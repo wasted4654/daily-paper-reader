@@ -1,39 +1,36 @@
 {
-  "generated_at": "2026-03-24T03:09:27.251223+00:00",
-  "updated_date": "20260223-20260324",
+  "generated_at": "2026-03-24T19:48:04.870635+00:00",
+  "updated_date": "20260324",
   "carryover_days": 9,
   "items": [
     {
-      "id": "2603.12868v1",
-      "title": "Beyond Imitation: Reinforcement Learning Fine-Tuning for Adaptive Diffusion Navigation Policies",
-      "abstract": "Diffusion-based robot navigation policies trained on large-scale imitation learning datasets, can generate multi-modal trajectories directly from the robot's visual observations, bypassing the traditional localization-mapping-planning pipeline and achieving strong zero-shot generalization. However, their performance remains constrained by the coverage of offline datasets, and when deployed in unseen settings, distribution shift often leads to accumulated trajectory errors and safety-critical failures. Adapting diffusion policies with reinforcement learning is challenging because their iterative denoising structure hinders effective gradient backpropagation, while also making the training of an additional value network computationally expensive and less stable. To address these issues, we propose a reinforcement learning fine-tuning framework tailored for diffusion-based navigation. The method leverages the inherent multi-trajectory sampling mechanism of diffusion models and adopts Group Relative Policy Optimization (GRPO), which estimates relative advantages across sampled trajectories without requiring a separate value network. To preserve pretrained representations while enabling adaptation, we freeze the visual encoder and selectively update the higher decoder layers and action head, enhancing safety-aware behaviors through online environmental feedback. On the PointGoal task in Isaac Sim, our approach improves the Success Rate from 52.0% to 58.7% and SPL from 0.49 to 0.54 on unseen scenes, while reducing collision frequency. Additional experiments show that the fine-tuned policy transfers zero-shot to a real quadruped platform and maintains stable performance in geometrically out-of-distribution environments, suggesting improved adaptability and safe generalization to new domains.",
+      "id": "2603.21017v1",
+      "title": "Dreaming the Unseen: World Model-regularized Diffusion Policy for Out-of-Distribution Robustness",
+      "abstract": "Diffusion policies excel at visuomotor control but often fail catastrophically under severe out-of-distribution (OOD) disturbances, such as unexpected object displacements or visual corruptions. To address this vulnerability, we introduce the Dream Diffusion Policy (DDP), a framework that deeply integrates a diffusion world model into the policy's training objective via a shared 3D visual encoder. This co-optimization endows the policy with robust state-prediction capabilities. When encountering sudden OOD anomalies during inference, DDP detects the real-imagination discrepancy and actively abandons the corrupted visual stream. Instead, it relies on its internal \"imagination\" (autoregressively forecasted latent dynamics) to safely bypass the disruption, generating imagined trajectories before smoothly realigning with physical reality. Extensive evaluations demonstrate DDP's exceptional resilience. Notably, DDP achieves a 73.8% OOD success rate on MetaWorld (vs. 23.9% without predictive imagination) and an 83.3% success rate under severe real-world spatial shifts (vs. 3.3% without predictive imagination). Furthermore, as a stress test, DDP maintains a 76.7% real-world success rate even when relying entirely on open-loop imagination post-initialization.",
       "authors": [
-        "Junhe Sheng",
-        "Ruofei Bai",
-        "Kuan Xu",
-        "Ruimeng Liu",
-        "Jie Chen",
-        "Shenghai Yuan",
-        "Wei-Yun Yau",
-        "Lihua Xie"
+        "Ziou Hu",
+        "Xiangtong Yao",
+        "Yuan Meng",
+        "Zhenshan Bing",
+        "Alois Knoll"
       ],
       "primary_category": "cs.RO",
       "categories": [
         "cs.RO"
       ],
-      "published": "2026-03-13T10:14:32+00:00",
-      "link": "https://arxiv.org/pdf/2603.12868v1",
+      "published": "2026-03-22T02:30:09+00:00",
+      "link": "https://arxiv.org/pdf/2603.21017v1",
       "tags": [
         "keyword:GenAD"
       ],
       "llm_score": 8.0,
-      "llm_evidence_en": "Diffusion-based robot navigation policies and RL fine-tuning",
-      "llm_evidence_cn": "基于扩散的机器人导航策略与强化学习微调",
-      "llm_evidence": "基于扩散的机器人导航策略与强化学习微调",
-      "canonical_evidence": "基于扩散的机器人导航策略与强化学习微调",
-      "llm_tldr_en": "Proposes RL fine-tuning for diffusion-based navigation to improve zero-shot generalization and safety.",
-      "llm_tldr_cn": "提出针对扩散导航策略的强化学习微调方法，以提升零样本泛化能力和安全性。",
-      "llm_tldr": "提出针对扩散导航策略的强化学习微调方法，以提升零样本泛化能力和安全性。",
+      "llm_evidence_en": "diffusion world model integrated into diffusion policy for robustness",
+      "llm_evidence_cn": "将扩散世界模型集成到扩散策略中以增强鲁棒性",
+      "llm_evidence": "将扩散世界模型集成到扩散策略中以增强鲁棒性",
+      "canonical_evidence": "将扩散世界模型集成到扩散策略中以增强鲁棒性",
+      "llm_tldr_en": "Introduces Dream Diffusion Policy (DDP) integrating a world model for robust OOD visuomotor control.",
+      "llm_tldr_cn": "引入梦境扩散策略（DDP），通过集成扩散世界模型提升策略在分布外干扰下的鲁棒性。",
+      "llm_tldr": "引入梦境扩散策略（DDP），通过集成扩散世界模型提升策略在分布外干扰下的鲁棒性。",
       "llm_tags": [
         "query:genad"
       ],
@@ -41,339 +38,7 @@
       "matched_query_text": "Diffusion policy for autonomous driving control",
       "matched_requirement_id": "req-3",
       "selection_source": "carryover_cache",
-      "paper_id": "2603.12868v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.19675v1",
-      "title": "DynFlowDrive: Flow-Based Dynamic World Modeling for Autonomous Driving",
-      "abstract": "Recently, world models have been incorporated into the autonomous driving systems to improve the planning reliability. Existing approaches typically predict future states through appearance generation or deterministic regression, which limits their ability to capture trajectory-conditioned scene evolution and leads to unreliable action planning. To address this, we propose DynFlowDrive, a latent world model that leverages flow-based dynamics to model the transition of world states under different driving actions. By adopting the rectifiedflow formulation, the model learns a velocity field that describes how the scene state changes under different driving actions, enabling progressive prediction of future latent states. Building upon this, we further introduce a stability-aware multi-mode trajectory selection strategy that evaluates candidate trajectories according to the stability of the induced scene transitions. Extensive experiments on the nuScenes and NavSim benchmarks demonstrate consistent improvements across diverse driving frameworks without introducing additional inference overhead. Source code will be abaliable at https://github.com/xiaolul2/DynFlowDrive.",
-      "authors": [
-        "Xiaolu Liu",
-        "Yicong Li",
-        "Song Wang",
-        "Junbo Chen",
-        "Angela Yao",
-        "Jianke Zhu"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV",
-        "cs.RO"
-      ],
-      "published": "2026-03-20T06:19:31+00:00",
-      "link": "https://arxiv.org/pdf/2603.19675v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Flow-based dynamic world modeling for autonomous driving planning",
-      "llm_evidence_cn": "基于流的自动驾驶规划动态世界建模",
-      "llm_evidence": "基于流的自动驾驶规划动态世界建模",
-      "canonical_evidence": "基于流的自动驾驶规划动态世界建模",
-      "llm_tldr_en": "DynFlowDrive uses flow-based dynamics in a latent world model to improve autonomous planning reliability.",
-      "llm_tldr_cn": "DynFlowDrive利用流动力学在潜空间世界模型中建模，提升自动驾驶规划的可靠性。",
-      "llm_tldr": "DynFlowDrive利用流动力学在潜空间世界模型中建模，提升自动驾驶规划的可靠性。",
-      "llm_tags": [
-        "query:genad:composite"
-      ],
-      "matched_query_tag": "query:genad:composite",
-      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
-      "matched_requirement_id": "req-composite-genad",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.19675v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.14938v1",
-      "title": "FAR-Drive: Frame-AutoRegressive Video Generation in Closed-Loop Autonomous Driving",
-      "abstract": "Despite rapid progress in autonomous driving, reliable training and evaluation of driving systems remain fundamentally constrained by the lack of scalable and interactive simulation environments. Recent generative video models achieve remarkable visual fidelity, yet most operate in open-loop settings and fail to support fine-grained frame-level interaction between agent actions and environment evolution. Building a learning-based closed-loop simulator for autonomous driving poses three major challenges: maintaining long-horizon temporal and cross-view consistency, mitigating autoregressive degradation under iterative self-conditioning, and satisfying low-latency inference constraints. In this work, we propose FAR-Drive, a frame-level autoregressive video generation framework for autonomous driving. We introduce a multi-view diffusion transformer with fine-grained structured control, enabling geometrically consistent multi-camera generation. To address long-horizon consistency and iterative degradation, we design a two-stage training strategy consisting of adaptive reference horizon conditioning and blend-forcing autoregressive training, which progressively improves consistency and robustness under self-conditioning. To meet low-latency interaction requirements, we further integrate system-level efficiency optimizations for inference acceleration. Experiments on the nuScenes dataset demonstrate that our method achieves state-of-the-art performance among existing closed-loop autonomous driving simulation approaches, while maintaining sub-second latency on a single GPU.",
-      "authors": [
-        "Yaoru Li",
-        "Federico Landi",
-        "Marco Godi",
-        "Xin Jin",
-        "Ruiju Fu",
-        "Yufei Ma",
-        "Muyang Sun",
-        "Heyu Si",
-        "Qi Guo"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-03-16T07:40:13+00:00",
-      "link": "https://arxiv.org/pdf/2603.14938v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Generative video models for closed-loop autonomous driving simulation",
-      "llm_evidence_cn": "用于闭环自动驾驶模拟的生成式视频模型",
-      "llm_evidence": "用于闭环自动驾驶模拟的生成式视频模型",
-      "canonical_evidence": "用于闭环自动驾驶模拟的生成式视频模型",
-      "llm_tldr_en": "FAR-Drive enables frame-level interactive video generation for closed-loop driving simulation.",
-      "llm_tldr_cn": "FAR-Drive实现了帧级交互式视频生成，支持自动驾驶的闭环模拟与训练。",
-      "llm_tldr": "FAR-Drive实现了帧级交互式视频生成，支持自动驾驶的闭环模拟与训练。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "Generative end-to-end autonomous driving",
-      "matched_requirement_id": "req-2",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.14938v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.15185v1",
-      "title": "What Matters for Scalable and Robust Learning in End-to-End Driving Planners?",
-      "abstract": "End-to-end autonomous driving has gained significant attention for its potential to learn robust behavior in interactive scenarios and scale with data. Popular architectures often build on separate modules for perception and planning connected through latent representations, such as bird's eye view feature grids, to maintain end-to-end differentiability. This paradigm emerged mostly on open-loop datasets, with evaluation focusing not only on driving performance, but also intermediate perception tasks. Unfortunately, architectural advances that excel in open-loop often fail to translate to scalable learning of robust closed-loop driving. In this paper, we systematically re-examine the impact of common architectural patterns on closed-loop performance: (1) high-resolution perceptual representations, (2) disentangled trajectory representations, and (3) generative planning. Crucially, our analysis evaluates the combined impact of these patterns, revealing both unexpected limitations as well as underexplored synergies. Building on these insights, we introduce BevAD, a novel lightweight and highly scalable end-to-end driving architecture. BevAD achieves 72.7% success rate on the Bench2Drive benchmark and demonstrates strong data-scaling behavior using pure imitation learning. Our code and models are publicly available here: https://dmholtz.github.io/bevad/",
-      "authors": [
-        "David Holtz",
-        "Niklas Hanselmann",
-        "Simon Doll",
-        "Marius Cordts",
-        "Bernt Schiele"
-      ],
-      "primary_category": "cs.RO",
-      "categories": [
-        "cs.RO",
-        "cs.AI",
-        "cs.CV"
-      ],
-      "published": "2026-03-16T12:20:34+00:00",
-      "link": "https://arxiv.org/pdf/2603.15185v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Systematic re-examination of end-to-end driving planner architectures",
-      "llm_evidence_cn": "对端到端驾驶规划器架构的系统性重新检查",
-      "llm_evidence": "对端到端驾驶规划器架构的系统性重新检查",
-      "canonical_evidence": "对端到端驾驶规划器架构的系统性重新检查",
-      "llm_tldr_en": "This paper analyzes architectural patterns that affect the closed-loop performance of end-to-end driving.",
-      "llm_tldr_cn": "本文系统分析了影响端到端驾驶规划器闭环性能的常见架构模式。",
-      "llm_tldr": "本文系统分析了影响端到端驾驶规划器闭环性能的常见架构模式。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "End-to-end autonomous driving systems",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.15185v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.14056v1",
-      "title": "Amortizing Trajectory Diffusion with Keyed Drift Fields",
-      "abstract": "Diffusion-based trajectory planners can synthesize rich, multimodal action sequences for offline reinforcement learning, but their iterative denoising incurs substantial inference-time cost, making closed-loop planning slow under tight compute budgets. We study the problem of achieving diffusion-like trajectory planning behavior with one-step inference, while retaining the ability to sample diverse candidate plans and condition on the current state in a receding-horizon control loop. Our key observation is that conditional trajectory generation fails under naïve distribution-matching objectives when the similarity measure used to align generated trajectories with the dataset is dominated by unconstrained future dimensions. In practice, this causes attraction toward average trajectories, collapses action diversity, and yields near-static behavior. Our key insight is that conditional generative planning requires a conditioning-aware notion of neighborhood: trajectory updates should be computed using distances in a compact key space that reflects the condition, while still applying updates in the full trajectory space. Building on this, we introduce Keyed Drifting Policies (KDP), a one-step trajectory generator trained with a drift-field objective that attracts generated trajectories toward condition-matched dataset windows and repels them from nearby generated samples, using a stop-gradient drifted target to amortize iterative refinement into training. At inference, the resulting policy produces a full trajectory window in a single forward pass. Across standard RL benchmarks and real-time hardware deployments, KDP achieves strong performance with one-step inference and substantially lower planning latency than diffusion sampling. Project website, code and videos: https://keyed-drifting.github.io/",
-      "authors": [
-        "Gokul Puthumanaillam",
-        "Melkior Ornik"
-      ],
-      "primary_category": "cs.RO",
-      "categories": [
-        "cs.RO",
-        "eess.SY"
-      ],
-      "published": "2026-03-14T17:56:15+00:00",
-      "link": "https://arxiv.org/pdf/2603.14056v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "diffusion-based trajectory planners for control",
-      "llm_evidence_cn": "基于扩散模型的轨迹规划器",
-      "llm_evidence": "基于扩散模型的轨迹规划器",
-      "canonical_evidence": "基于扩散模型的轨迹规划器",
-      "llm_tldr_en": "Amortizes diffusion-based trajectory planning into one-step inference for efficient closed-loop control.",
-      "llm_tldr_cn": "将基于扩散的轨迹规划摊销为单步推理，以实现高效的闭环控制。",
-      "llm_tldr": "将基于扩散的轨迹规划摊销为单步推理，以实现高效的闭环控制。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "Diffusion-based motion planning for vehicles",
-      "matched_requirement_id": "req-5",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.14056v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.19979v1",
-      "title": "X-World: Controllable Ego-Centric Multi-Camera World Models for Scalable End-to-End Driving",
-      "abstract": "Scalable and reliable evaluation is increasingly critical in the end-to-end era of autonomous driving, where vision--language--action (VLA) policies directly map raw sensor streams to driving actions. Yet, current evaluation pipelines still rely heavily on real-world road testing, which is costly, biased toward limited scenario coverage, and difficult to reproduce. These challenges motivate a real-world simulator that can generate realistic future observations under proposed actions, while remaining controllable and stable over long horizons. We present X-World, an action-conditioned multi-camera generative world model that simulates future observations directly in video space. Given synchronized multi-view camera history and a future action sequence, X-World generates future multi-camera video streams that follow the commanded actions. To ensure reproducible and editable scene rollouts, X-World further supports optional controls over dynamic traffic agents and static road elements, and retains a text-prompt interface for appearance-level control (e.g., weather and time of day). Beyond world simulation, X-World also enables video style transfer by conditioning on appearance prompts while preserving the underlying action and scene dynamics. At the core of X-World is a multi-view latent video generator designed to explicitly encourage cross-view geometric consistency and temporal coherence under diverse control signals. Experiments show that X-World achieves high-quality multi-view video generation with (i) strong view consistency across cameras, (ii) stable temporal dynamics over long rollouts, and (iii) high controllability with strict action following and faithful adherence to optional scene controls. These properties make X-World a practical foundation for scalable and reproducible evaluation.",
-      "authors": [
-        "Chaoda Zheng",
-        "Sean Li",
-        "Jinhao Deng",
-        "Zhennan Wang",
-        "Shijia Chen",
-        "Liqiang Xiao",
-        "Ziheng Chi",
-        "Hongbin Lin",
-        "Kangjie Chen",
-        "Boyang Wang",
-        "Yu Zhang",
-        "Xianming Liu"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV",
-        "cs.AI"
-      ],
-      "published": "2026-03-20T14:23:32+00:00",
-      "link": "https://arxiv.org/pdf/2603.19979v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "generative world model for end-to-end driving",
-      "llm_evidence_cn": "用于端到端驾驶的生成式世界模型",
-      "llm_evidence": "用于端到端驾驶的生成式世界模型",
-      "canonical_evidence": "用于端到端驾驶的生成式世界模型",
-      "llm_tldr_en": "X-World is a generative world model that simulates future observations for end-to-end driving evaluation.",
-      "llm_tldr_cn": "X-World是一个生成式世界模型，通过模拟未来观测来支持端到端驾驶评估。",
-      "llm_tldr": "X-World是一个生成式世界模型，通过模拟未来观测来支持端到端驾驶评估。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "Generative end-to-end autonomous driving",
-      "matched_requirement_id": "req-2",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.19979v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.09465v1",
-      "title": "EvoDriveVLA: Evolving Autonomous Driving Vision-Language-Action Model via Collaborative Perception-Planning Distillation",
-      "abstract": "Vision-Language-Action models have shown great promise for autonomous driving, yet they suffer from degraded perception after unfreezing the visual encoder and struggle with accumulated instability in long-term planning. To address these challenges, we propose EvoDriveVLA-a novel collaborative perception-planning distillation framework that integrates self-anchored perceptual constraints and oracle-guided trajectory optimization. Specifically, self-anchored visual distillation leverages self-anchor teacher to deliver visual anchoring constraints, regularizing student representations via trajectory-guided key-region awareness. In parallel, oracle-guided trajectory distillation employs a future-aware oracle teacher with coarse-to-fine trajectory refinement and Monte Carlo dropout sampling to produce high-quality trajectory candidates, thereby selecting the optimal trajectory to guide the student's prediction. EvoDriveVLA achieves SOTA performance in open-loop evaluation and significantly enhances performance in closed-loop evaluation. Our code is available at: https://github.com/hey-cjj/EvoDriveVLA.",
-      "authors": [
-        "Jiajun Cao",
-        "Xiaoan Zhang",
-        "Xiaobao Wei",
-        "Liyuqiu Huang",
-        "Wang Zijian",
-        "Hanzhen Zhang",
-        "Zhengyu Jia",
-        "Wei Mao",
-        "Hao Wang",
-        "Xianming Liu",
-        "Shuchang Zhou Liu",
-        "Yang Wang",
-        "Shanghang Zhang"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV",
-        "cs.AI"
-      ],
-      "published": "2026-03-10T10:19:07+00:00",
-      "link": "https://arxiv.org/pdf/2603.09465v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "vision-language-action model for end-to-end autonomous driving planning",
-      "llm_evidence_cn": "用于端到端自动驾驶规划的视觉-语言-动作模型",
-      "llm_evidence": "用于端到端自动驾驶规划的视觉-语言-动作模型",
-      "canonical_evidence": "用于端到端自动驾驶规划的视觉-语言-动作模型",
-      "llm_tldr_en": "EvoDriveVLA uses collaborative distillation to improve perception and long-term planning in autonomous driving.",
-      "llm_tldr_cn": "EvoDriveVLA 通过协同蒸馏改进了自动驾驶中的感知和长期规划能力。",
-      "llm_tldr": "EvoDriveVLA 通过协同蒸馏改进了自动驾驶中的感知和长期规划能力。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "End-to-end autonomous driving systems",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.09465v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.13399v1",
-      "title": "FlowAD: Ego-Scene Interactive Modeling for Autonomous Driving",
-      "abstract": "Effective environment modeling is the foundation for autonomous driving, underpinning tasks from perception to planning. However, current paradigms often inadequately consider the feedback of ego motion to the observation, which leads to an incomplete understanding of the driving process and consequently limits the planning capability. To address this issue, we introduce a novel ego-scene interactive modeling paradigm. Inspired by human recognition, the paradigm represents ego-scene interaction as the scene flow relative to the ego-vehicle. This conceptualization allows for modeling ego-motion feedback within a feature learning pattern, advantageously utilizing existing log-replay datasets rather than relying on scenario simulations. We specifically propose FlowAD, a general flow-based framework for autonomous driving. Within it, an ego-guided scene partition first constructs basic flow units to quantify scene flow. The ego-vehicle's forward direction and steering velocity directly shape the partition, which reflects ego motion. Then, based on flow units, spatial and temporal flow predictions are performed to model dynamics of scene flow, encompassing both spatial displacement and temporal variation. The final task-aware enhancement exploits learned spatio-temporal flow dynamics to benefit diverse tasks through object and region-level strategies. We also propose a novel Frames before Correct Planning (FCP) metric to assess the scene understanding capability. Experiments in both open and closed-loop evaluations demonstrate FlowAD's generality and effectiveness across perception, end-to-end planning, and VLM analysis. Notably, FlowAD reduces 19% collision rate over SparseDrive with FCP improvements of 1.39 frames (60%) on nuScenes, and achieves an impressive driving score of 51.77 on Bench2Drive, proving the superiority. Code, model, and configurations will be released here.",
-      "authors": [
-        "Mingzhe Guo",
-        "Yixiang Yang",
-        "Chuanrong Han",
-        "Rufeng Zhang",
-        "Shirui Li",
-        "Ji Wan",
-        "Zhipeng Zhang"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-03-11T16:28:53+00:00",
-      "link": "https://arxiv.org/pdf/2603.13399v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "Ego-scene interactive modeling for autonomous driving",
-      "llm_evidence_cn": "自动驾驶自车-场景交互建模",
-      "llm_evidence": "自动驾驶自车-场景交互建模",
-      "canonical_evidence": "自动驾驶自车-场景交互建模",
-      "llm_tldr_en": "Models ego-motion feedback as scene flow to improve planning capability in autonomous driving.",
-      "llm_tldr_cn": "将自车运动反馈建模为场景流，通过交互式建模提升自动驾驶的规划能力。",
-      "llm_tldr": "将自车运动反馈建模为场景流，通过交互式建模提升自动驾驶的规划能力。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "End-to-end autonomous driving systems",
-      "matched_requirement_id": "req-4",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.13399v1",
-      "carry_days": 1
-    },
-    {
-      "id": "2603.11534v1",
-      "title": "Risk-Controllable Multi-View Diffusion for Driving Scenario Generation",
-      "abstract": "Generating safety-critical driving scenarios is crucial for evaluating and improving autonomous driving systems, but long-tail risky situations are rarely observed in real-world data and difficult to specify through manual scenario design. Existing generative approaches typically treat risk as an after-the-fact label and struggle to maintain geometric consistency in multi-view driving scenes. We present RiskMV-DPO, a general and systematic pipeline for physically-informed, risk-controllable multi-view scenario generation. By integrating target risk levels with physically-grounded risk modeling, we autonomously synthesize diverse and high-stakes dynamic trajectories that serve as explicit geometric anchors for a diffusion-based video generator. To ensure spatial-temporal coherence and geometric fidelity, we introduce a geometry-appearance alignment module and a region-aware direct preference optimization (RA-DPO) strategy with motion-aware masking to focus learning on localized dynamic regions.Experiments on the nuScenes dataset show that RiskMV-DPO can freely generate a wide spectrum of diverse long-tail scenarios while maintaining state-of-the-art visual quality, improving 3D detection mAP from 18.17 to 30.50 and reducing FID to 15.70. Our work shifts the role of world models from passive environment prediction to proactive, risk-controllable synthesis, providing a scalable toolchain for the safety-oriented development of embodied intelligence.",
-      "authors": [
-        "Hongyi Lin",
-        "Wenxiu Shi",
-        "Heye Huang",
-        "Dingyi Zhuang",
-        "Song Zhang",
-        "Yang Liu",
-        "Xiaobo Qu",
-        "Jinhua Zhao"
-      ],
-      "primary_category": "cs.CV",
-      "categories": [
-        "cs.CV"
-      ],
-      "published": "2026-03-12T04:44:12+00:00",
-      "link": "https://arxiv.org/pdf/2603.11534v1",
-      "tags": [
-        "keyword:GenAD"
-      ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "diffusion-based driving scenario generation",
-      "llm_evidence_cn": "基于扩散模型的驾驶场景生成",
-      "llm_evidence": "基于扩散模型的驾驶场景生成",
-      "canonical_evidence": "基于扩散模型的驾驶场景生成",
-      "llm_tldr_en": "Presents a risk-controllable multi-view diffusion pipeline for generating safety-critical driving scenarios.",
-      "llm_tldr_cn": "提出了一种风险可控的多视图扩散流水线，用于生成安全关键的驾驶场景。",
-      "llm_tldr": "提出了一种风险可控的多视图扩散流水线，用于生成安全关键的驾驶场景。",
-      "llm_tags": [
-        "query:genad"
-      ],
-      "matched_query_tag": "query:genad",
-      "matched_query_text": "Generative end-to-end autonomous driving",
-      "matched_requirement_id": "req-2",
-      "selection_source": "carryover_cache",
-      "paper_id": "2603.11534v1",
+      "paper_id": "2603.21017v1",
       "carry_days": 1
     }
   ]

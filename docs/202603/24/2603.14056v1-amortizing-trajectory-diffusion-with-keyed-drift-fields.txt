@@ -1,0 +1,610 @@
+Title: Amortizing Trajectory Diffusion with Keyed Drift Fields
+
+URL Source: https://arxiv.org/pdf/2603.14056v1
+
+Published Time: Tue, 17 Mar 2026 02:33:16 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Amortizing Trajectory Diffusion with Keyed Drift Fields 
+
+Gokul Puthumanaillam 
+
+gokulp2@illinois.edu 
+
+Melkior Ornik 
+
+mornik@illinois.edu 
+
+University of Illinois Urbana-Champaign 
+
+## Abstract 
+
+Diffusion-based trajectory planners can synthesize rich, multimodal action sequences for offline reinforce-ment learning, but their iterative denoising incurs substantial inference-time cost, making closed-loop plan-ning slow under tight compute budgets. We study the problem of achieving diffusion-like trajectory planning behavior with one-step inference, while retaining the ability to sample diverse candidate plans and condition on the current state in a receding-horizon control loop. Our key observation is that conditional trajectory generation fails under naïve distribution-matching objectives when the similarity measure used to align gen-erated trajectories with the dataset is dominated by unconstrained future dimensions. In practice, this causes attraction toward average trajectories, collapses action diversity, and yields near-static behavior. Our key insight is that conditional generative planning requires a conditioning-aware notion of neighborhood: tra-jectory updates should be computed using distances in a compact key space that reflects the condition, while still applying updates in the full trajectory space. Building on this, we introduce Keyed Drifting Policies (KDP), a one-step trajectory generator trained with a drift-field objective that attracts generated trajecto-ries toward condition-matched dataset windows and repels them from nearby generated samples, using a stop-gradient drifted target to amortize iterative refinement into training. At inference, the resulting policy produces a full trajectory window in a single forward pass. Across standard RL benchmarks and real-time hardware deployments, KDP achieves strong performance with one-step inference and substantially lower planning latency than diffusion sampling. Project website, code and videos: https://keyed-drifting.github.io/ 
+
+# 1 INTRODUCTION 
+
+Diffusion-based trajectory models have emerged as a compelling foundation for robot decision-making and offline reinforcement learning (RL) because they can model complex, multimodal distributions over future behavior directly from data [1,8,18]. In a typical deploy-ment, a diffusion model is used inside a receding-horizon control loop: at each control step, the system condi-tions on the current observation and optionally a goal or desired return, samples a short trajectory segment, executes the first action, and replans [1, 8, 42]. Despite their flexibility, diffusion planners are often impractical at high control rates because they require many sequen-tial denoising steps, leading to substantial latency and large numbers of neural network evaluations [16,34,42]. This paper asks a concrete question: how can we ob-tain diffusion-like trajectory planning behavior with one-step inference while preserving conditional con-trollability and sample diversity in a receding-horizon control loop? Prior work reduces diffusion-planning latency either by cutting denoising steps [11, 30, 33–35] or by iteratively sampling and selecting/guiding candidates with various signals [4, 29]. Both approaches remain tied to an it-erative sampling loop, requiring added tuning as com-pute budgets tighten. We take a different route: amor-tize refinement into training to obtain a one-step condi-tional trajectory generator usable for planning. Naïvely matching the data distribution in full window space is brittle—in high-dimensional state-action sequences, dis-1  
+
+> arXiv:2603.14056v1 [cs.RO] 14 Mar 2026 Figure 1: Given condition 𝑐 , full-window distance selects neighbors dominated by unconstrained future dimensions (orange), encourag-ing mode-averaged trajectories (left bottom). Key distance selects condition-matched neighbors (magenta), preserving diverse condi-tional trajectories (right bottom).
+
+tances are dominated by unconstrained future compo-nents, pulling samples toward averages, collapsing ac-tion diversity, and yielding inert closed-loop behavior. Our key observation is that conditional trajectory gener-ation requires a conditioning-aware notion of neighbor-hood: for a given condition, the learning signal should preferentially compare against data trajectories that match that condition, rather than against arbitrary tra-jectories that are close under a high-dimensional, poorly aligned metric. We operationalize this observation with Keyed Drift-ing Policies (KDP), a one-step trajectory generator trained with a keyed drift field objective [10] that pulls samples toward condition-matched dataset windows and repels them from nearby generated samples via a stop-gradient drifted target, amortizing refinement into the model pa-rameters. KDP is deployed in the same receding-horizon planning interface as diffusion planners, and we con-tribute: (i) a practical keyed drift-field formulation for conditional trajectory generation that avoids collapse under hard conditioning constraints; (ii) a one-step plan-ning recipe that preserves the diffusion-planner inter-face while eliminating the 𝑇 -step sequential denoising loop; and (iii) an end-to-end evaluation spanning stan-dard simulation benchmarks and real-time closed-loop hardware deployments under strict latency budgets. 
+
+# 2 Related Work 
+
+Our work sits at the intersection of diffusion-based plan-ning, offline RL, and distribution matching. 
+
+Offline RL: Offline RL learns policies from fixed datasets [32] and combats distribution shift via behavior con-straints, regularization, and conservative value learn-ing [23, 24]. Practical variants blend cloning-style objec-tives with critic learning or advantage weighting [13,40], while model-based offline RL uses learned dynamics with pessimism to mitigate compounding error [2,22,41]. Sequence-model approaches reframe decision making as conditional sequence prediction [3, 5, 19]. These fam-ilies are effective but usually yield reactive policies or require costly decoding or optimization, and they do not directly address reducing inference-time iterations for sampling-based planning. 
+
+Diffusion-based planners: Diffusion-based planners model future trajectories or actions and deploy them by sampling candidate plans or actions [1, 18, 39]. They support flexible conditioning via inpainting, return con-ditioning, or guidance [1, 18] and have been extended through hierarchical, latent, and energy-guided vari-ants [25, 26]. Robotics variants apply diffusion to tra-jectory generation and control under constraints [8, 42]. Despite strong modeling capacity, these methods typi-cally rely on iterative denoising, which increases infer-ence latency and can introduce closed-loop brittleness for real-time planning. 
+
+One-step generators: Faster samplers reduce denois-ing steps via deterministic trajectories, improved param-eterizations, or specialized solvers, and guidance mech-anisms steer samples toward conditions without explicit classifiers [11, 34]. Distillation and alternative objec-tives target few-step generation and reduces per-step compute [30, 33, 35]. Score-based foundations formalize diffusion and score learning in continuous time and in latent spaces, and hybrid objectives combine diffusion training with GAN-style efficiency [21,36,37]. These ap-proaches often require additional stages or tuning; our focus is amortizing refinement into training for one-step conditional planning. 
+
+Distribution matching: Kernel and particle-based per-spectives emphasize that distribution matching depends on the neighborhood metric: mean-shift-style updates and density-gradient estimators motivate attraction dy-namics, while kernel mean embeddings formalize distri-butional discrepancies [9, 14, 31]. Recent methods com-bine attraction with kernel-based repulsion to maintain diversity, including policy-gradient adaptations [27, 28]. Energy-based and score-based learning provide com-plementary views: score matching links learning to density-gradient estimation, while energy-based learn-ing, and noise-contrastive estimation use negative sam-ples to fit unnormalized models [15, 17]. Adversarial objectives and contrastive learning operationalize attrac-tion/ repulsion through learned discrepancies and posi-tive/negative sampling [7, 38]. Autoregressive sequence 2models provide another form of distribution matching by fitting trajectory distributions directly through con-ditional sequence prediction [5, 19]. 
+
+# 3 Background 
+
+## 3.1 Trajectory diffusion models for plan-ning 
+
+We consider diffusion models that generate short trajec-tory windows for receding-horizon control. Let a win-dow be represented as 𝑥 0 ∈ R𝐻 ×𝐷 (𝐷 = 𝑑 𝑠 + 𝑑 𝑎 ), where each timestep concatenates state and action, i.e., 𝑥 0 [𝑡 ] =
+
+(𝑠 𝑡 , 𝑎 𝑡 ). At decision time, the model is conditioned on a context 𝑐 derived from the current observation (and op-tionally a goal). In this paper, the conditioning signal we primarily care about is the current state, written as 
+
+𝑐 = 𝑠 0.Diffusion introduces a sequence of latent variables {𝑥 𝑡 }𝑇 𝑡 =1
+
+via a forward noising process [16] 
+
+𝑞 (𝑥 𝑡 | 𝑥 𝑡 −1) = N (√𝛼 𝑡 𝑥 𝑡 −1, (1 − 𝛼 𝑡 )𝐼 ) , (1) with 𝛼 𝑡 = 1 − 𝛽 𝑡 and a user-chosen noise schedule 
+
+{𝛽 𝑡 }𝑇 𝑡 =1. Defining ¯𝛼 𝑡 = Œ𝑡 𝑖 =1 𝛼 𝑖 , the marginal admits the closed form 
+
+𝑞 (𝑥 𝑡 | 𝑥 0) = N
+
+(√ ¯𝛼 𝑡 𝑥 0, (1 − ¯𝛼 𝑡 )𝐼 
+
+)
+
+, (2) also written as 𝑥 𝑡 = √¯𝛼 𝑡 𝑥 0 + √1 − ¯𝛼 𝑡 𝜀 with 𝜀 ∼ N ( 0, 𝐼 ).A standard parameterization trains a denoiser 𝜀 𝜃 to pre-dict the injected noise under conditioning 𝑐 :
+
+min  
+
+> 𝜃
+
+E𝑥 0∼D , 𝑡 ∼{ 1,...,𝑇 }, 𝜀 ∼N ( 0,𝐼 )
+
+[∥𝜀 − 𝜀 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 )∥ 22
+
+] . (3) At inference, trajectories are sampled by reversing the process from 𝑥 𝑇 ∼ N ( 0, 𝐼 ) using a learned reverse tran-sition 
+
+𝑝 𝜃 (𝑥 𝑡 −1 | 𝑥 𝑡 , 𝑐 ) = N
+
+(
+
+𝜇 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 ), 𝜎 2 
+
+> 𝑡
+
+𝐼 
+
+)
+
+, (4) where the mean typically takes the DDPM [16] form 
+
+𝜇 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 ) = 1
+
+√𝛼 𝑡 
+
+(
+
+𝑥 𝑡 − 1 − 𝛼 𝑡 
+
+√1 − ¯𝛼 𝑡 
+
+𝜀 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 )
+
+)
+
+, (5) and 𝜎 2 
+
+> 𝑡
+
+is set from the schedule. 
+
+## 3.2 Receding-horizon control and condi-tioning 
+
+In receding-horizon deployment, at each environment step we observe the current state 𝑠 and set 𝑐 = 𝑠 . Asampled window ˆ𝑥 0 yields the control action by extract-ing its first action component: 𝑎 = ˆ𝑥 0 [0, 𝑑 𝑠 :𝑑 𝑠 +𝑑 𝑎 ]. Im-plementations [18] further improve reliability by sam-pling 𝐾 candidate windows {ˆ𝑥 (𝑘 ) 
+
+> 0
+
+}𝐾 𝑘 =1 and selecting via a learned scorer 𝐽 𝜙 .
+
+## 3.3 Computational challenges with diffu-sion planning 
+
+Diffusion planning is dominated by sequential denoising: generating one candidate trajectory requires 𝑇 denoiser evaluations, and best-of-𝐾 selection scales this to ≈ 𝐾𝑇 
+
+evaluations per control step, plus scoring. Decreasing 
+
+𝑇 reduces latency but changes the sampling distribution and harms conditional fidelity; increasing 𝐾 improves selection but increases cost linearly. A natural alterna-tive is a one-step conditional generator 𝑔 𝜓 (𝑧, 𝑐 ) that out-puts a full horizon-𝐻 window in a single forward pass. However, naïvely training such a generator by matching distributions in full window space is unstable: distances and losses are dominated by unconstrained future com-ponents, encouraging collapse toward average trajecto-ries and producing inert controllers despite numerically stable training. 
+
+# 4 Keyed Drifting Policies 
+
+We introduce Keyed Drifting Policies (KDP), which train a conditional generator by evolving its training-time pushforward distribution with a drifting field, fol-lowing the stop-gradient drifted target recipe of drifting models [10]. The modification for conditional planning is that we make neighborhood structure conditioning-aware : when we decide which dataset windows should influence a generated sample, we measure similarity in a key space aligned with the condition, while applying updates in the full trajectory space. 
+
+## 4.1 Trajectory windows and hard condi-tioning constraints 
+
+Recall that a trajectory window is represented as 𝑥 and 
+
+𝑥 [𝑡 ] = (𝑠 𝑡 , 𝑎 𝑡 ). We use the block operators: state (𝑥 ) [ 𝑡 ] =
+
+𝑥 [𝑡, 0: 𝑑 𝑠 ], act (𝑥 ) [ 𝑡 ] = 𝑥 [𝑡, 𝑑 𝑠 :𝐷 ].
+
+In receding-horizon control, the condition is the current observation (state conditioning), 𝑐 = 𝑠 0 ∈ R𝑑 𝑠 . Because the plan must start at the true current state, we enforce this as a hard constraint via a clamping operator C𝑐 (·) :
+
+C𝑐 (𝑥 ) [ 0, 0: 𝑑 𝑠 ] = 𝑐, C𝑐 (𝑥 ) [ 𝑡, :] = 𝑥 [𝑡, :] otherwise. (6) Clamping is necessary because small prediction errors in the conditioned dimensions accumulate across replan-ning steps, which can destabilize the closed-loop behav-ior. 
+
+Goal-conditioned inpainting For goal-conditioned tasks we augment the condition with a goal vector 
+
+𝑔 ∈ R𝑑 𝑔 and enforce goal satisfaction by inpainting selected state coordinates at a designated timestep 𝑡 𝑔 .3Figure 2: Overview of KDP. A condition key retrieves condition-matched dataset windows, which train a one-step generator by attracting trajec-tories toward matched data and repelling them from nearby generated samples, enabling one-step closed-loop planning at inference. 
+
+Let I ⊆ {1, . . . , 𝑑 𝑠 } denote the goal-relevant state in-dices. We define an extended clamping operator C(𝑐,𝑔 )
+
+that overwrites both the initial state and the goal coor-dinates: 
+
+C(𝑐,𝑔 ) (𝑥 ) [ 0, 𝑑 𝑎 :𝐷 ] = 𝑐, C(𝑐,𝑔 ) (𝑥 ) [ 𝑡 𝑔 , 𝑑 𝑎 + I] = 𝑔, (7) leaving all other entries unchanged. During training we apply the same mask to the drift field so drift updates cannot modify clamped coordinates. 
+
+## 4.2 Conditional pushforward at training 
+
+Let 𝑔 𝜓 be a conditional generator that maps noise 𝑧 ∼N ( 0, 𝐼 ) and condition 𝑐 to a trajectory window: 
+
+x = C𝑐 
+
+(𝑔 𝜓 (𝑧, 𝑐 )) ∈ R𝐻 ×𝐷 . (8) For a fixed condition 𝑐 , the model induces a conditional pushforward distribution 𝑞 𝜓 (· | 𝑐 ). During stochas-tic optimization, the parameter sequence {𝜓 𝑖 } induces a sequence of conditional pushforwards {𝑞 𝜓 𝑖 (· | 𝑐 )} .Drifting models [10] view training as an evolution of the pushforward distribution governed by a drifting field; we adopt the same viewpoint, but the conditional set-ting forces a question that does not arise in unconditional generation: how should we define neighborhood structure so that the learning signal reflects the condition rather than being dominated by unconstrained future dimensions? 
+
+Empirically, if similarity is measured over full windows early in training, the unconstrained future dominates distance computations and leads to unstable or collapsed behavior (e.g., action variance collapse and near-static rollouts). KDP addresses this by defining neighborhoods in a key space aligned with the condition. 
+
+## 4.3 Key space and conditioning-aware neigh-borhoods 
+
+KDP introduces a key map 𝜅 (·) used only for neighbor-hood formation. In the state-conditioned case we use the initial state block: 𝜅 (𝑥 ) = state (𝑥 ) [ 0] ∈ R𝑑 𝑠 .
+
+Key-space distances are Euclidean: 
+
+𝑑 𝜅 (𝑥, 𝑦 ) = ∥𝜅 (𝑥 ) − 𝜅 (𝑦 )∥ 2 . (9) Because we always clamp state (x) [ 0] = 𝑐 , the key of a generated window is exactly the condition. As a result, neighborhood selection depends on 𝑐 rather than on the current (potentially noisy) future portion of x. This is the mechanism by which KDP makes conditional learning signals robust in high-dimensional trajectory spaces. 
+
+## 4.4 A keyed drifting field in full trajectory space 
+
+Having fixed how we form neighborhoods (Sec. 4.3), we still need a training-time refinement rule : given a clamped generated window x𝑖 , what update direction should move it toward the conditional data distribu-tion while avoiding mode collapse? Following drifting models [10], we construct a drifting field 𝑉 (x) with two roles: (i) attraction toward dataset windows that match the condition, and (ii) repulsion away from nearby gen-erated windows to maintain diversity. KDP uses the key distance 𝑑 𝜅 to decide which windows are near, but applies the update in the full window space R𝐻 ×𝐷 .
+
+From mean-shift to a keyed drift. A convenient way to think about drift is as a mean-shift-like update. Given a normalized kernel ˜𝑘 (· , ·) and sources of samples: y+ ∼
+
+𝑝 from the dataset and y− ∼ 𝑞 from the current model—a standard attraction–repulsion field can be written as                    
+
+> 𝑉 𝑝,𝑞 (x)=Ey+∼𝑝
+> [˜𝑘 𝜅 (x,y+)y+]−Ey−∼𝑞
+> [˜𝑘 𝜅 (x,y−)y−],
+
+(10) where ˜𝑘 𝜅 emphasizes that similarity is computed in key space. This form is equivalent to the mean of differences presentation in drifting models [10] (the x terms cancel between attraction and repulsion), and it makes explicit what KDP needs: a way to compute ˜𝑘 𝜅 that reflects the condition. 
+
+Mini-batch construction. In stochastic training, we approximate the expectations in Eq. (10) with minibatch 4averages. Let {y+ 𝑗 }𝐵 𝑗 =1 be a minibatch of dataset win-dows. We set the condition for the 𝑖 -th sample to be the dataset key, i.e., 
+
+𝑐 𝑖 = 𝜅 (y+𝑖 ); x 𝑖 = C𝑐 𝑖 
+
+(𝑔 𝜓 (𝑧 𝑖 , 𝑐 𝑖 )) ; 𝑧 𝑖 ∼ N ( 0, 𝐼 ), (11) so that the empirical distribution of conditions seen by the generator matches the data. We use the current mini-batch of generated samples as negatives, y− 𝑗 := x𝑗 , so repulsion is always defined relative to the model’s current conditional output distribution .
+
+Keyed kernel weights. A drifting field is only as use-ful as its notion of nearby. If we computed similarity in full window space early in training, distances would be dominated by unconstrained future components, and the resulting weights would not reflect the condition. KDP therefore computes kernel weights using key distances: 
+
+𝐷 + 
+
+> 𝑖 𝑗
+
+= 𝑑 𝜅 (x𝑖 , y+ 𝑗 ), 𝐷 − 
+
+> 𝑖 𝑗
+
+= 𝑑 𝜅 (x𝑖 , y− 𝑗 ). (12) We adopt the same exponential kernel family as [10] im-plemented via a softmax normalization: 
+
+𝑊 +𝑖 𝑗 = exp ( − 𝐷 + 
+
+> 𝑖 𝑗
+
+/𝜏 )Õ𝐵 𝑘 =1 exp ( − 𝐷 + 
+
+> 𝑖𝑘
+
+/𝜏 ) ,𝑊 −𝑖 𝑗 = exp ( − 𝐷 − 
+
+> 𝑖 𝑗
+
+/𝜏 )Õ𝐵 𝑘 =1 exp ( − 𝐷 − 
+
+> 𝑖𝑘
+
+/𝜏 ) .
+
+(13) Crucially, because x𝑖 is clamped, 𝜅 (x𝑖 ) is determined by 𝑐 𝑖 ; thus 𝐷 + 
+
+> 𝑖 𝑗
+
+compares conditions rather than uncon-strained futures, and 𝑊 + concentrates on condition-matched windows. 
+
+Self-negative masking. If we include 𝑗 = 𝑖 in the re-pulsion softmax, then 𝐷 − 
+
+> 𝑖𝑖
+
+= 0 makes 𝑊 −𝑖𝑖 dominate, yielding 𝜇 −𝑖 ≈ x𝑖 . This collapses the repulsion term into a no-op and reduces the drift to a pure attraction update, which empirically encourages mode averaging. We therefore exclude self-negatives by masking the di-agonal before normalization (equivalently 𝐷 − 
+
+> 𝑖𝑖
+
+← +∞ in Eq. (13)), matching the self-negative masking fix used in our implementation. 
+
+Attraction and repulsion means in full window space. We form weighted averages of full windows: 
+
+𝜇 +𝑖 =
+
+> 𝐵
+
+’
+
+> 𝑗 =1
+
+𝑊 +𝑖 𝑗 y+ 𝑗 , 𝜇 −𝑖 =
+
+> 𝐵
+
+’
+
+> 𝑗 =1
+
+𝑊 −𝑖 𝑗 y− 𝑗 . (14) Here 𝜇 +𝑖 is a condition-local prototype of the dataset in full trajectory space, 𝜇 −𝑖 is the corresponding proto-type of the model’s current samples under the same key-locality notion. The drift direction is their difference: 
+
+𝑉 (𝜏 ) 
+
+> 𝑖
+
+= 𝜇 +𝑖 − 𝜇 −𝑖 . This is precisely the batch approxi-mation of Eq. (10). 
+
+Multi-temperature averaging. The temperature 𝜏 
+
+controls how local the neighborhood is: smaller 𝜏 em-phasizes nearest neighbors in key space, while larger 
+
+𝜏 averages over a broader set of condition-similar win-dows. To reduce sensitivity to a single bandwidth choice, we average drifts across a small set of temperatures 
+
+{𝜏 𝑚 }𝑀 𝑚 =1 : 𝑉 𝑖 = 1
+
+𝑀 
+
+> 𝑀
+
+’
+
+> 𝑚 =1
+
+𝑉 (𝜏 𝑚 ) 
+
+> 𝑖
+
+. (15) 
+
+Constraint-respecting drift (masking) and stable magnitudes (normalization). Because KDP enforces hard constraints via C, refinement must not alter clamped entries. We therefore apply a binary mask 𝑀 ∈ { 0, 1}𝐻 ×𝐷 
+
+that zeros clamped coordinates: 
+
+𝑉 𝑖 ← 𝑀 ⊙ 𝑉 𝑖 . (16) Finally, we normalize nonzero drift vectors per sample: 
+
+𝑉 𝑖 ← 𝑉 𝑖 /(√ 1
+
+𝐻𝐷 ∥𝑉 𝑖 ∥22 + 𝜖 ). (17) This keeps equilibrium at 𝑉 𝑖 = 0 unchanged and prevents drift from varying wildly. 
+
+## 4.5 Amortizing refinement with a stop gra-dient drifted target 
+
+The keyed drift field 𝑉 𝑖 defines a refinement step that would improve x𝑖 if applied iteratively. Instead, we amortize refinement into 𝑔 𝜓 using a stop-gradient drifted target, as in [10]. Let sg (·) denote stop-gradient. We define the target: 
+
+˜𝑥 𝑖 = C𝑐 𝑖 (sg (x𝑖 + 𝑉 𝑖 )) . (18) We then regress the generator output toward this target in full trajectory space. 
+
+Weighted trajectory regression We use a weighted squared error that upweights action dimensions: 
+
+min  
+
+> 𝜓
+
+E [∥x𝑖 − ˜𝑥 𝑖 ∥2
+
+> 𝑊
+
+] , (19) with ∥𝑢 ∥2 
+
+> 𝑊
+
+= Õ𝐻 −1
+
+> 𝑡 =0
+
+(
+
+𝜆 𝑠 ∥𝑢 [𝑡, 0: 𝑑 𝑠 ] ∥ 22 + 𝜆 𝑎 ∥𝑢 [𝑡, 𝑑 𝑠 :𝐷 ] ∥ 22
+
+)
+
+.
+
+In our implementation, this weighting is a practical guard against action-collapse: it biases the amortized refinement toward producing control-relevant diversity in the action block while still training the full window. Algorithm 1 summarizes one SGD step. 5Input: Dataset minibatch {y+𝑖 }𝐵 𝑖 =1; key map 𝜅 ; gen-erator 𝑔 𝜓 ; temperatures {𝜏 𝑚 }𝑀 𝑚 =1; clamp opera-tor C; clamp mask 𝑀 ; weights 𝜆 𝑎 , 𝜆 𝑠 . 
+
+> 1
+
+𝑐 𝑖 ← 𝜅 (y+𝑖 ), sample 𝑧 𝑖 ∼ N ( 0, 𝐼 ). 
+
+> 2
+
+x𝑖 ← C 𝑐 𝑖 
+
+(𝑔 𝜓 (𝑧 𝑖 , 𝑐 𝑖 )). 
+
+> 3
+
+y− 𝑗 ← x𝑗 and mask self-negatives ( 𝑗 = 𝑖 ) in repulsion weights.  
+
+> 4
+
+𝑉 𝑖 ← 0 for all 𝑖 . 
+
+> 5
+
+for 𝑚 = 1 to 𝑀 do  
+
+> 6
+
+𝑊 +𝑖 𝑗 ← softmax ( − 𝑑 𝜅 (x𝑖 , y+ 𝑗 )/ 𝜏 𝑚 
+
+). 
+
+> 7
+
+𝑊 −𝑖 𝑗 ← softmax ( − 𝑑 𝜅 (x𝑖 , y− 𝑗 )/ 𝜏 𝑚 
+
+). 
+
+> 8
+
+𝜇 +𝑖 ← Õ𝑗 𝑊 +𝑖 𝑗 y+ 𝑗 , 𝜇 −𝑖 ← Õ𝑗 𝑊 −𝑖 𝑗 y− 𝑗 . 
+
+> 9
+
+𝑉 𝑖 ← 𝑉 𝑖 + 1
+
+> 𝑀
+
+(𝜇 +𝑖 − 𝜇 −𝑖 
+
+). 
+
+> 10
+
+end for  
+
+> 11
+
+𝑉 𝑖 ← 𝑀 ⊙ 𝑉 𝑖 . // constraint-aware drift  
+
+> 12
+
+˜𝑥 𝑖 ← C 𝑐 𝑖 
+
+(sg (x𝑖 + 𝑉 𝑖 )). 
+
+> 13
+
+Δ𝑠 𝑖,𝑡 ← x𝑖 [𝑡, 0: 𝑑 𝑠 ] − ˜𝑥 𝑖 [𝑡, 0: 𝑑 𝑠 ] 
+
+> 14
+
+Δ𝑎 𝑖,𝑡 ← x𝑖 [𝑡, 𝑑 𝑠 :𝐷 ] − ˜𝑥 𝑖 [𝑡, 𝑑 𝑠 :𝐷 ] 
+
+> 15
+
+L ← Õ𝑖,𝑡 
+
+(
+
+𝜆 𝑠 ∥Δ𝑠 𝑖,𝑡 ∥22 + 𝜆 𝑎 ∥Δ𝑎 𝑖,𝑡 ∥22
+
+) 
+
+> 16
+
+Update 𝜓 by SGD on L.
+
+> Algorithm 1: Keyed drifting policy training (one SGD step)
+
+## 4.6 Online receding-horizon planning 
+
+At each environment step, KDP conditions on the cur-rent observation 𝑐 and draws 𝐾 samples in parallel:                
+
+> ˆ𝑥 (𝑘 )=C𝑐
+> (𝑔 𝜓 (𝑧 𝑘 , 𝑐 )),𝑧 𝑘 ∼ N ( 0, 𝐼 ),𝑘 =1, . . . , 𝐾 .
+
+(20) A scorer 𝐽 𝜙 (a learned return model) selects a candidate, 
+
+ˆ𝑥 ∗ = arg max    
+
+> 𝑘 ∈ { 1,...,𝐾 }
+
+𝐽 𝜙 ( ˆ𝑥 (𝑘 ) , 𝑐 ), (21) the executed action is the first action block of the win-dow: 
+
+𝑎 ← act ( ˆ𝑥 ∗) [ 0] = ˆ𝑥 ∗ [0, 𝑑 𝑠 :𝐷 ]. (22) 
+
+Input: Current context 𝑐 ; generator 𝑔 𝜓 ; number of candidates 𝐾 ; optional scorer 𝐽 𝜙 . 
+
+> 1
+
+Sample 𝑧 1, . . . , 𝑧 𝐾 ∼ N ( 0, 𝐼 ). 
+
+> 2
+
+Generate candidates: ˆ𝑥 (𝑘 ) ← C 𝑐 (𝑔 𝜓 (𝑧 𝑘 , 𝑐 )) for 
+
+𝑘 = 1, . . . , 𝐾 . 
+
+> 3
+
+if 𝐽 𝜙 is available then  
+
+> 4
+
+Select ˆ𝑥 ∗ ← arg max 𝑘 𝐽 𝜙 ( ˆ𝑥 (𝑘 ) , 𝑐 ). 
+
+> 5
+
+else  
+
+> 6
+
+Select ˆ𝑥 ∗ ← ˆ𝑥 (1) . 
+
+> 7
+
+end if  
+
+> 8
+
+Execute 𝑎 ← ˆ𝑥 ∗ [0, 𝑑 𝑠 :𝐷 ] and repeat at the next control cycle. 
+
+> Algorithm 2: Receding-horizon planning with KDP
+
+This compute profile differs from diffusion planning: dif-fusion requires 𝑇 sequential policy evaluations per en-vironment step (each acting on a batch of 𝐾 candidates under best-of-𝐾 ), while KDP requires a single policy for-ward pass on 𝐾 candidates (plus the optional scorer). KDP therefore trades sequential refinement depth 𝑇 for embarrassingly-parallel candidate count 𝐾 , which is eas-ier to amortize on modern accelerators. 
+
+# 5 Experiments 
+
+Our experiments are designed to validate four claims: (i) KDP supports amortized refinement, (ii) KDP offers a favorable compute–performance tradeoff relative to diffusion-based planners, (iii) KDP supports conditional planning, and (iv) the performance gains are attributable to specific components of the method, verified by abla-tions. 
+
+## Experimental setup 
+
+5.0.1 Simulated benchmarks 
+
+We evaluate on D4RL benchmark [12]: (i) locomotion, (ii) goal-conditioned navigation, (iii) long-horizon navi-gation, (iv) dexterous manipulation. HalfCheetah Walker2D Hopper     
+
+> Maze2D AntMaze
+> Adroit-Pen Adroit-Hammer Adroit-Door Adroit-Relocate
+> Figure 3: D4RL simulation environments.
+
+5.0.2 Hardware implementation 
+
+To showcase real-time performance of KDP, we evaluate on two domains: (i) quadrotor navigation and (ii) table-top manipulation with a 6-DoF arm. 
+
+5.0.3 Metrics 
+
+We report the following per environment step: (i) Se-quential NFEs (NFE): number of sequential policy for-ward calls required to produce candidates. (ii) Batch-equivalent forwards (BEF): total effective batch processed per step, accounting for candidate count. (iii) Planning latency (ms/step) (PL): end-to-end planning time per en-vironment step. (iv) End-to-end control latency (ms/step) 
+
+6(E2E): planning latency plus environment and wrapper overhead. 
+
+5.0.4 Baselines 
+
+We separate baselines by their inference-time behav-ior: (i) fast-policy / offline-selection baselines (BC [32], CQL [24], IQL [23], Decision Transformer [6], Tra-jectory Transformer [20]), and representative model-based offline RL methods (MOPO [41], MOReL [22], and MBOP [2]); (ii) Generative trajectory methods (Dif-fuser [18], trained on the same trajectory-window repre-sentation and evaluated with the same receding-horizon control as KDP). For locomotion we additionally report recent low-NFE generative or trajectory-modeling ap-proaches (DQL [39], CAC [11], and CBC [11]). Where selection is used, we evaluate both (i) unranked sam-pling and (ii) ranked best-of-𝐾 sampling using the same learned scorer used for KDP. 
+
+## 5.1 Results: Short-horizon continuous con-trol 
+
+We begin with D4RL locomotion, a hard benchmark for one-step generative planning. These tasks have dense rewards, relatively short horizons, and strong state-action regularities; as a result, they favor methods that can produce a sharp immediate action without needing explicit trajectory-level uncertainty. We therefore ask: can a one-step generative planner remain competitive while preserving multimodal sampling and collapsing inference to one NFE?                                                                                                                  
+
+> HalfCheetah Hopper Walker2D Avg ↑NFE ↓
+> ME MME MME M
+> Offline selection
+> BC [32] 55.2 42.6 52.5 52.9 107.5 75.3 64.3 –CQL [24] 91.6 44.0 105.4 58.5 108.8 72.5 80.1 –IQL [23] 86.7 47.4 91.5 66.3 109.6 78.3 80.0 –DT [6] 86.8 42.6 107.6 67.6 108.1 74.0 81.1 –TT [20] 95.0 46.9 110.0 61.1 101.9 79.0 82.3 –MOPO [41] 63.3 42.3 23.7 28.0 44.6 17.8 36.6 –MOReL [22] 53.3 42.1 108.7 95.4 95.6 77.8 78.8 –MBOP [2] 105.9 44.6 55.1 48.8 70.2 41.0 60.9 –
+> Generative trajectory planners
+> DQL [39] 96.8 69.1 111.1 90.5 110.1 87.0 91.1 5CAC [11] 84.3 69.1 100.4 80.7 110.4 83.1 88.0 2CBC [11] 32.7 31.0 90.6 71.7 110.4 83.1 69.9 2Diffuser [18] 88.9 42.8 103.3 74.3 106.9 79.6 82.6 20
+> KDP 92.5 62.1 103.6 90.3 108.5 87.2 90.7 1
+> Table 1: Performance in short horizon control on D4RL Locomotion (ME=Medium-Expert, M=Medium).
+
+The answer is yes (refer Table 1). KDP is competitive with the strongest low-NFE generative trajectory meth-ods while substantially improving over Diffuser. Loco-motion is not the benchmark that most naturally favors trajectory sampling: when the correct action is strongly determined by the current state, conservative value-based methods and sequence models remain extremely difficult to beat. The key observation is that KDP does not need a diffusion-style denoising chain to remain in the same performance band as these methods. In other words, moving to one-step inference does not collapse the planner into a weak imitation policy. A second point is that the performance pattern is not uniform across dataset qualities. Medium-only datasets place greater pressure on the model to preserve diverse but dynam-ically consistent futures under weaker support, while medium-expert settings more strongly reward sharp action selection and better value discrimination. KDP remains robust across both regimes, which suggests that the gain is not coming from overfitting a single dataset type, but from replacing iterative refinement with a condition-aware amortized update that still preserves useful trajectory diversity. 
+
+Ablation: Compute–performance tradeoff. The systems-level distinction becomes much clearer when we look at inference cost (refer Table 2. Diffuser scales with the number of sequential denoising steps, so increasing candidate count compounds an already expensive inner loop. KDP changes that scaling law: candidate count grows primarily through parallel batch size, while the sequential depth of the policy remains fixed at one.                                    
+
+> Method NFE ↓BEF ↓PL E2E
+> BC [32] 111.01 1.22
+> D-UR( 𝐾 =1,𝑇 =20 )20 20 149.32 149.51 D-R( 𝐾 =16 ,𝑇 =20 )20 320 172.16 172.34 D-R 𝐾 =64 ,𝑇 =20 )20 1280 279.98 280.03
+> KDP-UR (𝐾 =1)111.98 2.11
+> KDP-R (𝐾 =16 )132 3.97 4.10
+> KDP-R (𝐾 =64 )1128 4.76 4.96
+> Table 2: Analysis of planning cost. Hardware: 1xNVIDIA A100. (D=Diffuser, UR=Unranked, R=Ranked)
+
+Ranked planning is only useful when extra candidates are cheap enough to sample inside the control budget. For Diffuser, larger 𝐾 becomes a latency bottleneck because every additional candidate inherits the full de-noising stack. For KDP, increasing 𝐾 remains a practical knob: ranking acts as an inexpensive robustness im-provement. 
+
+## 5.2 Results: Long-horizon, goal-conditioned planning 
+
+We next evaluate on Maze2D and AntMaze, where the core challenge is propagating conditioning information 7across a long horizon under delayed or sparse reward. These tasks stress the failure mode that motivated KDP. 
+
+5.2.1 Maze2D: horizon and candidate scaling 
+
+KDP improves on Diffuser while operating at essentially real-time planning cost (refer Table 3), which suggests that the gain is not just from being cheaper, but from using a more appropriate training signal for conditional trajectory generation. In Maze2D, once the neighbor-hood structure is aligned with the conditioned state/goal geometry, one-step generation appears sufficient to re-cover strong planning behavior. This result suggest that in a genuinely trajectory-level conditional prob-lem, amortizing refinement into training is not merely a systems trick, it can also be the better inductive bias.                                    
+
+> Method Maze2D AntMaze UM Med. Lar. PL UM Med. PL
+> CQL [24] 5.7 5.0 12.5 –84.0 53.7 –IQL [23] 47.4 34.9 58.6 –62.2 70.0 –Diffuser [18] 113.9 121.5 123.0 3.848 76.0 31.9 6.153
+> KDP 122.3 130.4 133.0 0.031 81.3 67.6 0.052
+> Table 3: Long horizon manipulation analysis. PL is in s/step. (UM=U-Maze, Med.=Medium, Lar.=Large)
+
+A second takeaway is that candidate scaling is only use-ful when the sampler stays inside the latency budget. Maze2D makes this visible because longer horizons and goal constraints make single-sample failure more likely, so best-of-𝐾 selection should matter. KDP benefits from this regime precisely because it can afford larger candi-date sets without paying a sequential-denoising penalty. 
+
+5.2.2 AntMaze: long-horizon sparse-reward plan-ning 
+
+AntMaze is substantially harder than Maze2D because success depends not only on reaching the right goal region, but on discovering and maintaining globally cor-rect route structure over long horizons under sparse feedback. The results reflect this difficulty. KDP re-tains its latency advantage and remains competitive with diffusion-based planning, but the gap over strong offline RL baselines narrows relative to Maze2D. AntMaze is a setting where more sampling steps alone are not enough: route selection, better goal representations, stronger ranking, or hierarchical structure matter more than sim-ply denoising longer. KDP preserves fast, condition-aware trajectory generation even in this hard sparse-reward regime, and thus provides a stronger foundation for future improvements in selection or hierarchy. 
+
+Ablation: Training/objective. Table 4 isolates the training-time components of KDP. We ablate the neighborhood definition by replacing the default condition-keyed dis-tance with full-window distances, test the role of collapse prevention by including self-negatives or removing re-pulsion entirely, and study the stability contribution of drift normalization and temperature averaging.                       
+
+> Ablation Locom. ↑Maze2D ↑Act. div. ↑
+> Full method (KDP) 90.7 128.2 0.93 No keying (full-window distances) 2.91 9.6 0.14 Include self-negatives 78.08 91.3 0.93 Attraction-only (no repulsion) 1.05 3.7 2.2e6 No drift normalization 86.93 131.5 0.93 Single 𝜏 92.37 102.1 0.93
+> Table 4: Training objective ablations. (Locom.=Locomotion, Act. div.=Action diversity)
+
+The ablations show that the method depends first and foremost on conditioning-aware neighborhoods. Re-moving keying and computing similarity in full trajec-tory space causes performance to collapse, confirming that the central failure mode is not lack of model capacity but a misaligned notion of neighborhood under condi-tioning. Repulsion is also essential: when it is removed, performance collapses and the action-diversity statistic explodes, indicating uncontrolled drift rather than use-ful multimodality. Excluding self-negatives provides a smaller but still consistent gain, suggesting that once repulsion is present, its quality matters even if it is not the dominant factor. Drift normalization is less critical– performance remains strong without it and can even im-prove slightly on Maze2D–but normalization improves robustness across settings and makes the training signal better behaved overall. Finally, using a single temper-ature degrades Maze2D, which is consistent with our intuition that long-horizon goal-conditioned planning benefits from neighborhoods defined at multiple scales. 
+
+## 5.3 Results: Dexterous manipulation and high-DoF control 
+
+We now turn to a much harder setting: dexterous ma-nipulation, where small action errors are amplified by contacts, underactuation, and high-dimensional control. 
+
+5.3.1 Adroit results 
+
+The manipulation results make the benefit of KDP more pronounced than in locomotion. Unlike locomotion, where smooth dynamics often allow strong fast-policy baselines to dominate, Adroit requires the sampled plan to remain precise under contact and over multiple cou-pled degrees of freedom. In this setting, the one-step 8drift objective appears to align better with the control problem than iterative denoising of the entire trajectory window.                      
+
+> Task Diffuser [18] KDP
+> Score T(s) Score T(s) pen-clone 10.7 1.634 53.4 0.020
+> door-clone 56.7 1.598 61.8 0.024
+> hammer-clone 53.1 1.532 79.6 0.034
+> relocate-clone 56.2 1.685 62.8 0.036
+> Table 5: Adroit results.
+
+Two insights matter here (refer Table 5). First, the gain is not just faster than Diffuser, it is faster and better on tasks where poor action structure is immediately pun-ished. Second, the improvement is consistent with the way KDP is trained: the action block is explicitly em-phasized in the regression objective, so the model is en-couraged to learn plans whose control-relevant portion is sharp and usable at execution time. In high-DoF ma-nipulation, that appears to be a more favorable bias than repeatedly refining the full window online. These results are also important for deployment—planning delays on the order of seconds are often unacceptable regardless of final normalized score, because contact transitions and object motion evolve on much faster timescales. 
+
+Ablation: Action chunking. Action chunking pro-vides a second lens on trajectory quality (refer Table 6). If a sampled window is only trustworthy at its very first action, then executing multiple actions be-fore replanning should quickly degrade performance. If, instead, the sampled trajectory is locally coherent, modest chunk sizes should improve stability by filtering high-frequency planning noise and reducing replanning overhead. The chunking trends support the latter in-terpretation for KDP. Moderate chunk sizes improve performance, which suggests that KDP’s windows are not merely optimized for the first action token. This is the behavior one would want before moving to hard-ware: the planner should not collapse when sensing, actuation, and planning are slightly out of sync.                      
+
+> Task 𝐿 Diff. KDP
+> adroit-pen 138% 57% adroit-pen 841% 73% adroit-hammer 147% 62% adroit-hammer 841% 63% adroit-relocate 135% 65% adroit-relocate 864% 71%
+> Table 6: Action chunking.
+
+## 5.4 Real-world hardware experiments 
+
+> Figure 4: Qualitative real-time hardware results. Left: Crazyflie navi-gation trajectories for KDP (pink) and Diffuser (green). Right: SO-100 manipulation; the full behavior is best seen in the supplementary.
+
+We finally evaluate KDP on two real-world domains. We consider two representative settings with different fail-ure modes: (i) navigation , using a Crazyflie 2.0 micro-quadrotor to fly from start to goal through cluttered in-door space, and (ii) manipulation , using an SO-100 arm for tabletop pick-place and stacking tasks. For both domains, we report task success (Succ.), median time-to-success over successful trials (TTS), the achieved replanning frequency and time of the outer closed-loop controller (Replan, E2E), and measured planner latency per control cycle (Planner).                               
+
+> Domain Method Succ. (%) TTS (s) Replan (Hz) Planner p50 E2E p50
+> Navigation Diffuser 92 12.5 4.1 242 312 Navigation KDP 94 12.0 38 826 Manipulation Diffuser 88 35 3311 410 Manipulation KDP 90 32 17 947
+> Table 7: Real-world closed-loop results on a Crazyflie and an SO-100 arm. Setup: Diffuser ( 𝐾 =64 ,𝑇 =20 ); KDP ( 𝐾 =64 ).
+
+The advantage of KDP is not merely that it preserves task success while using fewer NFEs, but that it moves generative planning into a qualitatively different operat-ing regime. On both platforms, KDP matches or slightly improves closed-loop task performance while sustaining substantially higher replanning rates and dramatically lower control-cycle latency. This matters because real-world failures are often caused less by the nominal qual-ity of a single plan than by the fact that the plan becomes stale before it can be refreshed. The results therefore val-idate our central claim that amortizing refinement into training retains the benefits of trajectory-level genera-tive planning while making the planner reactive enough for real-time deployment. 
+
+# 6 Conclusion 
+
+We introduced Keyed Drifting Policies (KDP), a one-step conditional trajectory generator trained with a 9keyed drift field. The central design choice is conditioning-aware neighborhoods : drift weights are computed in a compact key space aligned with the condition, while drift updates act in full trajectory space. Combined with attraction–repulsion updates, self-negative masking, constraint masking, and a stop-gradient drifted target, KDP avoids the action-collapse failure mode observed under naïve full-window similarity. Empirically, KDP achieves competitive or improved performance on stan-dard offline RL planning benchmarks while dramatically reducing planning latency relative to diffusion sam-pling. Beyond simulation, we demonstrated real-time deployment on hardware in navigation and manipula-tion settings, where KDP sustains substantially higher replanning rates with comparable task success. Lim-itations: goal-conditioned and sparse-reward domains remain challenging. 
+
+# References 
+
+[1] Anurag Ajay, Yilun Du, Abhi Gupta, Joshua Tenen-baum, Tommi Jaakkola, and Pulkit Agrawal. Is conditional generative modeling all you need for decision-making? arXiv preprint arXiv:2211.15657 ,2022. [2] Arthur Argenson and Gabriel Dulac-Arnold. Model-based offline planning. arXiv preprint arXiv:2008.05556 , 2020. [3] David Brandfonbrener, Alberto Bietti, Jacob Buck-man, Romain Laroche, and Joan Bruna. When does return-conditioned supervised learning work for offline reinforcement learning? In Proceedings of the 36th International Conference on Neural Infor-mation Processing Systems , 2022. [4] Huayu Chen, Cheng Lu, Chengyang Ying, Hang Su, and Jun Zhu. Offline reinforcement learning via high-fidelity generative behavior modeling. arXiv preprint arXiv:2209.14548 , 2022. [5] Lili Chen, Kevin Lu, Aravind Rajeswaran, Kimin Lee, Aditya Grover, Misha Laskin, Pieter Abbeel, Aravind Srinivas, and Igor Mordatch. Deci-sion Transformer: Reinforcement Learning via Se-quence Modeling. In Advances in Neural Informa-tion Processing Systems , 2021. [6] Lili Chen, Kevin Lu, Aravind Rajeswaran, Kimin Lee, Aditya Grover, Misha Laskin, Pieter Abbeel, Aravind Srinivas, and Igor Mordatch. Decision transformer: Reinforcement learning via sequence modeling. Advances in neural information process-ing systems , 2021. [7] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A Simple Framework for Contrastive Learning of Visual Representations. In 
+
+Proceedings of the 37th International Conference on Machine Learning , 2020. [8] Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song. Diffusion policy: Visuomotor policy learning via action diffusion. 
+
+The International Journal of Robotics Research , 2025. [9] D. Comaniciu and P. Meer. Mean shift: a robust ap-proach toward feature space analysis. IEEE Trans-actions on Pattern Analysis and Machine Intelligence ,2002. [10] Mingyang Deng, He Li, Tianhong Li, Yilun Du, and Kaiming He. Generative modeling via drifting. 
+
+arXiv preprint arXiv:2602.04770 , 2026. [11] Zihan Ding and Chi Jin. Consistency models as a rich and efficient policy class for reinforcement learning. arXiv preprint arXiv:2309.16984 , 2023. [12] Justin Fu, Aviral Kumar, Ofir Nachum, George Tucker, and Sergey Levine. D4rl: Datasets for deep data-driven reinforcement learning. arXiv preprint arXiv:2004.07219 , 2020. [13] Scott Fujimoto and Shixiang (Shane) Gu. A Min-imalist Approach to Offline Reinforcement Learn-ing. In Advances in Neural Information Processing Systems , 2021. [14] K. Fukunaga and L. Hostetler. The estimation of the gradient of a density function, with applications in pattern recognition. IEEE Transactions on Informa-tion Theory , (1), 1975. [15] Michael U. Gutmann and Aapo Hyvärinen. Noise-contrastive estimation of unnormalized statistical models, with applications to natural image statis-tics. Journal of Machine Learning Research , 2012. [16] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denois-ing diffusion probabilistic models. In Advances in Neural Information Processing Systems , 2020. [17] Aapo Hyvärinen and Peter Dayan. Estimation of non-normalized statistical models by score match-ing. Journal of Machine Learning Research , 2005. [18] Michael Janner, Yilun Du, Joshua Tenenbaum, and Sergey Levine. Planning with diffusion for flexible behavior synthesis. In International Conference on Machine Learning , 2022. 10 [19] Michael Janner, Qiyang Li, and Sergey Levine. Of-fline Reinforcement Learning as One Big Sequence Modeling Problem. In Advances in Neural Informa-tion Processing Systems , 2021. [20] Michael Janner, Qiyang Li, and Sergey Levine. Of-fline reinforcement learning as one big sequence modeling problem. Advances in neural information processing systems , 2021. [21] Jinsung Jeon and Noseong Park. Spi-gan: De-noising diffusion gans with straight-path interpo-lations. arXiv preprint arXiv:2206.14464 , 2022. [22] Rahul Kidambi, Aravind Rajeswaran, Praneeth Ne-trapalli, and Thorsten Joachims. Morel: Model-based offline reinforcement learning. Advances in neural information processing systems , 2020. [23] Ilya Kostrikov, Ashvin Nair, and Sergey Levine. Offline reinforcement learning with implicit q-learning. arXiv preprint arXiv:2110.06169 , 2021. [24] Aviral Kumar, Aurick Zhou, George Tucker, and Sergey Levine. Conservative q-learning for offline reinforcement learning. Advances in neural infor-mation processing systems , 2020. [25] Wenhao Li. Efficient planning with latent diffusion. 
+
+arXiv preprint arXiv:2310.00311 , 2023. [26] Wenhao Li, Xiangfeng Wang, Bo Jin, and Hongyuan Zha. Hierarchical Diffusion for Offline Decision Making. In Proceedings of the 40th International Conference on Machine Learning ,2023. [27] Qiang Liu and Dilin Wang. Stein Variational Gra-dient Descent: A General Purpose Bayesian Infer-ence Algorithm. In Advances in Neural Information Processing Systems , 2016. [28] Yang Liu, Prajit Ramachandran, Qiang Liu, and Jian Peng. Stein variational policy gradient. arXiv preprint arXiv:1704.02399 , 2017. [29] Cheng Lu, Huayu Chen, Jianfei Chen, Hang Su, Chongxuan Li, and Jun Zhu. Contrastive Energy Prediction for Exact Energy-Guided Diffusion Sam-pling in Offline Reinforcement Learning. In Pro-ceedings of the 40th International Conference on Ma-chine Learning , 2023. [30] Simian Luo, Yiqin Tan, Longbo Huang, Jian Li, and Hang Zhao. Latent consistency models: Synthe-sizing high-resolution images with few-step infer-ence. arXiv preprint arXiv:2310.04378 , 2023. [31] Krikamol Muandet, Kenji Fukumizu, Bharath Sripe-rumbudur, and Bernhard SchÃ¶lkopf. Kernel Mean Embedding of Distributions: A Review and Beyond. 
+
+Foundations and Trends in Machine Learning , (1-2), 2017. [32] Dean A Pomerleau. Alvinn: An autonomous land vehicle in a neural network. Advances in neural in-formation processing systems , 1988. [33] Tim Salimans and Jonathan Ho. Progressive distil-lation for fast sampling of diffusion models. arXiv preprint arXiv:2202.00512 , 2022. [34] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising diffusion implicit models. arXiv preprint arXiv:2010.02502 , 2020. [35] Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models. In Proceedings of the 40th International Conference on Machine Learn-ing , 2023. [36] Yang Song, Jascha Sohl-Dickstein, Diederik PKingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equations. arXiv preprint arXiv:2011.13456 , 2020. [37] Arash Vahdat, Karsten Kreis, and Jan Kautz. Score-based Generative Modeling in Latent Space. In 
+
+Advances in Neural Information Processing Systems ,2021. [38] Aäron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748 , 2018. [39] Zhendong Wang, Jonathan J Hunt, and Mingyuan Zhou. Diffusion policies as an expressive pol-icy class for offline reinforcement learning. arXiv preprint arXiv:2208.06193 , 2022. [40] Ziyu Wang, Alexander Novikov, Konrad Zolna, Josh S Merel, Jost Tobias Springenberg, Scott E Reed, Bobak Shahriari, Noah Siegel, Caglar Gul-cehre, Nicolas Heess, and Nando de Freitas. Critic Regularized Regression. In Advances in Neural In-formation Processing Systems , 2020. [41] Tianhe Yu, Garrett Thomas, Lantao Yu, Stefano Er-mon, James Y Zou, Sergey Levine, Chelsea Finn, and Tengyu Ma. Mopo: Model-based offline pol-icy optimization. Advances in neural information processing systems , 2020. 11 [42] Guangyao Zhou, Sivaramakrishnan Swaminathan, Rajkumar Vasudeva Raju, J Swaroop Guntupalli, Wolfgang Lehrach, Joseph Ortiz, Antoine Dedieu, Miguel Lázaro-Gredilla, and Kevin Murphy. Dif-fusion model predictive control. arXiv preprint arXiv:2410.05364 , 2024. 12

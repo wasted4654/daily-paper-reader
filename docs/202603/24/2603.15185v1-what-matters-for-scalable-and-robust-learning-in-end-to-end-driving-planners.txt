@@ -1,0 +1,497 @@
+Title: What Matters for Scalable and Robust Learning in End-to-End Driving Planners?
+
+URL Source: https://arxiv.org/pdf/2603.15185v1
+
+Published Time: Tue, 17 Mar 2026 05:59:33 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# What Matters for Scalable and Robust Learning in End-to-End Driving Planners? 
+
+# David Holtz 1,2 Niklas Hanselmann 1 Simon Doll 1 Marius Cordts 1 Bernt Schiele 21 Mercedes-Benz AG 2 Max-Planck-Institute for Informatics, SIC 
+
+# Abstract 
+
+End-to-end autonomous driving has gained significant at-tention for its potential to learn robust behavior in inter-active scenarios and scale with data. Popular architec-tures often build on separate modules for perception and planning connected through latent representations, such as bird’s eye view feature grids, to maintain end-to-end dif-ferentiability. This paradigm emerged mostly on open-loop datasets, with evaluation focusing not only on driving per-formance, but also intermediate perception tasks. Unfortu-nately, architectural advances that excel in open-loop often fail to translate to scalable learning of robust closed-loop driving. In this paper, we systematically re-examine the im-pact of common architectural patterns on closed-loop per-formance: (1) high-resolution perceptual representations, (2) disentangled trajectory representations, and (3) gener-ative planning. Crucially, our analysis evaluates the com-bined impact of these patterns, revealing both unexpected limitations as well as underexplored synergies. Building on these insights, we introduce BevAD , a novel lightweight and highly scalable end-to-end driving architecture. BevAD achieves 72.7% success rate on the Bench2Drive bench-mark and demonstrates strong data-scaling behavior using pure imitation learning. Our code and models are publicly available here: https://dmholtz.github.io/bevad/ 
+
+# 1. Introduction 
+
+End-to-end autonomous driving (E2E-AD) has recently achieved great progress, driven by the possibility to opti-mize the entire stack in a planning-oriented manner [24]. Compared to classical approaches with rule-based compo-nents, this enables human-like behavior in complex sce-narios and promises performance gains that scale with data. While E2E-AD exists in various flavors, popular approaches [12, 24, 29, 52] often implement modular but fully-differentiable transformer-based architectures with la-tent intermediate representations, such as bird’s eye view (BEV) feature grids. Popularized on open-loop benchmarks Perception  
+
+> Planner
+> BEV attention
+> overfitting
+> (a) High-capacity perceptual representation, e.g., high-resolution BEV path
+> trajectory
+> (b) Planning Representation point estimate
+> diffusion samples (c) (Non-)generative Modeling
+
+Figure 1. Architectural Patterns. (a) High-resolution BEV fea-tures facilitate perception tasks, but promote overfitting the plan-ner. (b) Closed-loop methods prefer path over trajectory represen-tations due to robust steering. (c) Point-estimates interpolate be-tween trajectory modes that diffusion-based sampling can breed. 
+
+such as NuScenes [3], these works typically do not evaluate in a closed-loop setting. Unfortunately, approaches opti-mized for open-loop performance [24, 29, 52] often fail to generalize in closed-loop driving scenarios [9, 28], resulting in a divergence in the directions of architectural advances between works that solely focus on either setting. In this paper, we take a step towards consolidating these advances in E2E-AD with a focus on closed-loop driving. As depicted in Fig. 1 we systematically extend the design space proposed in ParaDrive [52], by re-examining three architectural patterns: (1) The use of high-resolution per-ceptual representations as input to the planning module, 1
+
+> arXiv:2603.15185v1 [cs.RO] 16 Mar 2026
+
+more common to the open-loop setting [24, 34], (2) dis-entanglement of trajectories into lateral- and longitudinal components, mainly used in closed-loop driving [25, 43] (3) the use of generative planners, previously underexplored for end-to-end closed-loop driving [8, 36, 53]. By evalu-ating these patterns jointly, we find that only one config-uration admits robust scaling of performance. In particu-lar, we observe that high-resolution perceptual representa-tions, shown to enable state-of-the-art (SotA) performance in open-loop [24, 29], can be susceptible to causal confu-sion [10], and introduce a spatial bottleneck to mitigate this. Furthermore, we show that disentangled trajectory repre-sentations and generative planning via diffusion [36, 53], previously studied only in isolation, provide complemen-tary benefits in modeling multi-modal behavior, and see the strongest scaling properties when using both in conjunction. Building on these insights, we develop BevAD. It achieves SotA closed-loop driving performance on the chal-lenging Bench2Drive benchmark [28] based on the CARLA simulator [13], without any bells and whistles, and using camera sensors only. Additionally, we demonstrate that BevAD strongly benefits from data scaling, with difficult skills emerging as the dataset size increases. In summary, our core contributions are threefold, we: (1) Show that high-resolution perceptual representations can hinder learning robust planning and introduce a spatial bottleneck layer for mitigation. (2) Analyze how a disentangled planning representation and diffusion-based planning provide complementary benefits for closed-loop driving. (3) Integrate these insights and build BevAD, a lightweight and highly scalable E2E-AD architecture that achieves SotA closed-loop driving on Bench2Drive. 
+
+# 2. Related Work 
+
+End-to-end Autonomous Driving. Traditional au-tonomous driving (AD) stacks integrate standalone modules through compact predefined interfaces [1]. Although of-fering interpretability, this approach is prone to error accu-mulation, information loss between modules, and conflict-ing optimization objectives [24]. In contrast, the E2E-AD paradigm mitigates these limitations by optimizing the en-tire perception-to-planning pipeline, from raw sensor data to a planning trajectory or physical control commands [2, 24]. UniAD [24] established a foundational framework for 
+
+modular E2E-AD by introducing query-based mechanisms to jointly optimize perception, prediction, and planning. A diverse landscape of stack-level designs has emerged, pri-marily categorized along three key dimensions: (1) Task Selection. This encompasses tasks such as 3D object de-tection [47], multi-object tracking [12, 24], online map-ping [24, 29, 47, 52], motion prediction [24, 29], occupancy prediction [24, 49], and increasingly, language-based tasks like commentary and visual question answering [15, 43]; 
+
+(2) Network Topology. Information flow is governed by sequential [23], parallel [6, 52] and hybrid [24, 29, 47] module placements or by unified transformers [48]; (3) Intermediate Representation. These include sparse (e.g., instance-level) [12, 47] and dense (e.g., BEV-centric [52] or occupancy-based [49]) representations. Despite this exten-sive architectural landscape, our study uncovers a miscon-ception about a subtle, yet pivotal detail within many exist-ing designs: High-resolution intermediate representations, such as an increased number of BEV features, have demon-strated improvements in open-loop perception [34] and are posited to improve planning performance [28]. Conversely, we propose spatially compressing the perceptual represen-tation before planner input and show substantially enhanced closed-loop driving robustness. This finding corroborates observations that other successful closed-loop driving meth-ods often employ architectural simplifications [43, 56], such as relying solely on single front-facing cameras. We sys-tematically shed light on the importance of the perceptual representation design and observe that 360-degree percep-tion works if the intermediate representation is otherwise limited in bandwidth. 
+
+Imitation Learning for Planning. Learning to plan with an autonomous vehicle can be broadly categorized into two paradigms, (1) imitation learning (IL) via behavior cloning and (2) reinforcement learning. Research on IL surged after pioneering work [2, 7] and with the availability of large au-tonomous driving datasets [3, 31] and simulators for closed-loop testing, such as CARLA [13]. Conditioning the driv-ing policy on a signal that represents the driver’s intention in addition to environment observations has become a piv-otal framework [7], allowing control over the policy at test time with navigation commands or target points. How-ever, behavior cloning is prone to introducing undesired side-effects such as covariate shift [42] and causal confu-sion [10], which are hard to detect with open-loop based evaluation schemes, even with hardened metrics [9]. Data augmentation [25, 43] and world models [21, 42] help mit-igate these effects, though they do not solve them entirely. Moreover, scaling up training data for IL has been shown to improve planning, following a power-law relationship in open-loop metrics, though these gains saturated in closed-loop driving [40, 54]. Many current E2E-AD solutions operate as point es-timators, directly regressing the final plan [6, 47, 56] in waypoint or action spaces, or by selecting from prede-fined anchors [5]. Both approaches can further benefit from trajectory post-processing [24, 35]. An emerging al-ternative is generative models, particularly diffusion-based planners, which learn the distribution of future trajecto-ries conditioned on the scene and a given command. At 2test time, they sample from this conditional distribution. Such diffusion-based planning can fit complex human driv-ing distributions better than point estimators [30, 53], fur-ther enabling test-time guidance with driving style prefer-ences [53]. Truncated schedules were proposed to mitigate the computational overhead from iterative denoising [36]. Despite demonstrating strong performance in open-loop benchmarks [36], diffusion-based planners have seen lim-ited adoption in closed-loop methods. Moreover, they have not been investigated in prior data scaling studies [40, 54]. This work systematically compares point estimators and diffusion-based planners in closed-loop driving, revealing superior data scalability for diffusion-based approaches. Open-loop E2E-AD methods often generate temporal waypoint trajectories [24, 29, 36, 47, 52], thereby entan-gling lateral and longitudinal control. This representation can lead to sparse and ambiguous supervision, particularly for dynamic, multi-modal intersection scenarios [25]. In contrast, SotA closed-loop methods favor disentangled out-puts: a future path independent of time and a target speed for longitudinal control [25, 43, 48, 56]. Both genera-tive modeling and disentangled planning representations are patterns for learning multi-modal futures, yet their interac-tion remains underexplored. Our study reveals strong syn-ergies for scalable and robust end-to-end learning. 
+
+# 3. Revisiting Common Architectural Patterns 
+
+We briefly summarize common architectural patterns that were previously studied in isolation and occur predomi-nantly either in the open-loop or the closed-loop setting. 1. High-Resolution Perceptual Representations are em-ployed to improve performance in perception tasks [34], but are primarily studied in open-loop. While [28] pro-vides some evidence for benefits in closed-loop driv-ing, leading closed-loop methods in CARLA inherently employ lower-capacity representations due to their re-duced sensor configuration. We aim to systematically re-examine the impact of the BEV size on learning pre-cise representations for closed-loop driving. 2. Disentangled Planning Representations are employed by the top-three closed-loop methods in CARLA as a measure to reduce the ambiguity of multi-modal futures. 3. Generative Planners emerged as a principled measure to model multi-modality in driving, but their study is mainly driven by open-loop methods. In the remainder of this section, we first introduce our anal-ysis framework (Sec. 3.1), along with the experiment setup (Sec. 3.2). Subsequently, we analyze the impact of the per-ceptual representation (Sec. 3.3), the patterns for modeling multi-modal future jointly (Sec. 3.4) and the implications on scaling (Sec. 3.5). 
+
+3.1. Analysis Framework 
+
+Our analysis framework as shown in Fig. 2 is built upon ParaDrive [52] for the following key reasons: (1) ParaDrive provides a systematic, module-level architecture for E2E-AD stacks, offering a well-defined foundation; (2) Its planner operates independently from auxiliary task, facil-itating a focused analysis of the perception-planner inter-face; (3) ParaDrive’s design, based on a real-world sen-sor configuration, has demonstrated strong performance on open-loop nuScenes tasks, unlike CARLA-specific meth-ods. Our framework prioritizes training efficiency to scale beyond nuScenes [3] to larger imitation learning datasets for CARLA [43, 56]. This is achieved through a stream-lined pipeline (Fig. 2a), optimizing the BEV backbone and removing non-essential auxiliary tasks, while maintaining a realistic sensor setup. Key aspects of the components are stated below, further details are found in the supplementary. 
+
+BEV Backbone. The BEV backbone processes images of 
+
+NCam = 6 cameras to produce BEV features FBev with dimensions H × W , comprising RADIO [19] with low-rank adapter [22] as its image backbone and a BEV encoder based on BEVFormer [34]. Significantly improved runtime is achieved by replacing the recurrent BEV feature genera-tion with cached features streamed from short episode snip-pets during training [51]. Furthermore, we introduce a novel camera augmentation technique, applying a random trans-formation BEV Tcar to all camera extrinsics to recover from compounding errors during closed-loop inference. 
+
+Auxiliary Tasks. We implement a DETR-style object de-coder [4] with deformable cross-attention [55] to supervise the BEV features during training [34]. We pruned other auxiliary tasks as used in [24, 52] as they did not demonstra-bly improve closed-loop performance during initial tests, but introduced significant runtime overhead. 
+
+Planning Head. We adopt a Transformer [50] decoder architecture as depicted in Fig. 2b: Self-attention among planning queries QPlan enables mutual alignment, while cross-attention to scene tokens FScene allows extraction of global scene features, following [24, 52]. Subsequently, we employ a coarse-to-fine strategy using an optional de-formable attention layer, refining QPlan by sampling local, high-resolution BEV features FBev . Inspired by diffusion transformers [41], each multi-head attention block is en-closed by adaLN-Zero transformations, incorporating con-ditioning from high-level driving commands, the ego-state, and optionally the diffusion timestep. If the planner is a point estimator, the planning queries QPlan are implemented as learnable embeddings. For diffusion-based planners, 
+
+QPlan is generated by adding Gaussian noise to the ground truth according to a diffusion schedule such as DDIM [46] and embedding the result into the transformer’s input space. By reinterpreting the planning queries as path and velocity 3BEV Backbone     
+
+> Multi-View Images
+> Parallel tasks
+> 3D Object Detection
+> Other Auxiliary Tasks Planner
+> modelling of multi-modality
+> Scene Tokenizer
+> representation capacity
+> Training-only (a) Pipeline Overview high-resolution BEV masked scene tokens
+> PE
+> Masking
+> Patchifying adaLN-Zero + Cross-Attention
+> High-level Command
+> learnable query Point-Estimate Diffusion
+> noisy GT
+> +
+> adaLN-Zero + Cross-Attention
+> Planning Output
+> Scene Tokenizer Planner
+> adaLN-Zero + Self-Attention
+> or
+> (Optional) Deformable Attention (b) Proposed Scene Tokenizer and Planning Head
+
+Figure 2. Analysis Framework. (a) We build our analysis framework on ParaDrive [52]. (b) We introduce a scene tokenizer to reduce the spatial resolution of the BEV features. The design of our planning head is based on a diffusion transformer [41]. Crucially, the choice of the planning queries determines whether the planner is modeled as a point estimator or by diffusion. 
+
+tokens instead of trajectory tokens and adjusting supervi-sion accordingly, we can modify the planning representa-tion. This flexible design enables analysis across different formulations without altering the planner’s architecture. 
+
+Controller. Following [25, 28, 43], we employ two PID controllers to convert planning outputs into steering and ac-celeration commands. The disentangled planning represen-tation facilitates PID controller design by allowing separate processing of path and speed [25]. To achieve the same for the trajectory representation, we fit a piecewise cubic Her-mite polynomial to the temporal waypoints and interpolate at fixed distances, while speed is derived using a second-order difference quotient. This allows consistent PID con-troller parameters across representations, minimizing the controller’s critical impact on closed-loop driving. 
+
+3.2. Experiment Setup 
+
+Data Collection. There are currently two popular data sources for expert demonstrations in CARLA [13] for train-ing imitation learning models: (1) Bench2Drive [28] pro-vides a dataset of expert demonstrations collected by the privileged, RL-based Think2Drive [33] expert along with sensor data and object annotations. (2) The official CARLA leaderboard 2.0 benchmark provides specifications of long routes in CARLA with scenarios alongside, from which a dataset of expert demonstrations can be collected with the privileged, rule-based expert PDM-lite [44, 56]. Sim-lingo [43] and TF++ [56] split the long routes into shorter segments, each containing one scenario, and uniformly up-sample routes with rare scenarios. Due to various known label bugs in the Bench2Drive dataset, we adopt the second approach. We re-collect training data for our six-camera sensor setup using the same route specifications as Simlingo and use these routes for training, unless stated otherwise. 
+
+Training. We conduct all experiments on 8xA100 80GB GPUs with a total batch size of 128 in mixed-precision (bfloat16) to balance efficiency, memory usage and stabil-ity. AdamW [38] Schedule-free [11] (learning rate: 2−4;weight decay: 0.01 ) is used for optimization. Our training consists of two stages: A warm-up stage over four epochs to initialize the BEV backbone with perception supervision, followed by a second stage that adds planning supervision. For faster convergence, we freeze the BEV backbone for all second-stage experiments except for studies on data scale. 
+
+Benchmark and Metrics. We perform closed-loop evalu-ations on the challenging Bench2Drive benchmark [28] in CARLA [13]. Bench2Drive comprises 220 short test routes, each featuring a single scenario, enabling analysis of spe-cific driving skills. We report the official metrics driving score (DS) and success rate (SR). 
+
+3.3. High-Resolution Perceptual Representations 
+
+Established BEV-based end-to-end architectures connect perception and planning through H × W high-resolution latent BEV features [24, 52]. We introduce a tokenizer (Fig. 2b) that applies masking and patchifying to compress BEV features FBev into scene tokens FScene , thereby chan-neling spatial information through a bottleneck. 
+
+Masking. We propose using a key padding mask in the global cross-attention of the planner to exclude BEV cells where planning queries QPlan cannot attend to. Our initial experiments tested various masking strategies, such as re-4moving distant parts to the left and right of the ego vehi-cle, and sophisticated masks based on the map segmenta-tion outputs. No significant differences were observed, so we use the simplest form, masking out 20% of the left- and right-most BEV cells. Although tailored to CARLA maps, this approach helps to determine if restricting the attention space facilitates learning a robust representation. 
+
+Patchifying. Inspired by Vision Transformers [14], we propose pixel unshuffling for combining patches of p × p
+
+BEV features FBev , (pixels) into spatial scene tokens FScene ,which our planner can globally attend to. We prevent the channel dimension of the scene tokens from growing by 
+
+p2 by projecting the output of pixel unshuffling to a lower-dimensional space, thereby enforcing a bottleneck. We ex-plore p ∈ { 1, 2, 4, 5}. This analysis aims to understand how forced compression and sequence length in cross-attention impact learning a robust representation. 
+
+Results. We employ a 100 × 100 BEV space, con-sistent with UniAD-tiny [24, 28], and a disentangled point-estimator planner [25], aligning with SoTA on Bench2Drive [43, 56]. Tab. 1 presents open- and closed-loop driving metrics for the tokenizer design space. We ob-serve significant improvements in closed-loop driving per-formance as the scene token count is reduced via masking and patchifying. Specifically, restricting the planner’s atten-tion to masked BEV features enhances closed-loop driving, even when the mask is applied solely at test time. Further-more, summarizing p × p BEV feature patches into scene tokens reduces the planner’s token count by a factor of p2,yielding substantial closed-loop performance gains. De-spite the reduced BEV resolution, the L1 trajectory error marginally improves for p ≤ 4. However, this compression strategy collapses for p ≥ 5, resulting in a significant drop in both closed-loop and open-loop performance. 
+
+Discussion. Transformer-based models are known to strug-gle with identifying relevant information in long (text) se-quences, even with modest token counts [32]. We relate this challenge to our setting, where high-resolution BEV inputs create long attention contexts. We hypothesize that the plan-ner overfits to spurious correlations in training data by de-riving actions from memorized visual landmarks. Fig. 3 vi-sualizes qualitative examples of planning query mean cross-attention activations. In the absence of masking and patch-ing, it reveals numerous punctual, high activation patterns in distant, often occluded or irrelevant BEV regions, strongly indicating causal confusion. These learned shortcuts are not measurable by open-loop metrics like L1 due to averaging, but lead to catastrophic failures in distinct situations at test time. By reducing the token count through masking and patchifying, our approach mitigates this causal confusion, significantly enhancing closed-loop driving by learning a more robust representation for test time. Mask Patch Size Scene Tokens DS ↑ SR ↑ L1 (m) ↓
+
+✗ 1 100 × 100 66.86 36.36 1.45 
+
+✓† 1 100 × 60 71.79 41.37 1.45 
+
+✓ 1 100 × 60 72.40 41.97 1.53 
+
+✓ 2 50 × 30 74.98 48.18 1.43 
+
+✓ 4 25 × 15 82.62 57.43 1.43 
+
+✓ 5 20 × 12 66.44 40.91 1.73              
+
+> Table 1. Impact of Tokenizer Design. Masking : Restricting plan-ning queries’ attention benefits closed-loop driving. Patchifying :Aggregating p×pBEV features into scene tokens significantly enhances closed-loop driving for p≤4. Notably, these closed-loop improvements are not reflected in the open-loop L1 trajectory error metric. Legend: †indicates test-time masking.
+
+Our finding contrasts with prior studies suggesting that higher BEV resolutions enhance downstream tasks such as 3D object detection [34]. This discrepancy stems from a fundamental difference between local detection and global planning tasks. DeformableDETR-style detection heads leverage object locality by decoding queries to specific ref-erence points [34, 55]. While increased BEV resolution enhances localization precision, it does not expand a sin-gle query’s receptive field. In contrast, planning requires understanding critical scene elements that may not be local-ized near the immediate trajectory, thus necessitating global cross-attention [24, 52]. In this global context, increas-ing BEV resolution expands the attention context size, con-tributing to the observed performance degradation. 
+
+3.4. Modeling Multi-Modal Behavior 
+
+The problem of inherent multi-modality in driving behav-ior is well-known in research [25, 53]. Leading closed-loop methods in CARLA address this with a disentangled output representation that separates the spatial path from the speed profile instead of entangling them in a trajectory of tempo-ral waypoints [43, 48, 56]. Points on the path are obtained by sampling at fixed distances instead of fixed time inter-vals, which were shown to be less ambiguous, providing better supervision [25]. Meanwhile, diffusion models [20] can natively address the multi-modality in entangled tempo-ral trajectories with generative modeling [36, 53]. On first glance, both patterns appear to solve a similar problem. To discern the individual contributions and potential synergies of trajectory representation and (non)generative modeling, we systematically evaluate all four combinations. As we ob-serve that the DS and SR tend to obscure the distinct symp-toms of driving failures, we additionally introduce static and dynamic infraction rates IR s and IR d for this experiment. In a nutshell, IR s and IR d capture the prevalence of failures due to wrong path planning and inappropriate acceleration respectively; details can be found in the supplementary. 5v = 8.2 m/s (a) p = 1 , without masking v = 0 m/s (b) p = 1 , with masking v = 0 m/s (c) p = 4 , with masking   
+
+> Figure 3. Qualitative visualization of the planning queries’ cross-attention to BEV features. Fig. 3a. The planner attends to distant BEV cells. Despite strong attention on the traffic light, the autonomous vehicle runs the red light. Fig. 3b: There are numerous attention spikes to random BEV cells, but barely no attention to the oncoming traffic. Fig. 3c: The attention map significantly simplifies and exhibits fewer attention outliers.
+
+Model Repr. DS ↑ SR ↑ IR s ↓ IR d ↓
+
+PE T 77.2 ±0.6 51.7 ±0.7 0.185 0.505 PE P+S 82.6 ±1.0 57.4 ±0.6 0.055 0.447 DI T 80.7 ±3.0 56.2 ±4.7 0.147 0.391 
+
+DI P+S 81.8 ±1.5 59.4 ±1.0 0.094 0.423   
+
+> Table 2. Comparison of modeling and planning representation.
+> Legend: PE: point-estimator, DI: diffusion, T: trajectory (entan-gled), P+S: path and speed (disentangled) representation.
+
+Results. As shown in Tab. 2 the disentangled representa-tion significantly reduces static infractions, regardless of the modeling approach. Particularly for point-estimators, this reflects strongly in the overall closed-loop scores, matching prior studies [25]. We conclude that the disentangled rep-resentation is favorable for learning robust steering. Gener-ative modeling with diffusion reduces dynamic infractions, regardless of trajectory representation. As a result, the en-tangled diffusion-based variant achieves similar overall SR than the disentangled point-estimator, though their failure modes are quite different. Further, we observe comple-mentary benefits for employing both diffusion-based mod-eling and disentangled representation, stated with the high-est overall SR. The lower driving score stems from -1.6% route completion, since the diffusion model is less willing to make an infraction for the sake of route progress. 
+
+3.5. Diminishing Returns when Scaling Non-Generative Planners 
+
+The promise of scaling performance with data is one of the main advantages of E2E-AD. Since generative planning can capture the full distribution of behavior, we hypothesize that it shows stronger benefits from scaling the dataset size. In the following, we hence examine the scaling behavior of diffusion- compared to point estimator-based planning. 
+
+Scaling Data. To scale training data beyond current datasets [28, 43], we build a route generator that exhaus-tively plans short semantically plausible single scenario routes in all CARLA towns. While being capable of build-ing > 10 6 unique route-scenario combinations (see supple-mentary), we only consider 8,000 uniformly sampled sce-narios as additional training data in our scaling experiments. For conducting data scaling experiments, we leverage estab-lished protocols from [40, 54]: We create five training splits from the joint set of Simlingo’s [43] and our routes, each approximately doubling in size. These splits are cumulative (each being a subset of the larger ones [40]), maintaining the same scenario distribution across all splits. We train all models on each data scaling split until convergence. 
+
+Results. As reported in Fig. 4, both variants improve mono-tonically in SR as we double the training dataset. In the low data regime, the point estimator slightly outperforms the diffusion-based planner. After an inflection point (about 8000 training scenes), the growth rate decelerates, match-ing prior studies on closed-loop scaling laws for point es-timate planners [54]. On the other hand, diffusion-based planning maintains its linear rate of improvement until our largest data scaling split, and thereby substantially outper-forms the point-estimator counterpart. Interestingly, we cannot observe any saturation for the diffusion-based plan-ner, unlike [40, 54] reported for closed-loop tests with point-estimator regressors. This opens up opportunities for further improvements in the presence of larger datasets. 61000 2000 4000 8000 16000 
+
+> Training Dataset Size
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> Score
+> Driving Score (Diffusion)
+> Success Rate (Diffusion)
+> Driving Score (Point Estimator)
+> Success Rate (Point Estimator)
+
+Figure 4. Scaling Properties. Diffusion demonstrates superior performance over point estimators when scaled with sufficient training data, despite initially underperforming with limited data. 
+
+Emerging Skills. The scaling gains can also be broken down in terms of multi-ability evaluation protocol from Bench2Drive [28], where we observe that difficult skills emerge at larger training split sizes. For example, this is the case for the Give Way and Merging skills as required for the yielding scenario depicted in Fig. 5. Detailed results can be found in the supplementary. 
+
+# 4. BevAD 
+
+Integrating the above insights, BevAD emerges as alightweight and highly scalable E2E-AD architecture from our analysis framework in Fig. 2. It applies synergies of architectural patterns, previously studied in isolation, for dealing with multi-modality in driving and combats overfit-ting with effective BEV compression. We compare BevAD to previous state-of-the-art in CARLA [13], providing a quantitative demonstration of BevAD’s results (Sec. 4.1) along with qualitative results (Sec. 4.2) and real-world ex-periments on NAVSIM [9] (Sec. 4.3). 
+
+4.1. Comparison to State of the Art 
+
+A comprehensive comparison of BevAD to other meth-ods on Bench2Drive with respect to training data, sen-sor configuration, supervision signals and performance can be found in Tab. 3. For a fair comparison, our model is denoted as BevAD-S when trained solely on Simlingo routes [43], and BevAD-M when trained with additional routes from our scaling study. We consider UniAD [24] and VAD [29] as baselines since their module-level ar-chitecture is most similar to BevAD. We report the over-all closed-loop driving score and success rate on the 220 test routes of Bench2Drive [28]. The significant improve-ments of +34.8 DS and +38.9 SR of BevAD-S compared to UniAD highlight the effectiveness of our tokenization as well as the complementary benefits of disentangled output representation and diffusion-based policy. By uniformly scaling up training scenarios, BevAD-M outperforms all prior methods in terms of DS and SR, as well as the con-current BridgeDrive [37] in terms of DS. We refer to the supplementary for the more fine-grained multi-ability eval-uation [28] and analysis on driving skill evolution. 
+
+4.2. Qualitative Results 
+
+In the challenging YieldToEmergencyVehicle scenario, BevAD demonstrates the ability to yield to a rapidly ap-proaching emergency vehicle from behind. Fig. 5 illustrates that BevAD acquires this skill after scaling up training data. Prior methods failed in such scenarios, either due to the lack of 360-degree camera perception [43] or insufficient train-ing data [48]. This underscores BevAD’s effective utiliza-tion of its surrounding view BEV perception and its scal-ability. Additional qualitative closed-loop demonstrations are provided in the supplementary material. ∀ t    
+
+> (a) BevAD-S t1= 10s t2= 14s (b) BevAD-M
+
+Figure 5. Yield to Emergency Vehicle. By increasing the training dataset size, BevAD-M learns to yield to emergency vehicles (red) on highways by safely merging into slower traffic. This cability is absent at smaller data scales (BevAD-S) and in prior leading closed-loop methods[43, 48]. 
+
+Failure Cases. We analyze common failure modes of BevAD-M: (1) Red Light Infractions occur in 19% of un-successful closed-loop runs. For example, the driving model runs a red light in the PedestrianCrossing scenario after pedestrians have crossed, suggesting causal confu-sion. (2) Route Deviations occur when BevAD ignores lane change commands, causing incorrect exits on multi-lane roads. We attribute this to weak conditioning signals from navigation commands, which are often insufficient for timely lane changes. Strengthening conditioning with target points can mitigate this issue by guiding the model towards the correct lane center similar to [25], though it increases re-liance on precise map localization. (3) Miscellaneous Col-
+
+7Method Details Overall                                                                                
+
+> Expert Sensors Labels Driving Score ↑Success Rate ↑
+> VAD [29] Think2Drive 6x CAM O, M 42.35 15.00 UniAD [24] Think2Drive 6x CAM O, M 45.81 16.36 ThinkTwice [27] Think2Drive 6x CAM, LiDAR O62.44 31.23 DriveAdapter [26] Think2Drive 6x CAM, LiDAR O64.22 33.08 Hydra-NeXt [35] Think2Drive 2x CAM -73.86 50.00 Orion [15] Think2Drive 6x CAM O, L 77.74 54.62 TF++ [56] PDM-lite 1x CAM, LiDAR O, M, S, D 84.21 67.27 Simlingo [43] PDM-lite 1x CAM L85.07 ±0.95 67.27 ±2.11
+> Hip-AD [48] Think2Drive 6x CAM O, M 86.77 69.09 BridgeDrive †[37] PDM-lite 1x CAM, LiDAR O, M, S, D 86.87 72.27 BevAD-S (ours) PDM-lite 6x CAM O80.63 ±1.76 55.30 ±2.63
+> BevAD-M (ours) PDM-lite 6x CAM O88.11 ±0.98 72.73 ±1.98
+> Table 3. Closed-loop Results on Bench2Drive. Despite its simpler design BevAD outperforms previous modular baselines UniAD and VAD by a large margin, reaching SOTA-level performance. We highlight that BevAD can gain further substantial driving performance by uniformly scaling up training data. Legend: O: 3D Object Detection, M: Map, S: Semantic Segmentation, D: Depth, L: Language,
+> †: concurrent work. If available, we report mean and standard deviation over three seeds to account for the randomness in CARLA.
+
+lisions result from delayed reactions in time-critical scenar-ios or occur in situations that involve strong interaction with other vehicles, such as merging into flows. 
+
+4.3. Real-world Experiments 
+
+We evaluate our method’s real-world applicability on the NAVSIM planning benchmark [9]. To match NAVSIM’s expected planning representation, we adapt the diffusion planner to predict trajectories with associated yaw angles over a four-second horizon, and train BevAD end-to-end on the navtrain split for eight epochs. We summarize performance on the navtest split in Tab. 4, using the of-ficial NAVSIM metrics. BevAD outperforms representative baselines UniAD [24] and ParaDrive [52] by 3.2 and 2.6 PDMS, respectively, primarily due to improvements in driv-able area compliance (DAC) and ego-progress (EP). No-tably, BevAD achieves this performance with only object detection and planning supervision, in contrast to baselines that also leverage online-mapping and occupancy predic-tion supervision. BevAD’s lightweight design yields a 570 GPU-hour (A100-80GB) training compute budget, 10x less than ParaDrive [9]. Furthermore, we ablate the tokenizer design on real-world data: As shown in Tab. 4, removing masking de-grades overall performance by 0.7 PDMS, while removing patchifying ( p = 1 ) results in a 1.0 PDMS degradation. This demonstrates the effective generalization of our mask-ing and tokenizing scheme to a real-world setting. 
+
+# 5. Conclusion and Limitations 
+
+We presented BevAD, a lightweight and highly scalable E2E-AD model that achieves SotA closed-loop driving on                                         
+
+> Method NC ↑DAC ↑TTC ↑EP ↑PDMS ↑
+> UniAD [24] 97.8 91.9 92.9 78.8 83.4 ParaDrive [52] 97.9 92.4 93.0 79.3 84.0 BevAD (ours) 98.1 95.3 94.5 80.5 86.6
+> BevAD w/o mask 97.8 94.9 93.7 80.3 85.9 (-0.7)
+> BevAD w/o patchifying 97.9 94.4 94.4 79.7 85.6 (-1.0)
+> Table 4. Real-world Results on NAVSIM. Performance com-parison of BevAD against baseline methods on the real-world NAVSIM benchmark ( navtest ), including key ablations. Leg-end: NC: no at-fault collision, DAC: drivable area compliance, TTC: time-to-collsion, EP: ego progress, PDMS: PDM score.
+
+Bench2Drive. BevAD emerges from our systematic analy-sis of common architectural patterns, previously studied in isolation. We show that high-resolution BEV features can lead to overfitting, which we mitigate by forcing the planner to learn bottleneck. Additionally, planning with diffusion complements disentangled planning output representations, particularly excelling when scaled with data. We acknowledge several limitations. First, while com-pressing the BEV along its spatial dimension significantly improved closed-loop driving, our approach may not di-rectly extend to high-speed highway scenarios, which re-quire long-range perception. A principled, context-adaptive BEV masking strategy remains for future work. Second, our analysis of failure cases suggests potential causal con-fusions. Mitigating these, perhaps via incorporating world knowledge from VLMs or with reinforcement learning, re-quires further investigation. 8Acknowledgments. This work is a result of the joint re-search project STADT:up (19A22006O). The project is sup-ported by the German Federal Ministry for Economic Af-fairs and Energy (BMWE), based on a decision of the Ger-man Bundestag. The authors are solely responsible for the content of this publication. 
+
+# References 
+
+[1] Sagar Behere and Martin Torngren. A functional architecture for autonomous driving. In First International Workshop on Automotive Software Architecture (WASA) , 2015. 2 [2] Mariusz Bojarski, Davide Del Testa, Daniel Dworakowski, Bernhard Firner, Beat Flepp, Prasoon Goyal, Lawrence D. Jackel, Mathew Monfort, Urs Muller, Jiakai Zhang, Xin Zhang, Jake Zhao, and Karol Zieba. End to end learning for self-driving cars, 2016. 2 [3] Holger Caesar, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Gi-ancarlo Baldan, and Oscar Beijbom. nuscenes: A multi-modal dataset for autonomous driving. In IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) ,2020. 1, 2, 3 [4] Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nico-las Usunier, Herv´ e J´ egou, and Justin Ponce. End-to-end ob-ject detection with transformers. In European Conference on Computer Vision (ECCV) , 2020. 3 [5] Shaoyu Chen, Bo Jiang, Hao Gao, Bencheng Liao, Qing Xu, Qian Zhang, Chang Huang, Wenyu Liu, and Xinggang Wang. Vadv2: End-to-end vectorized autonomous driving via probabilistic planning. ArXiv , abs/2402.13243, 2024. 2 [6] Kashyap Chitta, Aditya Prakash, Bernhard Jaeger, Zehao Yu, Katrin Renz, and Andreas Geiger. Transfuser: Imitation with transformer-based sensor fusion for autonomous driv-ing. IEEE Transactions on Pattern Analysis and Machine Intelligence , 45(11):12878–12895, 2023. 2 [7] Felipe Codevilla, Matthias Miiller, Antonio L´ opez, Vladlen Koltun, and Alexey Dosovitskiy. End-to-end driving via con-ditional imitation learning. In IEEE International Confer-ence on Robotics and Automation (ICRA) , 2018. 2 [8] Alexander Cui, Sergio Casas, Abbas Sadat, Renjie Liao, and Raquel Urtasun. Lookout: Diverse multi-future prediction and planning for self-driving. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2021. 2 [9] Daniel Dauner, Marcel Hallgarten, Tianyu Li, Xinshuo Weng, Zhiyu Huang, Zetong Yang, Hongyang Li, Igor Gilitschenski, Boris Ivanovic, Marco Pavone, Andreas Geiger, and Kashyap Chitta. Navsim: data-driven non-reactive autonomous vehicle simulation and benchmarking. In 38th International Conference on Neural Information Pro-cessing Systems , 2024. 1, 2, 7, 8 [10] Pim de Haan, Dinesh Jayaraman, and Sergey Levine. Causal confusion in imitation learning. In 33rd International Con-ference on Neural Information Processing Systems , 2019. 2 [11] Aaron Defazio, Xingyu (Alice) Yang, Harsh Mehta, Kon-stantin Mishchenko, Ahmed Khaled, and Ashok Cutkosky. The road less scheduled. In 38th International Conference on Neural Information Processing Systems , 2024. 4 [12] Simon Doll, Niklas Hanselmann, Lukas Schneider, Richard Schulz, Marius Cordts, Markus Enzweiler, and Hendrik P.A. Lensch. Dualad: Disentangling the dynamic and static world for end-to-end driving. In IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR) , 2024. 1, 2 [13] Alexey Dosovitskiy, German Ros, Felipe Codevilla, Antonio Lopez, and Vladlen Koltun. CARLA: An open urban driv-ing simulator. In 1st Annual Conference on Robot Learning ,2017. 2, 4, 7, 1 [14] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-vain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representa-tions , 2021. 5 [15] Haoyu Fu, Diankun Zhang, Zongchuang Zhao, Jianfeng Cui, Dingkang Liang, Chong Zhang, Dingyuan Zhang, Hongwei Xie, Bing Wang, and Xiang Bai. Orion: A holistic end-to-end autonomous driving framework by vision-language in-structed action generation. In IEEE/CVF International Con-ference on Computer Vision (ICCV) , 2025. 2, 8, 6 [16] Simon Gerstenecker, Andreas Geiger, and Katrin Renz. Plant 2.0: Exposing biases and structural flaws in closed-loop driv-ing, 2025. 1 [17] Tengda Han, Dilara Gokay, Joseph Heyward, Chuhan Zhang, Daniel Zoran, Viorica P˘ atr˘ aucean, Jo˜ ao Carreira, Dima Damen, and Andrew Zisserman. Learning from streaming video with orthogonal gradients. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2025. 2[18] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2016. 2 [19] Greg Heinrich, Mike Ranzinger, Hongxu Danny Yin, Yao Lu, Jan Kautz, Andrew Tao, Bryan Catanzaro, and Pavlo Molchanov. Radiov2.5: Improved baselines for agglomer-ative vision foundation models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2025. 3, 2 [20] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffu-sion probabilistic models. In 34th International Conference on Neural Information Processing Systems , 2020. 5, 3 [21] Anthony Hu, Gianluca Corrado, Nicolas Griffiths, Zak Murez, Corina Gurau, Hudson Yeo, Alex Kendall, Roberto Cipolla, and Jamie Shotton. Model-based imitation learn-ing for urban driving. In 36th International Conference on Neural Information Processing Systems , 2022. 2 [22] Edward J Hu, yelong shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. In In-ternational Conference on Learning Representations , 2022. 3, 2 [23] Shengchao Hu, Li Chen, Penghao Wu, Hongyang Li, Junchi Yan, and Dacheng Tao. St-p3: End-to-end vision-based au-tonomous driving via spatial-temporal feature learning. In 
+
+European Conference on Computer Vision (ECCV) , 2022. 2 
+
+9[24] Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, Lewei Lu, Xiaosong Jia, Qiang Liu, Jifeng Dai, Yu Qiao, and Hongyang Li. Planning-oriented autonomous driv-ing. In IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR) , 2023. 1, 2, 3, 4, 5, 7, 8, 6 [25] Bernhard Jaeger, Kashyap Chitta, and Andreas Geiger. Hid-den biases of end-to-end driving models. In IEEE/CVF In-ternational Conference on Computer Vision (ICCV) , 2023. 2, 3, 4, 5, 6, 7 [26] Xiaosong Jia, Yulu Gao, Li Chen, Junchi Yan, Patrick Langechuan Liu, and Hongyang Li. Driveadapter: Breaking the coupling barrier of perception and planning in end-to-end autonomous driving. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. 8, 6 [27] Xiaosong Jia, Penghao Wu, Li Chen, Jiangwei Xie, Conghui He, Junchi Yan, and Hongyang Li. Think twice before driv-ing: Towards scalable decoders for end-to-end autonomous driving. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2023. 8, 6 [28] Xiaosong Jia, Zhenjie Yang, Qifeng Li, Zhiyuan Zhang, and Junchi Yan. Bench2drive: towards multi-ability benchmark-ing of closed-loop end-to-end autonomous driving. In 38th International Conference on Neural Information Processing Systems Datasets and Benchmarks Track , 2024. 1, 2, 3, 4, 5, 6, 7 [29] Bo Jiang, Shaoyu Chen, Qing Xu, Bencheng Liao, Jiajie Chen, Helong Zhou, Qian Zhang, Wenyu Liu, Chang Huang, and Xinggang Wang. Vad: Vectorized scene representation for efficient autonomous driving. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. 1, 2, 3, 7, 8, 6[30] Chiyu Max Jiang, Yijing Bai, Andre Cornman, Christo-pher Davis, Xiukun Huang, Hong Jeon, Sakshum Kul-shrestha, John Lambert, Shuangyu Li, Xuanyu Zhou, Car-los Fuertes, Chang Yuan, Mingxing Tan, Yin Zhou, and Dragomir Anguelov. Scenediffuser: efficient and control-lable driving simulation initialization and rollout. In 38th International Conference on Neural Information Processing Systems , 2024. 3 [31] Napat Karnchanachari, Dimitris Geromichalos, Kok Seang Tan, Nanxiang Li, Christopher Eriksen, Shakiba Yaghoubi, Noushin Mehdipour, Gianmarco Bernasconi, Whye Kit Fong, Yiluan Guo, and Holger Caesar. Towards learning-based planning: The nuplan benchmark for real-world au-tonomous driving. In IEEE International Conference on Robotics and Automation (ICRA) , 2024. 2 [32] Yuri Kuratov, Aydar Bulatov, Petr Anokhin, Ivan Rodkin, Dmitry Igorevich Sorokin, Artyom Sorokin, and Mikhail Burtsev. BABILong: Testing the limits of LLMs with long context reasoning-in-a-haystack. In The Thirty-eight Con-ference on Neural Information Processing Systems Datasets and Benchmarks Track , 2024. 5 [33] Qifeng Li, Xiaosong Jia, Shaobo Wang, and Junchi Yan. Think2drive: Efficient reinforcement learning by thinking with latent world model for autonomous driving (in carla-v2). In European Conference on Computer Vision (ECCV) ,2024. 4, 1 [34] Zhiqi Li, Wenhai Wang, Hongyang Li, Enze Xie, Chonghao Fang, Delong Lu, Xiaowei Zhu, and Gang Yu. Bevformer: Learning bird’s-eye-view representation from multi-camera images via spatiotemporal transformers. In European Con-ference on Computer Vision (ECCV) , 2022. 2, 3, 5, 4 [35] Zhenxin Li, Shihao Wang, Shiyi Lan, Zhiding Yu, Zuxuan Wu, and Jose M Alvarez. Hydra-next: Robust closed-loop driving with open-loop training. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2025. 2, 8, 6 [36] Bencheng Liao, Shaoyu Chen, Haoran Yin, Bo Jiang, Cheng Wang, Sixu Yan, Xinbang Zhang, Xiangyu Li, Ying Zhang, Qian Zhang, and Xinggang Wang. Diffusiondrive: Trun-cated diffusion model for end-to-end autonomous driving. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2025. 2, 3, 5, 4 [37] Shu Liu, Wenlin Chen, Weihao Li, Zheng Wang, Lijin Yang, Jianing Huang, Yipin Zhang, Zhongzhan Huang, Ze Cheng, and Hao Yang. Bridgedrive: Diffusion bridge policy for closed-loop trajectory planning in autonomous driving, 2025. 7, 8, 1, 2, 4, 6 [38] Ilya Loshchilov and Frank Hutter. Decoupled weight de-cay regularization. In International Conference on Learning Representations , 2017. 4 [39] Calvin Luo. Understanding diffusion models: A unified per-spective, 2022. 3 [40] Alexander Naumann, Xunjiang Gu, Tolga Dimlioglu, Mar-iusz Bojarski, Alperen Degirmenci, Alexander Popov, De-vansh Bisla, Marco Pavone, Urs M¨ uller, and Boris Ivanovic. Data scaling laws for end-to-end autonomous driving. In 
+
+IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW) , 2025. 2, 3, 6 [41] William Peebles and Saining Xie. Scalable diffusion models with transformers. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. 3, 4 [42] Alexander Popov, Alperen Degirmenci, David Wehr, Shashank Hegde, Ryan Oldja, Alexey Kamenev, Bertrand Douillard, David Nist´ er, Urs Muller, Ruchi Bhargava, Stan Birchfield, and Nikolai Smolyanskiy. Mitigating covariate shift in imitation learning for autonomous vehicles using la-tent space generative world models. In IEEE International Conference on Robotics and Automation (ICRA) , 2025. 2 [43] Katrin Renz, Long Chen, Elahe Arani, and Oleg Sinavski. Simlingo: Vision-only closed-loop autonomous driving with language-action alignment. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2025. 2, 3, 4, 5, 6, 7, 8, 1 [44] Chonghao Sima, Katrin Renz, Kashyap Chitta, Li Chen, Hanxue Zhang, Chengen Xie, Jens Beißwenger, Ping Luo, Andreas Geiger, and Hongyang Li. DriveLM: Driving with graph visual question answering. In European Confer-ence on Computer Vision (ECCV) , 2025. 4, 1 [45] Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli. Deep unsupervised learning using nonequilibrium thermodynamics. In Proceedings of the 32nd International Conference on Machine Learning , 2015. 3 [46] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denois-ing diffusion implicit models. In International Conference on Learning Representations , 2021. 3, 4 
+
+10 [47] Wenchao Sun, Xuewu Lin, Yining Shi, Chuang Zhang, Haoran Wu, and Sifa Zheng. Sparsedrive: End-to-end autonomous driving via sparse scene representation. In 
+
+IEEE International Conference on Robotics and Automation (ICRA) , 2024. 2, 3 [48] Yingqi Tang, Zhuoran Xu, Zhaotie Meng, and Erkang Cheng. Hip-ad: Hierarchical and multi-granularity planning with deformable attention for autonomous driving in a single decoder. In IEEE/CVF International Conference on Com-puter Vision (ICCV) , 2025. 2, 3, 5, 7, 8, 6 [49] Wenwen Tong, Chonghao Sima, Tai Wang, Li Chen, Silei Wu, Hanming Deng, Yi Gu, Lewei Lu, Ping Luo, Dahua Lin, and Hongyang Li. Scene as occupancy. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. 2[50] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-reit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Il-lia Polosukhin. Attention is all you need. In 31st Inter-national Conference on Neural Information Processing Sys-tems , 2017. 3 [51] Shihao Wang, Yingfei Liu, Tiancai Wang, Ying Li, and Xi-angyu Zhang. Exploring object-centric temporal modeling for efficient multi-view 3d object detection. In IEEE/CVF International Conference on Computer Vision (ICCV) , 2023. 3, 2 [52] Xinshuo Weng, Boris Ivanovic, Yan Wang, Yue Wang, and Marco Pavone. Para-drive: Parallelized architecture for real-time autonomous driving. In IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR) , 2024. 1, 2, 3, 4, 5, 8 [53] Yinan Zheng, Ruiming Liang, Kexin ZHENG, Jinliang Zheng, Liyuan Mao, Jianxiong Li, Weihao Gu, Rui Ai, Shengbo Eben Li, Xianyuan Zhan, and Jingjing Liu. Diffusion-based planning for autonomous driving with flexi-ble guidance. In International Conference on Learning Rep-resentations , 2025. 2, 3, 5 [54] Yupeng Zheng, Pengxuan Yang, Zhongpu Xia, Qichao Zhang, Yuhang Zheng, Songen Gu, Bu Jin, Teng Zhang, Ben Lu, Chao Han, Xianpeng Lang, and Dongbin Zhao. Data scaling laws for imitation learning-based end-to-end autonomous driving, 2025. 2, 3, 6 [55] Xizhou Zhu, Weijie Su, Lewei Lu, Bin Li, Xiaogang Wang, and Jifeng Dai. Deformable DETR: Deformable transform-ers for end-to-end object detection. In International Confer-ence on Learning Representations , 2021. 3, 5 [56] Julian Zimmerlin, Jens Beißwenger, Bernhard Jaeger, An-dreas Geiger, and Kashyap Chitta. Hidden biases of end-to-end driving datasets, 2024. 2, 3, 4, 5, 8, 1 
+
+11 What Matters for Scalable and Robust Learning in End-to-End Driving Planners? 
+
+# Supplementary Material 
+
+This supplementary material details our data scaling pro-cedure (Sec. A), presents implementation details for our analysis framework and BevAD (Sec. B), and includes ad-ditional quantitative and qualitative results (Sec. C). 
+
+A. Dataset 
+
+A.1. Bench2Drive 
+
+Bench2Drive [28] offers expert demonstrations from the Think2Drive expert [33], comprising over 13,000 episodes for training. However, the adoption of the dataset within the community is limited due to missing sensor modalities and language annotations [37, 43, 56]. Furthermore, we identify significant 3D label flaws, as depicted in Fig. 6: (1) Unla-beled parked vehicles in all CARLA towns except Town12 and Town13, (2) Incomplete annotations for multi-lightbox traffic signals. (3) Misplaced bounding boxes for numer-ous traffic signs and pedestrians. These flaws create con-tradictory object detection supervision and enable planner shortcut learning, e.g., by distinguishing static cars from dynamic cars. Critically, the lack of public route files or open-source expert code hinder dataset extension and issue resolution. We therefore follow [37, 43, 56] and utilize the CARLA [13] Leaderboard 2.0 training routes and the rule-based PDM-lite expert [44, 56] for data collection. 
+
+A.2. Route Generator 
+
+Apart from the comprehensive Bench2Drive dataset, cur-rent CARLA imitation learning is limited by the diversity of expert demonstrations. SotA methods [37, 43, 56] utilize short, single-scenario route segments from CARLA Leader-board 2.0 for training. However, this approach suffers from significantly imbalanced scenario distributions (e.g., scenario InterurbanAdvancedActorFlow appears only six times, while others appear 40 times). While these methods employ upsampling of rare routes and extensive camera-and weather augmentations, this mitigation is limited. Fixed geographic contexts and similar actor behaviors can lead to overfitting to spurious correlations [16]. To overcome these limitations, we build a novel route generator that creates unique route-scenario combinations within CARLA towns, enabling extensive and diverse data collection. Our approach maintains the established concept of short, single-scenario training routes, which facilitates fine-grained control over scenario distribution; for simplic-ity, we adopt a uniform distribution. The route generation algorithm proceeds in three steps: (1) Trigger Point Selec-tion, (2) Route Planning and (3) Scenario Generation. unlabeled   
+
+> unlabeled
+> Figure 6. Label Flaws. Bench2Drive exhibits incomplete and erroneous 3D bounding box annotations in various scenes.
+
+Trigger Point Selection. We employ a coarse-to-fine search strategy for trigger point selection. Initially, sce-narios are mapped to one of three coarse location classes: Intersection, No-Intersection, or Highway Ramp. Subse-quently, trigger points meeting these initial criteria are ex-haustively sampled from all CARLA maps. This candidate list is then refined using scenario-specific criteria. For Inter-sections, relevant features include traffic lights, stop signs, turning options, bike lanes, and pedestrian crossings. For No-Intersections, we consider the number of adjacent lanes (with/against ego traffic flow), and the presence of parking or shoulder lanes. Highway Ramps are differentiated into On- and Off-Ramps. For instance, the SignalizedJunctionLeftTurn scenario necessitates a signalized intersection with a left-turn option. The VehicleOpensDoorTwoWays scenario requires a right-side parking lane for the adversary and an adjacent lane with oncoming traffic. Conversely, the Accident scenario demands a right-side shoulder lane and a left-side lane with traffic flowing in the same direction. These examples are visualized in Fig. 7. 
+
+Route Planning. We plan routes through a trigger point using a bidirectional search on the lane graph to determine start and end points. This search is constrained to avoid additional intersections. Distances between the start point, trigger point, and end point are randomly sampled from scenario-dependent intervals. This strategy enhances vari-ance and mitigates the learning of distance- and location-dependent shortcuts. 
+
+Scenario Generation. The final step involves configuring CARLA’s pre-defined scenario behavior models at the trig-ger point. To enhance diversity and prevent spurious cor-relations, additional scenario parameters are sampled from meaningful intervals, for instance, by varying inter-vehicle distances within traffic flows. 1ego lane     
+
+> junction
+> traffic lights
+> left exit (a) Signalized Junction Left ego lane
+> parking lane
+> oncoming lane (b) Open Door shoulder lane
+> ego lane
+> neighbor lane (c) Accident
+> Figure 7. Visualization of Trigger Point Selection Criteria. (a) This scenario requires a signalized junction with a left-turn exit relative to the ego lane. (b) The VehicleOpensDoorTwoWays sce-nario requires a right-side parking lane for the adversary and an adjacent left-side lane for oncoming traffic. (c) The Accident sce-nario demands a right-side shoulder lane for the group of blocking vehicles and an adjacent left-side lane with the same traffic flow.
+
+Our route generator produces over 100,000 unique route-scenario combinations across all CARLA maps. Due to the high cost of sensor data collection, we utilize a subset of 8,000 routes for our data scaling experiments. Neverthe-less, the generator’s extensive diversity remains a signifi-cant asset for applications beyond imitation learning, such as reinforcement learning. 
+
+B. Implementation Details 
+
+B.1. Model Efficient Streaming Training. The training performance of previous BEV-based E2E-AD architectures is bottle-necked by recurrent BEV feature generation, required for fusing temporal information within the BEV encoder’s tem-poral self-attention layer [34]. For instance, UniAD [24] processes four past frames ( t − 4, . . . , t − 1) at each training step t with a frozen BEV backbone to eventually compute temporal self-attention between F(t−1)  
+
+> Bev
+
+and F(t)
+
+> Bev
+
+. In con-trast, we adapt streaming training from object-centric mod-eling [51] to BEV-based architectures. Specifically, dur-ing training, we sample streams of n subsequent frames, feeding them sequentially into the network. A memory component caches current BEV features F(t) 
+
+> Bev
+
+at each step 
+
+t, enabling subsequent steps ( t′ = t + 1 ) to retrieve 
+
+F(t′−1)  
+
+> Bev
+
+= F(t) 
+
+> Bev
+
+from cache instead of recurrently recom-puting it. Short sequences (e.g., 2s, n = 20 frames) are streamed to periodically reset the memory and mitigate non-orthogonal gradients [17] arising from strongly correlated Method BEV FPS (train) ↑
+
+UniAD-tiny [24, 28] frozen (stage-2) 2.5 BevAD (ours) frozen 89.0 end-to-end 55.0   
+
+> Table 5. Training Efficiency. BevAD achieves substantial train-ing speed-up relative to UniAD-tiny. Measured on 8xA100-80GB.
+
+frames. Our approach avoids four additional BEV back-bone forward passes (compared to UniAD stage-1) and sig-nificantly reduces CPU load by requiring only one set of multi-view images per step, rather than five. Additionally, we employ RADIO [19] as an image back-bone with a low-rank adapter (LoRA) [22] for parameter-efficient finetuning. RADIO provides rich, generic features, and LoRA finetuning significantly reduces VRAM require-ments compared to backpropagating through a ResNet [18]. Pruning additional heads for online-mapping, motion fore-casting, and occupancy prediction further reduces BevAD’s memory footprint. These optimizations combined enable end-to-end train-ing with a batch size of 16 on a single A100-80GB GPU, a significant improvement over UniAD, which required two-stage training with a frozen backbone due to VRAM con-straints. Our optimizations yield significantly higher train-ing sample throughput, even surpassing UniAD-tiny, as shown in Tab. 5. Specifically, BevAD processes 35 × more training samples per second with a frozen BEV backbone, and achieves a 22 × speed-up in end-to-end training. These optimizations represent a major contribution towards scal-able imitation learning for robust closed-loop performance, a benefit we extend to the community through our open-source code release. 
+
+Camera Augmentation. Camera augmentations are in-tegral to robust closed-loop imitation learning [25]. Per-fect expert drivers, such as PDM-lite, maintain precise lane centering, leading to a training distribution dominated by ideal states. However, during closed-loop testing, accumu-lated steering errors can cause the vehicle to drift, resulting in covariate shift [42] and degraded planner performance. A common mitigation involves augmenting driver camera views with random shifts and rotations during training [25], adopted by SotA methods on Bench2Drive [37, 43, 56]. This augmentation simulates out-of-distribution states not observed with perfect expert driving. However, these shift and rotation augmentations are typ-ically limited to single front-facing camera setups and are challenging to apply to multi-camera systems. Further-more, their application to real-world data necessitates novel view synthesis, introducing pipeline overhead and poten-tial artifacts. To address these limitations, we propose a 2novel BEV-based augmentation strategy. Instead of manip-ulating raw sensor data, we augment the BEV coordinate system directly. This is achieved by sampling a random transformation matrix Bev TCar , comprising a small yaw rotation γ ∼ [−22 .5◦, 22 .5◦] and a lateral offset ∆y ∼
+
+[−0.75 m, 0.75 m]. This matrix is then applied to all cam-era transformation matrices Car TCam i :
+
+> Bev
+
+TCam i = Bev TCar · Car TCam i
+
+By providing Bev TCam i to the BEV encoder, it builds BEV features FBev in the augmented BEV coordinate sys-tem rather than the vehicle coordinate system. Additionally, we apply this transformation to all ground truth labels, i.e., 3D bounding boxes and planning trajectories. Our augmen-tation prevents the detection head and planner from learning a bias towards axis-aligned objects or trajectories relative to the ego vehicle. For example, the disentangled planner must learn to predict the future path in the augmented BEV space, necessitating a robust understanding of the BEV fea-ture grid. Unlike prior camera augmentations, our BEV-based scheme requires no augmented sensor data, as it only alters the generation of the latent BEV representation via a non-learnable, random transformation. 
+
+Planning Queries. The planning query’s interpretation de-termines the output representation. For an entangled trajec-tory representation, we define PPlan = PTraj ∈ RNt×Nc ,where Nt is the number of trajectory points and Nc is the feature dimension. For a disentangled representa-tion, PPlan = [ PPath ∥ P Speed ], with PPath ∈ RNp×Nc and 
+
+PSpeed ∈ RNt×Nc , where Np denotes the number of path points. In our experiments, we set Nt = 15 for a 3s plan-ning horizon, resulting in temporal waypoint and speed pre-dictions spaced at 0.2s intervals. For path planning, we use 
+
+Np = 30 with waypoints spaced 1m apart. 
+
+Planning Head. The planning head (Fig. 2b) comprises 
+
+Nlayer = 8 transformer decoder layers with a feature dimen-sion of Nc = 512 . Inspired by [41], we integrate an adaLN-Zero transformation to condition the self-attention and global cross-attention layers with c, as depicted in Fig. 8. For the point estimator, c = emb (command ) + emb (v0),combining a learnable embedding of the high-level navigation command and a sinusoidal embedding of the current velocity. For the diffusion-based plan-ner, c = emb (command ) + emb (v0) + emb (τ ), addition-ally incorporating an embedding of the current diffusion timestep τ .
+
+B.2. Diffusion-based Planning Preliminaries. Diffusion models are a class of genera-tive models that learn to reverse a gradual noising pro-cess applied to data [20, 45]. They define a fixed forward Markov chain that progressively adds Gaussian noise to Layer Norm              
+
+> Scale, Shift
+> Multi-Head X-Attention
+> Scale
+> Figure 8. adaLN-Zero Attention. We employ an adaLN-Zero transformation to condition the transformer on c. For self-attention, we set K=V=QPlan and for cross-attention, we set
+> K=V=FScene .
+
+data, transforming it into a pure noise distribution. Specifi-cally, the forward process admits sampling of noisy data xτ
+
+for arbitrary (time)steps τ in the Markov chain in closed-form given clean data x0 by sampling Gaussian noise 
+
+ϵ ∼ N (0, 1) [20]: 
+
+xτ (x0, ϵ) = √ ¯ατ x0 + √1 − ¯ατ ϵ (1) The sequence ¯α0, . . . ¯αT typically stems from a variance schedule with constant parameters [20, 46]. The core of diffusion models lies in learning a reverse Markov chain that iteratively denoises samples over T timesteps, starting from random noise p(xT ) = N (xT ; 0, I), to recover data samples from the original distribution [20]: 
+
+pθ (x0: T ) := p(xT )
+
+> T
+
+Y 
+
+> τ=1
+
+pθ (x(τ −1) |xτ ) (2) Instead of learning the Gaussian transitions pθ (xτ −1|xτ )
+
+directly, it is common practice to learn a function approxi-mator fθ : ( xτ , τ ) → x0 parameterized by a neural network with learnable weights θ [39]. This allows learning the dif-fusion model by minimizing Eq. (3) for all timesteps τ [20]: 
+
+∥x0 − fθ (xτ , τ )∥ (3) For diffusion-based planning, the clean planning ground truth x0 is defined based on the planning representation: • Entangled: a series of normalized trajectory waypoints, 
+
+x0 = {(xi, y i}Nt
+
+> i=1
+
+}.• Disentangled: a tuple comprising normalized path waypoints and a normalized speed sequence, i.e., 
+
+x0 = ( {(xi, y i}Np
+
+> i=1
+
+, {(vi}Nt
+
+> i=1
+
+}).
+
+Training. During training, we sample a timestep τ from a uniform distribution and Gaussian noise ϵ ∼ N (0, 1). We 3obtain the noisy sample xτ using Eq. (1) and following the DDIM variance schedule [46]. The planning head serves as the conditional function approximator fθ : (˜xτ , τ, z)
+
+for the reverse process [36], tasked with predicting x0
+
+from ˜xτ , the diffusion timestep τ , and conditioning con-text z = ( FScene , c ). Note that xτ is embedded into a latent space via an MLP to obtain ˜xτ before being fed to fθ .
+
+Inference. For inference, we start with a random sample 
+
+xT ∼ N (0 , 1) and iteratively denoise it using the trained function approximator fθ (˜xτ , τ, z) and the DDIM sampling algorithm [46]. This process progressively denoises xT to yield the final clean prediction x0. We specifically em-ploy DDIM’s accelerated generation that conducts denois-ing with a subset of S < T denoising steps to enhance com-putational efficiency during sampling. 
+
+DiffusionDrive. We do not adopt DiffusionDrive’s [36] truncated diffusion schedule in our experiments. This deci-sion stems from our observation, that DiffusionDrive’s for-ward process adds noise to a fixed set of anchor trajectories, while the reverse process aims to predict ground truth tra-jectories, leading to an asymmetric reversal. This issue is also thoroughly discussed in concurrent work [37], which proposes a theoretically sound diffusion bridge formulation as a solution. 
+
+B.3. Controller 
+
+We adopt the disentangled PID controllers from Sim-lingo [43] for lateral and longitudinal control. All controller parameters are retained, with the exception of the steering proportional gain, which is slightly lowered to Psteer = 1 .8
+
+to reduce oversteering in our closed-loop agent. 
+
+B.4. Loss 
+
+The overall loss function for end-to-end training combines terms for 3D object detection and planning: 
+
+L = λdet Ldet + λplan Lplan (4) The detection loss Ldet , adopted from [34], includes classi-fication and regression components. The planning loss Lplan 
+
+varies with the planner’s modeling choice: • For regression-based planning with a point estimator, 
+
+Lplan is a smooth L1 loss applied to the trajectory error, or path and speed error. • For diffusion-based planning, Lplan is a smooth L1 loss on the x0-prediction error, as defined in Eq. (3). The loss coefficients are set to λdet = 1 and λplan = 100 to balance the magnitudes of the detection and planning loss components. 
+
+B.5. Metrics 
+
+To better characterize closed-loop failure modes, we intro-duce auxiliary metrics: the static infraction rate (IR s) and dynamic infraction rate (IR d). IR s = Nlayout-collision + Noutside-lane 
+
+Nroutes 
+
+(5) This metric quantifies infractions related to lateral control errors, such as collisions with static layout elements or driv-ing outside the lane. IR d = Nactor-collision + Nred-light + Nstop-sign 
+
+Nroutes 
+
+(6) This metric captures infractions arising from longitudinal control errors and interactions with dynamic elements, in-cluding collisions with actors, running red lights, or failing to stop at stop signs. Collectively, these metrics provide the expected number of infractions per route, offering a granu-lar understanding of control deficiencies. 
+
+C. Results 
+
+This section presents an ablation study, quantitative results on the Bench2Drive benchmark, and qualitative demonstra-tions of BevAD’s closed-loop driving. 
+
+C.1. Ablations 
+
+Our ablation studies investigate early design choices. For the following ablations of camera augmentation and BEV size, our baseline is a planning head with a tokenizer (p = 4 , masking), disentangled representation, and a point-estimator regressor, as detailed in Sec. 3.3 and Tab. 1. Fur-thermore, we ablate the number of denoising steps in the diffusion planner using our strongest model, BevAD-M. 
+
+Camera Augmentation. To assess the effectiveness of our novel BEV-based augmentation, we compare the baseline against a variant trained without it. As shown in Tab. 6, the absence of camera augmentation significantly degrades closed-loop performance. This degradation primarily stems from a 5.7× increase in static infractions, leading to re-duced route completion and increased secondary collisions. These results underscore the critical role of our augmen-tation scheme in promoting robust driving and enabling recovery from compounding steering errors. The results also highlight the insufficiency of common open-loop met-rics, as the L1 trajectory error does not reflect the observed degradation in model robustness. 
+
+BEV Size. Our tokenizer compresses high-resolution BEV features ( FBev ) into low-resolution scene tokens ( FScene ). An alternative is to directly learn a low-resolution BEV fea-ture space. As shown in Tab. 7, despite exposing the same number of scene tokens to the planner, direct low-resolution BEV generation significantly degrades closed-loop perfor-mance. Specifically, the deformable BEV-image cross-attention of our BEV encoder (based on BEVFormer [34]) extracts image information more sparsely when generating 4Augmentation DS ↑ SR ↑ IR s ↓ L1 (m) ↓
+
+✓ 82 .62 57 .43 0.055 1.43 
+
+✗ 66 .60 33 .64 0.314 1.47 
+
+Table 6. Ablation of camera augmentation. The absence of cam-era augmentation significantly degrades closed-loop performance, despite minimal impact on open-loop L1 trajectory deviation. This underscores the contribution of our BEV-based augmentation to robust driving and covariate shift mitigation. 
+
+BEV Scene Tokens DS ↑ SR ↑ IR s ↓
+
+100 × 100 25 × 15 82 .62 57 .43 0.055 
+
+25 × 25 25 × 15 72 .18 40 .36 0.409 
+
+Table 7. BEV Resolution and Tokenization. High-resolution BEV generation, compressed via our tokenizer, yields supe-rior closed-loop driving performance compared to direct low-resolution BEV generation. 
+
+S DS ↑ SR ↑ FPS ↑
+
+10 88.11 72.73 4.2 5 88.33 72.72 5.8 2 88.53 72.72 7.5 
+
+Table 8. Impact of Denoising Iterations. Reducing denoising steps significantly boosts inference FPS while preserving closed-loop driving performance, enabling real-time applications. FPS measured on a Quadro RTX 8000. 
+
+low-resolution BEVs, potentially omitting fine details. Fur-thermore, it prevents leveraging deformable refinement lay-ers for sampling local, high-resolution features around the future trajectory. As a result, we observe 7.4× more static infractions with the low-resolution BEV encoder compared to our compression approach. This finding underscores the necessity of compressing high-resolution representa-tions rather than directly learning low-resolution ones. 
+
+Number of denoising steps. The iterative denoising of diffusion models critically impacts the inference latency in real-world deployments. The runtime of our diffusion-based planner linearly increases with the number of denois-ing steps S, while the point estimator planner has constant runtime, corresponding to S = 1 . We thus evaluate how S
+
+affects closed-loop driving performance and inference FPS in Tab. 8. In contrast to DiffusionDrive [36], we achieve constant driving performance for S ∈ { 2, 5, 10 }, without applying their truncated diffusion framework. We attribute this to a bug in their diffusion schedule, which we detail in the appendix. 1000 2000 4000 8000 16000 
+
+> Training Dataset Size
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> Success Rate (%)
+> Merging
+> Overtaking
+> Emergency Break
+> Give Way
+> Traffic Sign
+
+Figure 9. Emerging Skills. All skills remain underdeveloped with fewer than 4,000 training episodes. As the volume of training data increases, the skills progressively and uniformly emerge. 
+
+C.2. Multi-Ability Evaluation 
+
+To gain a nuanced understanding of system performance in closed-loop driving, we employ the fine-granular multi-ability evaluation protocol from Bench2Drive [28]. This protocol defines five advanced urban driving skills: Merg-ing, Overtaking, Emergency Brake, Give Way, and Traffic Sign. Each of the 220 test routes is mapped to one or more skills necessary for successfully navigating the scenario. Tab. 9 presents a comparison of BevAD’s multi-ability scores against prior work. BevAD consistently achieves high scores ( > 70% ) across all skills, dominating the mean score. In contrast, prior state-of-the-art methods [43, 48] exhibit uneven performance, excelling in some skills while underperforming in others. BevAD-M surpasses the pre-vious best in Merging and Give Way skills by +8.17 and +23.34, respectively. These skills demand comprehensive surround perception, underscoring BevAD’s effective uti-lization of its multi-view camera system. However, BevAD lacks in terms of Overtaking, Emergency Brake, and Traffic Sign skills compared to the best prior or concurrent methods for each skill. Building on the discussion in Sec. 3.5, we present the progression of BevAD’s closed-loop driving skills as the training dataset size increases, detailed in Fig. 9. With fewer than 4,000 training episodes, all skills exhibit a success rate below 50%. However, as the training data is doubled and quadrupled, the skills show consistent and uniform im-provement. This enhancement is evidenced by high success rates in complex scenarios, such as overtaking amidst on-coming traffic, merging onto highways and into traffic flow at intersections, and yielding to emergency vehicles. 5Method Ability (%) ↑
+
+Merging Overtaking Emergency Brake Give Way Traffic Sign Mean 
+
+VAD [29] 8.11 24.44 18.64 20.00 19.15 18.07 UniAD-Base [24] 14.10 17.78 21.67 10.00 14.21 15.55 ThinkTwice [27] 27.38 18.42 35.82 50.00 54.23 37.17 DriveAdapter [26] 28.82 26.38 48.76 50.00 56.43 42.08 Hydra-NeXt [35] 40.00 64.44 61.67 50.00 50.00 53.22 Orion [15] 25.00 71.11 78.33 30.00 69.15 54.72 TF++ [25] 58.75 57.77 83.33 40.00 82.11 64.39 Simlingo [43] 54.01 ±2.63 57.04 ±3.40 88.33 ±3.34 53.33 ±5.77 82.45 ±4.73 67.03 ±2.12 
+
+Hip-AD [48] 50.00 84.44 83.33 40.00 72.10 65.98 BridgeDrive † [37] 63.50 58.89 88.34 50.00 88.95 69.93 BevAD-S (ours) 55.83 ±0.72 53.33 ±6.67 63.33 ±1.93 46.67 ±5.77 60.88 ±3.08 56.01 ±3.78 
+
+BevAD-M (ours) 71.67 ±2.60 74.07 ±1.29 75.56 ±4.41 76.67 ±5.77 75.44 ±1.61 74.68 ±1.24            
+
+> Table 9. Multi-Ability Evaluation. BevAD consistenly achieves high results across all skills, dominating the mean score score. Notably, it significantly surpasses prior work in the Merging and Give Way skills. However, it exhibits comparatively lower performance in Overtaking ,
+> Emergency Brake , and Traffic Sign skills. Legend: †: concurrent work.
+
+C.3. Qualitative Results 
+
+We provide qualitative closed-loop driving examples for each multi-ability skill of BevAD-M in Fig. 10, 11, 12, 13, 14 and 15. The examples are best viewed when zoomed in and visualize planned ego trajectories that are generated by rolling out the predicted speed profile along the predicted path. This depiction aids in understanding the dynamic planning component, but is solely for visualization. It does not serve as controller input, nor does it affect the lateral accuracy of the predicted path. 6Figure 10. Merging. BevAD merges from a parallel parking space into traffic. It yields to rear-end flow of vehicles, identifies a safe gap, and accelerates for seamless merging. 
+
+Figure 11. Overtaking (1). BevAD executes an overtaking maneuver when the route is blocked by a construction vehicle. It waits for clear oncoming traffic, then steers into the opposing lane, accelerates to quickly pass the obstacle, and subsequently decelerates when returning to its original lane. 
+
+7Figure 12. Overtaking (2). BevAD approaches a group of cyclists. It executes a safe left lane change to overtake them. After the maneuver, BevAD returns to its original lane, maintaining a safe distance to the cyclists. 
+
+Figure 13. Emergency Brake. BevAD brakes at a green-light intersection due to a pedestrian crossing its left-turn path. Driving resumes upon pedestrian clearance. 
+
+8Figure 14. Give Way. BevAD yields to an oncoming vehicle encroaching on the ego lane. It performs a controlled rightward deviation from the lane center, staying within road limits, and re-centers once the oncoming traffic has passed. 
+
+Figure 15. Traffic Sign. BevAD stops at a stop sign at an intersection with cross-traffic. It waits for a safe gap, then executes a right turn and merges into the traffic flow. 
+
+9
