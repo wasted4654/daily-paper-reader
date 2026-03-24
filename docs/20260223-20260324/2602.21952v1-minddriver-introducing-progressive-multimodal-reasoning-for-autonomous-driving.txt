@@ -1,0 +1,892 @@
+Title: MindDriver: Introducing Progressive Multimodal Reasoning for Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2602.21952v1
+
+Published Time: Thu, 26 Feb 2026 02:10:41 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# MindDriver: Introducing Progressive Multimodal Reasoning for Autonomous Driving 
+
+## Lingjun Zhang 1*† 
+
+## , Yujian Yuan 1,2*† 
+
+## , Changjie Wu 1‡
+
+## , Xinyuan Chang 1, Xin Cai 3,
+
+## Shuang Zeng 1,4†
+
+## , Linzhe Shi 1, Sijin Wang 1, Hang Zhang 1, Mu Xu 11 Amap, Alibaba Group, 2 The Hong Kong University of Science and Technology 
+
+3 The Chinese University of Hong Kong 4 Xi’an Jiaotong University 
+
+zhanglingjun.zlj@alibaba-inc.com,yyuanbn@connect.ust.hk {wuchangjie.wcj,changxinyuan.cxy,sijin.wsj,suishou.zh,xumu.xm}@alibaba-inc.com 
+
+## Abstract 
+
+Vision-Language Models (VLM) exhibit strong rea-soning capabilities, showing promise for end-to-end au-tonomous driving systems. Chain-of-Thought (CoT), as VLM’s widely used reasoning strategy, is facing critical challenges. Existing textual CoT has a large gap between text semantic space and trajectory physical space. Although the recent approach utilizes future image to replace text as CoT process, it lacks clear planning-oriented objective guidance to generate images with accurate scene evolu-tion. To address these, we innovatively propose Mind-Driver , a progressive multimodal reasoning framework that enables VLM to imitate human-like progressive think-ing for autonomous driving. MindDriver presents seman-tic understanding, semantic-to-physical space imagination, and physical-space trajectory planning. To achieve aligned reasoning processes in MindDriver, we develop a feedback-guided automatic data annotation pipeline to generate aligned multimodal reasoning training data. Further-more, we develop a progressive reinforcement fine-tuning 
+
+method to optimize the alignment through progressive high-level reward-based learning. MindDriver demonstrates superior performance in both nuScences open-loop and Bench2Drive closed-loop evaluation. Codes are available at: https://github.com/hotdogcheesewhite/ MindDriver .
+
+## 1. Introduction 
+
+Recently, Multimodal Large Language Models (MLLMs) have gained substantial attention in the field of end-to-end 
+
+> *
+
+Equal contribution with random order. Each co-first author may list themselves as lead author on their CV. 
+
+> †
+
+Work done during internship at Amap, Alibaba Group. 
+
+> ‡
+
+Corresponding author and project leader. Guideless             
+
+> Reasoning
+> Aligned
+> Smooth
+> Reasoning
+> (b) Image Reasoning
+> (c) Progressive Multimodal Reasoning (ours)
+> Lack Focus
+> (a) Text Reasoning
+> There are … ,
+> the car should go
+> straight .
+> Semantic
+> space Misalignment
+> Space
+> Misalign
+> (Turn Left )
+> Perception
+> Inference
+> Physical
+> Space
+> Abstract
+> Dream next scene
+> ??
+> Intermediate
+> space
+> Lack Infer
+> Physical
+> Space
+> (Turn Right )
+> There are … a
+> heading car ,
+> …go straight .
+> Semantic
+> space
+> Intermediate
+> space
+> Physical
+> Space
+> (Go Straight )
+> (Turn Left )
+
+Figure 1. Comparison of different reasoning methods. Text rea-soning struggles with space misalignment, while image reasoning suffers from guideless image prediction. Our proposed progres-sive multimodal reasoning conducts aligned smooth reasoning. 
+
+autonomous driving [12, 44, 58]. Their popularity arises from the ability to harness extensive world knowledge ob-tained through large-scale pre-training, and to align multi-modal representations effectively. One notable approach is utilizing pretrained vision-language models (VLM) to di-rectly extract high-level semantic features from raw sen-sor inputs and predict vehicle trajectories in physical space [58]. This efficient end-to-end architecture simplifies the overall framework, reduces information loss, and lever-ages world knowledge to understand driving scenes and en-sure safe planning in challenging and long-tail scenarios. Chain-of-Thought (CoT) reasoning, a widely adopted reasoning strategy in VLMs [1, 43], has recently been ap-plied to autonomous driving to enhance scene reasoning capabilities and improve the interpretability of driving de-cisions [68]. As shown in Fig. 1, benefiting from the 1
+
+> arXiv:2602.21952v1 [cs.CV] 25 Feb 2026
+
+large-scale pre-training of LLMs, traditional CoT methods mainly focus on text reasoning within the semantic space, abstractly analyzing the scene and the driving logic. How-ever, trajectory planning in autonomous driving depends on predictions in the physical space. Traditional text reasoning that directly predicts trajectory after textual reasoning faces a significant space misalignment between the semantic and physical space, thus resulting in decision misalignment. To alleviate this misalignment, recent research has explored us-ing images instead of text as the intermediary for reason-ing [58]. Images inherently combine semantic and physical information as the intermediate space, which is more suit-able to assist trajectory prediction. However, purely image-driven reasoning lacks a clear planning-oriented objective guidance, which confuses the model about which objects to focus on. Additionally, image reasoning fails to effectively utilize the extensive driving knowledge embedded in large-scale pretraining of LLMs, thereby limiting its performance in complex and long-tail driving scenarios. To address the above challenges, inspired by the human perception-imagination-action mechanism, we propose a 
+
+Progressive Multimodal Reasoning method that enables smooth reasoning from textual semantics, through interme-diate imagined scene images, to physical trajectories. As shown in Fig. 1, our method comprises three key com-ponents: (1) Semantic understanding: derive high-level driving insights through textual reasoning for scene under-standing, logical decision-making, and so on; (2) Visual imagination: leverage text reasoning as guidance to gen-erate future scene images, bridging semantic and physical spaces. and (3) Physical trajectory prediction: leverage the dreamed scene image to predict physically-grounded trajec-tories. This end-to-end thinking ensures progressive and smooth reasoning, enabling effective and interpretable au-tonomous driving planning. To achieve progressive multimodal reasoning, we pro-pose MindDriver, a novel framework with smooth rea-soning from semantic understanding, through semantic-to-physical-space imagination, to physical-space trajectory planning. However, there are significant challenges when training such a well-aligned multi-component reasoning model: (1) Lack of Training Dataset: high-quality aligned progressive multimodal reasoning training data is in de-mand. (2) Inefficient Training Strategy: traditional super-vised fine-tuning focuses on token-level supervision, ne-glecting the alignment of each component. To address these, we propose a feedback-guided data annotation frame-work that automatically aligns each component in rea-soning process, by three filtering and feedback-guided re-annotation. Furthermore, to effectively train the progressive reasoning with well-alignment, we propose a progressive reinforcement fine-tuning post-training method. It struc-tures the training process into progressive steps, prioritiz-ing gradual alignment for transitions from semantic under-standing to visual imagination, and from visual imagination to trajectory planning. Extensive experiments on both open-loop [3] and closed-loop [17] trajectory planning, future frames generation demonstrate the effectiveness of progressive multimodal reasoning, auto-annotation pipeline, and reinforcement fine-tuning in MindDriver. In summary, our contributions include: • We propose a progressive multimodal reasoning method that enhances model’s trajectory planning by smooth rea-soning from text semantic understanding, through inter-mediate imagined scene images, to physical trajectories. • To ensure reasoning alignment in MindDriver, we design a feedback-guided automatic data annotation framework to generate aligned multimodal reasoning data. Further-more, we develop a progressive reinforcement fine-tuning method to further strengthen the alignment through pro-gressive high-level reward-based optimization. • Experimental results demonstrate MindDriver achieves superior performance in both open-loop and closed-loop evaluations, as well as future frames generation, high-lighting its effectiveness in reasoning and planning in au-tonomous driving. 
+
+## 2. Related Work 
+
+2.1. End-to-End Autonomous Driving 
+
+End-to-end autonomous driving systems [16, 22, 23, 26, 36, 48, 57, 64] directly map raw sensor inputs to driv-ing trajectories through unified architectures, eliminating the need for hand-crafted intermediate modules. These approaches jointly optimize perception and planning, en-abling task-coadapted feature abstraction and improved per-formance through gradient-based training. Notable meth-ods like UniAD [11] and VAD [18] integrate perception, prediction, and planning into a single framework, improv-ing open-loop benchmarks. SparseDrive [37] uses sparse perception to unify detection, tracking, and mapping, while GenAD [63] and GoalFlow [51] employ generative models to predict multimodal trajectories. However, these imitation learning-based systems struggle with interpretability and generalization in long-tail closed-loop scenarios [32, 40]. In this work, we develop a system excelling in both open and closed-loop evaluations while ensuring robust general-ization. 
+
+2.2. MLLM for Autonomous Driving 
+
+MLLMs demonstrate strong contextual understanding and world knowledge [25, 27, 28, 33, 54], attracting grow-ing integration with autonomous driving tasks. Methods like DriveVLM [39] use a dual-system architecture where an LLM predicts trajectory primitives refined by an end-2Vision Encoder 
+
+# Large Language Model 
+
+Text Tokenizer 
+
+History video 
+
+# …
+
+Surround -view Camera Image 
+
+Vision Encoder 
+
+Feedback -Guided Annotation Pipeline 
+
+Supervised Fine -tuning 
+
+Progressive Reinforcement Fine -tuning 
+
+> Scene
+> Analysis
+
+## LLM Vision Encoder 
+
+> Qwen2.5
+> VL -72B
+> Rule -based
+> Model -based
+> Annotate
+> CoT
+> Reasoning
+> data
+> Filter
+
+# …
+
+> Driving Command
+> Turn Left | Turn …
+> Ego Status
+> Velocity | …
+> Instruction
+> Task and thinking guidance
+
+Text Prompt   
+
+> Latent risk
+> assessment
+> Behavior
+> Reasoning
+> Action
+> Decision
+> (a) Video -Context Text Reasoning (b) Future
+> World
+> Imagination
+> (c) Final
+> Trajectory
+> Prediction Dream Guide
+
+## LLM 
+
+Vision Encoder 
+
+> LoRA
+
+GRPO   
+
+> Reward
+> Model 1
+> Reward
+> Model 2
+> Stage1
+> Stage2
+> Feedback
+
+Progressive Multimodal Reasoning 
+
+> …
+
+Figure 2. Overview. (Left) Framework of MindDriver. MindDriver conducts the perception-imagination-action process for accurate trajectory planning. (Right) (Top) Reasoning data annotation pipeline. The progressive multimodal reasoning data is auto-annotated by both rule-based and model-based filtering and feedback-guided regeneration. (Bottom) Progressive reinforcement fine-tuning is applied to enhance the progressive reasoning process. 
+
+to-end model, while DriveLM [35] employs visual ques-tion answering (VQA) for trajectory planning. However, aligning semantic reasoning with precise action execution remains challenging. Solutions such as EMMA [13] in-corporate hierarchical Chain-of-Thought for structured se-mantic reasoning, AutoVLA [68] adopts adaptive reason-ing for diverse scenarios, and FSDrive [59] generates fu-ture scene images to enable visual imagination in trajec-tory planning. To address these limitations, we propose a unified framework for progressive multimodal reasoning, enabling decision-oriented scene understanding and future image imagination to generate smooth, physically plausible trajectories through coherent multimodal inference. 
+
+2.3. Reinforcement Fine-tuning 
+
+DeepSeek-R1 [5] has confirmed that RFT [29] exhibits sig-nificant potential in enhancing the performance and adapt-ability of VLMs. RAD [4] leverages 3D Gaussian splat-ting to conduct closed-loop Reinforcement Learning train-ing. TrajHF [20] adopts RFT technology to align trajectory generation models with safety constraints and human driv-ing preferences. However, the application of RFT in end-to-end VLMs-based autonomous driving is still in its in-fancy [56, 66]. Although some existing works use Gradient-Regularized Preference Optimization (GRPO) to help mod-els improve trajectory planning capabilities, they can only reward the final outcome and cannot effectively optimize the intermediate process. In this work, we propose a pro-gressive reinforcement fine-tuning approach that effectively rewards the process and achieves alignment in multimodal reasoning process. We apply RFT to the VLM framework, enhancing scene understanding capabilities and future im-age imagination abilities, while leveraging GRPO to ensure faster convergence and more stable training dynamics. 
+
+## 3. MindDriver 
+
+We propose MindDriver, a framework featuring a novel pro-gressive multimodal reasoning method that enables smooth reasoning from semantic text understanding, future scene imagination, to physical trajectory prediction. To en-sure reasoning alignment in MindDriver, we propose a feedback-guided auto-annotation pipeline and progressive reinforcement fine-tuning post-training strategy, which en-sure strictly aligned training data and a consistent training process, respectively. 
+
+3.1. Progressive Multimodal Reasoning Framework 
+
+Following previous work [27, 58], MindDriver adopts cam-era images and text prompts as inputs, while conducting our proposed progressive multimodal reasoning, through a uni-fied text reasoning and visual generation model. 
+
+Model Inputs. MindDriver ingests the temporal visual inputs, high-level driving commands, ego-vehicle states, 3Qwen2.5   
+
+> VL -72B Rule -based Qwen3 -235B
+> Annotate
+> Reasoning
+> data
+> History video
+> Surround -view Camera Images
+> Driving Command
+> Go straight
+
+Format Decision Logic 
+
+Error Feedback 
+
+For Re -Annotate 
+
+1. Scene Analysis 2. Latent Risk Assessment 
+
+3. Behavior Reasoning 4. Action Decision 
+
+> Instruction
+> 1.Objective:……
+> You are controlling
+> an autonomous
+> vehicle in a comp -
+> lex urban traffic
+> environment……
+> 2. Use the following
+> standard ……a.
+> Scene Analysis……
+> Raw
+> CoT
+
+Filter                
+
+> Rule -based
+> The weather is overcast , the road surface is wet
+> and slippery, and visibility is slightly reduced due
+> to rain. The traffic light at the intersection is red ,
+> with large trucks occupying the straight and …
+> Direction: Maintain current lane and drive straight,
+> Speed: Stop. Reason: Under red light conditions,
+> with a large truck blocking the path ahead and
+> complex traffic dynamics at the intersection, …
+> Ego vehicle's optimal direction and speed
+> change:
+> MAINTAIN CURRENT LANE, STOP
+> From <CAM_FRONT>: a large truck is
+> slowly crossing the intersection, occupying
+> the space intended for left -turning and
+> straight -going traffic. According to historical
+> images, the truck’s movement is stable …
+> Future Scene
+> GT trajectory
+> The future
+> trajectory is:
+> [(0,0), (0,0),
+> …, (0,0)]
+
+Figure 3. Auto-annotation pipeline for progressive multimodal reasoning training data. Qwen2.5-VL-72B first annotates raw CoT, which is then filtered based on format, decision, and logic. Failed cases are re-annotated using error feedback to improve generation quality. 
+
+and language instructions to perform driving reasoning and trajectory planning. The visual inputs comprise cur-rent images from six surround-view RGB cameras, along with four recent front-view frames as the history video, to capture scene dynamics without incurring substantial computational overhead. Additionally, following previous work [44, 58], high-level driving commands (e.g, Turn Left, Turn Right), and ego vehicle status (i.e., current velocity and acceleration) are added. Finally, language instruction is utilized to structure these inputs into a prompt format that a large language model (LLM) can readily interpret. 
+
+Progressive Multimodal Reasoning. Most previous VLM-based methods focus on text reasoning [68], suffer-ing from space misalignment between text semantic space and trajectory physical space. While recent work [58] at-tempts to address this issue by using image reasoning in-stead of text as the intermediary, leveraging the semantic and physical information inherent in images, it lacks clear planning-oriented objective guidance, leaving the model uncertain about which objects to prioritize. To address these, inspired by the human perception-imagination-action mechanism, we propose a progressive multimodal reason-ing method that enables smooth reasoning from text un-derstanding, through intermediate future image, to physical trajectories. As shown in Fig. 2, our method first leverages LLM’s world knowledge to conduct semantic text reason-ing, analyzing the scene, latent risk, and the action. Then, guided by the planning-oriented analysis in text reasoning, our method imagines the future world scene, containing the analyzed moving tendency of each critical object and phys-ical scene details. Finally, based on the dreamed image, our method predicts the final future trajectory with a coherent mapping from the physical details in image to physically-grounded trajectory outputs. This end-to-end analysis en-sures a progressive and smooth reasoning, enabling effec-tive and interpretable autonomous driving planning. 
+
+Unified Text Reasoning and Visual Generation. To support our proposed progressive multimodal reasoning generation, inspired by recent works [42, 49], we unify textual reasoning and vision generation in a single LLM. Following [58], we expand the visual codebook of VQ-VAE [41] to the vocabulary of the large language model, enabling MindDriver to generate discrete vision tokens. For visual generation, we utilize the tokenizer of VQ-VAE to encode images into discrete indices, and supervise the to-ken prediction at each location for both modalities with a shared prediction head in LLMs. Therefore, MindDriver adopts the general Language Modeling objective to directly maximize the likelihood of each multimodal sequence in an auto-regressive manner: 
+
+L = − X
+
+> i=1
+
+log Pθ (yi|y<i ), (1) where yi denotes the text or visual token, and θ is the LLM parameters. In inference, the VQ-VAE decoder (detok-enizer) maps the vision tokens back to image pixels. 
+
+3.2. Feedback-Guided Data Auto-annotation 
+
+To produce reasonable and aligned progressive multimodal reasoning training data, we propose a video-context text 4reasoning format and a feedback-guided auto-annotation pipeline. The text reasoning data is merged with future scene image and trajectory to create complete reasoning data. Finally, supervised fine-tuning (Fig. 2 right) is applied to the synthesized reasoning data to enable MindDriver with initial progressive multimodal reasoning ability. 
+
+Video-Context Text Reasoning Format. We do not use existing public autonomous driving text reasoning data, as most of them are image-context [27, 38], generating CoT from single-frame camera images. Static inputs lack the motion tendencies of objects, which can lead to incor-rect decisions, even for humans. Although AutoVLA [68] adopts a video-based CoT, it uses only the three front views for trajectory planning and ignores back views, increasing the risk from the back environment. To address these limita-tions, inspired by human driving logic, we design a video-context text reasoning, as shown in Fig. 10. It consists of scene analysis, latent risk assessment, behavior reasoning, and action decision. The scene analysis and latent risk as-sessment are conducted based on existing camera images and the history video, which better captures the dynamics of each object in motion. Action decision outputs the high-level driving decision, including direction and speed adjust-ments. Candidate decision categories are listed in the suppl. 
+
+Feedback-Guided Auto-annotation Pipeline. We de-velop a general pipeline for high-quality progressive mul-timodal reasoning data annotation. As shown in Fig. 10, this pipeline includes three filtering processes to control the data quality across different aspects, along with a feedback-guided re-annotation strategy to iteratively refine filtered samples. Given inputs with current camera, history video, driving command, and instruction, the powerful MLLM Qwen2.5-VL-72B [1] first generates a raw text CoT. A rule-based format filter then checks structural complete-ness. Next, a decision filter checks correctness by com-paring generated action to GT decision derived from GT trajectory (details in suppl. ). Finally, the logic filter eval-uates reasoning soundness. Instead of reusing Qwen2.5-VL-72B, we employ the more advanced text-LLM Qwen3-235B-A22B-Instruct [52] for robust logical validation and overcoming self-checking bias [55]. If any filter fails, error feedback is returned as context to improve re-annotation. Feedback includes: (1) Format mismatches, (2) Incorrect decisions vs. GT decisions, and (3) Logic errors summa-rized by Qwen3. This feedback is combined with the raw CoT as input context for the next iteration. The pipeline details are listed in suppl. After that, the text CoT is con-catenated with the ground truth future scene image and the trajectory with special tokens (<think>,<dream>,<answer>) to distinguish them, creating multimodal reasoning data. 
+
+3.3. Progressive Reinforcement Fine-tuning 
+
+Standard SFT has limitations in training our multimodal reasoning data for its token-level equally important super-vision. In multimodal reasoning, uniform token weight-ing can bias the model toward producing fluent text rather than maintaining a balanced understanding of both textual and visual information. To enhance the reasoning ability of MindDriver, we introduce a progressive reinforcement fine-tuning post-training scheme, including two-stage learning with different rewards to optimize task-level behavior rather than token likelihoods. This process progressively improves the dreamed image and the planned trajectory. 
+
+Stage1: Dream Semantically Consistent Image. This stage improves the model’s ability to generate a semanti-cally consistent image based on the preceding text reason-ing, compared to GT image. Rather than optimizing pixel-level fidelity, we prioritize semantic consistency with the GT image, as the text CoT provides semantic guidance and highlights the approximate placement of key entities, which are crucial for downstream decisions. To achieve this, we adopt the CLIP [31] similarity to capture high-level seman-tic alignment between predicted and GT images, encourag-ing the model to dream images that preserve critical objects (e.g., traffic lights, pedestrians) in semantically correct lo-cations. The reward of stage 1 ( rImg ) is formulated as: 
+
+rImg = ECLIP (Idream ) · ECLIP (IGT )
+
+∥ECLIP (Idream )∥∥ ECLIP (IGT )∥ (2) where IGT denotes the GT image, and Idream is the image generated by the MindDriver based on its preceding text CoT, ECLIP (·) denotes the image encoder of CLIP. 
+
+Stage2: Predict Precise Trajectory. Building on the enhanced future-image imagination achieved in Stage 1, Stage 2 aligns the model with the trajectory-planning ob-jective. Unlike SFT, which frames trajectory prediction as token prediction, this stage regulates trajectory using an L2 geometric distance, offering a more accurate supervised method for trajectory planning. Reward of stage 2 ( rL2 ) is: 
+
+rL2 = λ − ADE 
+
+α , ADE = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+∥ˆyt − yt∥2 (3) where λ denotes the maximum displacement error, and α is scaling factor to normalize the reward. The planning trajec-tory ˆyt is evaluated against the GT trajectory y, and ADE is computed as the average L2 distances over T time steps. Similar to [68], we employ the GRPO algorithm [34], which stabilizes training and improves convergence effi-ciency. Given a scenario input query q, comprising sensor images, the ego vehicle’s state, and driving instruction, we sample a set of G candidate outputs O = {o1, o 2, . . . , o G}
+
+from the old policy πθold . The current policy πθ is then op-timized using the normalized group-relative advantage Ai,5Table 1. End-to-end trajectory planning experiments on nuScenes [2]. We evaluated the L2 and collision metrics based on the distinct computational methodologies of ST-P3 [9] and UniAD [10], respectively. * indicates that ego status is additionally used. VAD [18] and UniAD [10] results are derived from BEV-Planner [24]. † indicates the re-implemented results using official codes for Qwen2.5-VL-3B.                                                                                                                                                                                                                                                                                                                                                                          
+
+> Method ST-P3 metrics UniAD metrics LLM L2 (m) ↓Collision (%) ↓L2 (m) ↓Collision (%) ↓
+> 1s 2s 3s Avg. 1s 2s 3s Avg. 1s 2s 3s Avg. 1s 2s 3s Avg.
+> With Ego status methods
+> ST-P3* [ECCV22] [9] 1.33 2.11 2.90 2.11 0.23 0.62 1.27 0.71 ---------VAD* [ICCV23] [18] 0.17 0.34 0.60 0.37 0.04 0.27 0.67 0.33 ---------UniAD* [CVPR23] [10] --------0.20 0.42 0.75 0.46 0.02 0.25 0.84 0.37 -RDA-Driver* [ECCV24] [12] 0.17 0.37 0.69 0.40 0.01 0.05 0.26 0.10 0.23 0.73 1.54 0.80 0.00 0.13 0.83 0.32 LLaVA-7B BEV-Planner* [CVPR24] [24] 0.16 0.32 0.57 0.35 0.00 0.29 0.73 0.34 ---------OminiDrive* [CVPR25] [45] 0.14 0.29 0.55 0.33 0.00 0.13 0.78 0.30 --------LLaVA-7B FSDrive* †[NeurIPS25] [58] 0.17 0.33 0.56 0.35 0.07 0.10 0.24 0.14 0.22 0.59 1.19 0.67 0.07 0.14 0.75 0.32 Qwen2.5-VL-3B Auto-VLA* [NeurIPS25] [68] 0.25 0.46 0.73 0.48 0.07 0.07 0.26 0.13 0.33 0.81 1.45 0.86 0.08 0.11 0.85 0.35 Qwen2.5-VL-3B
+> MindDriver* (ours) 0.16 0.31 0.52 0.33 0.05 0.09 0.22 0.12 0.22 0.57 1.15 0.65 0.03 0.10 0.48 0.20 Qwen2.5-VL-3B
+> Without Ego status methods
+> VAD [ICCV23] [18] 0.69 1.22 1.83 1.25 0.06 0.68 2.52 1.09 ---------UniAD [CVPR23] [10] --------0.59 1.01 1.48 1.03 0.16 0.51 1.64 0.77 -ELM [ECCV24] [67] --------0.34 1.23 2.57 1.38 0.12 0.50 2.36 0.99 BLIP2-2.7B OccWorld [ECCV24] [62] 0.39 0.73 1.18 0.77 0.11 0.19 0.67 0.32 0.52 1.27 2.41 1.40 0.12 0.40 2.08 0.87 GPT3-like BEV-Planner [CVPR24] [24] 0.30 0.52 0.83 0.55 0.10 0.37 1.30 0.59 ---------OminiDrive [CVPR25] [45] 0.40 0.80 1.32 0.84 0.04 0.46 2.32 0.94 --------LLaVA-7B PreWorld [ICLR25] [21] --------0.49 1.22 2.32 1.34 0.19 0.57 2.65 1.14 -FSDrive †[NeurIPS25] [58] 0.28 0.53 0.85 0.55 0.07 0.15 0.40 0.21 0.39 0.95 1.68 1.01 0.05 0.25 1.03 0.44 Qwen2.5-VL-3B
+> MindDriver (ours) 0.27 0.51 0.82 0.53 0.06 0.12 0.32 0.17 0.35 0.87 1.57 0.93 0.04 0.19 0.91 0.38 Qwen2.5-VL-3B
+
+by maximizing the following objective: 
+
+JGRPO (θ) = Eq,o i∼πθold 
+
+"
+
+1
+
+G
+
+> G
+
+X
+
+> i=1
+
+ J Ri − β DKL (πθ ∥πref )#
+
+,
+
+(4) 
+
+J Ri = min ( ρiAi, clip (ρi, 1 − ϵ, 1 + ϵ) Ai) , (5) 
+
+ρi = πθ (oi|q)
+
+πθold (oi|q) , Ai = ri − mean ({rj }Gj=1 )
+
+std ({rj }Gj=1 ) . (6) 
+
+r(s) =
+
+(
+
+rImg + λ1 · rformat , s = 1 ,rL2 + λ2 · rformat , s = 2 . (7) where θ and θold denote the current and old policy parame-ters, ri is the reward for sample oi, rf ormat is the format re-ward, ϵ and β are hyperparameters controlling the clipping range and the weight of the KL divergence regularization term, and πref is the reference policy from the SFT stage. 
+
+## 4. Experiments 
+
+4.1. Experiment settings 
+
+Datasets. To comprehensively evaluate MindDriver’s per-formance, we conducted both closed-loop and open-loop evaluations. Following [18, 58], we evaluate open-loop trajectory planning and future frames generation on the nuScenes [3]. The nuScenes contains 1,000 scenes of ap-proximately 20 seconds each captured by six cameras pro-viding 360-degree field of view. Specifically, the dataset provides 28,130 (train) and 6,019 (val) samples. Follow-ing [27, 68], we evaluate the closed-loop driving perfor-mance on Bench2Drive [17], which features challenging in-teractive scenarios based on the CARLA leaderboard v2. It provides an official training set where we use the base set (1000 clips) for fair comparison with all the other baselines, which is divided into 950 clips for training and 50 clips for open-loop validation. We evaluate the MindDriver on the official set of 220 short routes designed by Bench2Drive, 
+
+Metrics. For open-loop evaluation, nuScenes includes L2 displacement error and collision rate for trajectory plan-ning, following [10, 18]. Notably, UniAD [10] computes L2 metrics and collision rate at each timestep, whereas ST-P3 [9] considers the average of all previous time-steps. We adopted both of these two different calculation meth-ods. For future frames generation quality evaluation, we use Fréchet Inception Distance (FID) [7], following [46, 58]. For closed-loop evaluation, we adopt the metrics from [17]: (1) Driving Score (DS): overall performance metric; (2) Success Rate (SR): percentage of infraction-free, timely completed episodes; (3) Efficiency (Effi): ego speed rela-tive to neighboring vehicles’ average; (4) Comfort (Comf): compliance with motion smoothness thresholds. 
+
+Implementation. We employ Qwen2.5-VL-3B [1] as our base VLM. During SFT, we use 1 × 10 −4 learning rate and batch size of 32, for 12 epochs (nuSences) and 6 epochs (Bench2Drive). We extend the visual codebook of MoVQGAN [61] to LLM vocabulary and use its detok-enizer to map LLM-predicted visual tokens to pixel space. 6Table 2. Future frames generation results on the nuScenes [2] dataset.                                        
+
+> Method DriveGAN [19] DriveDreamer [46] Drive-WM [47] GenAD [53] GEM [6] Doe-1 [65] FSDrive [58] MindDriver (ours)
+> [CVPR21] [ECCV24] [CVPR24] [CVPR24] [CVPR25] [arxiv24] [NeruIPS25]
+> Type GAN Diffusion Diffusion Diffusion Diffusion Autoregressive Autoregressive Autoregressive
+> Resolution 256 ×256 128 ×192 192 ×384 256 ×448 576 ×1024 384 ×672 128 ×192 128 ×192
+> FID ↓73.4 52.6 15.8 15.4 10.5 15.9 10.1 9.4
+
+Table 3. Closed-loop Results on the Bench2Drive (CARLA) Benchmark. *: the ego status is additionally use. ‡ : trained not on Bench2Drive training set                                           
+
+> Method DS ↑SR (%) ↑Effi ↑Comf ↑
+> AD-MLP* [Arxiv23] [60] 18.05 0.00 48.45 22.63 UniAD-Base* [CVPR23] [11] 45.81 16.36 129.21 43.58 VAD* [ICCV25] [18] 42.35 15.00 157.94 46.01
+> TCP-traj* [NeurIPS22] [50] 59.90 30.00 76.54 18.08 DriveAdapter* [CVPR23] [15] 64.22 33.08 70.22 16.01 ReasonPlan* [CoRL25] [27] 64.01 34.55 180.64 25.63 AutoVLA* ‡[NeurIPS25] [68] 78.84 57.73 146.93 39.33
+> MindDriver(ours) 65.48 39.55 143.21 34.63
+
+Table 4. Ablation results of different CoT. 
+
+Type L2 (m) ↓ Collision (%) ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. 
+
+None 0.38 0.93 1.67 0.99 0.13 0.35 1.18 0.56 Text CoT 0.37 0.90 1.61 0.96 0.08 0.23 1.05 0.46 Image CoT 0.39 0.98 1.81 1.06 0.15 0.37 1.13 0.55 MultiModal(I2T) CoT 0.38 0.95 1.70 1.01 0.07 0.25 1.08 0.47 MultiModal(T2I) CoT 0.36 0.89 1.60 0.95 0.05 0.22 0.97 0.41 
+
+During progressive RFT, we use 3 × 10 −6 learning rate and batch size 16, for 700 (stage 1) and 500 (stage 2) steps in nuSences, 1400 (stage 1) and 1000 (stage 2) steps in Bench2Drive. All the experiments were run on 16 Nvidia H20. Additional detailed information is listed in the suppl. 
+
+4.2. Main results 
+
+Open-loop evaluation on nuSences. Tab. 1 illustrates open-loop trajectory planning performance on nuScenes. As for results without ego status, MindDriver outperforms previous SOTA methods on both ST-P3 and UniAD metrics, including non-autoregressive (e.g., UniAD) and autoregres-sive methods (e.g., OccWorld). Notably, MindDriver’s mul-timodal reasoning surpasses image-only CoT methods (e.g., FSDrive), indicating that incorporating textual reasoning before future image generation improves trajectory quality and reduces collisions. Additionally, MindDriver exceeds text-only CoT approaches (e.g., AutoVLA), suggesting that subsequent future world dreaming is particularly effective at lowering collision rates. 
+
+Evaluation of generated image. As shown in Tab. 2, following prior work [47, 58], we report the FID of the gen-erated image to validate their visual quality. To balance 
+
+Table 5. Ablation results of dreaming different future scene. 
+
+Type L2 (m) ↓ Collision (%) ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. 
+
+Next 1.5s image 0.39 0.95 1.68 1.01 0.08 0.30 0.97 0.45 Next 1s image 0.40 0.96 1.75 1.04 0.03 0.29 0.97 0.43 Next 0.5s image 0.36 0.89 1.60 0.95 0.05 0.22 0.97 0.41 
+
+Table 6. Ablation results of data filtering. 
+
+Strategy L2 (m) ↓ Collision (%) ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. 
+
+No CoT 0.38 0.93 1.67 0.99 0.13 0.35 1.18 0.56 Raw CoT 1.32 2.50 3.62 2.48 0.17 1.06 2.97 1.40 + 3 Filters 0.37 0.92 1.64 0.98 0.08 0.32 1.18 0.53 + Error feedback 0.37 0.90 1.61 0.96 0.08 0.23 1.05 0.46 
+
+the quality and generation speed, we generate frames at 128x192 resolution. It is observed that MindDriver achieves superior FID, outperforming even specialized diffusion-based models (e.g., DriveDreamer, Drive-WM). Compared with the image-only CoT method, FSDrive, MindDriver’s lower FID indicates that prefixed textual reasoning en-hances scene understanding and action decisions, leading to more accurate future image generation. 
+
+Closed-loop evaluation on Bench2Drive (CARLA). 
+
+For results in Tab. 3, AutoVLA is trained on a much larger set of datasets, including nuPlan [30], CARLA-Garage [14], and so on. It is observed that MindDriver achieves compet-itive closed-loop performance compared to SOTA methods DriveAdapter [15], which utilizes privileged expert feature distillation, and ReasonPlan [27], which predicts future im-age before text reasoning. MindDriver achieves a higher driving score and success rate (39.55%), even without us-ing ego-status. This illustrates MindDriver’s strong ability to reason across diverse driving scenes and validate its ro-bustness under complex, multi-intent scenarios. 
+
+4.3. Ablation Study 
+
+Different CoT Type. Tab. 4 shows the ablation study on different CoT designs. MultiModal(I2T/T2I) CoT denotes different text and image order in multimodal reasoning: I2T dreams an image first and then performs text reasoning, whereas T2I first conducts text reasoning and then dreams 7Future Risk imagination Scene perception                           
+
+> nuScenes (Open -loop)
+> MIND (ours)
+> Timestamps
+> VAD FSDrive
+> … [ Scene Analysis ]: The
+> traffic light most relevant to
+> the ego vehicle's driving
+> direction is red , indicating that
+> passage is not allowed……
+> Thinking  … [ Latent Risk ]: From <CA -
+> M_FRONT>: An electric
+> vehicle is moving steadily
+> .……impose certain restr -
+> ictions on driving……
+> … [ Behavior Reasoning ]: as
+> there is a vehicle approaching
+> ahead. Slow down appro -
+> priately for safety to avoid
+> potential collision risks.……
+> Decision reasoning Future Risk imagination Scene perception
+> … [ Scene Analysis ]: The
+> weather is foggy and rainy ,
+> visibility is severely obstru -
+> cted , the traffic light is……,
+> the drivable area is small .……
+> … [ Latent Risk ]: From <CA -
+> M_FRONT>: Apedestrian is
+> crossing the car's lane, mov -
+> ing at a constant speed , with a
+> trajectory overlapping……
+> … [ Behavior Reasoning ]:
+> The yellow car creates a clear
+> obstruction in the current lane,
+> Changing lanes to bypass the
+> yellow car..……
+> Decision reasoning
+> Bench2Drive (Closed -loop)
+
+Figure 4. Qualitative comparison of MindDriver with baselines. (Left) Three scenarios from the open-loop nuScenes benchmark. The red trajectory is the prediction and the green one is the GT. (Right) The performance variation with timestamps on closed-loop Bench2Drive. 
+
+an image. It is observed that pure text CoT provides clear improvement over the baseline, and our proposed multi-modal CoT further enhances this by dreaming future scene images. Pure image CoT offers limited benefits due to the absence of planning-oriented reasoning. Within multimodal reasoning, T2I consistently outperforms I2T (as in Reason-Plan [28]), which aligns with the logic of human reasoning: high-level semantic planning precedes accurate scene esti-mation for precise control. 
+
+Dream Different Future Scene. We conduct ablation studies on different future frames generation in Tab. 5, covering the imagination of the next 0.5/1/1.5s scene im-age. Tab. 5 shows that dreaming the next 0.5s scene im-age achieves the best performance. This likely stems from better temporal alignment with the frame sampling inter-val (0.5s/frame) of the input history video, which simpli-fies prediction. Additionally, predictions over 1/1.5s span longer distances, increasing uncertainty and reducing accu-racy, especially for rare or emergent events. 
+
+Reasoning Data Filtering. Tab. 6 ablates our data-filtering strategy for text reasoning. Training with raw CoT annotated by Qwen2.5-VL-72B yields a significant de-crease in performance than the No CoT baseline. This in-dicates that the unfiltered CoT is low-quality and contains substantial logical and decision-making errors. However, applying our three filters markedly improves CoT quality and creates an obvious performance improvement over the baseline. Additionally, our proposed error feedback-guided strategy further improves the CoT quality by prompting the VLM with history error feedback, producing more accurate reasoning, and achieving the best performance. 
+
+Progressive RFT . Tab.7 illustrates the ablation on RFT strategy. It is observed that two-stage progressive RFT achieves the best performance, outperforming the one-stage 
+
+Table 7. Ablation results of Progressive RFT. 
+
+Type L2 (m) ↓ Collision (%) ↓ FID ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. Score None RL 0.36 0.89 1.60 0.95 0.05 0.22 0.97 0.41 9.8 One-stage RL 0.37 0.91 1.64 0.97 0.07 0.23 0.95 0.42 9.7 Progressive RL 0.35 0.87 1.57 0.93 0.04 0.19 0.91 0.38 9.4 
+
+variant that optimizes a weighted sum of image and trajec-tory rewards (with weights 0.33 and 0.67). One-stage RFT shows a marginal difference with baseline, likely because jointly balancing image generation and trajectory prediction is difficult. Meanwhile, our proposed progressive RFT first enhances the model to dream an accurate scene image, im-proving alignment between the text CoT and the image. The second stage further optimizes trajectory planning, further aligning generated images with the predicted trajectories. 
+
+4.4. Qualitative Visualization 
+
+Fig. 4 presents the qualitative results of MindDriver in rep-resentative open-loop and closed-loop evaluation scenarios, illustrating its progressive reasoning process and the cor-responding predicted trajectories. Compared with baseline methods, MindDriver demonstrates superior performance in scenarios involving complex environmental interactions and latent risk reasoning. In the open-loop nuScenes bench-mark, with regard to perceptual capabilities, the MindDriver can detect the most relevant traffic lights, outperforms FS-Drive significantly in scenarios involving dynamic obsta-cles. In the closed-loop Bench2Drive benchmark, Mind-Driver can accurately recognize relevant traffic lights even under low visibility conditions. 85. Conclusion 
+
+This paper proposes MindDriver, a unified framework based on progressive multimodal reasoning that enables VLMs to imitate human-like progressive thinking. The framework first conducts semantic-space text reasoning to achieve comprehensive scene understanding. Then, guided by this, it dreams the future scene image, and ultimately predicts the physical-space trajectory. To ensure aligned multimodal reasoning, we introduce a feedback-guided data annotation pipeline. Furthermore, we develop a progressive reinforce-ment fine-tuning method to optimize the alignment through progressive high-level reward-based learning. Extensive ex-periments on both open-loop and closed-loop validate the effectiveness of MindDriver, advancing autonomous driv-ing toward more reliable reasoning. 
+
+Limitations and future work. Although MindDriver achieves comparable inference speed (1 Hz) on an NVIDIA RTX 4090 GPU with other VLM-based methods, it is highly GPU-dependent, requiring significant computing. Moreover, the current work only considers the generation of front-view images; future efforts could explore richer and more detailed visual outputs. 9MindDriver: Introducing Progressive Multimodal Reasoning for Autonomous Driving 
+
+# Supplementary Material 
+
+## 6. Reasoning Annotation Pipeline 
+
+We develop a general pipeline for high-quality progressive multimodal reasoning data annotation. This pipeline in-cludes three filtering processes to control the data qual-ity across different aspects, along with a feedback-guided re-annotation strategy to iteratively refine filtered samples. Given inputs with the current camera, history video, driving command, and instruction, the powerful MLLM Qwen2.5-VL-72B [1] first generates a raw text CoT. The prompt for Qwen2.5-VL-72B is shown in Fig. 9. The text CoT then passes through three filters: • Format Filter: This rule-based filter checks whether the text reasoning is composed of the four parts: (1) Scene Analysis, (2) Latent Risk Assessment, (3) Behavior Rea-soning, and (4) Action Decision (including both direction and speed prediction). • Decision Filter: It checks decision correctness by com-paring the generated action to the GT decision derived from the GT trajectory. The process for generating ground truth (GT) labels is as follows: Leveraging statis-tical insights into dynamic vehicle parameters (e.g., ve-locity and acceleration) from the dataset, and informed by prior knowledge of real-world driving behaviors, we conducted clustering analysis on future vehicle trajecto-ries. We experimented with different numbers of clus-ters (7, 10, and 49) to evaluate the effectiveness of tra-jectory pattern segmentation. The results revealed that smaller cluster counts led to highly imbalanced trajectory distributions, failing to capture the diversity of driving be-haviors. To enhance model learning and generalization, we adopted a fine-grained trajectory categorization strat-egy. Specifically, for accelerating and decelerating vehi-cles, we used the 30th and 60th percentiles of their accel-eration distributions as thresholds to differentiate behav-ior subcategories. A similar percentile-based threshold-ing approach was applied to left-turning and right-turning vehicles, based on their turning dynamics. This method enables more discriminative and behaviorally meaning-ful trajectory labeling, thereby supporting more accurate prediction modeling. The final selected meta actions are shown in the Tab. 8. • Logic Filter: This filter evaluates the reasoning sound-ness of CoT. Instead of reusing Qwen2.5-VL-72B, we employ the more advanced text-LLM Qwen3-235B-A22B-Instruct [52] for robust logical validation and over-coming self-checking bias [55]. The prompt of Qwen3-235B-A22B-Instruct is illustrated in Fig. 5. To enable      
+
+> Table 8. Meta action type in desion filter.
+> Behavior Meta Action Type
+> Direction Change [Maintain Current Lane, Change Lane Left, Change Lane Right, Turn Left, Turn Right] Speed Change [Smooth Deceleration, Emergency Brake, Maintain Current Speed, Smooth Acceleration, Stop, Remain Stationary]
+
+better understanding, we show an example of this log-ical quality check in Fig. 8. Based on Qwen3’s robust logical analysis capabilities, a critical examination of the preliminary response from Qwen2.5VL-72B identified a broken causal chain in its reasoning process. The reason-ing incorrectly conflates two distinct operational phases, firstly, valid recommendation for post-green-light behav-ior ("safe passage after the light turns green"), which is contextually appropriate; secondly, mandatory red-light behavior (complete stop and wait), which was not ex-plicitly specified. This conflation erroneously applies the speed-adjustment guidance for post-green-light con-ditions to current red-light state, resulting in a conclusion that is fundamentally disconnected from the actual traffic scenario. Therefore, by applying similar logical valida-tion, reasoning errors can be identified and corrected. 
+
+Feedback-guided Re-annotation. If any above filter fails, error feedback is returned as context to improve re-annotation. As shown in Tab. 9, the error feedback includes: (1) Format error: the detailed missing parts considering scene analysis, latent risk assessment, behavior reasoning, and action decision. (2) Decision error: Incorrect decisions vs. GT decisions, for both direction and speed decisions, and (3) Logic error: return the summarized logic errors generated by Qwen3-235B-A22B-Instruct. This feedback is combined with the raw CoT as input context for the next iteration. This process is shown in Fig. 6. After that, the text CoT is concatenated with the ground truth future scene image and the trajectory with special to-kens (<think>,<dream>,<answer>) to distinguish them, cre-ating multimodal reasoning data. It is formatted as: <t> Tok Text CoT </t><d> Tok Img </d><a> Tok Traj </a> (8) where <t>, <d>, <a> denotes <think>,<dream>,<answer> special tokens. Tok Text CoT , Tok Img , and Tok Traj are the to-kens of the text CoT, the dreamed image, and the predicted 11. Objective: You are an expert in detecting the quality of reasoning              
+
+> chains for autonomous driving models, tasked with determining whether
+> the input reasoning process is correct or flawed.
+> 2. Output Format: Reason + [Correct/Incorrect]
+> 3. Judgment Criteria: Determine whether the input reasoning chain is
+> logically correct and free from logical flaws. At the end of your
+> response, specify the optimal direction and speed change for the ego
+> vehicle as: <Direction Change>, <Speed Change >.
+> Direction Change (select one): [Maintain Current Lane, Change
+> Lane Left, Change Lane Right, Turn Left, Turn Right ].
+> Speed Change (select one): [Smooth Deceleration, Emergency
+> Brake, Maintain Current Speed, Smooth Acceleration, Stop ,
+> Remain Stationary].
+> 4. Input reasoning process:
+
+Figure 5. Prompt for logical verification to Qwen3-235B-A22B-Instruct. …… 
+
+1. Objective: 
+
+You are controlling an…… 
+
+……[ Behavior Reasoning]: it 
+
+should either maintain its current 
+
+speed or accelerate smoothly to 
+
+ensure a safe following distance 
+
+from vehicles ahead .…… 
+
+The reasoning contains a logical 
+
+flaw: in a red -light scenario, the 
+
+vehicle should explicitly "stop 
+
+and wait," not "maintain current 
+
+speed," as the…… 
+
+……[ Behavior Reasoning]: 
+
+since the current traffic light is 
+
+red, the vehicle should STOP to 
+
+ensure compliance with traffic 
+
+regulations. 
+
+Figure 6. Combined COT with feedback for re-annotation. 
+
+trajectory. 
+
+## 7. Implementation Details 
+
+All experiments are conducted on 16 NVIDIA H20 GPUs (96 GB each). We employ Qwen2.5-VL-3B [1] as our base VLM. During SFT, we use 1 × 10 −4 learning rate and batch size of 32, for 12 epochs (nuSences) and 6 epochs (Bench2Drive). For our feedback annotation pipline, We set the maximum number of iterative rounds to 3. The vi-sion encoder of MindDriver is frozen, and the LLM is fully fine-tuned in the SFT stage. During progressive RFT, we use 3 × 10 −6 learning rate and batch size 16, for 700 (stage 
+
+Table 9. Specific feedback type in data auto-annotation. 
+
+Error Type Feedback Content Example 
+
+Format Error Missing Scene Analysis / ... Missing Action Decision part. Decision Error 1.Direction decision error(GT: Change Lane Right; Prediction: Turn Right). 2.Speed decision error(GT: Smooth Decelera-tion; Prediction: Maintain Current Speed). Logic Error Reasoning is discontinuous ... consideration is incomplete 
+
+1) and 500 (stage 2) steps in nuSences, 1400 (stage 1) and 1000 (stage 2) steps in Bench2Drive. We set λ = 10 and 
+
+α = 6 for L2 reward. In Eq. 7 of main paper, λ1 and λ1
+
+are both set as 10 for strict format learning in RFT. The for-mat reward rformat is to check whether the answer includes 6 parsed points (If yes, set 1; Otherwise set 0). The KL regu-larization weight β is set to 0.04. The generation parameter is with a sampling temperature as 1, top p as 1, and top k as 0 for diverse generation results in GRPO. In this stage, the vision encoder is frozen, and the LLM is fine-tuned us-ing Low-Rank Adaptation (LoRA) [8] to reduce the training cost. The LoRA rank is set as 32. This RFT is implemented using VERL training framework. 
+
+Model Layers Hidden size Num Heads Patch Size Qwen2.5-VL 32 1280 16 14 
+
+Table 10. Model parameters of image encoder model (Vision Transformer). 
+
+Model Layers Hidden size KV Heads Head Size Qwen2.5-VL 36 2048 2 128 
+
+Table 11. Model parameters of LLM. 
+
+## 8. Visualization of Dreamed Images 
+
+We selected two representative cases to illustrate the vi-sualized outputs of MindDriver’s predicted future scenes. As depicted in Fig. 7, the progressive reasoning process is clearly articulated in both examples. In the first case, MindDriver first performs textual rea-soning on the current scene. It identifies pedestrian motion trends, analyzes potential safety risks, and accordingly pro-poses future behavioral recommendations. Subsequently, based on the outcomes of this textual reasoning, the system generates a visual imagination of the future scene. In the re-sulting visualization, pedestrian positions can be observed 2`
+
+Text Reasoning Trajectory Prediction Future Imagination 
+
+[Latent Risk Assessment]: … A white 
+
+sedan is driving ahead on the road at a 
+
+close distance … A black SUV is crossing 
+
+the road from the left . [Behavior 
+
+Reasoning]: Pay attention to the situation of 
+
+vehicles … [Action Decision]: … <Maintain 
+
+Current Lane>, <Smooth Deceleration>. 
+
+[Latent Risk Assessment]: … pedestrians 
+
+are crossing the road, moving 
+
+dynamically … pedestrians pose a potential 
+
+risk to …[Behavior Reasoning]: ……, 
+
+ensuring pedestrians can cross 
+
+safely.…[Action Decision]: … <Maintain 
+
+Current Lane>, <Smooth Deceleration>. Figure 7. Qualitative Analysis of MindDriver. Red represents our predicted values, and green represents the ground truth (GT). Reason : There is a logical flaw in the reasoning 
+
+process. In the [Behavior Reasoning] section, the 
+
+conclusion states 'maintain current speed,' but 
+
+according to the scene description, the traffic light is 
+
+red, and the vehicle should be in a stationary waiting 
+
+state. There is no reasonable basis for 'maintain 
+
+current speed' in this context. Furthermore, when the 
+
+traffic light is red, the vehicle must come to a 
+
+complete stop, rather than drive at its current speed 
+
+or accelerate directly after the light turns green. 
+
+Summary : The reasoning contains a logical flaw: in 
+
+a red -light scenario, the vehicle should explicitly 
+
+"stop and wait," not "maintain current speed," as the 
+
+latter violates traffic regulations and undermines the 
+
+rigor of the reasoning. 
+
+Incorrect 
+
+[Behavior Reasoning]: Since the traffic light is red, the ego 
+
+vehicle should first comply with traffic regulations and remain 
+
+stopped at its current position. Given the navigation goal is 
+
+FORWARD, once the signal turns green , the vehicle may 
+
+proceed straight in its current lane. Considering the traffic 
+
+conditions ahead, it should either maintain its current speed or 
+
+accelerate smoothly to ensure a safe following distance from 
+
+vehicles ahead. 
+
+[Summary of Reasoning]: The optimal direction and speed 
+
+adjustment for the ego vehicle is to continue straight in the 
+
+current lane while maintaining its current speed, as the red light 
+
+requires waiting, and after the light turns green, it can safely 
+
+and smoothly navigate through the construction zone with 
+
+limited traffic conditions. 
+
+Formatted output result: The optimal direction and speed 
+
+adjustment for the ego vehicle is 
+
+<Maintain Current Lane>, < Maintain Current Speed >. 
+
+Logic 
+
+check 
+
+Figure 8. An example of a logical quality check. 
+
+to have changed, demonstrating that our method effectively establishes modeling capabilities for future spatiotemporal relationships. In the second case, a black SUV is crossing the road. If the ego vehicle maintains its current speed, a collision risk exists. Our method accurately imagines the motion state of the vehicle — the black SUV is predicted to reach the center of the road after 0.5 seconds, thereby validating the effectiveness of our approach in both textual reasoning and future imagination. 
+
+## 9. More Visualization 
+
+We assess the model using closed-loop testing in the CARLA simulator. The model takes visual input in the form of four RGB images from the front-facing camera, encom-passing a history of the past two seconds. MindDriver out-puts a predicted two-second trajectory, which is then uti-lized by a PID controller to determine the control signals (throttle, brake, and steering) applied to the vehicle. 
+
+nuScenes results. In many challenging nuScenes [3] scenarios, such as nighttime, heavy rain, and high-curvature roads, MindDriver performs well and avoids collisions. As shown in Fig. 11. In the visualized comparisons, the green trajectory serves as the Ground Truth (GT), while the red trajectory illustrates the path planning executed by Mind-Driver. The results exemplify the model’s resilience across a spectrum of real-world complexities. In the nighttime sce-nario (left), despite severe illumination changes and glare, the model maintains a steady path. Similarly, in the overcast and wet urban environment (center), MindDriver adeptly navigates through dynamic traffic, unaffected by the visual noise caused by rain. Most critically, the turning scenario 31. Objective: 
+
+You are controlling an autonomous vehicle in a complex urban traffic environment with access to images fro 
+
+m six camera perspectives and 2 seconds of historical footage from <CAM_FRONT>. Your task is to plan a s 
+
+afe and reasonable driving trajectory for the next 3 seconds based on navigation targets. Navigation targets wi 
+
+ll be provided in the following form: [FORWARD] / [RIGHT] / [LEFT] / [STOP], which should guide the pri 
+
+oritization of actions. 
+
+2. Process Overview: 
+
+Follow the steps outlined below for reasoning: 
+
+a. [Scene Description] : Describe the weather, road conditions, visibility, and traffic signal states to determine 
+
+drivable areas. 
+
+b. [Risk Object Identification] : Identify 1 -3 objects with the greatest impact on safety, analyze their position 
+
+s and motion states, and update drivable areas. 
+
+c. [Reasoning Autonomous Driving Behavior] : Propose three reasonable behavior combinations (direction 
+
++ speed) and provide reasons. 
+
+d. [Summarizing Reasoning Results] : Select the optimal behavior and output it in standard format. 
+
+3. Scene Analysis :
+
+Analyze the weather (sunny/rainy/foggy/night) and the impact of obstructions on visibility. 
+
+Determine the traffic signal state most relevant to the current driving direction: [Red Light, Yellow Light, Gre 
+
+en Light, Uncertain]. “Most relevant” refers to the traffic light controlling the right of way for the vehicle‘s la 
+
+ne; if navigating a right turn, prioritize the right turn signal. Summarize the initial drivable area: [Large, Medi 
+
+um, Small, Uncertain]. Large : Multi -lane, unobstructed; Medium : Partially restricted; Small : Severely restric 
+
+ted; Uncertain : Insufficient visibility. 
+
+4. Latent Risk Assessment: 
+
+Use the vehicle's forward direction as the reference point, with <CAM_FRONT_LEFT> covering the left 
+
+front area and <CAM_FRONT_RIGHT> covering the right front area. 
+
+Combine multi -perspective and historical images to identify object categories (e.g., cars, buses, pedestrians, 
+
+construction zones) and motion states (e.g., stationary, constant speed, accelerating toward, moving away). 
+
+Select 1 -3 highest -risk objects (priority: dynamic > static, lateral proximity > distant). 
+
+Update drivable areas across perspectives, using the smallest value principle (if any direction is rated 
+
+<Small>, the overall drivable area is <Small>). 
+
+5. Behavior Reasoning: 
+
+Propose three safe and reasonable behavior combinations, each containing: 
+
+Direction Change (select one): [Maintain Current Lane, Change Lane Left, Change Lane Right, Turn Left, 
+
+Turn Right]. 
+
+Speed Change (select one): [Smooth Deceleration, Emergency Brake, Maintain Current Speed, Smooth 
+
+Acceleration, Stop , Remain Stationary]. 
+
+Provide reasoning, considering traffic rules, obstacles, signal lights, and navigation targets. 
+
+6. Summarizing Reasoning Results: 
+
+Select the optimal behavior from the proposed options and present it in the following format: 
+
+Self -driving vehicle's optimal direction and speed change: <Direction>, <Speed>. 
+
+7. Output Format: 
+
+[Scene Analysis]: 
+
+<Description Results>, Drivable Area: <Large> 
+
+[Latent Risk Assessment]: 
+
+<CAM_FRONT>: <Object Category>, <Motion State> 
+
+<CAM_FRONT_RIGHT>: <Object Category>, <Motion State> 
+
+Combined Drivable Area: <Medium> 
+
+[Behavior Reasoning]: 
+
+<Maintain Current Lane>, <Smooth Deceleration>, <Reason> 
+
+<Change Lane Left>, <Smooth Acceleration>, <Reason> 
+
+<Turn Right>, <Smooth Deceleration>, <Reason> 
+
+[Action Decision]: 
+
+Self -driving vehicle's optimal direction and speed change: <Maintain Current Lane>, <Smooth Deceleration>. Figure 9. Prompt for CoT annotation by Qwen2.5-VL-72B 
+
+4Reasoning data creation pipeline 
+
+1. Scene Analysis 2. Latent Risk Assessment 
+
+3. Behavior Reasoning 
+
+4. Action Decision 
+
+History video 
+
+Ego -centric Camera Images 
+
+Driving Command 
+
+Go straight 
+
+Instruction                               
+
+> 1.Objective:……
+> You are controlling
+> an autonomous
+> vehicle in a comp -
+> lex urban traffic
+> environment……
+> 2. Use the following
+> standard ……a.
+> Scene Analysis……
+> [Scene analysis]: The weather is overcast , the road s
+> urface is wet and slippery, and visibility is slightly re
+> duced due to rain. The traffic light at the intersection
+> is red , with large trucks occupying the straight and th
+> e lane being controlled by the traffic light.
+> Since the navigation target is "FORWARD" but the
+> current traffic light is red , and there is a large truck c
+> rossing the intersection along with a roadblock obstr
+> ucting the way, moving forward directly poses safety
+> risks. Therefore, the optimal combination of behavio
+> rs is:
+> -Direction Adjustment: Maintain the current lane .
+> -Speed Adjustment: Stop
+> Reasoning: The current traffic light is red , and proce
+> eding directly may lead to collision risks. It is necess
+> ary to stop and wait for the traffic light to turn green
+> while monitoring dynamic changes ahead to ensure s
+> afety.
+> Ego vehicle's optimal direction and speed
+> change: <maintain the current lane > an
+> d < stop >.
+> -From <CAM_FRONT>: A large truck
+> is slowly crossing the intersection, occu
+> pying the space intended for left -turning
+> and straight -going traffic. According to
+> historical images, the truck’s movement
+> is stable .
+> -From <CAM_FRONT_LEFT>: A sed
+> an crossing the intersection, moving tow
+> ard the right side.
+> -From <CAM_FRONT_RIGHT>: A st
+> atic roadblock located ahead on the righ
+> t.
+> Combined navigable space for the self -d
+> riving vehicle: small due to the large tru
+> ck and roadblock in front.
+
+Figure 10. A complete sample of the annotation dataset. 
+
+Figure 11. nuScenes results. The red trajectory is the prediction and the green one is the GT. 
+
+(right) demonstrates the advantage of our dynamics-driven approach. While traditional methods often struggle with the kinematic constraints of sharp turns, our model produces a smooth trajectory that nearly perfectly overlaps with the GT. This confirms that incorporating dynamics-related re-wards significantly enhances the model’s ability to handle complex geometric maneuvers with expert-level precision. 
+
+Bench2drive results. On the simulation dataset there are many scenarios that require risk reasoning. For exam-ple, pedestrians crossing the road, narrow roads, nighttime, and other extreme conditions, MindDriver successfully han-dles them all. As shown in Fig. 12. As illustrated in the visualization, our extensive closed-loop testing on the simulation dataset exposes the model to highly demand-ing scenarios. The dataset incorporates significant out-of-distribution (OOD) data, ranging from adverse weather conditions with wet road reflections (Top Row) to intense lighting variations. The model demonstrates remarkable robustness in safety-critical situations. For instance, it ef-fectively anticipates and reacts to dynamic agents, such as vehicles cutting in and pedestrians jaywalking across the street (Middle Row). Notably, in complex intersection sce-narios (Bottom Row), the model successfully obeys traf-fic rules—identifying traffic lights and STOP signs—while making socially compliant decisions to stop and wait for multiple pedestrians, including children. This behavior highlights a significant improvement in planning logic and safety compared to previous SOTA methods like VAD. 
+
+## References 
+
+[1] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhao-hai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Jun-yang Lin. Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. 1, 5, 6, 2 [2] Holger Caesar, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yuxin Pan, Giancarlo Baldan, and Oscar Beijbom. nuscenes: A multi-modal dataset for autonomous driving. CVPR , 2020. 6, 7 
+
+5Timestamps Figure 12. Bench2drive results. From left to right indicates increasing timestamps. [3] Holger Caesar, Varun Bankiti, Alex H Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Gi-ancarlo Baldan, and Oscar Beijbom. nuscenes: A multi-modal dataset for autonomous driving. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 11621–11631, 2020. 2, 6, 3 [4] Hao Gao, Shaoyu Chen, Bo Jiang, Bencheng Liao, Yiang Shi, Xiaoyang Guo, Yuechuan Pu, Haoran Yin, Xiangyu Li, Xinbang Zhang, et al. Rad: Training an end-to-end driv-ing policy via large-scale 3dgs-based reinforcement learning. 
+
+arXiv preprint arXiv:2502.13144 , 2025. 3 [5] Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Ruoyu Zhang, Runxin Xu, Qihao Zhu, Shirong Ma, Peiyi Wang, Xiao Bi, et al. Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948 , 2025. 3 [6] Mariam Hassan, Sebastian Stapf, Ahmad Rahimi, Pedro M B Rezende, Yasaman Haghighi, David Brüggemann, Isinsu Katircioglu, Lin Zhang, Xiaoran Chen, Suman Saha, Marco Cannici, Elie Aljalbout, Botao Ye, Xi Wang, Aram Davtyan, Mathieu Salzmann, Davide Scaramuzza, Marc Pollefeys, Paolo Favaro, and Alexandre Alahi. Gem: A generaliz-able ego-vision multimodal world model for fine-grained ego-motion, object dynamics, and scene composition con-trol. CVPR , 2025. 7 [7] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilib-rium. NeurIPS , 2017. 6 [8] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, et al. Lora: Low-rank adaptation of large language models. ICLR ,1(2):3, 2022. 2 [9] Shengchao Hu, Li Chen, Penghao Wu, Hongyang Li, Junchi Yan, and Dacheng Tao. St-p3: End-to-end vision-based au-tonomous driving via spatial-temporal feature learning. In 
+
+ECCV , 2022. 6 [10] Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, Lewei Lu, Xiaosong Jia, Qiang Liu, Jifeng Dai, Yu Qiao, and Hongyang Li. Planning-oriented autonomous driv-ing. In CVPR , 2023. 6 [11] Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, et al. Planning-oriented autonomous driving. In Pro-ceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 17853–17862, 2023. 2, 7 [12] Zhijian Huang, Tao Tang, Shaoxiang Chen, Sihao Lin, and Zequn et al. Jie. Making large language models better plan-ners with reasoning-decision alignment. ECCV , 2024. 1, 6 [13] Jyh-Jing Hwang, Runsheng Xu, Hubert Lin, Wei-Chih Hung, Jingwei Ji, Kristy Choi, Di Huang, Tong He, Paul Covington, Benjamin Sapp, et al. Emma: End-to-end multimodal model for autonomous driving. arXiv preprint arXiv:2410.23262 ,2024. 3 [14] Bernhard Jaeger, Kashyap Chitta, and Andreas Geiger. Hid-den biases of end-to-end driving models. In Proceedings of 
+
+6the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 8240–8249, 2023. 7 [15] Xiaosong Jia, Yulu Gao, Li Chen, Junchi Yan, Patrick Langechuan Liu, and Hongyang Li. Driveadapter: Breaking the coupling barrier of perception and planning in end-to-end autonomous driving. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,pages 7953–7963, 2023. 7 [16] Xiaosong Jia, Penghao Wu, Li Chen, Jiangwei Xie, Con-ghui He, Junchi Yan, and Hongyang Li. Think twice be-fore driving: Towards scalable decoders for end-to-end au-tonomous driving. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition , pages 21983–21994, 2023. 2 [17] Xiaosong Jia, Zhenjie Yang, Qifeng Li, Zhiyuan Zhang, and Junchi Yan. Bench2drive: Towards multi-ability benchmark-ing of closed-loop end-to-end autonomous driving. arXiv preprint arXiv:2406.03877 , 2024. 2, 6 [18] Bo Jiang, Shaoyu Chen, Qing Xu, Bencheng Liao, Jiajie Chen, Helong Zhou, Qian Zhang, Wenyu Liu, Chang Huang, and Xinggang Wang. Vad: Vectorized scene representation for efficient autonomous driving. ICCV , 2023. 2, 6, 7 [19] Seung Wook Kim, Jonah Philion, Antonio Torralba, and Sanja Fidler. Drivegan: Towards a controllable high-quality neural simulation. In CVPR , 2021. 7 [20] Derun Li, Jianwei Ren, Yue Wang, Xin Wen, Pengxiang Li, Leimeng Xu, Kun Zhan, Zhongpu Xia, Peng Jia, Xianpeng Lang, et al. Finetuning generative trajectory model with re-inforcement learning from human feedback. arXiv preprint arXiv:2503.10434 , 2025. 3 [21] Xiang Li, Pengfei Li, Yupeng Zheng, Wei Sun, Yan Wang, and Yilun Chen. Semi-supervised vision-centric 3d occu-pancy world model for autonomous driving. ICLR , 2025. 6 [22] Yiheng Li, Seth Z. Zhao, Chenfeng Xu, Chen Tang, Chenran Li, Mingyu Ding, Masayoshi Tomizuka, and Wei Zhan. Pre-training on synthetic driving data for trajectory prediction. In 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pages 5910–5917, 2024. 2 [23] Zhenxin Li, Kailin Li, Shihao Wang, Shiyi Lan, Zhiding Yu, Yishen Ji, Zhiqi Li, Ziyue Zhu, Jan Kautz, Zuxuan Wu, et al. Hydra-mdp: End-to-end multimodal planning with multi-target hydra-distillation. arXiv preprint arXiv:2406.06978 ,2024. 2 [24] Zhiqi Li, Zhiding Yu, Shiyi Lan, Jiahan Li, Jan Kautz, Tong Lu, and José M. Álvarez. Is ego status all you need for open-loop end-to-end autonomous driving? CVPR , 2024. 6 [25] Shiyi Liang, Xinyuan Chang, Changjie Wu, Huiyuan Yan, Yifan Bai, Xinran Liu, Hang Zhang, Yujian Yuan, Shuang Zeng, Mu Xu, et al. Persistent autoregressive mapping with traffic rules for autonomous driving. arXiv preprint arXiv:2509.22756 , 2025. 2 [26] Bencheng Liao, Shaoyu Chen, Haoran Yin, Bo Jiang, Cheng Wang, Sixu Yan, Xinbang Zhang, Xiangyu Li, Ying Zhang, Qian Zhang, et al. Diffusiondrive: Truncated diffusion model for end-to-end autonomous driving. arXiv preprint arXiv:2411.15139 , 2024. 2 [27] Xueyi Liu, Zuodong Zhong, Yuxin Guo, Yun-Fu Liu, Zhiguo Su, Qichao Zhang, Junli Wang, Yinfeng Gao, Yupeng Zheng, Qiao Lin, et al. Reasonplan: Unified scene prediction and de-cision reasoning for closed-loop autonomous driving. arXiv preprint arXiv:2505.20024 , 2025. 2, 3, 5, 6, 7 [28] Ming Nie, Renyuan Peng, Chunwei Wang, Xinyue Cai, Jianhua Han, Hang Xu, and Li Zhang. Reason2drive: Towards interpretable and chain-based reasoning for au-tonomous driving, 2024. 2 [29] Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Car-roll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to follow instructions with human feedback. Ad-vances in neural information processing systems , 35:27730– 27744, 2022. 3 [30] Sung-Yeon Park, Can Cui, Yunsheng Ma, Ahmadreza Moradipari, Rohit Gupta, Kyungtae Han, and Ziran Wang. Nuplanqa: A large-scale dataset and benchmark for multi-view driving scene understanding in multi-modal large lan-guage models. arXiv preprint arXiv:2503.12772 , 2025. 7 [31] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In ICML , 2021. 5[32] Katrin Renz, Long Chen, Elahe Arani, and Oleg Sinavski. Simlingo: Vision-only closed-loop autonomous driving with language-action alignment, 2025. 2 [33] Hao Shao, Yuxuan Hu, Letian Wang, Steven L. Waslander, Yu Liu, and Hongsheng Li. Lmdrive: Closed-loop end-to-end driving with large language models, 2023. 2 [34] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, YK Li, Y Wu, et al. Deepseekmath: Pushing the limits of mathe-matical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. 5 [35] Chonghao Sima, Katrin Renz, Kashyap Chitta, Li Chen, Hanxue Zhang, Chengen Xie, Jens Beißwenger, Ping Luo, Andreas Geiger, and Hongyang Li. Drivelm: Driving with graph visual question answering. In European Conference on Computer Vision , pages 256–274. Springer, 2024. 3 [36] Chonghao Sima, Kashyap Chitta, Zhiding Yu, Shiyi Lan, Ping Luo, Andreas Geiger, Hongyang Li, and Jose M Al-varez. Centaur: Robust end-to-end autonomous driving with test-time training. arXiv preprint arXiv:2503.11650 , 2025. 2 [37] Wenchao Sun, Xuewu Lin, Yining Shi, Chuang Zhang, Hao-ran Wu, and Sifa Zheng. Sparsedrive: End-to-end au-tonomous driving via sparse scene representation. arXiv preprint arXiv:2405.19620 , 2024. 2 [38] Ran Tian, Boyi Li, Xinshuo Weng, Yuxiao Chen, Edward Schmerling, Yue Wang, Boris Ivanovic, and Marco Pavone. Tokenize the world into object-level knowledge to address long-tail events in autonomous driving. arXiv preprint arXiv:2407.00959 , 2024. 5 [39] Xiaoyu Tian, Junru Gu, Bailin Li, Yicheng Liu, Zhiyong Zhao, Yang Wang, Kun Zhan, Peng Jia, Xianpeng Lang, and Hang Zhao. Drivevlm: The convergence of autonomous driving and large vision-language models. CoRL , 2024. 2 
+
+7[40] Xiaoyu Tian, Sitong Zhao, Haotian Wang, Shuaiting Chen, Yunjie Ji, Yiping Peng, Han Zhao, and Xiangang Li. Think twice: Enhancing llm reasoning by scaling multi-round test-time thinking, 2025. 2 [41] Aäron van den Oord, Oriol Vinyals, and Koray Kavukcuoglu. Neural discrete representation learning. In NeurIPS , 2017. 4 [42] Chunwei Wang, Guansong Lu, Junwei Yang, Runhu Huang, Jianhua Han, Lu Hou, Wei Zhang, and Hang Xu. Illume: Illuminating your llms to see, draw, and self-enhance. arXiv preprint arXiv:2412.06673 , 2024. 4 [43] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Yang Fan, Kai Dang, Mengfei Du, Xuancheng Ren, Rui Men, Dayiheng Liu, Chang Zhou, Jingren Zhou, and Jun-yang Lin. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024. 1 [44] Shihao Wang, Zhiding Yu, Xiaohui Jiang, Shiyi Lan, Min Shi, Nadine Chang, Jan Kautz, Ying Li, and Jose M Alvarez. Omnidrive: A holistic llm-agent framework for autonomous driving with 3d perception, reasoning and planning. arXiv preprint arXiv:2405.01533 , 2024. 1, 4 [45] Shihao Wang, Zhiding Yu, Xiaohui Jiang, Shiyi Lan, Min Shi, Nadine Chang, Jan Kautz, Ying Li, and José M. Álvarez. Omnidrive: A holistic llm-agent framework for autonomous driving with 3d perception, reasoning and planning. CVPR ,2025. 6 [46] Xiaofeng Wang, Zheng Zhu, Guan Huang, Xinze Chen, Jia-gang Zhu, and Jiwen Lu. Drivedreamer: Towards real-world-driven world models for autonomous driving. ECCV , 2024. 6, 7 [47] Yuqi Wang, Jiawei He, Lue Fan, Hongxin Li, Yuntao Chen, and Zhaoxiang Zhang. Driving into the future: Multiview visual forecasting and planning with world model for au-tonomous driving. CVPR , 2024. 7 [48] Yuping Wang, Shuo Xing, Cui Can, Renjie Li, Hongyuan Hua, Kexin Tian, Zhaobin Mo, Xiangbo Gao, Keshu Wu, Sulong Zhou, Hengxu You, Juntong Peng, Junge Zhang, Zehao Wang, Rui Song, Mingxuan Yan, Walter Zimmer, Xingcheng Zhou, Peiran Li, Zhaohan Lu, Chia-Ju Chen, Yue Huang, Ryan A. Rossi, Lichao Sun, Hongkai Yu, Zhiwen Fan, Frank Hao Yang, Yuhao Kang, Ross Greer, Chenxi Liu, Eun Hak Lee, Xuan Di, Xinyue Ye, Liu Ren, Alois Knoll, Xiaopeng Li, Shuiwang Ji, Masayoshi Tomizuka, Marco Pavone, Tianbao Yang, Jing Du, Ming-Hsuan Yang, Hua Wei, Ziran Wang, Yang Zhou, Jiachen Li, and Zhengzhong Tu. Generative ai for autonomous driving: Frontiers and op-portunities, 2025. 2 [49] Junfeng Wu, Yi Jiang, Chuofan Ma, Yuliang Liu, Heng-shuang Zhao, Zehuan Yuan, Song Bai, and Xiang Bai. Liq-uid: Language models are scalable multi-modal generators. 
+
+arXiv preprint arXiv:2412.06673 , 2024. 4 [50] Penghao Wu, Xiaosong Jia, Li Chen, Junchi Yan, Hongyang Li, and Yu Qiao. Trajectory-guided control prediction for end-to-end autonomous driving: A simple yet strong base-line. Advances in Neural Information Processing Systems ,35:6119–6132, 2022. 7 [51] Zebin Xing, Xingyu Zhang, Yang Hu, Bo Jiang, Tong He, Qian Zhang, Xiaoxiao Long, and Wei Yin. Goalflow: Goal-driven flow matching for multimodal trajectories generation in end-to-end autonomous driving, 2025. 2 [52] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388 , 2025. 5, 1 [53] Jiazhi Yang, Shenyuan Gao, Yihang Qiu, Li Chen, Tianyu Li, Bo Dai, Kashyap Chitta, Penghao Wu, Jia Zeng, Ping Luo, Jun Zhang, Andreas Geiger, Yu Qiao, and Hongyang Li. Generalized predictive model for autonomous driving. In 
+
+CVPR , 2024. 7 [54] Yujian Yuan, Changjie Wu, Xinyuan Chang, Sijin Wang, Hang Zhang, Shiyi Liang, Shuang Zeng, Mu Xu, and Ning Guo. Unimapgen: A generative framework for large-scale map construction from multi-modal data. arXiv preprint arXiv:2509.22262 , 2025. 2 [55] Yujian Yuan, Yanting Zheng, and Liangqiong Qu. Bench-marking radiology report generation from noisy free-texts. 
+
+IEEE Journal of Biomedical and Health Informatics , 2025. 5, 1 [56] Zhenlong Yuan, Jing Tang, Jinguo Luo, Rui Chen, Chengx-uan Qian, Lei Sun, Xiangxiang Chu, Yujun Cai, Dapeng Zhang, and Shuo Li. Autodrive-r 2: Incentivizing reason-ing and self-reflection capacity for vla model in autonomous driving, 2025. 3 [57] Shuang Zeng, Xinyuan Chang, Xinran Liu, Yujian Yuan, Shiyi Liang, Zheng Pan, Mu Xu, and Xing Wei. Prior-drive: Enhancing online hd mapping with unified vector pri-ors. arXiv preprint arXiv:2409.05352 , 2024. 2 [58] Shuang Zeng, Xinyuan Chang, Mengwei Xie, Xinran Liu, Yifan Bai, Zheng Pan, Mu Xu, and Xing Wei. Futuresight-drive: Thinking visually with spatio-temporal cot for au-tonomous driving. arXiv preprint arXiv:2505.17685 , 2025. 1, 2, 3, 4, 6, 7 [59] Shuang Zeng, Xinyuan Chang, Mengwei Xie, Xinran Liu, Yifan Bai, Zheng Pan, Mu Xu, Xing Wei, and Ning Guo. Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving, 2025. 3 [60] Jiang-Tian Zhai, Ze Feng, Jinhao Du, Yongqiang Mao, Jiang-Jiang Liu, Zichang Tan, Yifu Zhang, Xiaoqing Ye, and Jingdong Wang. Rethinking the open-loop evaluation of end-to-end autonomous driving in nuscenes. arXiv preprint arXiv:2305.10430 , 2023. 7 [61] Chuanxia Zheng, Long Tung Vuong, Jianfei Cai, and Dinh Q. Phung. Movq: Modulating quantized vectors for high-fidelity image generation. NeurIPS , 2022. 6 [62] Wenzhao Zheng, Weiliang Chen, Yuanhui Huang, Borui Zhang, Yueqi Duan, and Jiwen Lu. Occworld: Learning a 3d occupancy world model for autonomous driving. ECCV ,2024. 6 [63] Wenzhao Zheng, Ruiqi Song, Xianda Guo, Chenming Zhang, and Long Chen. Genad: Generative end-to-end au-tonomous driving. ECCV , 2024. 2 [64] Wenzhao Zheng, Junjie Wu, Yao Zheng, Sicheng Zuo, Zixun Xie, Longchao Yang, Yong Pan, Zhihui Hao, Peng Jia, Xi-
+
+8anpeng Lang, et al. Gaussianad: Gaussian-centric end-to-end autonomous driving. arXiv preprint arXiv:2412.10371 ,2024. 2 [65] Wenzhao Zheng, Zetian Xia, Yuanhui Huang, Sicheng Zuo, Jie Zhou, and Jiwen Lu. Doe-1: Closed-loop autonomous driving with large world model. arXiv preprint arXiv: 2412.09627 , 2024. 7 [66] Weicheng Zheng, Xiaofei Mao, Nanfei Ye, Pengxiang Li, Kun Zhan, Xianpeng Lang, and Hang Zhao. Driveagent-r1: Advancing vlm-based autonomous driving with active perception and hybrid thinking, 2025. 3 [67] Yunsong Zhou, Linyan Huang, Qingwen Bu, Jia Zeng, Tianyu Li, Hang Qiu, Hongzi Zhu, Minyi Guo, Yu Qiao, and Hongyang Li. Embodied understanding of driving scenarios. 
+
+ECCV , 2024. 6 [68] Zewei Zhou, Tianhui Cai, Seth Z Zhao, Yun Zhang, Zhiyu Huang, Bolei Zhou, and Jiaqi Ma. Autovla: A vision-language-action model for end-to-end autonomous driving with adaptive reasoning and reinforcement fine-tuning. arXiv preprint arXiv:2506.13757 , 2025. 1, 3, 4, 5, 6, 7 
+
+9

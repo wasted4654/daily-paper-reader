@@ -1,0 +1,247 @@
+Title: LAD-Drive: Bridging Language and Trajectory with Action-Aware Diffusion Transformers
+
+URL Source: https://arxiv.org/pdf/2603.02035v1
+
+Published Time: Tue, 03 Mar 2026 03:52:44 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# LAD-Drive: Bridging Language and Trajectory with Action-Aware Diffusion Transformers 
+
+Fabian Schmidt 1,2,∗, Karol Fedurko 1,∗, Markus Enzweiler 1, Abhinav Valada 2
+
+Abstract — While multimodal large language models (MLLMs) provide advanced reasoning for autonomous driving, translating their discrete semantic knowledge into continuous trajectories remains a fundamental challenge. Existing methods often rely on unimodal planning heads that inherently limit their ability to represent multimodal driving behavior. Furthermore, most generative approaches frequently condition on one-hot encoded actions, discarding the nuanced navigational uncertainty critical for complex scenarios. To resolve these limitations, we introduce LAD-Drive, a generative framework that structurally disentangles high-level intention from low-level spatial planning. LAD-Drive employs an action decoder to infer a probabilistic meta-action distribution, establishing an explicit belief state that preserves the nuanced intent typically lost by one-hot encodings. This distribution, fused with the vehicle’s kinematic state, conditions an action-aware diffusion decoder that utilizes a truncated denoising process to refine learned motion anchors into safe, kinematically feasible trajectories. Extensive evaluations on the LangAuto benchmark demonstrate that LAD-Drive achieves state-of-the-art results, outperforming competitive baselines by up to 59% in Driving Score while significantly reducing route deviations and collisions. We will publicly release the code and models on https://github.com/iis-esslingen/ lad-drive .
+
+I. I NTRODUCTION 
+
+The field of end-to-end autonomous driving has shifted significantly with the integration of pretrained Large Language Models (LLMs). Early frameworks leverage the vast world knowledge and reasoning capabilities of LLMs to navigate complex, long-tail traffic scenarios. Specifically, pioneering approaches [1]–[3] reformulate continuous trajectory planning as an autoregressive text generation task, predicting spatial waypoints directly within the discrete language space. How-ever, this direct translation suffers from a severe modality mismatch between discrete language tokens and continuous action spaces. The inherent numerical insensitivity of discrete textual tokenization not only frequently generates physically infeasible, malformed outputs that trigger downstream parsing failures [4], but also yields unstable predictions that severely degrade long-term planning [5]. To avoid these pitfalls, many approaches employ dedicated regression heads to map vision-language features directly  
+
+> ∗
+
+Equal Contribution.  
+
+> 1
+
+Institute for Intelligent Systems, Esslingen University of Applied Sciences, Germany.  
+
+> 2
+
+Department of Computer Science, University of Freiburg, Germany. This work has been funded by the BMFTR under support code 13FH544KB2 (ADRIVE-GPT). The authors alone are responsible for the content of the paper. The authors thank the DACHS data analysis cluster, hosted at Esslingen University and co-funded by the MWK within the DFG’s ”Großger ¨ate der L ¨ander” program, for providing the computational resources necessary for this research. AD-MLLM   
+
+> Action Decoder Sensor Data
+> Navigation Instruction Diffusion Decoder Trajectories Meta-Action Distribution
+> Probabilistic Conditioning
+
+Action 
+
+Diffusion 
+
+Language 
+
+> Score
+
+Fig. 1. LAD-Drive disentangles high-level semantic reasoning from low-level spatial planning across three modules. First, the Language module uses a multimodal LLM (AD-MLLM) to synthesize sensor data and navigation instructions into contextualized hidden states. Second, the Action decoder infers a discrete meta-action distribution directly from these states. Finally, the Diffusion decoder utilizes this probabilistic conditioning to iteratively refine noisy priors into kinematically consistent, multimodal trajectories. 
+
+to continuous trajectories [6]–[8]. While computationally efficient, these coupled architectures face two critical lim-itations. Architecturally, forcing a single network head to simultaneously resolve high-level semantic intentions (what to do) and low-level spatial planning (how to execute it) creates a severe entanglement that can overwhelm model capacity. Mathematically, regression objectives (such as L1 or L2 loss) are fundamentally ill-equipped to handle the multimodal nature of driving. They inherently average across divergent but equally valid behaviors (e.g., turning left versus right to avoid an obstacle). This mode averaging can yield to physically infeasible predictions, leading to poor generalization in complex scenarios [9]. To capture multimodal driving behaviors, recent literature has explored two primary architectural paradigms [10]. The first reframes trajectory prediction as a classification task by discretizing the continuous action space into a finite vocabulary of specialized action tokens [11], [12]. While this prevents mode averaging by forcing the model to output a categorical distribution, it inherently introduces quantization errors that compromise smooth low-level planning [5]. The second paradigm shifts toward generative modeling. By leveraging diffusion models to explicitly learn the underlying distribution of future motion, this approach allows flexible trajectory prediction and effectively captures the complex multimodality of human driving [9]. While diffusion models excel at generating diverse and kinematically plausible paths [13], [14], effectively condi-tioning these planners on the semantic reasoning of an LLM remains a critical bottleneck. As our analysis reveals, feeding 
+
+> arXiv:2603.02035v1 [cs.RO] 2 Mar 2026
+
+raw LLM hidden states directly into a planner introduces semantic noise and causal confusion. Conversely, attempts to simplify this conditioning introduce new bottlenecks. Rigid, one-hot encoded actions [15]–[17] default to a winner-takes-all paradigm that discards critical uncertainty, while opaque implicit planning tokens [18] obscure the agent’s semantic intent, making it impossible to explicitly model or interpret the underlying probabilistic belief state. To bridge this intention-action gap, we introduce LAD-Drive ( Language and Action-Aware Diffusion Drive ), an end-to-end framework that structurally disentangles semantic intention from geometric execution. As shown in Fig. 1, LAD-Drive employs an action decoder to infer a probabilistic meta-action distribution, thereby forming an explicit belief state that preserves critical uncertainty. To execute this intention without causal confusion, an action-aware diffusion decoder 
+
+grounds the generation process in both this belief state and distilled LLM features. By utilizing clustered anchors as trajectory priors within a truncated diffusion schedule, LAD-Drive efficiently refines safe, kinematically feasible paths in just two denoising steps. In summary, our core contributions are the structural disentanglement of semantic reasoning and spatial planning through explicit probabilistic conditioning, and the design of a highly efficient action-aware diffusion decoder that produces multimodal trajectories. Extensive evaluations and systematic ablation studies validate this paradigm, confirming the necessity of our dual-conditioning strategy and demon-strating that LAD-Drive achieves state-of-the-art performance on the LangAuto benchmark [6]. We make the code and trained models publicly available on https://github. com/iis-esslingen/lad-drive .II. R ELATED WORK 
+
+A. End-to-End Autonomous Driving 
+
+The paradigm of end-to-end autonomous driving has evolved significantly from simple regression baselines to sophisticated generative frameworks. UniAD [19] pioneered the unified approach by integrating perception, prediction, and planning into a query-based transformer architecture, enabling effective multi-task interaction. To better address the inherent uncertainty in driving behaviors, VADv2 [11] introduced probabilistic planning, which discretizes the continuous action space into a trajectory vocabulary to explicitly model the distribution of future actions. Building on the need for continuous and multimodal output, recent research has increasingly leveraged diffusion models, with a specific focus on optimizing inference efficiency and guidance [9], [20]–[23]. DiffusionPlanner [20] formulates planning as a conditional generative task, utilizing a diffusion transformer to jointly model the ego-vehicle and surrounding agents with classifier guidance. Addressing the inference latency typical of such models, DiffusionDrive [21] proposes a truncated diffusion policy that initializes the denoising process from learned anchors rather than random noise. GoalFlow [22] further optimizes this generation by introducing goal-driven flow matching, conditioning the trajectory on estimated goal points to ensure consistency and efficiency. Adopting a coarse-to-fine paradigm, DiffRefiner [9] employs a diffusion refiner to iteratively improve initial trajectory proposals by enforcing fine-grained semantic consistency. Most recently, BridgeDrive [23] challenges the theoretical asymmetry of prior anchor-based methods by formulating planning as a sym-metric diffusion bridge process that connects the current state to a target state to generate physically rigorous trajectories. 
+
+B. LLM-based Autonomous Driving 
+
+The integration of LLMs into autonomous driving has progressed from high-level reasoning in simplified environ-ments [24] to closed-loop trajectory planning in complex simulations [6]–[8], [15], [16], [25]–[28]. This shift to realistic, closed-loop control was pioneered by LMDrive [6], which integrated multimodal sensor data with natural language instructions. Subsequent works have focused on optimizing this foundation. Building on this architecture, BEVDriver [7] enhances the perception module to generate more compre-hensive BEV representations, thereby optimizing both spatial awareness and semantic alignment. SimLingo [8] targets language-action alignment within a vision-only framework to ensure consistency between linguistic reasoning and executed maneuvers. Addressing computational efficiency, AdaDrive [25] implements an adaptive slow-fast system to gate LLM activations, whereas VLDrive [26] reduces overhead by using a lightweight LLM and dynamic visual pruning. Similarly, SToRM [27] mitigates the high computa-tional overhead of MLLMs by introducing a supervised token reduction mechanism, thereby improving driving performance. To bridge the gap between abstract reasoning and precise planning, hierarchical frameworks such as AD-H [15] and Senna [16] employ an MLLM to infer discrete, high-level meta-actions that subsequently condition a dedicated low-level planner for discrete trajectory prediction. To overcome the unimodal limitations of regression-based planners, recent research has shifted toward generative models that can capture multimodal trajectory distributions [4], [17], [18], [29]–[31]. A primary challenge lies in effectively conditioning these models. ORION [18] employs an implicit planning token within an LLM to guide a generative planner, while DiffVLA [17] utilizes an MLLM to produce one-hot encoded lateral and longitudinal commands for a hybrid sparse-dense diffusion planner. Taking a hierarchical approach, SGDrive [30] forecasts world knowledge in a scene-agent-goal manner to serve as a latent condition. To overcome the sequential restrictions of autoregressive models, dVLM-AD [29] employs a discrete diffusion MLLM with bidirec-tional attention, leveraging iterative denoising to enhance controllability and consistency between high-level reasoning and low-level planning. Finally, ensuring that generated trajectories are physically grounded and safe remains critical. DrivePI [31] incorporates 3D occupancy and flow as auxiliary tasks for spatial-temporal grounding, whereas ReCogDrive [4] integrates Diffusion Group Relative Policy Optimization to enforce safety and comfort constraints. In contrast to existing approaches that rely on opaque Timesteps   
+
+> SinPosEmb
+> FFN
+> Ego-Status
+> FFN  FFN
+> FFN
+> Norm
+> FFN
+> Noisy
+> Trajectories
+> MHCA
+> Add & Norm
+> QKV
+> MHCA
+> QKV
+> Add & Norm
+> FFN
+> Norm
+> Timestep Modulation
+> FFN
+> Norm
+> FFN
+> FFN
+> Add
+> Scores Re fi ned Trajectories
+> Update x 2
+> DiffusionDecoder
+> FFN
+> ReLU
+> FFN
+> ActionDecoder
+> Hidden States
+> LLM
+> Navigation Instruction
+> Sensor Data
+> FFN
+> Q-Former
+> Vision
+> Ecnoder
+> AD-MLLM Fig. 2. Detailed architecture of LAD-Drive. The framework utilizes an AD-MLLM backbone to process multi-view images, LiDAR point clouds, and navigation instructions into contextualized hidden states. A dedicated action decoder (green) infers a meta-action distribution from these states, which is fused with the vehicle’s ego-status to form a joint state-intent representation. The diffusion decoder (orange) employs a shared transformer-based block to iteratively refine noisy trajectory anchors over two denoising steps, with each step’s output updating the input for the next. This refinement process utilizes sequential multi-head cross-attention (MHCA) layers to ground trajectory generation in both the global visual-language context and the predicted probabilistic intent, outputting refined trajectories and their corresponding confidence scores.
+
+implicit conditioning [18] or rigid one-hot encodings [15]– [17], LAD-Drive structurally disentangles high-level intention from low-level planning by employing a dedicated action decoder to predict an explicit meta-action distribution. This probabilistic conditioning enables the system to navigate high-uncertainty scenarios effectively, guiding a continuous diffusion decoder to generate robust trajectories that strictly adhere to semantic navigation instructions. III. M ETHOD 
+
+We formulate the task of end-to-end autonomous driving as learning a conditional distribution P (τ | O , I) that maps multimodal sensor observations O and natural language navi-gation instructions I to a future trajectory τ = {w1, . . . , w T },where wi ∈ R2 represents waypoints in the vehicle’s local coordinate frame. While regression approaches based on MLPs or GRUs approximate the conditional expectation 
+
+E[τ | O , I], this formulation can struggle in highly multi-modal scenarios where multiple paths are valid by averaging divergent paths into suboptimal trajectories. Instead, we propose to explicitly preserve the multimodality of the driving scene. We achieve this by structurally disentangling high-level intention from low-level execution by introducing an intermediate probabilistic belief state ˆp = P (A | O , I),representing the meta-action distribution over the discrete action space A. The trajectory generation is then formulated as a diffusion process conditioned jointly on the observations and this explicit belief state: 
+
+P (τ | O , I) ≈ P (τ | ˆp, O, I) (1) To instantiate this formulation, our model utilizes an MLLM tailored for autonomous driving (AD-MLLM) as its central semantic backbone, following the work of [6]. The architecture leverages an LLM to process the multimodal context, integrating both sensor and natural language inputs. Specifically, a Vision Encoder first transforms multi-view camera and LiDAR features into a unified Bird’s-Eye-View (BEV) representation. Utilizing a Q-Former [32], the model then compresses these high-dimensional BEV features into a fixed set of learned scene tokens that are projected into the language space. By treating the scene tokens and navigational instructions as a causal sequence, the LLM predicts a contextually aware latent representation of hidden states. To form the explicit belief state, a dedicated action decoder infers the meta-action distribution directly from these states. These outputs, combined with the vehicle’s ego-status, serve as probabilistic conditioning signals for a downstream diffusion decoder, that iteratively refines noisy trajectories into refined trajectories that are kinematically consistent and semantically grounded in the perceived scene. The architecture is shown in Fig. 2. 
+
+A. Action Decoder 
+
+The action decoder infers high-level driving actions from the LLM’s contextualized hidden states hLLM ∈ R4096 . By explicitly supervising this module, we enforce an instruction-action alignment that bridges the gap between semantic intent and geometric execution, thereby mitigating ambiguous or causally inconsistent maneuvers. Furthermore, outputting discrete, human-understandable actions significantly enhances the overall interpretability of the model’s behavior. Following the lateral action space defined in [18], we define the discrete set of lateral maneuvers as Alat , comprising six categories: 
+
+Lane Follow , Straight , Left , Right , Lane Change Left , and 
+
+Lane Change Right . As illustrated in Fig. 2, the decoder consists of a multi-layer feed-forward neural network (FFN) that outputs a probability distribution ˆplat ∈ R|A lat | via a terminal softmax layer. While our architecture is designed to support decoupled lateral and longitudinal heads, our empirical analysis indicates that conditioning the diffusion process solely on lateral intent yields superior performance. We hypothesize that because longitudinal dynamics are largely governed by the vehicle’s ego-status and immediate spatial constraints, a high-Fig. 3. Anchor trajectories generated via k-means clustering on training trajectories to provide motion priors for the initialization of the truncated diffusion process. 
+
+level longitudinal head introduces redundant semantic noise. Consequently, for our primary configuration, the probabilistic belief state ˆp is formed exclusively from the lateral action distribution ˆplat . This provides a focused conditioning signal that resolves navigational ambiguity without compromising low-level planning stability. 
+
+B. Diffusion Decoder 
+
+For low-level planning, we propose a generative diffusion decoder based on the truncated diffusion policy introduced in [21]. Unlike existing methods that leverage explicit spatial representations, such as BEV maps, our decoder operates directly on the contextualized hidden states hLLM .Because these embeddings encapsulate a rich, compressed representation of the driving scene, historical context and navigational instructions, the generative process can flexibly condition on this semantic knowledge to natively preserve the multimodality of the driving environment. 
+
+a) Anchor Encoding: The diffusion decoder requires a set of anchor trajectories A = {ai ∈ RT ×2}Na
+
+> i=1
+
+, where 
+
+T = 5 waypoints and Na = 20 anchors. While previous works [21] utilize static anchors derived from datasets such as Navsim [33], we instead propose to domain-align our anchors to optimally capture the underlying properties of the operational domain. Consequently, we generate this domain-aligned set of anchors by applying k-means clustering directly to the expert trajectories of our target training distribution, as shown in Fig. 3. This data-driven initialization ensures that the motion priors accurately reflect the specific kinematic constraints and speed profiles of the evaluation environment, enabling the model to refine feasible paths with reduced planning complexity. To embed these motion priors, a 2-layer MLP encoder maps them into a shared latent space, yielding 
+
+za ∈ RNa×d, where d = 512 .
+
+b) Feature Bottleneck: While recent methods such as ORION [18] directly utilize raw, high-dimensional LLM hidden states as “planning tokens” to condition trajectory prediction, they report significant challenges in aligning these reasoning features with diffusion-based action spaces. Our empirical analysis confirms this. We observe that directly coupling the full 4096-dimensional LLM representation to the diffusion decoder leads to severely degraded driving performance (detailed in Sec. IV). We attribute this to a severe representation mismatch and dimensionality overload. As the raw LLM embeddings are heavily optimized for autoregressive linguistic prediction, they encapsulate broad, abstract world knowledge that is extraneous to low-level spatial planning. Injecting this high-dimensional semantic noise directly into the denoising process overwhelms the trajectory refinement. To resolve this alignment issue and stabilize the generative process, we introduce a structural feature bottleneck that maps the LLM hidden states hLLM into a compact d-dimensional latent space via a two-layer MLP, resulting in h′ 
+
+> LLM
+
+∈ Rd.As shown in Fig. 2, this projection acts as a semantic filter based on the information bottleneck principle, ensuring the diffusion decoder processes only the most relevant features pertaining to navigational intent and spatial context. 
+
+c) State-Intent Conditioning: To ground the trajectory decoding, we introduce a joint state-intent representation. While we explicitly preserve navigational uncertainty by conditioning on the continuous probabilistic belief state ˆp,high-level semantic intent alone is insufficient for low-level planning. To ensure the generated paths are kinematically feasible, the trajectory formulation must be strictly anchored to the vehicle’s current physical dynamics. Therefore, as illustrated in Fig. 2, we concatenate the belief state ˆp with the vehicle’s ego-status e (current velocity and yaw angle) to form a unified conditioning vector c = e ⊕ ˆp. This fusion explicitly couples what the vehicle intends to do with how it is currently moving, providing a comprehensive kinematic-semantic prior. Finally, this joint vector is mapped into the shared latent space via a two-layer MLP to obtain zsi ∈ Rd.
+
+d) Iterative Refinement: Having established the requisite geometric, semantic, and kinematic representations, the diffu-sion decoder begins the iterative generation process. Following the truncated diffusion paradigm [21], the decoder performs 
+
+N = 2 refinement steps on k-means anchors initialized with Gaussian noise. By starting from these noisy priors rather than pure noise, the progressive denoising process efficiently shifts the candidate trajectories toward scene-adaptive, kinematically feasible paths. To ensure the generated trajectories are contextually aware, the anchor embeddings za first attend to the projected LLM hidden states h′ 
+
+> LLM
+
+via a multi-head cross-attention (MHCA) layer, formulated as ht = MHCA (za, h′
+
+> LLM
+
+, h′
+
+> LLM
+
+).Functioning as a context attention mechanism, this block grounds the trajectory in the global visual-language context, enabling the planner to focus on the perceived scene layout and the provided navigation instructions. This is followed by a second MHCA layer that integrates the state-intent representation zsi : ht = MHCA (ht, zsi , zsi ). Operating as a guidance attention mechanism, this step explicitly conditions the refinement process on the predicted intention and physical state. This ensures the generated path adheres to the high-level decision made by the action decoder while strictly respecting the vehicle’s dynamic limits. By structuring the diffusion process with these sequential conditioning steps, the model effectively resolves the disconnect between high-level semantic planning and low-level execution. The fused features ht are subsequently processed by an FFN and modulated by a timestep embedding layer, which dynamically adjusts the latent features via scale and shift parameters based on the current diffusion step. Finally, the decoder branches into two specialized MLP heads: a waypoint head predicts offsets that iteratively deform the initial noisy anchors via a residual connection, and a classification head generates corresponding trajectory confidence scores. 
+
+C. Training Strategy 
+
+For training the diffusion decoder, we adapt the truncated denoising schedule from [21]. The diffusion decoder fdec 
+
+processes the noisy anchors Ynoisy alongside our explicitly defined conditioning representations to predict Na refined trajectories ˆY = {ˆyi}Na 
+
+> i=1
+
+and their confidence scores ˆs =
+
+{ˆsi}Na
+
+> i=1
+
+: ˆY, ˆs = fdec (Ynoisy , h′
+
+> LLM
+
+, zsi ). (2) To supervise the multimodality of the predictions without inducing mode collapse, we employ a closest-anchor matching strategy. The anchor with the minimum distance to the ground-truth trajectory yGT is assigned the positive label si = 1 ,while all others are marked si = 0 . The planning objective combines a binary cross-entropy (BCE) classification loss across all anchors with an L1 regression loss ( Lwp ) applied exclusively to the positive anchor ˆypos :
+
+Lplan = λwp Lwp (ˆypos , yGT ) + λcls 
+
+> Na
+
+X
+
+> i=1
+
+BCE (ˆ si, s i), (3) where λwp = 8 and λcls = 10 are hyperparameters balancing the two objectives. The final training objective incorporates a standard cross-entropy (CE) loss to explicitly supervise the action decoder. Using the one-hot encoded ground-truth action aGT , the total loss is formulated as: 
+
+Ltotal = Lplan + λaction CE (ˆ p, aGT ). (4) We adopt a two-stage training strategy designed to decouple the learning of spatial motion from semantic reasoning. 
+
+a) Spatial Grounding: During the initial stage, the loss contribution of the action decoder is masked ( λaction = 0 ). The primary objective is to train the Q-Former [32] and the diffusion decoder to generate physically valid paths that are strictly consistent with the visual scene. By explicitly grounding the diffusion process in the extracted scene tokens, the model establishes a robust foundation for kinematically feasible trajectory generation and spatial awareness prior to any complex semantic alignment. 
+
+b) Semantic Alignment: In the second stage, the action decoder is unmasked ( λaction = 1 ) and contributes to the total loss. This stage encourages the model to establish a latent mapping between the refined trajectories and their correspond-ing high-level semantic actions. Specifically, the diffusion decoder learns to modulate its spatial refinement based on the probabilistic belief state ˆp, effectively aligning the vehicle’s generated maneuvers with the high-level intention. IV. E XPERIMENTS 
+
+A. Benchmark and Metrics 
+
+To evaluate our method in a challenging instruction-following setting, we utilize the LangAuto benchmark [6] within the CARLA simulator [34]. Given that our method is specifically designed to process natural language directives rather than discrete goal points, we use LangAuto as the only existing closed-loop evaluation framework that supports such guidance. The benchmark challenges agents to navigate eight diverse towns across three tracks based on route length: Tiny 
+
+(< 150 m), Short (150 − 500 m), and Long (> 500 m). We report standard CARLA metrics: Route Completion (RC) for the percentage of distance traversed, Infraction Score (IS) as a multiplicative safety penalty for collisions and traffic violations, and the primary composite metric, Driving Score (DS), defined as the product of RC and IS. Consistent with the LangAuto protocol, all reported results represent the average of three independent evaluation runs. 
+
+B. Implementation Details 1) Agent and Controller Optimization: Beyond standard baseline evaluation, we address two critical engineering bottlenecks in LMDrive, significantly improving its baseline performance and creating a highly competitive benchmark. First, to prevent the accumulation of stale temporal noise and distributional drift over long horizons, we remove the baseline’s prediction head for an instruction-based history reset and enforce a strict 40-frame sliding window during inference, matching the training distribution’s receptive field. Second, we observed that the official LMDrive checkpoint is significantly under-calibrated for low-level lateral execution. Following insights from [7], we stabilize the lateral dynamics by optimizing the PID controller coefficients, decreasing the proportional gain to 1.2 while increasing the integral and derivative gains to 0.8 and 0.35, respectively. 
+
+2) Training Configuration: We initialize the AD-MLLM using the official LMDrive checkpoint [6], freezing the LLaVA-v1.5 [35] backbone and vision encoder to preserve pre-trained semantic knowledge while only fine-tuning the Q-Former and training the proposed action and diffusion decoders from scratch. Replacing the standard regression head, our diffusion decoder employs an efficient truncated denoising strategy initialized from Na = 20 clustered anchors with only two denoising steps for both training and inference. The model is trained on a subset of the GraphPilot dataset [36]. We use the raw sensor data and navigation instructions but deliberately omit scene-graph annotations to ensure the training protocol remains comparable to the original LMDrive baseline. During inference, the highest-scoring trajectory is selected to guide longitudinal and lateral PID controllers in generating discrete control commands. We employ eight NVIDIA L40s GPUs with a global batch size of 16 and a weight decay of 0.1, following a linear warmup cosine learning rate schedule that starts at 5 × 10 −7, peaks at 2 × 10 −5, and decays to 1 × 10 −6.The training spans a total of six epochs, divided equally into the two proposed stages, and requires approximately seven hours to complete. TABLE I LANG AUTO PERFORMANCE . B EST RESULTS HIGHLIGHTED IN BOLD .Method Venue Tiny Short Long Mean DS ↑ RC ↑ IS ↑ DS ↑ RC ↑ IS ↑ DS ↑ RC ↑ IS ↑ DS ↑ RC ↑ IS ↑                                                                                                                                                                      
+
+> LMDrive [6] (Reported) CVPR’24 66.5 77.9 0.85 50.6 60.0 0.84 36.2 46.6 0.81 51.1 61.5 0.83 LMDrive [6] (Checkpoint) CVPR’24 60.7 71.0 0.82 41.3 57.0 0.79 26.8 36.5 0.77 42.9 54.8 0.79 AD-H [15] arXiv’24 77.5 85.1 0.91 56.1 68.0 0.78 44.0 53.2 0.83 59.2 68.8 0.84 BEVDriver [7] IROS’25 70.2 81.3 0.87 66.7 77.8 0.87 48.9 59.7 0.82 61.9 72.9 0.85 SToRM [27] arXiv’26 78.8 86.9 0.92 64.5 74.7 0.88 44.2 56.8 0.82 62.5 72.8 0.87 VLDrive [26] ICCV’25 81.9 85.5 0.94 67.4 78.1 0.85 43.8 54.5 0.84 64.4 72.7 0.88 AdaDrive [25] ICCV’25 80.9 87.6 0.90 70.6 85.3 0.81 42.9 53.4 0.82 64.8 75.4 0.84
+> LAD-Drive (Ours) 83.5 87.0 0.95 71.3 78.1 0.89 49.8 58.3 0.86 68.2 74.5 0.90
+> TABLE II DETAILED INFRACTION AND EFFICIENCY ANALYSIS ,INCLUDING MEAN TOTAL MODEL LATENCY [MS ]AND DECODER PARAMETER COUNT [M]. Method DS ↑RC ↑IS ↑CP ↓CV ↓CL ↓RL ↓SS ↓Off ↓RD ↓TO ↓AB ↓DP ↓Latency ↓
+> LMDrive 42.9 54.8 0.80 0.08 2.83 4.28 2.31 0.00 3.79 11.95 2.93 1.63 33.61 40.15 LAD-Drive (Ours) 68.2 74.5 0.90 0.02 0.67 1.20 1.60 0.11 1.10 2.31 2.68 2.48 32.13 47.04 CP: Collision Pedestrians, CV: Collision Vehicles, CL: Collision Layout, RL: Red Light, SS: Stop Sign, Off: Off-Road, RD: Route Deviation, TO: Timeout, AB: Agent Blocked, DP: Decoder Parameter Count, Latency measured on a single NVIDIA L40s GPU.
+
+C. Results 
+
+We present the comparison of our method against the baseline LMDrive [6] and current state-of-the-art methods in Tab. I. LAD-Drive achieves a new state-of-the-art performance with a mean DS of 68.2, outperforming the LMDrive baseline (42.9) by a substantial margin of +59% and surpassing recent approaches such as AdaDrive (64.8) and VLDrive (64.4). We attribute the substantial improvements in RC com-pared to the baseline to the structural disentanglement of intention and execution. The baseline’s significantly lower RC values, which are particularly evident in both Short 
+
+and Long benchmarks, indicate fundamental limitations in instruction-following capability, which frequently result in route deviations and consequent early episode termination. In contrast, our method mitigates these issues, maintaining robust adherence to navigation goals over extended horizons. Furthermore, even when compared with state-of-the-art meth-ods that achieve comparable RC levels, such as BEVDriver, VLDrive, and AdaDrive, LAD-Drive consistently achieves a higher IS. This distinction validates the effectiveness of our disentangled architecture. By explicitly conditioning the diffusion process on the predicted meta-action distribution, our probabilistic action conditioning effectively regularizes the driving behavior, ensuring that driving progress does not come at the expense of safety. 
+
+D. Ablations 
+
+To further investigate the source of these improvements, Tab. II details the infraction types. Compared to the official LMDrive checkpoint, our method drastically reduces collision rates with dynamic agents. Collision with vehicles (CV) drops by 76% (2.83 to 0.67) and collision with pedestrians (CP) decreases by 80% (0.08 to 0.02). A safety improvement is visually depicted in the right columns of Fig. 4. Equally important is the improvement in spatial grounding. Violations related to physical control, such as collision with layout (CL) and off-road (Off) events, are reduced by approximately 72% and 71%, respectively. As illustrated in the middle column of Fig. 4, this confirms that our diffusion decoder generates trajectories that are not only semantically consistent but also physically compliant with the road boundaries. The Route Deviation (RD) metric improves significantly, decreasing from 11.95 to 2.31. As demonstrated in the left column of Fig. 4, this reduction can be primarily attributed to our effective probabilistic meta-action conditioning, which ensures that the diffusion decoder remains strictly aligned with the intended navigation goal. In contrast, standard regression-based baselines are often computationally overloaded, as they attempt to resolve high-level semantic intentions and low-level spatial control simultaneously within a single head. This dual burden frequently results in erroneous lateral decisions, such as incorrect turns at intersections, which cause the agent to terminate episodes prematurely. By disentangling these tasks, LAD-Drive effectively regularizes the trajectory generation process to prevent navigational failures. This architectural refinement achieves a significant performance leap while actually reducing the decoder footprint by 1.48M parameters compared to the baseline. Although the two-step denoising process introduces a modest increase in inference overhead (+6.89ms), the model maintains a highly competitive total real-time latency of 47.04ms. To validate the contribution of each architectural com-ponent, we conduct a systematic ablation study presented in Tab. III. Initial results demonstrate that fine-tuning the base model and optimizing the agent (row 2) yields a substantial performance leap over the original checkpoint (DS 42.9 to 60.6). This establishes a strong regression baseline, ensuring that subsequent gains are attributable to architectural innovations rather than training recipe or parameter improvements. Simply substituting the regression Off-Road & Collision Layout Route Deviation Collision Vehicle LMDrive LAD-Drive    
+
+> Make a left turn. Continue straight. Keep going on this road. Make a right turn at the intersection.
+
+Fig. 4. Qualitative comparison between LMDrive (top row) and LAD-Drive (bottom row). For LAD-Drive, the generated multimodal trajectories are visualized using a heat map color scheme, with paths ranging from white (low confidence) to red (high confidence). The predicted meta-action distribution from the action decoder is displayed in the top right of each LAD-Drive panel (L: Left, CLL: Change Lane Left, S: Straight, LF: Lane Follow, CLR: Change Lane Right, R: Right). Column 1 (Route Deviation): Despite the instruction to make a left turn, LMDrive turns right. LAD-Drive executes the correct intention while safely avoiding a cyclist. Column 2 (Off-Road & Collision Layout): LMDrive fails to interpret the road layout and instruction, driving off-road into a fence, whereas LAD-Drive successfully continues straight. Columns 3 & 4 (Collision Vehicle): In the third scenario, LMDrive collides head-on with a truck, while LAD-Drive safely navigates the lane. In the fourth scenario, LMDrive initiates an unsafe left lane change into traffic, ignoring the right-turn navigation instruction. In contrast, LAD-Drive effectively handles dynamic agents and remains safely on the road, demonstrating robustness even when the action decoder exhibits slight uncertainty. TABLE III ABLATION STUDY ON MODEL COMPONENTS .Traj. Head FT & Opt. Lat. Act. Long. Act. Ego DS ↑ RC ↑ IS ↑
+
+Baseline 42.9 54.8 0.79 Baseline ✓ 60.6 66.1 0.91 
+
+Diffusion ✓ 59.4 66.0 0.89 Diffusion ✓ ✓ 60.0 68.1 0.88 Diffusion ✓ ✓ 64.8 72.2 0.88 Diffusion ✓ ✓ ✓ 68.2 74.5 0.90 Diffusion ✓ ✓ ✓ ✓ 65.9 72.4 0.90 FT & Opt.: Fine-Tuning and Controller Optimization, Lat. Act.: Lateral Action, Long. Act.: Longitudinal Action, Ego: Ego-Status. TABLE IV ABLATION STUDY ON LATENT DIMENSION OF 
+
+DIFFUSION DECODER .Lat. Dim. DS ↑ RC ↑ IS ↑
+
+128 63.6 72.3 0.87 256 66.9 73.9 0.90 512 68.2 74.5 0.90 1024 63.2 68.1 0.91 4096 48.5 52.4 0.92 
+
+Lat. Dim.: Latent Dimension. 
+
+head with a diffusion decoder (row 3) results in a slight performance degradation (DS 60.6 to 59.4). This confirms that while generative models offer multimodal capacity, they are inherently unstable without sufficient state guidance, often producing diverse but physically inconsistent trajectories. We observe a critical trade-off when conditioning mechanisms are isolated. Integrating only the lateral action decoder (row 4) provides semantic guidance on what to do, yielding a marginal overall improvement (DS 60.0). However, the lack of physical state awareness prevents the model from executing these intentions consistently over time. In contrast, relying solely on ego-status grounding (row 5) significantly improves physical stability (DS 64.8) by ensuring temporal consistency, yet without explicit action predictions, the model struggles to resolve navigational ambiguities in complex scenarios. The combined configuration (row 6) achieves the highest performance (DS 68.2), validating the necessary synergy. High-level lateral action guidance resolves semantic ambiguity while low-level ego-grounding ensures physical feasibility. Finally, introducing a longitudinal action head (row 7) degrades performance (DS 65.9). This empirical result corroborates our hypothesis that as longitudinal dynamics are largely governed by the vehicle’s ego-status and immediate spatial constraints, forcing the diffusion process to also condition on a high-level longitudinal command introduces redundant semantic noise that disrupts the refinement process. Tab. IV details the impact of the diffusion decoder’s latent dimension size. We observe a clear performance peak at 
+
+d = 512 , which optimally balances feature compression and representational capacity to achieve the highest performance (DS 68.2). Constraining the bottleneck too aggressively (d = 128 ) restricts the model’s ability to capture complex scene dynamics, whereas expanding it beyond 512 degrades navigational accuracy. Most notably, bypassing the bottleneck to directly couple the raw 4096-dimensional LLM embeddings results in a severe performance collapse (DS 48.5). This empirical drop explicitly confirms our structural hypothesis that in the absence of a semantic filter, the model suffers from a severe representation mismatch and dimensionality overload. V. C ONCLUSION 
+
+We introduced LAD-Drive to resolve the modality gap between high-level language reasoning and continuous trajec-tory planning. LAD-Drive employs an action decoder to infer a probabilistic meta-action distribution, structurally disentan-gling semantic intention from spatial execution. This forms an explicit belief state that preserves critical navigational uncertainty. Fused with the vehicle’s kinematic ego-status, this distribution provides robust probabilistic conditioning for an action-aware diffusion decoder. Coupled with a structural feature bottleneck that filters high-dimensional semantic noise from the LLM, our framework efficiently translates abstract reasoning into safe, executable trajectories. Exten-sive evaluations on the LangAuto benchmark validate our approach. LAD-Drive achieves state-of-the-art performance, outperforming the baseline by 59% in Driving Score. At the same time, this progress is accompanied by substantial improvements in safety and instruction following, reducing vehicle and layout collisions by 76% and 72%, respectively, while decreasing route deviations by 81%. REFERENCES [1] J. Mao, Y. Qian, J. Ye, H. Zhao, and Y. Wang, “Gpt-driver: Learning to drive with gpt,” arXiv preprint arXiv:2310.01415 , 2023. [2] Z. Xu, Y. Zhang, E. Xie, Z. Zhao, Y. Guo, K.-Y. K. Wong, Z. Li, and H. Zhao, “Drivegpt4: Interpretable end-to-end autonomous driving via large language model,” IEEE Robotics and Automation Letters , vol. 9, no. 10, pp. 8186–8193, 2024. [3] X. Tian, J. Gu, B. Li, Y. Liu, Y. Wang, Z. Zhao, K. Zhan, P. Jia, X. Lang, and H. Zhao, “Drivevlm: The convergence of autonomous driving and large vision-language models,” in 8th Annual Conference on Robot Learning , 2024. [4] Y. Li, K. Xiong, X. Guo, F. Li, S. Yan, G. Xu, L. Zhou, L. Chen, H. Sun, B. Wang et al. , “Recogdrive: A reinforced cognitive framework for end-to-end autonomous driving,” arXiv preprint arXiv:2506.08052 ,2025. [5] C. Xie, B. Sun, T. Li, J. Wu, Z. Hao, X. Lang, and H. Li, “Latentvla: Efficient vision-language models for autonomous driving via latent action prediction,” arXiv preprint arXiv:2601.05611 , 2026. [6] H. Shao, Y. Hu, L. Wang, G. Song, S. L. Waslander, Y. Liu, and H. Li, “Lmdrive: Closed-loop end-to-end driving with large language models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 15 120–15 130. [7] K. Winter, M. Azer, and F. B. Flohr, “Bevdriver: Leveraging bev maps in llms for robust closed-loop driving,” in IEEE/RSJ International Conference on Intelligent Robots and Systems , 2025. [8] K. Renz, L. Chen, E. Arani, and O. Sinavski, “Simlingo: Vision-only closed-loop autonomous driving with language-action alignment,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 11 993–12 003. [9] L. Yin, R. Ju, G. Guo, and E. Cheng, “Diffrefiner: Coarse to fine trajectory planning via diffusion refinement with semantic interaction for end to end autonomous driving,” arXiv preprint arXiv:2511.17150 ,2025. [10] K. Oksuz, A. Buburuzan, A. Knittel, Y. Yao, and P. K. Dokania, “Foun-dation models for trajectory planning in autonomous driving: A review of progress and open challenges,” arXiv preprint arXiv:2512.00021 ,2025. [11] S. Chen, B. Jiang, H. Gao, B. Liao et al. , “Vadv2: End-to-end vectorized autonomous driving via probabilistic planning,” arXiv preprint arXiv:2402.13243 , 2024. [12] Z. Zhou, T. Cai, S. Z. Zhao, Y. Zhang, Z. Huang, B. Zhou, and J. Ma, “Autovla: A vision-language-action model for end-to-end autonomous driving with adaptive reasoning and reinforcement fine-tuning,” Advances in Neural Information Processing Systems , 2025. [13] J. Wei, N. V ¨odisch, A. Rehr, C. Feist, and A. Valada, “Parkdiffusion: Heterogeneous multi-agent multi-modal trajectory prediction for au-tomated parking using diffusion models,” in IEEE/RSJ International Conference on Intelligent Robots and Systems , 2025, pp. 8297–8304. [14] J. Wei, A. Rehr, C. Feist, and A. Valada, “Parkdiffusion++: Ego inten-tion conditioned joint multi-agent trajectory prediction for automated parking using diffusion models,” arXiv preprint arXiv:2602.20923 ,2026. [15] Z. Zhang, S. Tang, Y. Zhang, T. Fu, Y. Wang, Y. Liu, D. Wang, J. Shao, L. Wang, and H. Lu, “Ad-h: Autonomous driving with hierarchical agents,” arXiv preprint arXiv:2406.03474 , 2024. [16] B. Jiang, S. Chen, B. Liao, X. Zhang, W. Yin et al. , “Senna: Bridging large vision-language models and end-to-end autonomous driving,” 
+
+arXiv preprint arXiv:2410.22313 , 2024. [17] A. Jiang, Y. Gao, Z. Sun, Y. Wang, J. Wang, J. Chai, Q. Cao et al. ,“Diffvla: Vision-language guided diffusion planning for autonomous driving,” arXiv preprint arXiv:2505.19381 , 2025. [18] H. Fu, D. Zhang, Z. Zhao, J. Cui, D. Liang, C. Zhang, D. Zhang, H. Xie, B. Wang, and X. Bai, “Orion: A holistic end-to-end autonomous driving framework by vision-language instructed action generation,” in 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 24 823–24 834. [19] Y. Hu, J. Yang, L. Chen, K. Li, C. Sima, X. Zhu, S. Chai, S. Du, T. Lin, W. Wang et al. , “Planning-oriented autonomous driving,” in 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 17 853–17 862. [20] Y. Zheng, R. Liang, K. Zheng, J. Zheng, L. Mao, J. Li, W. Gu, R. Ai, S. E. Li, X. Zhan et al. , “Diffusion-based planning for autonomous driving with flexible guidance,” in International Conference on Learning Representations , 2025. [21] B. Liao, S. Chen, H. Yin, B. Jiang, C. Wang, S. Yan, X. Zhang, X. Li, Y. Zhang, Q. Zhang et al. , “Diffusiondrive: Truncated diffusion model for end-to-end autonomous driving,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 12 037–12 047. [22] Z. Xing, X. Zhang, Y. Hu, B. Jiang, T. He, Q. Zhang, X. Long, and W. Yin, “Goalflow: Goal-driven flow matching for multimodal trajec-tories generation in end-to-end autonomous driving,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025. [23] S. Liu, W. Chen, W. Li, Z. Wang, L. Yang, J. Huang, Y. Zhang, Z. Huang, Z. Cheng, and H. Yang, “Bridgedrive: Diffusion bridge policy for closed-loop trajectory planning in autonomous driving,” 
+
+arXiv preprint arXiv:2509.23589 , 2025. [24] D. Fu, X. Li, L. Wen, M. Dou, P. Cai, B. Shi, and Y. Qiao, “Drive like a human: Rethinking autonomous driving with large language models,” in IEEE/CVF Winter Conference on Applications of Computer Vision Workshops , 2024, pp. 910–919. [25] R. Zhang, J. Xie, W. Zhang, W. Chen, X. Tan, X. Wan, and G. Li, “Adadrive: Self-adaptive slow-fast system for language-grounded autonomous driving,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 5112–5121. [26] R. Zhang, W. Zhang, X. Tan, S. Yang, X. Wan, X. Luo, and G. Li, “Vldrive: Vision-augmented lightweight mllms for efficient language-grounded autonomous driving,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 5923–5933. [27] S. H. Kim, J. B. Park, D. Y. Koo, H. G. Park, and I. Y. Chun, “Storm: Supervised token reduction for multi-modal llms toward efficient end-to-end autonomous driving,” arXiv preprint arXiv:2602.11656 , 2026. [28] F. Schmidt, N. M. K. A. Nazar, M. Enzweiler, and A. Valada, “Enhancing llm-based autonomous driving with modular traffic light and sign recognition,” arXiv preprint arXiv:2511.14391 , 2025. [29] Y. Ma, Y. Cao, W. Ding, S. Zhang, Y. Wang, B. Ivanovic, M. Jiang, M. Pavone, and C. Xiao, “dvlm-ad: Enhance diffusion vision-language-model for driving via controllable reasoning,” arXiv preprint arXiv:2512.04459 , 2025. [30] J. Li, J. Wu, D. Hu, X. Huang, B. Sun, Z. Hao, X. Lang, X. Zhu, and L. Zhang, “Sgdrive: Scene-to-goal hierarchical world cognition for autonomous driving,” arXiv preprint arXiv:2601.05640 , 2026. [31] Z. Liu, R. Huang, R. Yang, S. Yan, Z. Wang, L. Hou, D. Lin, X. Bai, and H. Zhao, “Drivepi: Spatial-aware 4d mllm for unified autonomous driving understanding, perception, prediction and planning,” arXiv preprint arXiv:2512.12799 , 2025. [32] J. Li, D. Li, S. Savarese, and S. Hoi, “Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models,” in International conference on machine learning , 2023. [33] D. Dauner, M. Hallgarten, T. Li, X. Weng, Z. Huang et al. , “Navsim: Data-driven non-reactive autonomous vehicle simulation and bench-marking,” Advances in Neural Information Processing Systems , vol. 37, pp. 28 706–28 719, 2024. [34] A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, “CARLA: An open urban driving simulator,” in Proceedings of the 1st Annual Conference on Robot Learning , 2017, pp. 1–16. [35] H. Liu, C. Li, Y. Li, and Y. J. Lee, “Improved baselines with visual instruction tuning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2024, pp. 26 296–26 306. [36] F. Schmidt, M. Enzweiler, and A. Valada, “Graphpilot: Grounded scene graph conditioning for language-based autonomous driving,” 
+
+arXiv preprint arXiv:2511.11266 , 2025.

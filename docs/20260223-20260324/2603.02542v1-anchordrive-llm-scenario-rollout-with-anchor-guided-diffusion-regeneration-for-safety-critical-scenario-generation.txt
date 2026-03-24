@@ -1,0 +1,432 @@
+Title: AnchorDrive: LLM Scenario Rollout with Anchor-Guided Diffusion Regeneration for Safety-Critical Scenario Generation
+
+URL Source: https://arxiv.org/pdf/2603.02542v1
+
+Published Time: Wed, 04 Mar 2026 01:31:25 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 1
+
+# AnchorDrive: LLM Scenario Rollout with Anchor-Guided Diffusion Regeneration for Safety-Critical Scenario Generation 
+
+Zhulin Jiang ∗, Zetao Li ∗, Cheng Wang, Ziwen Wang, Chen Xiong †
+
+Abstract —Autonomous driving systems require comprehensive evaluation in safety-critical scenarios to ensure safety and robust-ness. However, such scenarios are rare and difficult to collect from real-world driving data, necessitating simulation-based synthesis. Yet, existing methods often exhibit limitations in both controlla-bility and realism. From a capability perspective, LLMs excel at controllable generation guided by natural language instructions, while diffusion models are better suited for producing trajectories consistent with realistic driving distributions. Leveraging their complementary strengths, we propose AnchorDrive, a two-stage safety-critical scenario generation framework. In the first stage, we deploy an LLM as a driver agent within a closed-loop simu-lation, which reasons and iteratively outputs control commands under natural language constraints; a plan assessor reviews these commands and provides corrective feedback, enabling semanti-cally controllable scenario generation. In the second stage, the LLM extracts key anchor points from the first-stage trajectories as guidance objectives, which jointly with other guidance terms steer the diffusion model to regenerate complete trajectories with improved realism while preserving user-specified intent. Experiments on the highD dataset demonstrate that AnchorDrive achieves superior overall performance in criticality, realism, and controllability, validating its effectiveness for generating controllable and realistic safety-critical scenarios. 
+
+Index Terms —Autonomous driving, safety-critical scenario generation, large language model, diffusion model, trajectory generation 
+
+I. I NTRODUCTION 
+
+As autonomous driving technology continues to advance, validating the safety and robustness of autonomous driving systems across diverse scenarios has become an indispensable step toward practical deployment [1]–[3]. Testing in safety-critical scenarios is particularly essential, as such scenarios serve as the core basis for assessing system safety capabil-ities. These scenarios typically exhibit high-risk interaction characteristics: autonomous vehicles may encounter sudden or unconventional behaviors from other road users during interactions, significantly elevating the likelihood of colli-sions [4], [5]. However, real-world road testing is not only resource-intensive but also makes it difficult to systemati-cally collect sufficient and adequately dangerous safety-critical 
+
+> ∗
+
+These authors contributed equally to this work. 
+
+> †
+
+Corresponding author (e-mail: xiongch8@mail.sysu.edu.cn). All authors are with the School of Intelligent Systems Engineering, Sun Yat-sen University, Shenzhen, China. The authors would like to thank the fundings of the National Key R&D Program of China (Grant No. 2024YFB4303400), Natural Science Foundation of Guangdong Province, China (Grant No. 2025A1515010166) and the Shenzhen Fundamental Research Program, China (Grant No. JCYJ20240813151301003). 
+
+Fig. 1. Illustrative example and main challenges of scenario generation. The blue vehicle represents the ego vehicle, while the red vehicle represents the adversarial vehicle. 
+
+samples, resulting in limited evaluation coverage. In contrast, simulation-based safety-critical scenario generation and testing has become a prevalent approach due to its lower cost, higher efficiency, and ease of scalability and reproducibility. As illustrated in Fig. 1, methods for generating safety-critical scenarios in simulation typically configure road struc-tures, traffic participants, their initial states, and behavioral policies within virtual environments, synthesizing trajectories that trigger high-risk interactions for safety evaluation of the system under test. Such generation requires the results to possess both realism and controllability. Realism requires that kinematic characteristics of generated trajectories (e.g., velocity, acceleration) statistically approximate real driving data distributions as closely as possible, while avoiding un-reasonable behaviors (e.g., lane departure), thereby preventing extreme and implausible scenarios. Controllability requires that generated results adhere to user semantic descriptions, enabling targeted generation of specified risk interaction sce-narios. However, existing methods often struggle to satisfy both realism and controllability. Early safety-critical scenario generation methods typically relied on simulation platforms such as CARLA [6] and SUMO [7], where researchers manually or semi-automatically designed scenarios based on ontologies [8], [9]. Such methods offer strong controllability but suffer from low efficiency,  
+
+> arXiv:2603.02542v1 [cs.AI] 3 Mar 2026 IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 2
+
+heavy reliance on expert knowledge, and insufficient realism. To improve the realism of generated scenarios, deep learning-based methods have emerged. These methods typically train models on large-scale real driving data and generate safety-critical scenarios at test time through optimization-based tech-niques or gradient guidance [10]–[13]. Since deep learning models can capture behavioral patterns present in the training distribution, such methods exhibit clear advantages in scenario realism; however, they often struggle to finely control gener-ation results, exhibiting limitations in controllability. The advancement of generative AI offers new possibilities for addressing these challenges. LLMs have demonstrated exceptional capabilities in natural language understanding and code generation [14]–[16], making them naturally suited as interactive interfaces for users to describe safety-critical sce-narios via natural language. Works such as ChatScene and OmniTester compile user descriptions into scripts or config-uration files to drive simulators for scenario generation [17], [18], achieving a text-to-scenario paradigm that significantly lowers the barrier for scenario construction; however, gen-erated trajectories still exhibit considerable gaps from real trajectory distributions. Meanwhile, LLMs have also been employed to translate semantic descriptions into loss terms for guiding diffusion model denoising [19], [20], enhancing controllability of deep learning-based methods to some ex-tent. However, the mapping from natural language to loss functions involves representational mismatches, and complex interactions are difficult to stably encode as loss functions, resulting in responses to instructions that remain insufficiently direct and fine-grained, with room for further improvement. Existing methods often generate scenarios in a single pipeline, which tends to result in insufficient realism or limited controllability. To address this, we decouple these two aspects: first solving the controllable generation problem, then addressing the realism problem. We draw inspiration from two recent lines of progress: end-to-end autonomous driving research has shown that LLM-based driver agents with “perception–reasoning–execution” closed-loop capabilities can stably translate high-level intentions into executable action sequences [21]–[24], enabling their adaptation as interac-tion process constructors for generating high-risk trajecto-ries consistent with user instructions. Meanwhile, diffusion models have demonstrated strong capabilities in fitting real data distributions for trajectory generation, and can guide the denoising process through anchor points to ensure generated trajectories satisfy specified conditions at critical moments and positions [25], [26], thereby producing trajectories that both pass through designated anchors and remain realistic. Based on this complementarity, we first employ an LLM-based driver agent to generate controllable scenarios, then use anchor-guided diffusion for trajectory regeneration, enabling results that achieve both controllability and realism. Therefore, we propose AnchorDrive, a two-stage LLM-guided safety-critical scenario generation framework. Our framework comprises two main modules: an LLM-based Sce-nario Rollout module for controllable scenario generation, and a trajectory regeneration module for optimization. In the first module, the LLM-based driver agent receives environment states and user natural language instructions, performs rea-soning under preset Chain-of-Thought (CoT) prompts, and iteratively outputs control commands; a plan assessor reviews these commands and provides corrective feedback upon fail-ures, suppressing unreasonable behaviors to stably generate safety-critical scenarios conforming to user instructions within the simulation closed-loop. In the second module, we utilize the LLM to analyze first-stage trajectories and automatically extract key anchor points, constructing these anchors along with other constraints as guidance objectives to form a loss function that guides the diffusion model’s denoising process for regenerating complete multi-vehicle trajectories. The an-chors preserve driving intentions and temporal structure of critical events from the first stage, while the diffusion prior enhances kinematic plausibility and statistical consistency, thereby improving scenario realism without altering scenario semantics (risk pattern type, key participants, and temporal ordering of critical events). In summary, the main contributions of this paper include:  
+
+> •
+
+We propose a safety-critical scenario generation method based on a closed-loop LLM-based driver agent: iter-atively outputting control sequences under natural lan-guage constraints, with review and corrective feedback from a plan assessor to suppress unreasonable behaviors, thereby stably generating high-risk interaction scenarios consistent with instruction semantics and achieving se-mantically controllable generation.  
+
+> •
+
+We design a diffusion model-based trajectory optimiza-tion mechanism: the LLM extracts a sparse set of key anchor points from generated trajectories, using these anchors along with other guidance objectives to steer diffusion denoising for multi-vehicle trajectory regener-ation and refinement, improving trajectory realism while preserving scenario semantics.  
+
+> •
+
+We propose the two-stage AnchorDrive framework and conduct systematic evaluation on the highD dataset. Experiments demonstrate superior overall performance across criticality, realism, and controllability metrics, validating the effectiveness for generating controllable and realistic safety-critical scenarios. The remainder of this paper is organized as follows: Section II reviews related work on safety-critical scenario generation; Section III presents the proposed AnchorDrive framework; Section IV provides experimental evaluation and component effectiveness analysis on highD; Section V con-cludes the paper and discusses future directions. II. R ELATED WORK 
+
+A. Traditional Scenario Generation Methods 
+
+Early scenario generation methods primarily relied on experts designing safety-critical scenarios within simulation platforms such as CARLA and SUMO, manually adjusting participants’ initial positions, velocities, and driving routes, or constructing collisions, near-misses, and traffic violations using ontologies and script templates [8], [9]. Such methods offer strong controllability at the parameter level but suffer from heavy reliance on domain knowledge, limited scalability, IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 3
+
+and difficulty maintaining consistency with real trajectory distributions [27]. Recent research has explored specific parameterized spaces within original scenarios to precisely locate adversarial pa-rameters using optimization-based methods [28]–[30]. For example, AdvSim [13] directly perturbs background vehicles in trajectory space to search for trajectories that cause plan-ner failures. Strive [12] introduces deep learning models to optimize in data-driven latent spaces while enhancing multi-vehicle interaction plausibility; other works train adversarial vehicles via reinforcement learning to learn dangerous ma-neuvers in closed-loop interactions [31], [32]. Although these methods can systematically discover challenging scenarios, the generated results are often determined by optimization objectives or reward designs, making it difficult to specify risk patterns at a high-level semantic layer, thus generally lacking semantic-level controllability. In recent years, guidance-based diffusion models have been introduced to scenario generation to improve controllability of deep learning-based methods. Works such as CTG guide the denoising sampling process through differentiable loss functions, STL constraints, or safety objectives for controllable trajectory generation [10]–[12]; SafeSim [26] further combines loss function guidance with partial diffusion in closed-loop simulation, enabling adjustment of collision types and risk levels while maintaining behavioral realism. However, such methods still heavily rely on manually designed loss functions or task-specific reward models; different adversarial objectives often require reconstructing loss functions, limiting flexible specification at the semantic level and reducing usability for non-expert users. 
+
+B. LLM-based Scenario Generation 
+
+Benefiting from strong capabilities in natural language un-derstanding, knowledge reasoning, and code generation, LLMs have been widely applied to scenario generation tasks in recent years [33], [34], demonstrating potential for generating realistic and controllable scenarios. One class of methods utilizes LLMs to compile user de-scriptions into intermediate representations such as scripts or configurations, defining participant initial states, interaction rules, and trigger conditions for rapid construction and batch generation. For example, LCTGen [35] uses LLMs to con-vert text queries into structured representations, then employs Transformers to generate traffic scenarios. ChatScene [17] ana-lyzes user descriptions via LLMs, translating natural language into Scenic scripts and executing them in CARLA to obtain corresponding scenarios. These methods significantly lower the barrier for scenario generation, allowing users to directly obtain target dangerous scenarios through simple descriptions; however, they still face the problem of insufficient scenario realism. Another class of methods combines LLMs with diffusion models. CTG++ [19] uses LLMs to convert user natural lan-guage instructions into differentiable guidance loss functions, applying gradient guidance during diffusion model denoising to ensure generated trajectories satisfy semantic constraints described in instructions. LD-Scene [20] applies this approach to safety-critical scenario generation, using chain-of-thought prompts to generate adversarial loss functions that guide latent diffusion models to generate specified types of safety-critical scenarios. However, the mapping from natural language to loss functions remains insufficiently direct, and complex interaction intents are difficult to stably encode as optimization objectives, thus limiting generation controllability. 
+
+C. LLM-based Driver Agents 
+
+Recent end-to-end autonomous driving research has begun deploying LLMs directly as driver agents, generating driving decisions in closed-loop within simulation environments [36]– [38]. [39] notes that LLMs can serve as high-level decision-makers, driving stably on roads. In early work, Fu et al. [21] constructed an LLM-driven closed-loop control framework in a simplified highway en-vironment: encoding surrounding information as concise text input to the LLM for discrete action selection with expla-nations. LMDrive [24] encodes front-view camera images with navigation text and inputs them to the LLM, which directly outputs steering angles and acceleration to control the vehicle, achieving navigation-text-guided end-to-end closed-loop control. DriveGPT4 [40] extends this paradigm to more open urban traffic, driving step-by-step reasoning through semantic summaries and outputting continuous control signals, demonstrating LLMs’ capabilities for long-horizon planning and complex interaction modeling. Overall, LLM-based driver agents possess the advantage of following natural language intent and generating interpretable driving behaviors in closed-loop interactions. Based on this, we adopt an LLM-based driver agent in the first stage to construct safety-critical scenarios consistent with user descrip-tions. III. M ETHODOLOGY 
+
+This section presents the technical details of the proposed AnchorDrive framework. We first provide a formal definition of the safety-critical scenario generation task, clarifying inputs, outputs, and notation; then we describe the specific implemen-tations of the first and second stages respectively. 
+
+A. Problem Formulation 
+
+Our objective is to generate controllable and realistic safety-critical interaction scenarios conditioned on natural language instructions. Each scenario contains N traffic participants, where the ego vehicle and adversarial vehicle are specified by user instruction I. We aim to make the adversarial vehicle collide with the ego vehicle in a user-specified manner while ensuring all vehicle trajectories remain realistic. A traffic scenario consists of a map M and state se-quences of N traffic participants, where the map contains lane topology, drivable areas, etc. We index traffic participants by i ∈ { 0, 1, . . . , N − 1}. At a discrete time step t (with time step length set by the simulator), the joint state of all participants is denoted as st = [ s0 
+
+> t
+
+, s 1 
+
+> t
+
+, . . . , s N −1 
+
+> t
+
+]. The IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 4
+
+single-vehicle state is defined as sit = ( xit, y it, θ it, v it), where 
+
+xit, y it, θ it, v it represent 2D position coordinates, heading angle, and velocity respectively. Given a history observation window of length Thist , we denote the history state sequence as 
+
+x = {st−Thist , s t−Thist +1 , . . . , s t}, i.e., historical states of all traffic participants over the past Thist time steps. We generate joint trajectories τ of all participants over the future prediction horizon [t+1 , t +T ], consisting of action sequence τ a and state sequence τ s: τ = [ τ a, τ s], where τ s = {st+1 , s t+2 , . . . , s t+T }
+
+and τ a = {at+1 , a t+2 , . . . , a t+T }. At time t, the joint action is defined as at = [ a0 
+
+> t
+
+, a 1 
+
+> t
+
+, . . . , a N −1 
+
+> t
+
+], where single-vehicle action ait = ( ˙ vit, ˙θit), with ˙vit and ˙θit representing acceleration and yaw rate respectively. The action sequence τ a is integrated via vehicle kinematics to obtain state sequence τ s, thus deter-mining future trajectory τ ; therefore, our task is essentially to predict action sequence τ a.User instruction I specifies the desired risk interaction pattern to generate (e.g., “adversarial vehicle cuts in causing rear-end collision”), which may include target participants, interaction manner, and expected risk outcome. Given inputs 
+
+(M, x, I ), we aim to generate future trajectory τ satisfying two requirements: 1) Controllability: the generated interaction process is consistent with user instruction description, with adversarial vehicle colliding with ego vehicle in the user-specified manner; 2) Realism: kinematic characteristics of generated trajectories statistically approximate real driving data distributions as closely as possible, while avoiding un-reasonable behaviors. Therefore, we formulate the problem as learning a conditional generative model 
+
+τ ∼ Pθ (τ | M, x, I ) (1) for directly generating multi-vehicle future joint trajectories τ
+
+conditioned on map M , historical observations x, and natu-ral language instruction I, yielding safety-critical interaction scenarios with both controllability and realism. 
+
+B. Stage 1: LLM-based Scenario Rollout 
+
+This section describes the closed-loop generation process of the first stage (LLM-based Scenario Rollout). As shown in Fig. 2, the generation process iterates with fixed-length frame windows as planning steps. At each planning step, the LLM-based driver agent reads global state and, after reasoning about the current situation, outputs the plan for that step, including driving intentions and corresponding per-frame control commands for both ego and adversarial vehicles. For convenient direct vehicle control, we represent each frame’s control command uniformly as (ax, a y ), representing lateral and longitudinal acceleration respectively. Subsequently, com-mands are sent to the LLM-based plan assessor for rapid review, focusing on “whether goal is advanced” and “whether rule constraints are violated.” If passed, the command is executed to update the scenario, and the planning decision is written to plan memory; if not passed, it returns to the LLM-based driver agent for plan revision. This closed-loop iterates by time steps until the goal is achieved or maximum simulation steps are reached. Specifically, this module comprises three submodules: 
+
+1) Global State Constructor: The global state constructor provides the LLM-based driver agent with global information required for decision-making, comprising three parts: user instruction, scenario state, and planning memory. User instruc-tion is the user’s natural language description of the desired scenario, e.g., “adversarial vehicle changes lanes to cut in front of ego vehicle causing rear-end collision.” Scenario state depicts current traffic conditions, including positions, heading angles, velocities, dimensions, and types of ego vehicle, adver-sarial vehicle, and background vehicles within a certain range, as well as road geometry information such as lane centerlines, road boundaries, and adjacent lane topology; scenario screen-shots are also provided to enhance LLM understanding of spatial relationships. Planning memory records summaries of executed planning steps during closed-loop iteration, including driving intentions, per-frame control commands, and executed trajectories for each step, serving as references for subsequent reasoning. 
+
+2) LLM-based Driver Agent: The LLM-based driver agent reads global state and generates driving decisions under prompt constraints. LLM reasoning effectiveness is signifi-cantly influenced by prompt design [41], [42]; to improve rea-soning stability, we design hierarchical CoT prompts that guide each planning step through a “situation analysis–intention planning–action output” workflow. The situation analysis layer evaluates relative position and velocity relationships between ego and adversarial vehicles, as well as spatial constraints with background vehicles and lane boundaries, thereby constraining the feasible action space and avoiding boundary violations and non-target collisions. The intention planning layer generates high-level driving intentions for ego and adversarial vehicles based on user instruction and current state. For example, for instruction “adversarial vehicle changes lanes to cut in front of ego vehicle causing rear-end collision,” if the adversarial vehicle has entered the lane-change process, this layer requires it to continue completing the cut-in and decelerate appropri-ately after cutting in to promote rear-end collision, while the ego vehicle maintains original speed. The action output layer outputs driving intentions and per-frame control sequences for ego and adversarial vehicles following a template, with each frame as (ax, a y ), constraining value ranges to avoid extreme actions. 
+
+3) LLM-based Plan Assessor: We introduce the LLM-based plan assessor to review outputs from the LLM-based driver agent. It integrates per-frame controls through vehicle kinematics into short-term trajectories, with background vehi-cles following original dataset trajectories, and evaluates from two aspects: goal advancement (whether interaction conforms to instruction) and constraint satisfaction (whether boundary violations occur, whether collisions with background vehicles occur, whether control magnitudes are feasible). If evaluation passes, controls are executed in the simulation environment to update scenario state, and driving intentions with per-frame controls for that planning step are written to planning memory; if not passed, structured failure reasons are returned, driving the LLM-based driver agent to regenerate until passing or reaching maximum retry count. Through multiple closed-loop iterations, the first stage can IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 5
+
+> Fig. 2. Overall architecture of the AnchorDrive framework. The framework employs two-stage generation: Stage 1 generates safety-critical scenarios satisfying user instructions in a closed-loop manner under natural language instruction constraints; Stage 2 extracts a sparse set of key anchor points from Stage 1 trajectories and jointly guides the diffusion model denoising process with other constraints to regenerate complete trajectories, improving multi-vehicle trajectory realism while preserving scenario semantics.
+
+generate safety-critical scenarios consistent with user instruc-tions; however, its output still has two limitations: First, background vehicles lack interactive response—this stage only plans ego and adversarial vehicles, while other background vehicles follow original dataset trajectories and cannot re-act to main vehicle behaviors; Second, trajectory realism is insufficient—the LLM outputs control commands as per-frame accelerations, easily introducing unnatural motions such as velocity and acceleration discontinuities, and statistical distributions of key kinematic metrics also differ significantly from the original dataset. 
+
+C. Stage 2: Diffusion Model Trajectory Regeneration for Generated Scenario Optimization 
+
+To optimize scenarios generated in the first stage, we design a diffusion model-based scenario optimization mechanism that employs diffusion models to regenerate first-stage trajectories for improved scenario realism. As shown in Fig. 2, the second stage comprises two submodules: LLM-based anchor extractor and anchor-guided diffusion trajectory regeneration module. The LLM-based anchor extractor performs semantic and kinematic analysis on first-stage trajectories, extracting key anchor points as constraints for preserving scenario semantics. The anchor-guided diffusion trajectory regeneration module combines anchor alignment, road boundary adherence, and non-target collision suppression as three guidance objectives into a loss function, applying gradient guidance to the diffusion model during denoising to make regenerated trajectories more realistic while maintaining critical interaction structures. 
+
+1) LLM-based Anchor Extractor: Anchors serve as the critical bridge connecting the two stages. First-stage tra-jectories contain per-frame state information; if all frames were used as guidance targets for the diffusion model, it would significantly compress adjustable degrees of freedom, preventing the model from leveraging its advantages in de-tail refinement and distribution fitting; it would also limit correction of unreasonable behaviors—for example, once a trajectory exhibits boundary violations, per-frame guidance would force regenerated results to follow original deviations, making effective correction difficult. Therefore, we design an LLM-based anchor extractor that identifies and extracts an appropriate number of key anchor points from complete trajectories (such as intention initiation, interaction occurrence, collision occurrence, etc.), applying guidance only at critical moments while leaving other moments for the diffusion model to complete and refine, thereby improving trajectory realism while preserving interaction semantics. The anchor extractor receives complete records output from the first stage, including driving intention descriptions and per-frame control commands for each planning step along IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 6
+
+with corresponding trajectories. Through prompt guidance, the LLM analyzes trajectories, identifies key phases of ego and adversarial vehicle behaviors, and selects representative spa-tiotemporal positions (x, y, t ) as anchor points for each phase. Anchors need not exactly replicate precise coordinates from original trajectories; appropriate adjustments are permitted for better generation results. Since safety-critical scenarios involve adversarial vehicles attacking ego vehicles, for adversarial vehicles, we further attach brief explanations to anchors describing the behav-ioral phase or intention node at that anchor. Meanwhile, to maintain temporal consistency of two-vehicle interactions, we synchronously set corresponding anchors at the same frame numbers in ego vehicle trajectories without requiring semantic explanations. 
+
+2) Anchor and Rule Consistency Joint-Guided Diffusion Trajectory Regeneration: To make trajectories more realistic while preserving first-stage scenario semantics, we propose a multi-objective guided diffusion model trajectory regenera-tion strategy for optimizing already-generated scenarios. This strategy uses LLM-extracted key anchors as primary guidance objectives, and unifies road boundary adherence and non-target collision suppression into composable guidance loss functions, applying gradient corrections on clean trajectory estimates at each denoising step to stably achieve semantic preservation and realism improvement. Specifically, following [43], our diffusion model directly predicts action sequence τ a, while state sequence τ s can be derived from initial state st and dynamics model f . The diffusion model generates trajectories by reversing a gradual noising process. Given real trajectory τ0 sampled from data distribution q(τ0), the forward noising process yields a se-quence of increasingly noisy trajectories (τ1, τ 2, . . . , τ K ). The 
+
+k-th step trajectory τk is obtained by adding Gaussian noise to τk−1, parameterized by predefined variance schedule βk:
+
+q(τ1: K |τ0) := 
+
+> K
+
+Y
+
+> k=1
+
+q(τk|τk−1) (2) 
+
+q(τk|τk−1) := N (τk; p1 − βkτk−1, β kI) (3) The noising process gradually corrupts data, making final 
+
+q(τK ) approach N (τK ; 0 , I ). Trajectory generation is achieved by learning the reverse of this noising process: given noisy trajectory τK , the model learns to denoise it back to τ0 through a series of reverse steps. Each reverse step is modeled as: 
+
+pθ (τk−1|τk, c ) := N (τk−1; μθ (τk, k, c ), Σk) (4) where c is conditioning information including map road struc-ture M and all vehicle history trajectories x, and Σk uses preset variance schedule. Specifically, we employ noise pre-diction parameterization with network output ˆϵθ = ϵθ (τk, k, c ),and use the closed-form relationship from the forward process to recover the clean trajectory from τk, obtaining current step’s 
+
+ˆτ0 estimate: 
+
+ˆτ0 = τk − √1 − ¯αk ˆϵθ
+
+√¯αk
+
+(5) where ¯αk is a DDPM predefined parameter. Subsequently, we fuse ˆτ0 with τk according to DDPM posterior mean form to compute the reverse step mean: 
+
+μθ (τk, k, c ) = 
+
+√¯αk−1βk
+
+1 − ¯αk
+
+ˆτ0
+
++
+
+√αk(1 − ¯αk−1)1 − ¯αk
+
+τk (6) and sample τk−1 from this Gaussian distribution; repeating this iteration yields final generated trajectory τ0.While diffusion priors alone can generate realistic behaviors, they cannot satisfy user instructions. Therefore, we employ the reconstruction guidance method proposed in [44], [45] to guide each denoising step of the diffusion model: at the k-th reverse denoising step, the diffusion model first reconstructs the corresponding clean trajectory estimate ˆτ0 from the current noisy sample. Subsequently, we compute the gradient of loss function J on this clean trajectory estimate ˆτ0 and apply a small correction to ˆτ0 along the gradient direction: 
+
+˜τ0 = ˆ τ0 − αΣk∇τk J(ˆ τ0) (7) where α is guidance strength controlling the magnitude of ap-plied guidance. This strategy stably injects guidance objective information into each denoising step, making the corrected ˜τ0
+
+more inclined toward satisfying guidance objectives, thereby enabling generated trajectory τ0 to better satisfy various guid-ance objectives. Specifically, we write guidance objectives as composable weighted loss functions: 
+
+J(τ ) = λanchor Janchor + λavoid Javoid 
+
++ λboundary Jboundary (8) where λanchor , λ avoid , λ boundary control relative strengths of each guidance objective. The three loss terms correspond to: key semantic anchor alignment, non-target collision suppres-sion, and road boundary adherence loss. 
+
+a) Anchor Alignment Loss Janchor : To preserve critical interaction structures determined in the first stage, formally, the anchor extractor maps first-stage records R to anchor set 
+
+A, denoted as A = E LLM (R), where A can be expressed as A = {(pi, t i)}Na 
+
+> i=1
+
+with pi = ( xi, y i). Let the position of diffusion model clean trajectory estimate ˆτ0 at time ti be 
+
+p(ti) = ( x(ti), y (ti)) , then 
+
+Janchor =
+
+> Na
+
+X
+
+> i=1
+
+∥p(ti) − pi∥22 (9) where Na is total anchor count. This term encourages vehicles to reach corresponding anchor positions at time ti, thereby maintaining critical interaction semantic consistency. 
+
+b) Non-target Collision Suppression Loss Javoid : In safety-critical scenarios, we wish to preserve only the intended target collision pair, i.e., ego and adversarial vehicles collide, while non-target vehicle pairs should maintain safe distances. Let the bounding box gap between vehicles i and j at time 
+
+t be dij (t), safety distance threshold be dsafe , and denote the set of vehicle pairs requiring guidance as B, containing pairs IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 7
+
+Algorithm 1 Stage-2 Anchor-conditioned Multi-objective Guided Denoising 
+
+Input: K, B, α, R, M , ϵθ , ELLM , {βk, Σk},
+
+(λanchor , λ avoid , λ boundary )
+
+Output: τ0 
+
+> 1:
+
+A ← ELLM (R) 
+
+> 2:
+
+τK ∼ N (0 , I ) 
+
+> 3:
+
+for k = K down to 1 do  
+
+> 4:
+
+ˆϵθ ← ϵθ (τk, k, c ) 
+
+> 5:
+
+ˆτ0 ← 1√ ¯αk (τk − √1 − ¯αk ˆϵθ ) 
+
+> 6:
+
+Janchor ← Janchor (ˆ τ0; A) 
+
+> 7:
+
+Javoid ← Javoid (ˆ τ0; B) 
+
+> 8:
+
+Jboundary ← Jboundary (ˆ τ0; M ) 
+
+> 9:
+
+J ← λanchor Janchor +λavoid Javoid +λboundary Jboundary  
+
+> 10:
+
+τk−1 ← ˆτ0 − αΣk∇τk J(ˆ τ0) 
+
+> 11:
+
+end for  
+
+> 12:
+
+return τ0
+
+of ego-background, adversarial-background, and background-background vehicles. The loss function is: 
+
+Javoid =
+
+> T
+
+X
+
+> t=1
+
+X
+
+> (i,j )∈B
+
+max(0 , d safe − dij (t)) 
+
+· exp 
+
+ dsafe − dij (t)
+
+σ
+
+
+
+(10) where σ is penalty strength parameter. When inter-vehicle distance falls below safety threshold, this term increases rapidly with penetration depth, effectively suppressing non-target collisions. 
+
+c) Road Boundary Adherence Loss Jboundary : Used to prevent vehicles from entering non-drivable areas. Since highD is a highway dataset, the main non-drivable areas are reflected in lateral boundary constraints, so we apply boundary penalties only to vehicle lateral positions. Let vehicle i’s lateral coordinate at time t be yi(t). We define each vehicle 
+
+i’s corresponding lateral drivable interval [y(i)lower , y (i)upper ] and introduce safety margin δboundary . When vehicles approach or exceed their drivable boundaries, loss increases, defined as: 
+
+Jboundary = X
+
+> iT
+
+X
+
+> t=1
+
+h
+
+max(0 , y i(t) − y(i)upper − δboundary )+ max(0 , y (i)lower + δboundary − yi(t)) 
+
+i
+
+(11) This term is zero when vehicles are within the safe zone 
+
+[y(i)lower + δboundary , y (i)upper − δboundary ]; once vehicles exceed this range, penalty grows linearly with deviation, encouraging vehicles to remain within their drivable regions. Based on the above anchor and rule consistency joint guidance, we summarize the Stage-2 denoising regeneration process in Algorithm 1: Through the above multi-objective guidance, second-stage generation results improve upon the first stage in three as-pects: First, scenario semantics are preserved—collision types and interaction logic described in user instructions are re-tained; Second, background vehicles gain interactive response capability—the diffusion model learns multi-vehicle interac-tion patterns from real driving data, enabling background vehicles to adaptively respond with reasonable reactions such as deceleration and yielding based on ego and adversarial vehicle behaviors, rather than simply following original tra-jectories; Third, trajectory smoothness is improved—velocity and acceleration changes become more continuous, closer to real driving behaviors, with kinematic characteristics better matching original dataset distributions. Thus, the two subtasks are ultimately completed: first solving the controllable scenario generation problem, then solving the realism problem. IV. E XPERIMENT 
+
+This section presents the experimental evaluation of the proposed AnchorDrive model. We first describe the dataset, evaluation metrics, and experimental setup. Then, we com-pare AnchorDrive’s performance against baseline methods and provide quantitative analysis of the results. Additionally, we conduct ablation studies to evaluate the contribution of key components in our approach. 
+
+A. Dataset 
+
+We conduct experiments on the highD dataset. highD is a highway naturalistic driving dataset collected via drone aerial photography, covering 6 recording locations with each road segment approximately 410 m in length; total data duration is approximately 16.5 hours, containing approximately 110,000 vehicle trajectories at 25 Hz sampling frequency. We extract trajectory segments using fixed time windows for model training and evaluation: using 1.28 seconds (32 frames) of past motion data to predict 5.12 seconds (128 frames) of future trajectories. 
+
+B. Evaluation Metrics 
+
+To comprehensively evaluate generated scenario quality, we design metrics from three aspects: criticality, realism, and semantic controllability. 
+
+Criticality : This aspect measures the effectiveness of gen-erated scenarios. The ego-adversarial collision rate quantifies the percentage of scenarios where adversarial vehicles collide with ego vehicles; higher values indicate stronger adversarial effects. 
+
+Realism : To ensure generated scenarios conform to real-world traffic behaviors, we evaluate off-road rates, non-target collision rates, and trajectory distribution consistency. Ego off-road rate, adversarial off-road rate, and background off-road rate measure how frequently ego, adversarial, and background vehicles drive off the road respectively; lower values indicate more reasonable behaviors. Non-target collision rates include ego-background collision rate, adversarial-background colli-sion rate, and background-background collision rate, quanti-fying collision frequencies between different vehicle groups; lower values indicate interactions more consistent with reality. Additionally, we compute the first-order Wasserstein dis-tance [46] (WD) between generated and real trajectories on velocity and acceleration statistical distributions to measure IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 8 
+
+> Fig. 3. Adversarial safety-critical scenarios generated by AnchorDrive. Examples include brake-induced rear-end collision, overtake-and-cut-back collision, dangerous cut-in side collision, and multi-vehicle coordinated conflict, demonstrating the model’s capability to generate diverse safety-critical scenarios.
+
+consistency between generation results and real driving data. Specifically, for any one-dimensional statistic (velocity or acceleration), let the real sample set be {xi}ni=1 and generated sample set be {yi}ni=1 , then: 
+
+ˆW1(P, Q ) = 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+|x(i) − y(i)| (12) where x(i) and y(i) are sorted sample values respectively. We merge velocity samples from ego and adversarial vehicles to compute velocity WD, merge acceleration samples from both vehicles to compute acceleration WD, and take the average of velocity WD and acceleration WD as the final metric. Smaller values indicate generated trajectories are kinematically closer to real traffic behaviors in statistical distribution. 
+
+Semantic Controllability : We use task success rate to measure whether scenarios satisfy description objectives in natural language instructions; higher values indicate greater semantic controllability. 
+
+C. Experimental Setup 
+
+Baselines . We compare our proposed method against ex-isting LLM-based safety-critical scenario generation baseline methods. Specifically, we re-implement and compare with the following two methods: LLMscenario [34], which sends origi-nal complete scenarios with prompts to the LLM, commanding the LLM to modify trajectories in original scenarios to obtain target dangerous scenarios; and LD-scene [20], which has the LLM generate loss functions based on its understanding of scenarios and user instructions, using these loss functions to guide the denoising process of trained diffusion models to obtain user-specified dangerous scenarios. Both methods are re-implemented by us. 
+
+Implementation Details . Our method is implemented in PyTorch and trained for approximately 8 hours on an NVIDIA GeForce RTX 4090 GPU. The trajectory diffusion model is trained for 20 epochs using the Adam optimizer [47] with learning rate lr = 0 .003 and 50 denoising steps. The first-stage driver agent uses Gemini-2.5-Pro [48] as the decision model, with each planning step length set to 10 frames; second-stage anchor extraction is also performed by Gemini-2.5-Pro. 
+
+D. Overall Performance 
+
+As shown in Fig. 3, our method can generate diverse traffic scenarios. The figure displays four types of safety-critical scenarios, encompassing both single-vehicle conflict and multi-vehicle coordinated conflict patterns. The corre-sponding prompts for the four scenarios are: a) ADV suddenly brakes causing EGO to rear-end; b) ADV attempts to overtake EGO but returns to original lane too early, causing collision; c) ADV changes lanes into EGO’s lane, colliding with EGO; d) ADV1 (lower) attempts to cut in front of ADV2 (upper), ADV2 fails to decelerate in time causing rapid gap reduction, IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 9 
+
+> Fig. 4. Controllability study. Under the same initial scenario conditions, the ADV vehicle is commanded to attack different vehicles, and ADV can make different decisions based on different targets.
+
+forcing ADV1 to urgently cut back to original lane to avoid rear-end from ADV2, ultimately colliding with EGO. Table I presents quantitative comparison results between our method and baselines. Overall, the proposed AnchorDrive demonstrates stronger comprehensive advantages across crit-icality, realism, and semantic controllability metrics. Specif-ically, AnchorDrive’s EGO–ADV Coll is 0.86, higher than LLMscenario (0.83) and LD-scene (0.69), indicating our method more easily triggers target adversarial collisions; meanwhile, AnchorDrive’s Task Success reaches 0.81, supe-rior to LLMscenario (0.78) and LD-scene (0.55), demonstrat-ing more stable instruction consistency. Regarding realism-related metrics, AnchorDrive’s EGO/ADV Offroad is 0.02, lower than LLMscenario (0.14) and LD-scene (0.06); additionally, AnchorDrive’s EGO/ADV–BG Coll and BG–BG Coll are both 0, showing more robust overall performance. For distribution consistency, LD-scene has the lowest Wasserstein Distance (0.72), while AnchorDrive is 1.15, better than LLMscenario (7.64), indicating our method maintains good trajectory distribution consistency while achieving high criticality and task success rates. In summary, AnchorDrive achieves a better balance among criticality, realism, and semantic controllability. 
+
+E. Controllability Study 
+
+This section further evaluates AnchorDrive’s responsive-ness to natural language instructions. We validate its seman-tic controllability through the following approach: changing prompts under the same initial scenario and observing whether generated scenario interaction patterns change with semantic variations. Fig. 4 presents corresponding visualization results. As shown in Fig. 4, we command the ADV vehicle to attack different vehicles by simply modifying prompts to specify different target vehicle IDs. Results show that the model can stably map the “target vehicle ID” semantic constraint to generated behaviors: when targets change, ADV’s key decisions adjust accordingly. 
+
+F. Ablation Study 
+
+This section evaluates the contribution of key components in AnchorDrive to generation quality. We focus on the first-stage plan assessor decision review mechanism and the second-stage trajectory regeneration module, constructing three configura-tions for comparison. Table II summarizes quantitative results for the three configurations. First, the plan assessor decision review mechanism signif-icantly improves stability and instruction achievement rate of first-stage closed-loop generation. Compared to configurations without plan assessor, introducing plan assessor raises EGO– ADV coll from 0.85 to 0.91 and Task Success from 0.72 to 0.85, while reducing EGO/ADV–BG coll from 0.15 to 0.06, demonstrating that review and failure feedback can effectively suppress non-target conflicts and boundary violations. On the other hand, second-stage trajectory regeneration pri-marily improves trajectory realism and suppresses unreason-able actions. When removing this module under plan assessor-enabled settings, EGO–ADV coll rises from 0.86 to 0.91 and Task Success rises from 0.81 to 0.85, with generation strat-egy tending toward more aggressive approaches to complete IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 10 
+
+TABLE I OVERALL PERFORMANCE COMPARISON WITH BASELINE METHODS ON THE HIGH D DATASET . W E COMPARE OUR PROPOSED METHOD WITH 
+
+LLM SCENARIO AND LD-SCENE TO EVALUATE OVERALL PERFORMANCE ON CRITICALITY , REALISM , AND SEMANTIC CONTROLLABILITY IN SAFETY -CRITICAL SCENARIO GENERATION .
+
+Method Criticality Realism Controllability 
+
+EGO-ADV Coll ↑
+
+EGO/ADV-BG Coll ↓
+
+BG-BG Coll ↓
+
+EGO/ADV Offroad ↓
+
+BG Offroad ↓ WD ↓ Task Success ↑
+
+LLMscenario 0.83 0.23 / 0.14 / 7.64 0.78 LD-scene 0.69 0.02 0 0.06 0.04 0.72 0.55 
+
+AnchorDrive (Ours) 0.86 0 0 0.02 0.04 1.15 0.81 
+
+TABLE II ABLATION STUDY OF KEY COMPONENTS . C OMPARISON OF DIFFERENT MODULE CONFIGURATIONS (PLAN ASSESSOR DECISION REVIEW AND STAGE -2 
+
+> TRAJECTORY REGENERATION
+
+) ON SAFETY -CRITICAL SCENARIO GENERATION PERFORMANCE ON THE HIGH D DATASET .
+
+Configuration Criticality Realism Controllability 
+
+Plan Assessor Traj. Regen. EGO-ADV Coll ↑
+
+EGO/ADV-BG Coll ↓
+
+BG-BG Coll ↓
+
+EGO/ADV Offroad ↓
+
+BG Offroad ↓ WD ↓ Task Success ↑× × 0.85 0.15 / 0.07 / 2.18 0.72 
+
+✓ × 0.91 0.06 / 0.05 / 2.43 0.85 
+
+✓ ✓ 0.86 0 0 0.02 0.04 1.15 0.81 
+
+Fig. 5. Comparison of ADV velocity distributions before and after trajec-tory regeneration. Comparing adversarial vehicle (ADV) velocity histograms between original scenarios and different generation configurations, velocity distributions become closer to original scenarios after adding Stage-2 trajec-tory regeneration. 
+
+instructions; however, Wasserstein Distance significantly in-creases from 1.15 to 2.43, EGO/ADV Offroad rises from 0.02 to 0.05, and non-target collision EGO/ADV–BG coll rises from 0.00 to 0.06, indicating less realistic trajectories. After intro-ducing second-stage trajectory regeneration, trajectory realism improves significantly; although EGO–ADV coll and Task Success decrease somewhat, this is a necessary trade-off to ensure realism. Fig. 5 compares ADV vehicle velocity distribu-tions before and after diffusion optimization; post-optimization distributions are more consistent with original scenarios, with correspondingly smaller Wasserstein Distances. The above experiments validate two key designs of Anchor-Drive: the first-stage plan assessor improves instruction exe-cution stability and interaction reasonableness, while second-stage diffusion optimization significantly enhances trajectory realism. 
+
+G. Anchor Guidance Study 
+
+Fig. 6 demonstrates the necessity and effectiveness of in-troducing the LLM-based anchor extractor in second-stage refinement. The upper portion of the figure shows safety-critical scenarios directly generated by the first-stage LLM-based driver agent. It can be seen that while this method can achieve instruction-required target interactions, errors may still occur during closed-loop generation; for example, in the figure, ADV’s longitudinal velocity is too high during lane change and fails to apply reverse acceleration in time, causing slight boundary violation. It can be observed that LLM-extracted anchors can summa-rize ADV’s key intentions at each phase, and after detecting IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 11 
+
+Fig. 6. Anchor guidance study. This figure demonstrates the role of the LLM-based anchor extractor in second-stage trajectory regeneration. By extracting anchors through the LLM-based anchor extractor, the diffusion model can suppress boundary violations and other unreasonable behaviors while preserving scenario semantics. 
+
+lane-change boundary violation segments, proactively skip abnormal segments, setting final alignment anchors before IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 12 
+
+strong interaction occurs to pull the vehicle back to rea-sonable positions within the lane. Ultimately, under anchor guidance, trajectories generated by the diffusion model both maintain original driving intentions and interaction structures while effectively suppressing boundary violations and other unreasonable behaviors, improving trajectory realism. V. C ONCLUSION 
+
+We propose AnchorDrive, a two-stage safety-critical sce-nario generation framework that simultaneously achieves se-mantic controllability and trajectory realism. In the first stage, we deploy an LLM as a driver agent within a simulation closed-loop, reasoning over scenario states under user natural language instruction constraints and progressively outputting control commands to generate high-risk interaction processes conforming to instructions. In the second stage, we utilize the LLM to extract key anchor points from first-stage trajectories and use anchors as primary guidance objectives, jointly with other guidance terms to guide the diffusion model’s denoising process for trajectory regeneration, improving generated tra-jectory realism while preserving instruction semantic objec-tives. Experimental results on the highD dataset demonstrate that the AnchorDrive framework can stably generate safety-critical scenarios consistent with user instruction semantics on one hand, while making generated trajectories statistically closer to real data distributions on the other, achieving a balance between controllability and realism. Our method still has room for further improvement. In the future, we plan to conduct the following work to further enhance the framework’s capabilities: 1) Current experiments are primarily validated on highD; subsequent work will extend to more complex urban scenario datasets (such as nuScenes) to cover richer road topologies, traffic participant types, and inter-action patterns, further examining the method’s generalization capability; 2) The current framework’s scenario generation speed is relatively slow, primarily because the first stage requires multiple rounds of closed-loop reasoning and plan assessor review iterations, and the second stage additionally requires diffusion model trajectory regeneration, resulting in high overall computational overhead; subsequent research can explore methods to improve generation efficiency. REFERENCES [1] Z. Jiang, J. Liu, P. Sun, M. Sang, H. Li, and Y. Pan, “Generation of risky scenarios for testing automated driving visual perception based on causal analysis,” IEEE Transactions on Intelligent Transportation Systems , vol. 25, no. 11, pp. 15 991–16 004, 2024. [2] I. Argui, M. Gueriau, and S. Ainouz, “Advancements in mixed reality for autonomous vehicle testing and advanced driver assistance systems: A survey,” IEEE Transactions on Intelligent Transportation Systems ,vol. 25, no. 12, pp. 19 276–19 294, 2024. [3] Y. Kang, H. Yin, and C. Berger, “Test your self-driving algorithm: An overview of publicly available driving datasets and virtual testing environments,” IEEE Transactions on Intelligent Vehicles , vol. 4, no. 2, pp. 171–185, 2019. [4] W. Ding, C. Xu, M. Arief, H. Lin, B. Li, and D. Zhao, “A survey on safety-critical driving scenario generation—a methodological perspec-tive,” IEEE Transactions on Intelligent Transportation Systems , vol. 24, no. 7, pp. 6971–6988, 2023. [5] Q. Wang, D. Xu, G. Kuang, C. Lv, S. E. Li, and B. Nie, “Risk-aware vehicle trajectory prediction under safety-critical scenarios,” IEEE Transactions on Intelligent Transportation Systems , 2025. [6] A. Dosovitskiy, G. Ros, F. Codevilla, A. Lopez, and V. Koltun, “Carla: An open urban driving simulator,” in Conference on robot learning .PMLR, 2017, pp. 1–16. [7] P. A. Lopez, M. Behrisch, L. Bieker-Walz, J. Erdmann, Y.-P. Fl¨ otter¨ od, R. Hilbrich, L. L¨ ucken, J. Rummel, P. Wagner, and E. Wießner, “Microscopic traffic simulation using sumo,” in 2018 21st international conference on intelligent transportation systems (ITSC) . Ieee, 2018, pp. 2575–2582. [8] A. A. B. da Costa, P. Irvine, X. Zhang, S. Khastgir, and P. Jennings, “Ontology-based scenario generation for automated driving systems verification and validation using rules of the road,” IEEE Transactions on Intelligent Vehicles , 2024. [9] J. M. Scanlon, K. D. Kusano, T. Daniel, C. Alderson, A. Ogle, and T. Victor, “Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain,” Accident Analysis & Prevention , vol. 163, p. 106454, 2021. [10] C. Jiang, A. Cornman, C. Park, B. Sapp, Y. Zhou, D. Anguelov 
+
+et al. , “Motiondiffuser: Controllable multi-agent motion prediction using diffusion,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 9644–9653. [11] C. Xu, A. Petiushko, D. Zhao, and B. Li, “Diffscene: Diffusion-based safety-critical scenario generation for autonomous vehicles,” in 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , vol. 39, no. 8, 2025, pp. 8797–8805. [12] D. Rempe, J. Philion, L. J. Guibas, S. Fidler, and O. Litany, “Generating useful accident-prone driving scenarios via a learned traffic prior,” in 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 17 305–17 315. [13] J. Wang, A. Pun, J. Tu, S. Manivasagam, A. Sadat, S. Casas, M. Ren, and R. Urtasun, “Advsim: Generating safety-critical scenarios for self-driving vehicles,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2021, pp. 9909–9918. [14] J. Achiam, S. Adler, S. Agarwal, L. Ahmad, I. Akkaya, F. L. Aleman, D. Almeida, J. Altenschmidt, S. Altman, S. Anadkat et al. , “Gpt-4 technical report,” arXiv preprint arXiv:2303.08774 , 2023. [15] S. Bubeck, V. Chandrasekaran, R. Eldan, J. Gehrke, E. Horvitz, E. Ka-mar, P. Lee, Y. T. Lee, Y. Li, S. Lundberg et al. , “Sparks of artificial general intelligence: Early experiments with gpt-4,” arXiv preprint arXiv:2303.12712 , 2023. [16] M. Chen, “Evaluating large language models trained on code,” arXiv preprint arXiv:2107.03374 , 2021. [17] J. Zhang, C. Xu, and B. Li, “Chatscene: Knowledge-enabled safety-critical scenario generation for autonomous vehicles,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2024, pp. 15 459–15 469. [18] Q. Lu, X. Wang, Y. Jiang, G. Zhao, M. Ma, and S. Feng, “Om-nitester: Multimodal large language model driven scenario testing for autonomous vehicles,” Automotive Innovation , pp. 1–15, 2025. [19] Z. Zhong, D. Rempe, Y. Chen, B. Ivanovic, Y. Cao, D. Xu, M. Pavone, and B. Ray, “Language-guided traffic simulation via scene-level diffu-sion,” in Conference on robot learning . PMLR, 2023, pp. 144–177. [20] M. Peng, Y. Xie, X. Guo, R. Yao, H. Yang, and J. Ma, “Ld-scene: Llm-guided diffusion for controllable generation of adversarial safety-critical driving scenarios,” arXiv preprint arXiv:2505.11247 , 2025. [21] D. Fu, X. Li, L. Wen, M. Dou, P. Cai, B. Shi, and Y. Qiao, “Drive like a human: Rethinking autonomous driving with large language models,” in 
+
+2024 IEEE/CVF Winter Conference on Applications of Computer Vision Workshops (WACVW) . IEEE, 2024, pp. 910–919. [22] X. Zhou, X. Han, F. Yang, Y. Ma, V. Tresp, and A. Knoll, “Opendrivevla: Towards end-to-end autonomous driving with large vision language action model,” arXiv preprint arXiv:2503.23463 , 2025. [23] Z. Zhou, T. Cai, S. Z. Zhao, Y. Zhang, Z. Huang, B. Zhou, and J. Ma, “Autovla: A vision-language-action model for end-to-end autonomous driving with adaptive reasoning and reinforcement fine-tuning,” arXiv preprint arXiv:2506.13757 , 2025. [24] H. Shao, Y. Hu, L. Wang, G. Song, S. L. Waslander, Y. Liu, and H. Li, “Lmdrive: Closed-loop end-to-end driving with large language models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 15 120–15 130. [25] Z. Huang, Z. Zhang, A. Vaidya, Y. Chen, C. Lv, and J. F. Fisac, “Versatile behavior diffusion for generalized traffic agent simulation,” 
+
+arXiv preprint arXiv:2404.02524 , 2024. [26] W.-J. Chang, F. Pittaluga, M. Tomizuka, W. Zhan, and M. Chandraker, “Safe-sim: Safety-critical closed-loop traffic simulation with diffusion-controllable adversaries,” in European Conference on Computer Vision .Springer, 2024, pp. 242–258. IEEE TRANSACTIONS ON VEHICULAR TECHNOLOGY 13 
+
+[27] C. Zhang, R. Guo, W. Zeng, Y. Xiong, B. Dai, R. Hu, M. Ren, and R. Urtasun, “Rethinking closed-loop training for autonomous driving,” in European Conference on Computer Vision . Springer, 2022, pp. 264– 282. [28] Y. Abeysirigoonawardena, F. Shkurti, and G. Dudek, “Generating adver-sarial driving scenarios in high-fidelity simulators,” in 2019 International Conference on Robotics and Automation (ICRA) . IEEE, 2019, pp. 8271–8277. [29] W. Ding, M. Xu, and D. Zhao, “Cmts: A conditional multiple trajectory synthesizer for generating safety-critical driving scenarios,” in 2020 IEEE International Conference on Robotics and Automation (ICRA) .IEEE, 2020, pp. 4314–4321. [30] N. Hanselmann, K. Renz, K. Chitta, A. Bhattacharyya, and A. Geiger, “King: Generating safety-critical driving scenarios for robust imitation via kinematics gradients,” in European Conference on Computer Vision .Springer, 2022, pp. 335–352. [31] W. Ding, B. Chen, M. Xu, and D. Zhao, “Learning to collide: An adaptive safety-critical scenarios generating method,” in 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) .IEEE, 2020, pp. 2243–2250. [32] M. Koren and M. J. Kochenderfer, “Efficient autonomy validation in simulation with adaptive stress testing,” in 2019 IEEE Intelligent Transportation Systems Conference (ITSC) . IEEE, 2019, pp. 4178– 4183. [33] Y. Gao, M. Piccinini, Y. Zhang, D. Wang, K. Moller, R. Brusnicki, B. Zarrouki, A. Gambi, J. F. Totz, K. Storms et al. , “Foundation models in autonomous driving: A survey on scenario generation and scenario analysis,” arXiv preprint arXiv:2506.11526 , 2025. [34] C. Chang, S. Wang, J. Zhang, J. Ge, and L. Li, “Llmscenario: Large language model driven scenario generation,” IEEE Transactions on Systems, Man, and Cybernetics: Systems , vol. 54, no. 11, pp. 6581– 6594, 2024. [35] S. Tan, B. Ivanovic, X. Weng, M. Pavone, and P. Kraehenbuehl, “Lan-guage conditioned traffic generation,” arXiv preprint arXiv:2307.07947 ,2023. [36] J. Mao, J. Ye, Y. Qian, M. Pavone, and Y. Wang, “A language agent for autonomous driving,” arXiv preprint arXiv:2311.10813 , 2023. [37] L. Wen, D. Fu, X. Li, X. Cai, T. Ma, P. Cai, M. Dou, B. Shi, L. He, and Y. Qiao, “Dilu: A knowledge-driven approach to autonomous driving with large language models,” arXiv preprint arXiv:2309.16292 , 2023. [38] S. Hu, Z. Fang, Z. Fang, Y. Deng, X. Chen, and Y. Fang, “Agentsco-driver: Large language model empowered collaborative driving with lifelong learning,” arXiv preprint arXiv:2404.06345 , 2024. [39] Y. Li, K. Katsumata, E. Javanmardi, and M. Tsukada, “Large language models for human-like autonomous driving: A survey,” in 2024 IEEE 27th International Conference on Intelligent Transportation Systems (ITSC) . IEEE, 2024, pp. 439–446. [40] Z. Xu, Y. Zhang, E. Xie, Z. Zhao, Y. Guo, K.-Y. K. Wong, Z. Li, and H. Zhao, “Drivegpt4: Interpretable end-to-end autonomous driving via large language model,” IEEE Robotics and Automation Letters , 2024. [41] P. Liu, W. Yuan, J. Fu, Z. Jiang, H. Hayashi, and G. Neubig, “Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing,” ACM computing surveys , vol. 55, no. 9, pp. 1–35, 2023. [42] P. Sahoo, A. K. Singh, S. Saha, V. Jain, S. Mondal, and A. Chadha, “A systematic survey of prompt engineering in large language models: Techniques and applications,” arXiv preprint arXiv:2402.07927 , 2024. [43] Z. Zhong, D. Rempe, D. Xu, Y. Chen, S. Veer, T. Che, B. Ray, and M. Pavone, “Guided conditional diffusion for controllable traffic simulation,” arXiv preprint arXiv:2210.17366 , 2022. [44] J. Ho, T. Salimans, A. Gritsenko, W. Chan, M. Norouzi, and D. J. Fleet, “Video diffusion models,” Advances in neural information processing systems , vol. 35, pp. 8633–8646, 2022. [45] D. Rempe, Z. Luo, X. Bin Peng, Y. Yuan, K. Kitani, K. Kreis, S. Fidler, and O. Litany, “Trace and pace: Controllable pedestrian animation via guided trajectory diffusion,” in Proceedings of the IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition , 2023, pp. 13 756– 13 766. [46] L. Kantorovitch, “On the translocation of masses,” Management science ,vol. 5, no. 1, pp. 1–4, 1958. [47] D. P. Kingma, “Adam: A method for stochastic optimization,” arXiv preprint arXiv:1412.6980 , 2014. [48] G. Comanici, E. Bieber, M. Schaekermann, I. Pasupat, N. Sachdeva, I. Dhillon, M. Blistein, O. Ram, D. Zhang, E. Rosen et al. , “Gem-ini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities,” arXiv preprint arXiv:2507.06261 , 2025.

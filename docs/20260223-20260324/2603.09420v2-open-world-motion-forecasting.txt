@@ -1,0 +1,389 @@
+Title: Open-World Motion Forecasting
+
+URL Source: https://arxiv.org/pdf/2603.09420v2
+
+Published Time: Tue, 17 Mar 2026 05:09:02 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# Open-World Motion Forecasting 
+
+Nicolas Schischka 1, Nikhil Gosala 1, B Ravi Kiran 2, Senthil Yogamani 3, Abhinav Valada 1
+
+> 1
+
+University of Freiburg 2Qualcomm SARL France 3Automated Driving, Qualcomm Technologies, Inc 
+
+Abstract —Motion forecasting aims to predict the future trajec-tories of dynamic agents in the scene, enabling autonomous vehicles to effectively reason about scene evolution. Existing approaches operate under the closed-world regime and assume fixed object taxonomy as well as access to high-quality perception. Therefore, they struggle in real-world settings where perception is imperfect and object taxonomy evolves over time. In this work, we bridge this fundamental gap by introducing open-world motion forecasting , a novel setting in which new object classes are sequentially introduced over time and future object trajectories are estimated directly from camera images. We tackle this setting by proposing the first end-to-end class-incremental motion forecasting framework to mitigate catastrophic forgetting while simultaneously learning to forecast newly introduced classes. When a new class is introduced, our framework employs a pseudo-labeling strategy to first generate motion forecasting pseudo-labels for all known classes which are then processed by a vision-language model to filter inconsistent and over-confident predictions. Parallelly, our approach further mitigates catastrophic forgetting by using a novel replay sampling strategy that leverages query feature variance to sample previous sequences with infor-mative motion patterns. Extensive evaluation on the nuScenes and Argoverse 2 datasets demonstrates that our approach successfully resists catastrophic forgetting and maintains performance on previously learned classes while improving adaptation to novel ones. Further, we demonstrate that our approach supports zero-shot transfer to real-world driving and naturally extends to end-to-end class-incremental planning, enabling continual adaptation of the full autonomous driving system. We provide the code at https://omen.cs.uni-freiburg.de. 
+
+I. I NTRODUCTION 
+
+Autonomous vehicles operating in complex environments must be able to anticipate the future behavior of surrounding agents to ensure safe and efficient navigation. Motion fore-casting addresses this need by predicting future trajectories of multiple agents in the scene, which when combined with ego state and map context, allows downstream planners to generate efficient and safe trajectories. Existing approaches address the challenge of motion forecasting using sequence models such as LSTMs [ 52 , 9, 8, 46 ], graph neural networks [ 12 , 26 ], and more recently, transformer-based architectures [ 18 , 31 , 43 ]. These approaches assume access to accurate, fully observed past trajectories derived from near-perfect perception systems. However, this assumption is rarely satisfied in the real-world with errors in detection and tracking cascading into forecasting and planning. End-to-end camera-based motion forecasting methods [ 13 , 17 , 40 ] solve this limitation by predicting future trajectories directly from on-board multi-view images. By learn-ing a differentiable mapping from raw sensor input to future ob-ject trajectories, these approaches reduce dependence on hand-crafted intermediate representations and improve robustness by circumventing the need for multiple decoupled modules. Motion Forecasting Model 
+
+> Motion Forecasting Model
+> c) Open-World Motion Forecasting
+> Motion Forecasting Model
+> Motion Forecasting Model
+> Annotations for agent types
+> Annotations for agent types
+> a) Traditional Motion Forecasting b) End-to-End Motion Forecasting
+> Annotations for all agent types Annotations for all agent types
+
+Fig. 1: Our approach is the first to tackle the problem of open-world motion forecasting. In contrast to (a) traditional and (b) end-to-end motion forecasting, (c) the underlying model is trained incrementally, with access to labels only for a subset of all classes Cn and raw multi-view camera images. As a result, it continually learns to forecast the motion of all classes in an end-to-end manner, while handling imperfect object detections and successfully combating catastrophic forgetting. 
+
+Despite this progress, existing motion forecasting approaches are designed under a closed-world assumption, where the set of agent categories is fixed in advance and exhaustive annotations are available for every semantic class. However, this assumption often fails to generalize to the real-world where novel classes such as e-scooters might need to be routinely incorporated into the model. Under a closed-world training paradigm, adding a new class requires re-annotation of historical data with the new label and full model re-training, which is both economically prohibitive and operationally impractical. Na ¨ıve fine-tuning on limited data containing only the new class typically leads to catastrophic forgetting, degrading forecasting performance on previously learned classes. These challenges are further exacerbated during real-world deployment, especially on edge devices, where storage and data retention constraints prevent model re-training on fully labeled datasets. In this work, we address these limitations by formaliz-ing open-world motion forecasting - an end-to-end class-incremental setting where models predict future trajectories directly from raw camera observations and incorporate new semantic classes from limited labeled data while retaining fore-casting performance on previously learned ones without access to the original training set. To this end, we propose O pen-World M otion Pr Edictio N (OMEN), the first approach specifically designed to address this novel setting. Our framework enables existing models to integrate new semantic classes using only a small set of annotated image sequences per class, while explicitly mitigating catastrophic forgetting. By eliminating the need for large-scale dataset re-annotation, full model re-training, and long-term storage of the entire dataset, our approach offers a scalable and memory-efficient solution for adding new classes to a motion forecasting model, as illustrated in Fig. 1. 
+
+> arXiv:2603.09420v2 [cs.CV] 16 Mar 2026
+
+OMEN achieves this through two complementary mecha-nisms. First, we generate motion forecasting pseudo-labels for classes [1 , c − 1] on the newly labeled dataset for a novel class 
+
+c by leveraging the previously trained 3D detection head. This yields a unified labeled dataset covering all classes. To mitigate false positives and overly confident pseudo-label predictions, we employ a vision-language model to filter out detections inconsistent with the visual evidence. Second, we introduce a sequence-based experience replay strategy that prioritizes image sequences with a high sum of variance in the latent query feature space. By sampling sequences with informative motion patterns, this strategy helps mitigate catastrophic forgetting while respecting memory constraints. We perform extensive evaluations on the nuScenes [ 2 ] and Argoverse 2 [ 45 ] datasets and demonstrate that OMEN retains model performance and successfully mitigates catastrophic forgetting across multiple sequential class additions while continuing to adapt to new categories. Furthermore, we ablate the effectiveness of the individual network components and highlight that OMEN readily extends to class-incremental end-to-end planning. Finally, we conduct real-world evaluations with our self-driving vehicle and demonstrate OMEN’s zero-shot capability. Our key contributions can be summarized as follows: 1) Formal introduction of the novel open-world motion forecasting task. 2) OMEN, the first approach tailored for end-to-end open-world motion forecasting. 3) A pseudo-labeling strategy with a vision-language model-based error filtering mechanism to generate motion forecasting pseudo-labels. 4) A variance-based experience replay selection mechanism based on the latent distribution of motion queries to alleviate long-term forgetting. 5) Extensive experiments and a comprehensive ablation study on two real-world datasets. 6) Demonstration of the natural extension of our model to class-incremental end-to-end planning as well as zero-shot capability for real-world deployment. 7) Publicly available code upon acceptance at https://omen. cs.uni-freiburg.de. II. R ELATED WORK 
+
+Motion Forecasting has been addressed using two primary paradigms, namely, tracklet-based forecasting and end-to-end forecasting . Tracklet-based forecasting approaches use pre-computed agent tracks as input and predict future tra-jectories. Given the sequential nature of such input data, recurrent networks have been extensively used to model future agent behavior. Several methods [ 52 , 9 , 49 ] leveraged LSTMs to model the behavior of multiple agents in the scene. LSTM-based networks have also been combined with CNNs to learn rich spatial information alongside temporal context [ 8, 46 ], and external scene information such as HD map data has also been introduced to better constrain motion predictions [ 3, 44 ]. However, LSTM networks suffer from vanishing and exploding gradients, which limit their temporal context. Dai et al. [7] addressed this problem by introducing shortcut paths between LSTM blocks, while others replaced LSTM blocks with transformer-based attention to model long-range context [ 18 , 31 , 35 , 51 ]. Several recent methods also enable the estimation of uncertainty in motion forecasting models [11, 34, 10] In contrast, end-to-end forecasting leverages a sequence of camera images to directly estimate the future states of all agents in the scene. Traphic [ 5] used an LSTM-CNN-based model to predict trajectories of road agents in dense videos, while Li et al. [25] proposed using a recurrent network with transformers for end-to-end forecasting. FIERY and Beverse [ 16 , 50 ] lifted multi-camera features to a spatio-temporal BEV representation for 3D perception tasks, including object forecasting. While PiP [ 19 ] and ViP3D [ 13 ] took additional HD maps as input and coupled them with transformer-based attention for end-to-end motion prediction, UniAD [ 17 ] and SparseDrive [ 40 ] performed online map generation solely based on camera images. Similar to the aforementioned approaches, OMEN also follows an end-to-end paradigm and couples it with class-incremental learning to perform open-world motion forecasting. 
+
+Class-Incremental Learning for Robot Perception : The goal of class-incremental learning is to enable an existing model to progressively learn new classes over time without forgetting previously learned ones. Several approaches for image-based perception have been introduced, most of which used knowledge distillation and experience replay to prevent catastrophic forgetting [ 38 , 48 , 6, 15 , 41 ]. While Liu et al. [29] and Joseph et al. [21] proposed the use of a replay buffer to tackle the forgetting problem for conventional detectors, CL-DETR [ 30 ] was the first approach to target incremental learning for DETR-like transformers by employing a calibration strategy to preserve the label distribution in the training set. COOLer [ 32 ] addressed class-incremental multi-object tracking by leveraging a contrastive loss formulation to better learn instance features of overlapping classes. Only very few approaches have explored continual learning for tracklet-based object forecasting, in which new driving scenarios, rather than novel semantic classes, are sequentially added to the model. Bao et al. [1] proposed a divergence metric to determine dependencies between various driving scenes and uses a generative replay mechanism. CMP [ 22 ]leveraged meta-representation learning to learn a sparse scene representation and coupled it with a replay buffer where samples are chosen based on their representation similarity. Instead of producing a unified model suitable for all scenarios, DECODE [ 24 ] incrementally generated specialized models for distinct domains. This is achieved by using a hypernetwork to generate specialized network parameters and by leveraging normalizing flow to select the best model during inference. To the best of our knowledge, no approach has been proposed thus far for either continual or class-incremental end-to-end forecasting, which we address in this work. Multi-View Images        
+
+> Multi-View Images
+> Detection Decoder
+> Thresholding:
+> VLM
+> Detection Decoder
+> Matching
+> Motion Decoder
+> Detection Losses
+> Multi-View Images
+> Motion Prediction Losses
+> Future motion pseudo-labels
+> from future detections
+> Detection Decoder
+> Motion Decoder
+> Scenes with diverse motions
+> Dataset
+> Replay buffer
+> III.B. VLM-Guided Pseudo-Label Generation
+> III.C. Sequence-Based Experience Replay
+> Object detection pseudo-labels
+> Dataset
+> Model Model
+> Model Model
+> Matching Matching Object Query
+> 3D Bounding Box Future Trajectory Model
+> Encoder Encoder Encoder Encoder Encoder
+> Pseudo-label proposals
+> Thresholding: Thresholding:
+> Detection Decoder
+> Detection Decoder
+
+Fig. 2: Illustration of the proposed OMEN architecture. At each incremental step i, we create detection and motion forecasting pseudo-labels for the old categories with the old model Φi−1, filter them via a matching with the predictions of a VLM, and add them to the detection ( △) and motion forecasting ( ◦)ground truth of Di, as detailed in Sec. III-B. Furthermore, a replay buffer is created as described in Sec. III-C, based on the latent space of the old model. 
+
+III. T ECHNICAL APPROACH 
+
+In this section, we formally define the open-world motion prediction problem and present OMEN, our novel end-to-end class-incremental framework for camera-based motion forecasting, illustrated in Fig. 2. Specifically, we outline our VLM-guided pseudo-label generation module to produce accurate motion forecasting pseudo-labels in Sec. III-B , and present our novel sequence-based experience replay strategy to address long-term forgetting in Sec. III-C. 
+
+A. Open-World Motion Prediction 
+
+We define open-world motion forecasting as the task of predicting the future trajectories of all agents in a scene directly from camera images X and an evolving set of semantic classes Ci over time. Analogous to class-incremental object detection, the model is trained in incremental steps, where it has access to only a disjoint set of labels. In other words, after step i − 1, the model has to retain knowledge of previously learned classes without accessing their ground truth samples in all subsequent steps [i, i + 1 , ... ). To facilitate this, we split the underlying dataset into several subsets with distinct sets of class labels. Thus, the dataset Di for incremental step i consists of NS sequences, each with multiple sequential samples. Each sample contains M multi-view RGB images X in addition to the 3D bounding box parameters 
+
+{x, y, z, w, l, h, yaw, v x, v y , v z }, class labels, and future agent trajectories τ t:t+T = {(( x, y )t+1 , (x, y )t+2 , . . . , (x, y )t+T )}
+
+for all objects of the set of classes Ci. Note that the images may still contain objects from past or future classes, but the ground truth includes annotations for only the subset of classes 
+
+Ci. An exception from this formulation is a small exemplar replay buffer ϵi that contains a fixed size of Nreplay ≪ NS
+
+sequences from the previous datasets {D0, . . . , D i−1} with annotations for classes C0, . . . , C i−1 of the previous steps. 
+
+B. VLM-Guided Pseudo-Label Generation 1) Pseudo-Labeling for Motion Prediction: In each incre-mental step i, we use the model of the previous step Φi−1
+
+to generate 3D object detection pseudo-labels ˆyidet for all classes observed in previous steps {0, . . . , i − 1} with the M
+
+multi-view images Xj as input. As the framework is designed for end-to-end DETR-based architectures, the object detection output ˆyi−1 
+
+> det
+
+consists of a set of N predictions, each with 3D bounding box parameters and confidence score c. Following incremental 2D detection approaches, we retain only predictions whose confidence c exceeds a threshold θ, and denote these as pseudo-label proposals ˆyidet,proposal .A straightforward idea is to proceed in a similar manner to retrieve motion prediction pseudo-labels ˆyipred,proposal ∈
+
+R ˆN ×T ×2 for the next T time steps for all ˆN objects that pass the threshold θ with the old model Φi−1. However, we observe that a more accurate way to capture the motion of moving objects, especially with non-linear trajectories, is to use the 3D object positions estimated by the detection decoder for the images from future time steps up to T . Since the underlying model inherently performs end-to-end tracking via query propagation and each query has a unique identity, we do not require any external method to derive object associations and thus future positions across different timestamps. Formally, we compose the motion forecasting pseudo-label ˆyij,pred,proposal 
+
+for object j as [ ˜yj,t +1 , . . . , ˜yj,t +T ]. Here, we transform the center of the object {x, y, z }τ at each future step τ by the homogeneous transformation matrix Tτ →t from the future ego-vehicle frame to the current ego-coordinate system: 
+
+˜yij,pred,proposal,t +τ = Tτ →t
+
+
+
+xyz
+
+1
+
+
+
+> τ
+
+. (1) 2) VLM-Based Filtering of False Positives: We observe that the model’s confidence c increases over steps, leading to a higher rate of false positives (FPs). Since we are using a model that operates directly on raw sensor input, it is crucial to mitigate this effect, as it can learn and accumulate motion patterns and object instances that do not exist in the actual scene. Moreover, improving upstream object detection and tracking performance also indirectly influences end-to-end motion prediction results, as it yields more accurate motion-forecasting pseudo-labels in subsequent steps. We employ the Grounded SAM 2 [ 37 ] vision-language model (VLM) to reduce the number of FPs. By doing so, the model keeps a consistent confidence over time and stays calibrated. First, we integrate the foundation model by prompting it with the classes from previous steps, separated by periods, e.g., “car. pedestrian.”, and using its predicted 2D instance masks within the 2D object bounding boxes of Grounding DINO [ 28 ]. To associate 3D object detections with 2D semantic masks, we then use the keypoint feature sampling generator of the underlying sparse 3D object detection method. Given the final anchor box for an object and its feature query, this generator returns multiple 3D sampling points. Subsequently, we project each of these NK keypoints Ki to all of the v ∈ V multi-view image planes with the projection function πv (·). If the absolute majority of the projected points for an object of class c lies in at least one view v inside an instance mask Mcv of the same class, we keep this pseudo-label proposal as a true positive pseudo-label ˆyj = {ˆyj,det , ˆyj,pred } and add it to the set of ground truth labels y. Formally, this condition is defined as follows: 
+
+∃v ∈ V ∃M ∈ M cv : 1
+
+NKNKX
+
+> i=1
+
+I(πv (Ki) ∈ M ) > 12 (2) Simultaneously, we remove the associated 2D bounding box and mask from the set of masks Mcv . As a result, we do not match any remaining proposal with the same mask again, as visualized in the supplementary material in Sec. S.3. Note that if we perceive an object in multiple cameras, we remove the corresponding masks from all views. By traversing the object list in descending order, we ensure that only the most confident object is matched to an object predicted by the VLM. Moreover, to account for objects missed by the VLM, we still add unmatched pseudo-label proposals to the set of ground truth labels and include them in the bipartite matching during training. However, their weight in all loss calculations is set to zero. Moreover, to handle temporal occlusions of objects and since FP predictions typically occur only for the first observation of an object, we also add pseudo-label proposals for objects that have already passed the confidence threshold 
+
+θ in a past frame to the set of pseudo-labels. 
+
+C. Sequence-Based Experience Replay 
+
+Despite the aforementioned strategies to improve the pseudo-label quality, we observe a degradation over time. As a countermeasure, we create a small replay buffer ϵi that contains 
+
+Nreplay sequences S. It is important to emphasize that we should employ a strategy for selecting sequences rather than single samples, since motion forecasting models need context from previous time steps. More specifically, we keep the number of sequences Nreplay in the buffer constant and divide it evenly among all C = {C0, . . . , C i−1} previously learned classes. This results in the following definition of the buffer of step i with 
+
+P = Nreplay /|C| :
+
+ϵi = {SC0 
+
+> 0
+
+, . . . , SC0 
+
+> P
+
+, . . . , SCi−1 
+
+> 0
+
+, . . . , SCi−1 
+
+> P
+
+}. (3) Selecting the set of past sequences is non-trivial, as each sequence contains multiple samples that vary in the number of objects and object motions, with many being static. As a result, it may be suboptimal to use a purely image-feature-based approach, as it does not account for different types of trajectories. The latter also holds true for strategies that incorporate statistics about dataset distributions, such as [ 30 ]. In contrast, by taking advantage of the internal representation of size D of the end-to-end model, we base the replay buffer on statistics about the motion queries Qmotion ∈ RN ×D
+
+corresponding to all ground truth objects in each sample. To retrieve a motion query qj,motion for each object instance j
+
+in the dataset Di−1, we provide all samples of all sequences from the previous step i − 1 to the model. Then, we adapt the Hungarian matching from training to associate each ground truth instance with a model prediction. Subsequently, we calculate the mean motion query ¯qc of all Ntotal objects in 
+
+Di−1 per class c:
+
+¯qc =
+
+PNtotal  
+
+> j=1
+
+qj 1{yj =c}
+
+PNtotal  
+
+> j=1
+
+1{yj =c}
+
+. (4) The final score sk,c for class c in sequence k is then defined as the sum of squared deviations from this mean query over all Ninst,k object instances: 
+
+sk,c =
+
+> Ninst,k
+
+X
+
+> j
+
+(qj − ¯qc)21{yj =c}. (5) Finally, we select the P sequences with the highest scores as replay samples per class because they generally represent scenes with a high to moderate number of moving objects with linear and non-linear future trajectories. 
+
+D. Extension to Class-Incremental Open-Loop Planning 
+
+As the proposed framework for open-world motion prediction inherently leads to a better understanding of the surround-ing environment, it should also directly positively influence the planning of the ego-vehicle trajectory τ ego,t :t+T =
+
+{(( x, y )ego,t +1 , (x, y )ego,t +2 , . . . , (x, y )ego,t +T }). Therefore, to achieve class-incremental open-loop planning, we concate-nate a query for the ego-vehicle qego ∈ R1×D to the set of ND-dimensional object queries Q ∈ RN ×D :
+
+˜Q = concatenate (Q, qego ), (6) and additionally predict its future motion under the setup of only having access to a set of class labels Ci at a time, following [40]. TABLE I: Class-incremental motion prediction results on the nuScenes validation set for the proposed per-class incremental setting. We report all metrics for the first class car (1), the second class pedestrian (2), and all classes (All). † means that for this experiment, our proposed pseudo-labeling from the future detections was used. The best results are marked bold , and the second-best underlined.                                                                                                                  
+
+> Method EPA (%) ↑AP f static (%) ↑AP f linear (%) ↑AP f non −linear (%) ↑mAP f (%) ↑
+> (1) (2) All (1) (2) All (1) (2) All (1) (2) All (1) (2) All Joint Training 45.92 35.49 30.26 54.27 31.99 34.23 29.01 31.10 18.78 14.97 14.11 6.60 32.75 25.73 19.87 Forgetting 0.0 0.0 2.31 0.0 0.0 3.39 0.0 0.0 1.28 0.0 0.0 0.64 0.0 0.0 1.77 Pseudo-Labeling 3.25 -1.38 8.47 41.01 13.51 22.05 10.61 19.73 10.62 2.94 8.05 2.73 18.19 13.76 11.80 Pseudo-Labeling †19.82 6.87 12.12 46.13 17.76 22.78 25.06 18.40 14.47 10.63 7.35 3.93 27.27 14.50 13.73 CL-DETR †[30] 42.93 20.64 19.65 49.99 20.24 24.08 24.58 16.27 14.90 10.96 7.70 4.09 28.51 14.74 14.35 Ours 39.34 20.80 21.95 47.95 19.86 26.01 28.86 19.50 16.24 13.04 8.10 4.57 29.95 15.82 15.60
+
+IV. E XPERIMENTAL RESULTS 
+
+We design our experimental setup to answer the following: 1) Does our proposed framework effectively mitigate for-getting and achieve similar accuracy as an upper bound training with all labels? 2) Does our approach generalize to real-world autonomous driving in a zero-shot setting? 3) Can our approach be naturally extended to support class-incremental planning? 
+
+A. Datasets 
+
+nuScenes : To set up two open-world motion forecasting scenarios, we use the large-scale nuScenes dataset [ 2], captured in Singapore and Boston. For all approaches, we resize the six multi-view RGB images captured at 2 Hz to a shape of 
+
+256 × 704 as model inputs, and consider only the classes that may contain moving objects. We create two distinct training data splits, each presenting its own specific challenges: a per-class incremental and a group-incremental split. In the per-class incremental setting, each step contains annotations for only a single class, resulting in six incremental steps that are particularly prone to forgetting. To train the underlying end-to-end model reasonably well, we randomly sample 300 sequences per class from all 700 training scenes that contain annotations for the class, and remove the annotations for all other classes. If fewer than 300 sequences are available for a class, we only use these. Moreover, we determine the class ordering for the incremental steps based on the label counts, resulting in the order car - pedestrian - truck 
+
+- trailer - motorcycle - bicycle - bus . For the group-incremental training procedure, we divide the data disjointly into 234 , 233 ,and 233 sequences, which presents a challenging setting due to the limited amount of data. Following COOLer [ 32 ], we group similar classes into steps: We combine car, truck, bus, and trailer into the base step vehicle , the class pedestrian into 
+
+pedestrian in the second step, and bicycle and motorcycle into 
+
+two-wheeler in the final step. 
+
+Argoverse 2 : We also create an open-world motion forecasting data split on the Argoverse 2 (AV2) [ 45 ] dataset that contains traffic scenes from six US cities. For all models, we resize the seven surround view RGB images to a shape of 640 ×960 . Since the front camera images are in portrait mode, we first crop them to landscape format. Following Far3D [ 20 ], we split the RGB images of each of the 700 sequences, recorded with 10 Hz, into five sequences with 2 Hz. We use the same 26 classes as in the official end-to-end forecasting evaluation. For this dataset, we create a similar overlapping setting as proposed by Cermelli et al. [4] , in which we use all available annotations for the classes in each step. We remove the annotations for classes that are introduced in later steps, and, as a result, they may appear as background. For the base training, we randomly select 20 classes ( articulated bus , pedestrian , construction cone ,
+
+bus , wheelchair , construction barrel , motorcycle , bicyclist ,
+
+dog , stroller , box truck , sign , stop sign , wheeled device ,
+
+vehicular trailer , mobile pedestrian crossing sign , bicycle ,
+
+school bus , truck cab , regular vehicle ) and train the model for three incremental steps (20-2 setting), each with two of the remaining classes ( motorcyclist , wheeled rider - truck , bollard 
+
+- large vehicle , message board trailer ). 
+
+B. Baselines 
+
+We compare OMEN against several challenging baselines. As it is desirable to come as close as possible to the performance of the joint training that uses all sequences and all class labels simultaneously, this serves as the upper bound. To demonstrate the difficulty of the proposed task, we benchmark a forgetting baseline that does not employ any measures against forgetting in all proposed scenarios. To highlight the additional benefits of the approach beyond the pseudo-labeling from the object detections at future frames, we also report results for two pseudo-labeling baselines . The first uses forecasting predictions, and the second uses future 3D object detections as pseudo-labels for forecasting. Moreover, we adapt CL-DETR [30 ], a state-of-the-art method for class-incremental 2D object detection, for the presented task. Similarly to our method, we limit the replay buffer size and retain only the samples per step that best represent the data distribution. For the per-class incremental scenario, we adapt the sampling strategy to match the distribution of object frequencies across sequences. To achieve a fair comparison, we use the pseudo-labels from future object detections for CL-DETR. As an additional baseline for the exemplar replay buffer, we take inspiration from CoDEPS [ 42 ], which stores exemplar samples based on their feature similarity for online continual depth estimation and panoptic segmentation. We adapt this idea by using the global classification feature vector from DINOv3 [ 39 ]for each input sample, stacking these vectors for all samples in a sequence and iteratively selecting sequences for the buffer TABLE II: Class-incremental motion prediction results on the nuScenes validation set for the proposed group-incremental setting, which consists of a base training with four classes (1-4), an incremental step with one class (5) followed by a second incremental step with two classes (6-7). We report all metrics for the individual steps and all classes (All). † means that for this experiment, our proposed pseudo-labeling from the future detections was used. The best results are marked bold , and the second-best underlined.                                                                                                                        
+
+> Method AP f static (%) ↑AP f linear (%) ↑AP f non −linear (%) ↑mAP f (%) ↑
+> (1-4) (5) (6-7) All (1-4) (5) (6-7) All (1-4) (5) (6-7) All (1-4) (5) (6-7) All Joint Training 30.61 31.99 42.60 34.23 15.07 31.10 20.04 18.78 7.85 14.11 0.36 6.60 17.85 25.73 21.00 19.87 Forgetting 0.0 0.0 28.42 8.12 0.0 0.0 13.49 3.85 0.0 0.0 0.10 0.03 0.0 0.0 14.00 4.00 Pseudo-Labeling 19.92 15.36 26.01 21.01 4.22 19.04 3.74 6.20 1.89 8.44 0.13 2.32 8.68 14.28 9.96 9.84 Pseudo-Labeling †20.53 18.90 23.64 21.18 6.07 19.67 8.98 8.84 2.21 8.23 0.40 2.55 9.60 15.60 11.00 10.86 CL-DETR †[30] 22.00 20.49 27.68 23.41 6.59 16.74 14.88 10.41 2.31 6.23 0.11 2.24 10.30 14.49 14.23 12.02 Ours 22.74 20.59 30.78 24.73 7.18 20.75 12.69 10.69 2.75 6.44 0.17 2.54 10.89 15.93 14.55 12.65
+
+TABLE III: Class-incremental 3D object detection and motion prediction results on the Argoverse 2 validation set for the proposed incremental 20-2 setting with a total of four steps. We set the evaluation range to 50 m, following the AV2 End-to-End Forecasting settings for motion prediction. † means that for this experiment, we used our proposed pseudo-labeling from the future detections. The best results are marked bold , and the second-best underlined.                                                                                                                  
+
+> Method CDS (%) ↑AP f static (%) ↑AP f linear (%) ↑AP f non −linear (%) ↑mAP f (%) ↑
+> (1-20) (21-26) All (1-20) (21-26) All (1-20) (21-26) All (1-20) (21-26) All (1-20) (21-26) All Joint Training 31.21 16.74 27.87 44.74 26.67 41.13 27.18 16.29 25.00 18.55 29.41 21.45 32.63 24.32 30.83 Forgetting 0.0 0.72 0.17 0.0 1.74 0.35 0.0 0.09 0.02 0.0 2.49 0.66 0.0 1.46 0.32 Pseudo-Labeling 29.01 15.14 25.81 41.43 20.62 37.27 25.43 11.83 22.71 11.87 27.38 16.00 29.07 19.99 27.10 Pseudo-Labeling †28.54 15.27 25.48 40.91 19.76 36.68 26.89 12.96 24.10 15.65 26.25 18.47 30.22 19.66 27.94 CL-DETR †[30] 28.43 14.46 25.20 40.30 18.59 35.96 25.06 14.38 22.93 13.75 20.49 15.55 28.90 17.88 26.51 Ours 29.19 14.56 25.82 41.37 22.27 37.55 28.97 14.18 26.01 18.48 24.74 20.15 31.79 20.54 29.36
+
+TABLE IV: Class-incremental open-loop planning results after each training stage on the nuScenes validation set for the proposed per-class incremental setting. The best results are marked bold , and the second-best underlined.                                                                              
+
+> Step L2 (m)↓Col. Rate (%) ↓
+> 1s2s3sAvg. 1s2s3sAvg. Joint Training 0.32 0.63 1.04 0.66 0.02 0.08 0.34 0.14 10.38 0.76 1.27 0.80 0.03 0.12 0.60 0.25 20.36 0.71 1.18 0.75 0.02 0.10 0.45 0.19 30.33 0.64 1.05 0.67 0.02 0.10 0.41 0.18 40.35 0.67 1.10 0.70 0.03 0.16 0.46 0.21 50.34 0.65 1.06 0.68 0.02 0.09 0.31 0.14
+> 60.33 0.63 1.04 0.67 0.01 0.08 0.34 0.15 70.32 0.63 1.03 0.66 0.02 0.11 0.36 0.16
+
+that have the lowest pair-wise Chamfer cosine similarity to all sequences in the buffer. To follow CoDEPS, we compute cosine similarity rather than a distance function. 
+
+C. Training Protocol 
+
+To develop our approach, we build on the end-to-end prediction and planning method SparseDrive [ 40 ]. Unless otherwise noted, we use the same parameters as in the SparseDrive-S model and train it with the same loss functions. In contrast to the original work, we only use camera images as input during training and testing, and disable LiDAR-based depth supervision. In addition, we remove the online map generation module, as its influence on end-to-end motion forecasting models remains underexplored [ 47 ], and deactivate ego-trajectory planning for most of the experiments. In each incremental step, we train the model in two stages as in [ 40 ], using the AdamW optimizer [ 33 ] with cosine learning rate decay and weight decay of 1 × 10 −3. In the first stage, we only train the 3D object detection model part for 50 epochs on nuScenes and 10 on AV2, while in the second stage, we update the entire model for 10 and 2 epochs, respectively. To enhance plasticity for novel classes, we only use replay samples during the second-stage training, with each batch containing approximately 25% replay samples. We set the initial learning rates for the first and second stages to 2 × 10 −4
+
+and 1 × 10 −4 during base training, and to half of these values in the subsequent incremental steps. For the first stage, we enable query denoising from Sparse4Dv3 [ 27 ], but only for the ground-truth annotations due to possible noise in the pseudo-labels. For nuScenes, we train all models on 4 GPUs with a total batch size of 64 for the first stage and 48 for the second stage training, while we set these numbers to 32 and 28 for AV2. To train the model on the AV2 dataset, we follow the velocity calculation and trajectory GT generation from LT3D [ 47 ] for the AV2 End-to-End Forecasting Challenge and extend the dataloader from Far3D [ 20 ] for SparseDrive. Following Far3D, we use a VoVNet-99 [ 23 ] as the image backbone for AV2, while we employ ResNet-50 [ 14 ] for all models for nuScenes. We forecast the object motion for a time horizon T of 6 s on the nuScenes dataset, as in prior work [ 17 , 13 , 40 ], and for 3 son the AV2 dataset, as in the End-to-End Forecasting Challenge. Regarding the specific parameters for the incremental learning scenarios, we set the fixed replay buffer size Nreplay to 30 
+
+sequences across all experiments, unless otherwise specified. If the buffer size is not divisible without a residual by the number of classes, we select the remaining sequences from the latest sub-dataset. If there is again a residual, we store samples for the classes with the lowest frequencies more frequently. To create the pseudo-labels, we use a threshold of θ = 0 .3.TABLE V: Ablation study on the per-class incremental setting to study the influence of each contribution. The best results are marked bold .                                                                                 
+
+> Forecasting PL VLM Filt. Var. Buffer AMOTA (%) ↑/ mAP f (%) ↑
+> pred. fut det. (1) (2) (3) (4) (5) (6) (7) All Joint Training 49.9 / 32.75 32.4 / 25.73 29.5 / 15.15 0.0 / 5.14 32.6 / 17.81 36.8 / 24.19 33.8 / 18.34 30.7 / 19.87 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 0.0 / 0.0 36.4 / 12.39 5.2 / 1.77
+> ✓29.2 / 18.19 17.4 / 13.76 5.2 / 6.71 0.0 / 1.50 25.2 / 11.01 25.0 / 15.08 33.8 / 16.36 19.4 / 11.80
+> ✓41.3 / 27.27 20.8 / 14.50 11.0 / 9.04 0.0 / 3.48 18.7 / 9.75 27.2 / 17.82 26.2 / 14.21 20.8 / 13.73
+> ✓✓52.0 / 29.45 30.4 / 14.70 19.6 / 10.34 0.0 / 3.10 27.8 / 12.65 32.1 / 17.90 30.2 / 14.06 27.4 / 14.60
+> ✓✓✓52.7 /29.95 32.5 /15.82 15.8 / 11.26 0.0 /3.85 26.3 / 13.46 33.9 /19.62 35.2 / 15.27 28.0 /15.60
+
+TABLE VI: Ablation study for the exemplar selection strategy used on both proposed nuScenes settings. For the random exemplar selections, we conduct three runs with different random seeds for the selection process and average the results. The best results are marked bold .                                                                 
+
+> Setting Selection AP f linear (%) ↑AP f non −linear (%) ↑
+> per-class (7 steps) Classes (1) (2) All (1) (2) All Random 27.32 19.26 15.68 12.90 6.37 4.29 DINOv3 26.97 18.99 15.25 12.75 6.69 4.01 CL-DETR 27.04 19.28 14.58 12.86 6.80 4.10 Ours 28.86 19.50 16.24 13.04 8.10 4.57
+> group (3 steps) Classes (1-4) (5) All (1-4) (5) All Random 7.32 18.75 9.91 2.67 6.79 2.58
+> DINOv3 7.71 18.94 10.29 2.20 6.89 2.31 CL-DETR 6.08 19.21 9.36 2.11 7.82 2.43 Ours 7.18 20.75 10.69 2.75 6.44 2.54
+
+D. Quantitative Results 
+
+For each method, we compute the forecasting mean average precision (mAP f) [ 36 ] as the main metric, which was proposed to evaluate end-to-end motion forecasting approaches. It aver-ages static, linear, and non-linear Forecasting Average Precision (AP f), which we also report separately. For nuScenes, we adapt the evaluation code from the AV2-API. First, we present the forecasting results for the nuScenes per-class incremental split in Table I. In this setting, OMEN achieves the highest overall mAP f and is especially more accurate for the classes introduced first, which are more prone to forgetting. Moreover, the accuracy for linearly and non-linearly moving objects, which are more complex for the model to learn, significantly surpasses that of the baselines. Since the focus of our method is to retain knowledge about these moving objects, there is a slight trade-off regarding static objects, while CL-DETR, which is based on dataset distributions, exhibits degraded performance for moving agents. We also make a similar observation for the 3D object detection and tracking metrics, which we provide in the supplementary material in Sec. S.1. For this data split, we also evaluate the end-to-end prediction accuracy (EPA) [ 13 ] in Table I, which shows very low scores for methods that do not counteract increased model confidence over time. The reason for this is that, contrary to mAP f, EPA does not consider the relative score ordering of objects but strictly punishes false positives above a certain confidence threshold. Therefore, we select mAP f as the main metric for the remaining experiments. For the group-incremental scenario, we observe that this setting is very challenging due to the smaller dataset size, which leads to decreased accuracies for all methods, as demonstrated 
+
+TABLE VII: Ablation study for the size of the replay buffer K on the per-class incremental setting. Note that we keep the buffer size constant across steps. The best results are marked bold .                             
+
+> Buffer Size AP f non −linear (%) ↑mAP f (%) ↑
+> (1) (2) All (1) (2) All
+> K= 6 11.84 5.53 3.56 29.60 15.10 14.86
+> K= 12 12.53 7.55 4.37 30.16 15.14 15.50
+> K= 30 13.04 8.10 4.57 29.95 15.82 15.60
+
+in Table II. Nevertheless, OMEN achieves the best results for static and linear trajectories, while the accuracy for non-linearly moving objects is on a low level for all methods. On the proposed overlapping AV2 scenario, OMEN also outperforms the baselines, primarily for moving objects, in motion prediction, as shown in Table III. Notably, it almost reaches the results of the joint training, while even surpassing it for linearly moving objects. The narrower gap in this setting is due to the shorter forecasting horizon and the larger number of training sequences compared to the experiments on nuScenes. Finally, we show in Table IV that the approach can be successfully applied to open-loop planning scenarios, in which the model learns novel agent types over time. As a result, across added classes, it can be observed that the L2-error for the ego future trajectory and the collision rate gradually decrease. 
+
+E. Ablation Study 
+
+We investigate the effect of each individual contribution of the approach in Table V. First, creating the motion forecasting pseudo-labels from the object detections at future frames greatly increases mAP f. Second, the VLM-based filtering significantly improves tracking and also positively impacts forecasting. Third, the sequence-based experience replay further boosts motion forecasting results. We also study how the variance-based replay mechanism directly compares against other replay buffer population strategies in Table VI for the two nuScenes splits. Here, we conclude that our approach is especially effective in retaining knowledge about moving agents compared to methods that consider only the image feature space or dataset distributions. In the supplementary material in Sec. S.4, we visualize selected scenes. Furthermore, we provide ablations about the replay buffer size K in Table VII, which indicates that storing only two sequences per class in the final step ( K = 12 ) already notably enhances motion forecasting quality. (a) Qualitative results of a sample from the nuScenes dataset with a prediction horizon of 6 s. While the upper bound and OMEN correctly predict the non-linear motion of the truck as well as the static trajectories for the pedestrians and cars in the opposite lane, CL-DETR demonstrates insufficient efficacy.    
+
+> (b) Qualitative results for a sample of the Argoverse 2 dataset with a prediction horizon of 3 s. Similarly to nuScenes, our approach better estimates the future motion of moving objects compared to CL-DETR. Fig. 3: Qualitative results of OMEN in comparison to CL-DETR and the upper bound. We show the camera input images with our model’s 3D object detections on the left, and the top-3 predicted modes per object for all methods in the bird’s-eye-view perspective on the right.
+> Fig. 4: Zero-shot qualitative results of OMEN deployed on real-world data from our self-driving car. OMEN successfully keeps forecasting knowledge about the first two introduced classes car and pedestrian .
+
+F. Qualitative Results 
+
+In Fig. 3, we present visualizations for nuScenes and AV2 from OMEN side-by-side with the upper bound and CL-DETR. These examples demonstrate that OMEN better retains knowl-edge, especially about moving objects, as shown for the turning vehicles. While CL-DETR often outputs infeasible trajectories that enter oncoming traffic or simply follow the orientation of the objects, our model estimates motion in these cases more accurately and comes close to the upper bound. In addition, for the nuScenes sample, it can be observed that CL-DETR does not always predict that all static vehicles and pedestrians are actually static, but rather that some are slightly moving, which is not the case for OMEN and the upper bound. We present more qualitative results in the supplementary material in Sec. S.5. 
+
+G. Real-World Experiments 
+
+To demonstrate the zero-shot capability of OMEN, we eval-uate it on sequences from our in-house self-driving perception car. It should be noted that there is a significant domain gap between this deployed environment and the nuScenes data due to differences in country, camera, and mounting pose. For this experiment, we use the per-class incremental setting to train our model only on front-view images from nuScenes and show the results in Fig. 4. More real-world visualizations are presented in the supplementary material in Sec. S.6. 
+
+H. Discussion of Limitations 
+
+In the experimental evaluation of this work, we did not enforce that classes may be completely absent in subsequent incremental steps, which could potentially lead to increased forgetting and, thus, decreased accuracy for these classes due to missing pseudo-labels. Moreover, OMEN relies on ground-truth annotations for novel classes. In addition, we did not use a high-definition map as input or build a map online, which could improve the model’s overall forecasting performance. V. C ONCLUSION 
+
+In this paper, we introduced the task of open-world motion prediction and proposed the methodological approach OMEN to successfully overcome the challenges of this learning setup. While accounting for storage constraints of autonomous ve-hicles, we introduced an exemplar replay selection strategy tailored for open-world motion forecasting, alongside a pseudo-labeling mechanism that utilizes object detections for future frames and filters false positives by incorporating a VLM. Extensive experiments and ablations demonstrated that the approach successfully diminishes forgetting while retaining plasticity to learn novel classes, and comes close to the performance of an upper bound training with all annotations at the same time. Future work could build on the methodological approach and further investigate its adaptation to closed-loop planning, to equip the whole stack of autonomous vehicles with the ability to operate in open-world scenarios. VI. A CKNOWLEDGEMENT 
+
+Nikhil Gosala was funded by Qualcomm Technologies Inc., as well as an academic grant from NVIDIA. Nicolas Schischka was funded by the European Union with the HIDDEN project, under grant agreement No 101202228. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Climate, Infrastructure and Environment Executive Agency (CINEA). Neither the European Union nor the granting authority can be held responsible for them. REFERENCES 
+
+[1] Peng Bao, Zonghai Chen, Jikai Wang, Deyun Dai, and Hao Zhao. Lifelong vehicle trajectory prediction frame-work based on generative replay. IEEE Transactions on Intelligent Transportation Systems , 24(12):13729–13741, 2023. [2] Holger Caesar, Varun Bankiti, Alex H Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Giancarlo Baldan, and Oscar Beijbom. nuscenes: A multimodal dataset for autonomous driving. In IEEE Conf. on Computer Vision and Pattern Recognition , pages 11621–11631, 2020. [3] Sergio Casas, Cole Gulino, Simon Suo, and Raquel Urtasun. The importance of prior knowledge in precise multimodal prediction. In 2020 IEEE/RSJ international conference on intelligent robots and systems (IROS) , pages 2295–2302. IEEE, 2020. [4] Fabio Cermelli, Massimiliano Mancini, Samuel Rota Bulo, Elisa Ricci, and Barbara Caputo. Modeling the background for incremental learning in semantic segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 9233– 9242, 2020. [5] Rohan Chandra, Uttaran Bhattacharya, Aniket Bera, and Dinesh Manocha. Traphic: Trajectory prediction in dense and heterogeneous traffic using weighted interactions. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 8483–8492, 2019. [6] Li Chen, Chunyan Yu, and Lvcai Chen. A new knowledge distillation for incremental object detection. In 2019 in-ternational joint conference on neural networks (IJCNN) ,pages 1–7. IEEE, 2019. [7] Shengzhe Dai, Li Li, and Zhiheng Li. Modeling vehicle interactions via modified lstm models for trajectory prediction. Ieee Access , 7:38287–38296, 2019. [8] Nachiket Deo and Mohan M Trivedi. Convolutional social pooling for vehicle trajectory prediction. In Proceedings of the IEEE conference on computer vision and pattern recognition workshops , pages 1468–1476, 2018. [9] Nachiket Deo and Mohan M Trivedi. Multi-modal tra-jectory prediction of surrounding vehicles with maneuver based lstms. In 2018 IEEE intelligent vehicles symposium (IV) , pages 1179–1184. IEEE, 2018. [10] Aron Distelzweig, Eitan Kosman, Andreas Look, Faris Janjo ˇs, Denesh K Manivannan, and Abhinav Valada. Motion forecasting via model-based risk minimization. In IEEE International Conference on Robotics and Automation (ICRA) , pages 7011–7018, 2025. [11] Aron Distelzweig, Andreas Look, Eitan Kosman, Faris Janjo ˇs, J ¨org Wagner, and Abhinav Valada. Stochasticity in motion: An information-theoretic approach to trajectory prediction. In IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pages 6211–6218, 2025. [12] Jiyang Gao, Chen Sun, Hang Zhao, Yi Shen, Dragomir Anguelov, Congcong Li, and Cordelia Schmid. Vectornet: Encoding hd maps and agent dynamics from vectorized representation. In Proceedings of the IEEE/CVF confer-ence on computer vision and pattern recognition , pages 11525–11533, 2020. [13] Junru Gu, Chenxu Hu, Tianyuan Zhang, Xuanyao Chen, Yilun Wang, Yue Wang, and Hang Zhao. Vip3d: End-to-end visual trajectory prediction via 3d agent queries. In 
+
+IEEE Conf. on Computer Vision and Pattern Recognition ,pages 5496–5506, June 2023. [14] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , pages 770–778, 2016. [15] Julia Hindel, Daniele Cattaneo, and Abhinav Valada. Taxonomy-aware continual semantic segmentation in hyperbolic spaces for open-world perception. IEEE Robotics and Automation Letters , 10(2):1904–1911, 2024. [16] Anthony Hu, Zak Murez, Nikhil Mohan, Sof ´ıa Dudas, Jeffrey Hawke, Vijay Badrinarayanan, Roberto Cipolla, and Alex Kendall. Fiery: Future instance prediction in bird’s-eye view from surround monocular cameras. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 15273–15282, October 2021. [17] Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, et al. Planning-oriented autonomous driving. In 
+
+IEEE Conf. on Computer Vision and Pattern Recognition ,pages 17853–17862, 2023. [18] Zhiyu Huang, Xiaoyu Mo, and Chen Lv. Multi-modal motion prediction with transformer-based neural network for autonomous driving. In 2022 International Conference on Robotics and Automation (ICRA) , pages 2605–2611. IEEE, 2022. [19] Bo Jiang, Shaoyu Chen, Xinggang Wang, Bencheng Liao, Tianheng Cheng, Jiajie Chen, Helong Zhou, Qian Zhang, Wenyu Liu, and Chang Huang. Perceive, interact, predict: Learning dynamic and static clues for end-to-end motion prediction. arXiv preprint arXiv:2212.02181 , 2022. [20] Xiaohui Jiang, Shuailin Li, Yingfei Liu, Shihao Wang, Fan Jia, Tiancai Wang, Lijin Han, and Xiangyu Zhang. Far3d: Expanding the horizon for surround-view 3d object detection. In Proceedings of the AAAI conference on artificial intelligence , pages 2561–2569, 2024. [21] KJ Joseph, Salman Khan, Fahad Shahbaz Khan, and Vineeth N Balasubramanian. Towards open world object detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 5830– 5840, 2021. [22] DaeJun Kang, Dongsuk Kum, and Sanmin Kim. Con-tinual learning for motion prediction model via meta-representation learning and optimal memory buffer reten-tion strategy. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15438–15448, 2024. [23] Youngwan Lee, Joong-won Hwang, Sangrok Lee, Yuseok Bae, and Jongyoul Park. An energy and gpu-computation efficient backbone network for real-time object detection. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition workshops , pages 0–0, 2019. [24] Boqi Li, Haojie Zhu, and Henry X Liu. Decode: Domain-aware continual domain expansion for motion prediction. 
+
+arXiv preprint arXiv:2411.17917 , 2024. [25] Lingyun Luke Li, Bin Yang, Ming Liang, Wenyuan Zeng, Mengye Ren, Sean Segal, and Raquel Urtasun. End-to-end contextual perception and prediction with interaction transformer. In 2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pages 5784– 5791. IEEE, 2020. [26] Ming Liang, Bin Yang, Rui Hu, Yun Chen, Renjie Liao, Song Feng, and Raquel Urtasun. Learning lane graph representations for motion forecasting. In European Conference on Computer Vision , pages 541–556. Springer, 2020. [27] Xuewu Lin, Zixiang Pei, Tianwei Lin, Lichao Huang, and Zhizhong Su. Sparse4d v3: Advancing end-to-end 3d detection and tracking. arXiv preprint arXiv:2311.11722 ,2023. [28] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Qing Jiang, Chunyuan Li, Jianwei Yang, Hang Su, et al. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. In 
+
+ECCV , pages 38–55, 2024. [29] Xialei Liu, Hao Yang, Avinash Ravichandran, Rahul Bhotika, and Stefano Soatto. Multi-task incremental learn-ing for object detection. arXiv preprint arXiv:2002.05347 ,2020. [30] Yaoyao Liu, Bernt Schiele, Andrea Vedaldi, and Christian Rupprecht. Continual detection transformer for incremen-tal object detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pages 23799–23808, 2023. [31] Yicheng Liu, Jinghuai Zhang, Liangji Fang, Qinhong Jiang, and Bolei Zhou. Multimodal motion prediction with stacked transformers. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 7577–7586, 2021. [32] Zhizheng Liu, Mattia Segu, and Fisher Yu. Cooler: class-incremental learning for appearance-based multiple object tracking. In DAGM German Conference on Pattern Recognition , pages 443–458. Springer, 2023. [33] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Conference on Learning Representations , 2019. [34] Sajad Marvi, Christoph Rist, Julian Schmidt, Julian Jordan, and Abhinav Valada. Evidential uncertainty estimation for multi-modal trajectory prediction. In 
+
+IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) , pages 785–792, 2025. [35] Nigamaa Nayakanti, Rami Al-Rfou, Aurick Zhou, Kratarth Goel, Khaled S Refaat, and Benjamin Sapp. Wayformer: Motion forecasting via simple & efficient attention networks. arXiv preprint arXiv:2207.05844 ,2022. [36] Neehar Peri, Jonathon Luiten, Mengtian Li, Aljo ˇsa O ˇsep, Laura Leal-Taix ´e, and Deva Ramanan. Forecasting from lidar via future object detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 17202–17211, June 2022. [37] Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, et al. Grounded sam: Assembling open-world models for diverse visual tasks. arXiv preprint arXiv:2401.14159 , 2024. [38] Konstantin Shmelkov, Cordelia Schmid, and Karteek Alahari. Incremental learning of object detectors without catastrophic forgetting. In Proceedings of the IEEE international conference on computer vision , pages 3400– 3409, 2017. [39] Oriane Sim ´eoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Micha ¨el Ramamonjisoa, et al. Dinov3. arXiv preprint arXiv:2508.10104 , 2025. [40] Wenchao Sun, Xuewu Lin, Yining Shi, Chuang Zhang, Haoran Wu, and Sifa Zheng. Sparsedrive: End-to-end autonomous driving via sparse scene representation. In 
+
+Int. Conf. on Robotics & Automation , pages 8795–8801. IEEE, 2025. [41] Niclas V ¨odisch, Daniele Cattaneo, Wolfram Burgard, and Abhinav Valada. Covio: Online continual learning for visual-inertial odometry. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 2464–2473, 2023. [42] Niclas V ¨odisch, K ¨ursat Petek, Wolfram Burgard, and Abhinav Valada. Codeps: Online continual learning for depth estimation and panoptic segmentation. In Robotics: Science and Systems (RSS) , 2023. [43] Jiarong Wei, Niclas V ¨odisch, Anna Rehr, Christian Feist, and Abhinav Valada. Parkdiffusion: Heterogeneous multi-agent multi-modal trajectory prediction for automated parking using diffusion models. In IEEE/RSJ Interna-tional Conference on Intelligent Robots and Systems (IROS) , pages 8297–8304, 2025. [44] Jiarong Wei, Anna Rehr, Christian Feist, and Abhinav Valada. Parkdiffusion++: Ego intention conditioned joint multi-agent trajectory prediction for automated parking using diffusion models. arXiv preprint arXiv:2602.20923 ,2026. [45] Benjamin Wilson, William Qi, Tanmay Agarwal, John Lambert, Jagjeet Singh, Siddhesh Khandelwal, Bowen Pan, Ratnesh Kumar, Andrew Hartnett, Jhony Kaesemodel Pontes, Deva Ramanan, Peter Carr, and James Hays. Argoverse 2: Next generation datasets for self-driving perception and forecasting. In Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2) , 2021. [46] Guo Xie, Anqi Shangguan, Rong Fei, Wenjiang Ji, Weigang Ma, and Xinhong Hei. Motion trajectory prediction based on a cnn-lstm sequential model. Science China Information Sciences , 63(11):212207, 2020. [47] Yihong Xu, Lo ¨ıck Chambon, ´Eloi Zablocki, Micka ¨el Chen, Alexandre Alahi, Matthieu Cord, and Patrick P ´erez. Towards motion forecasting with real-world perception inputs: Are end-to-end approaches competitive? In 
+
+Int. Conf. on Robotics & Automation , pages 18428–18435. IEEE, 2024. [48] Dongbao Yang, Yu Zhou, Aoting Zhang, Xurui Sun, Dayan Wu, Weiping Wang, and Qixiang Ye. Multi-view correlation distillation for incremental object detection. 
+
+Pattern Recognition , 131:108863, 2022. [49] Ting Zhang, Wenjie Song, Mengyin Fu, Yi Yang, and Meiling Wang. Vehicle motion prediction at intersections based on the turning intention and prior trajectories model. 
+
+IEEE/CAA Journal of Automatica Sinica , 8(10):1657– 1666, 2021. [50] Yunpeng Zhang, Zheng Zhu, Wenzhao Zheng, Junjie Huang, Guan Huang, Jie Zhou, and Jiwen Lu. Bev-erse: Unified perception and prediction in birds-eye-view for vision-centric autonomous driving. arXiv preprint arXiv:2205.09743 , 2022. [51] Zikang Zhou, Luyao Ye, Jianping Wang, Kui Wu, and Kejie Lu. Hivt: Hierarchical vector transformer for multi-agent motion prediction. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 8823–8833, 2022. [52] Alex Zyner, Stewart Worrall, and Eduardo Nebot. Arecurrent neural network solution for predicting driver intention at unsignalized intersections. IEEE Robotics and Automation Letters , 3(3):1759–1764, 2018. Open-World Motion Forecasting 
+
+# - Supplementary Material -
+
+S.1. 3D O BJECT DETECTION & T RACKING RESULTS 
+
+We present 3D object detection and tracking results from our framework, compared with baselines, in Table S.1. Here, we make a similar observation as for the distinction between static and dynamic forecasting: While CL-DETR [ 30 ] achieves a slightly higher mean average precision (mAP) and nuScenes detection score (NDS) [ 2 ] for the first introduced class car, OMEN still tracks object of this class better, as can be seen by the average multi-object tracking accuracy (AMOTA) [ 2]. Moreover, it substantially outperforms the baselines across detection and tracking metrics when averaging over all classes, which we attribute to the VLM-guided filtering mechanism, as shown in the ablation studies in the main paper. S.2. T RAINING TIME COMPARISON 
+
+To further highlight the benefits of our approach, we compare its training time for the group-incremental setting with that for joint training and refinement using all available labels and sequences at each incremental step in Table S.2. We run this experiment with eight Nvidia A6000, each with 48 gigabytes of video random-access memory (VRAM), on a server with 256 GB random-access memory (RAM) and an AMD EPYC 7452 32-core processor. As illustrated in the table, the total time to iteratively retrain the model with all available labels is almost twice that of OMEN when assuming that Grounded SAM 2 [ 37 ] masks for the old classes are provided for each novel data subset. This assumption might be valid, since the masks can be precomputed outside the autonomous vehicle due to their independence from the individual model. However, if this assumption is not made and the time for mask generation is also included in the total time required, the incremental training is still about 40% faster. The other framework components, aside from VLM-based mask generation, incur almost no additional computational overhead: To generate the replay buffer, only a forward pass through the previous dataset Di−1 is needed to retrieve the latent queries. Similarly, the pseudo-label generation only requires a forward pass through the new dataset Di but takes slightly longer due to the sequential matching of objects to VLM masks. It should also be noted that, to enable the joint training, it would be necessary to relabel all past sequences with the novel class and provide annotations for all past classes in the novel data subset, in addition to the time required for training. Consequently, this process would require significant additional effort beyond the raw training time.                                                     
+
+> TABLE S.1: Class-incremental 3D object detection and tracking results on the nuScenes validation set for the proposed per-class incremental setting. We report all metrics for the first class car (1) and all classes (All). †means that for this experiment, our proposed pseudo-labeling from the future detections was used. The best results are marked bold , and the second-best underlined.
+> Method mAP (%) ↑NDS (%) ↑AMOTA (%) ↑
+> (1) All (1) All (1) All Joint Training 59.6 37.1 68.1 48.2 49.9 30.7 Forgetting 0.0 4.6 0.0 6.1 0.0 5.2 Pseudo-Labeling 45.9 25.6 58.1 41.0 29.2 19.4 Pseudo-Labeling †49.9 25.8 61.7 40.8 41.3 20.8 CL-DETR †[30] 53.5 27.5 64.5 42.0 52.1 25.2 Ours 52.3 29.2 64.4 43.8 52.7 28.0
+
+S.3. V ISUALIZATION OF MASK FILTERING 
+
+We visualize the VLM-based mask filtering for the car class in nuScenes in Fig. S.1. As noted in the technical approach section, if the absolute majority of all projected keypoints for an object lie within an instance mask predicted by the VLM, we keep the object as a pseudo-label and remove the mask from the matching for the remaining objects with lower confidence. As object k and object i refer to the same object predicted by the VLM, object k, which has lower confidence, is removed. Note that the bounding boxes of i and k have a 3D Intersection over Union (IoU) of 0, i.e., they cannot be filtered based solely on overlap. S.4. C OMPARISON OF SEQUENCES FROM DIFFERENT 
+
+REPLAY BUFFER SELECTIONS 
+
+We visually compare the sequences that different replay buffer strategies select after the base training for the first class 
+
+car for the nuScenes per-class incremental setting in Fig. S.3. For visualization purposes, we show only the six sequences with the highest scores, i.e., the sequences selected first by the corresponding algorithms. Since the DINOv3 [ 39 ]-based strategy, inspired by [ 42 ], favors diverse sequences in the image feature space, the respective buffer contains sequences with atypical scenarios, such as construction zones, varying lighting and weather conditions, and from different cities. Although this covers the image feature space well, it yields worse motion forecasting results than our method, as shown in the ablation studies in the main paper. Moreover, the sequences selected by CL-DETR [ 30 ] aim to optimally represent the data-label distribution. Therefore, the selected sequences, in general, have approximately the same distribution across object classes as the whole dataset. The first selected sequences show a few turning maneuvers, but TABLE S.2: Comparison of the training time t between OMEN and the joint re-training with all labels in each step (0-2) for the group-incremental nuScenes setting, divided into training time ttrain , replay inference & buffer generation time treplay , and pseudo labeling time tpseudo .                                                   
+
+> Method Step 0 (hh :mm )↓Step 1 (hh :mm )↓Step 2 (hh :mm )↓Total (hh :mm )↓
+> ttrain treplay tpseudo ttrain treplay tpseudo ttrain ttotal
+> Joint Training 03:17 --06:41 --09:59 19:57 Ours w/o pre-computed VLM masks 03:17 00:04 01:18 03:21 00:04 01:18 03:08 12:30 Ours w/ pre-computed VLM masks 03:17 00:04 00:09 03:21 00:04 00:09 03:08 10:12
+
+Object 0 Object i Object k  
+
+> Fig. S.1: Visualization of the VLM-based mask filtering for objects of the car
+> class.
+
+overall, they contain many static objects, as is the case across the whole dataset. In contrast to these methods, we demonstrate that our proposed strategy, which considers the motion query latent space, selects sequences with a particularly high number of moving objects. As illustrated in the figure, the selected sequences feature dense traffic and multiple moving or turning cars. The selected scenes also include particularly interesting scenarios for motion forecasting, such as mixtures of moving and stopped cars or accelerating cars after a traffic light turns green, as shown in the bottom-right image. S.5. E XTENDED QUALITATIVE RESULTS 
+
+A. Motion Forecasting 
+
+In this section, we present additional visualizations of the motion forecasting results from our method, compared with those from CL-DETR [ 30 ] and the ground-truth annotations. In the first image in Fig. S.4, we demonstrate that for some static objects, CL-DETR predicts a movement, which is not the case for our method. The second image shows that OMEN can detect pedestrians and forecast their movement more reliably. In the remaining images, we present additional examples showing that our method better learns and retains non-linear future 
+
+> Fig. S.2: Image of our perception car used to record the real-world data.
+
+trajectories than CL-DETR. The latter holds not only for frequently observed objects, such as cars shown in the fourth and fifth rows, but also for other classes, such as bicyclists in the third row and buses in the sixth row. Our approach also maintains its performance in night scenarios, as shown in the last image. 
+
+B. Planning 
+
+To also visually demonstrate the open-loop planning ca-pabilities of OMEN, we present results for this additional task in Fig. S.5. We demonstrate, using four examples, that the model develops a better understanding of the surrounding agents over the course of training. In the first two images, OMEN, after the final incremental step, correctly detects one of the pedestrians and therefore, suggests stopping in front of the pedestrian crossing, until the pedestrians have crossed the road. In contrast, the model after the first incremental step, which has been trained only on the class car, is not correctly aware of the situation, as it plans to brake too late and to keep standing after the road is clear again. Similarly, in the third picture, the model after the first step would also not yield to the pedestrians. We demonstrate that this behavior is not limited to pedestrians: In the last example, the model after the final incremental step notices the bus and plans to stop behind it, whereas the model from the earlier checkpoint does not. In the first and last example, we observe that the model also behaves similarly when predicting the motion of other traffic participants. In both cases, the predicted motion of the car behind the ego-vehicle does not account for the presence of pedestrians or the bus. S.6. E XTENDED REAL -W ORLD EXPERIMENTS 
+
+In this section, we present additional zero-shot deployment results from our perception car, shown in Fig. S.2, using only the front-left camera and the global navigation satellite system (GNSS). The latter is necessary because we need to retrieve the ego-pose of the vehicle to temporally propagate the object queries between frames. From the recordings, we extract the camera images used for inference at 2 Hz, as in nuScenes, and associate them with the closest GNSS pose, measured at 100 Hz. The camera images, captured at a resolution of 
+
+1200 × 1920 (height × width), are cropped and downsampled to the same image resolution as for the underlying nuScenes training ( 256 ×704 ). To respect anonymity, we blur faces, street signs, and license plates in the provided videos and images. As illustrated in Fig. S.6, OMEN is also able to achieve generalizable zero-shot performance when the ego-vehicle is driving. In the top-left image, our approach correctly estimates the linear motion of oncoming traffic and the vehicles ahead. OMEN also accurately forecasts the turning behavior for two vehicles in the second image. The next three images show a scene in which the black vehicle ahead first takes a left turn, then stops at a pedestrian crossing to yield to a group of pedestrians before accelerating again. Our model accurately estimates the vehicle’s turn and predicts a stopping behavior in front of the pedestrians as one of the three most confident modes. Moreover, it captures the subsequent acceleration of the car and reliably predicts the pedestrians’ movements on the sidewalk. In the last image, we show that OMEN is also capable of detecting and forecasting the motion of cyclists in our data. (a) CL-DETR [30]. 
+
+(b) DINOv3. 
+
+(c) Ours. Fig. S.3: Qualitative comparison of selected scenes per replay buffer strategy (CL-DETR [ 30 ], DINOv3, Ours). We show one sample from each of the six highest-rated sequences per method after training the class car on the per-class incremental setting. Fig. S.4: Extended qualitative results on the nuScenes dataset for the proposed per-class incremental setting. The range of the birds-eye-view images is set to 
+
+40 m in the longitudinal and lateral direction of the ego-vehicle. In the upper two examples, it can be seen that CL-DETR [ 30 ] might predict movements for static objects and more often misses objects like pedestrians than OMEN. Moreover, as seen in the residual rows, our approach predicts non-linear motions for objects of different classes more accurately, also under varying lighting conditions. Fig. S.5: Qualitative open-loop planning results for the per-class incremental setting on the nuScenes dataset. The top-3 modes for the planned future ego-trajectory over the next 6 s are shown in orange from a birds-eye view, while the planning command is printed at the bottom left. The range of the birds-eye-view images is set to 40 m in the longitudinal and lateral direction of the ego-vehicle. We compare the results after the first step of training (only with cars) to the final trained model and the ground-truth (GT). Fig. S.6: Extended qualitative zero-shot real-world results recorded with our in-house perception car. The range of the birds-eye-view images is set to 40 m in the longitudinal and lateral direction of the ego-vehicle, while the prediction horizon is set to 6 s , and the top-3 predicted modes per object are shown. The camera’s field of view is highlighted in the bird’s-eye view projection.
