@@ -6,73 +6,67 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-24
-- 运行时间：2026-03-24 19:50:32 UTC
+- 最新运行日期：2026-03-25
+- 运行时间：2026-03-25 19:33:20 UTC
 - 运行状态：成功
-- 本次总论文数：17
-- 精读区：6
+- 本次总论文数：15
+- 精读区：4
 - 速读区：11
 
 ### 今日简报（AI）
-今日聚焦自动驾驶端到端规划与动态世界模型，深度复盘 17 篇前沿成果。
-核心突破在于 DynFlowDrive 的流式建模及规划器鲁棒性研究，为复杂场景下的可扩展学习提供了新范式。
-推荐优先精读两篇 9.0 分论文，紧跟扩散模型与强化学习在导航策略中的融合趋势。
-- 详情：[/202603/24/README](/202603/24/README)
+今日聚焦 15 篇前沿成果，深度解析了风格化扩散策略的可预测性与神经科学启发的自动驾驶强化学习。
+重点推荐 DriveVLM-RL 框架以提升驾驶安全性，以及通过编码可预测性让机器人动作更符合人类直觉。
+建议关注多模态大模型与扩散策略在解决虚实迁移及复杂交互任务中的最新应用。
+- 详情：[/202603/25/README](/202603/25/README)
 
 ### 精读区论文标签
-1. [What Matters for Scalable and Robust Learning in End-to-End Driving Planners?](/202603/24/2603.15185v1-what-matters-for-scalable-and-robust-learning-in-end-to-end-driving-planners)  
-   标签：评分：9.0/10、query:genad
-   evidence：系统性重新审视端到端驾驶规划器架构
-2. [DynFlowDrive: Flow-Based Dynamic World Modeling for Autonomous Driving](/202603/24/2603.19675v1-dynflowdrive-flow-based-dynamic-world-modeling-for-autonomous-driving)  
-   标签：评分：9.0/10、query:genad
-   evidence：基于流的自动驾驶世界建模
-3. [X-World: Controllable Ego-Centric Multi-Camera World Models for Scalable End-to-End Driving](/202603/24/2603.19979v1-x-world-controllable-ego-centric-multi-camera-world-models-for-scalable-end-to-end-driving)  
-   标签：评分：9.0/10、query:genad
-   evidence：用于端到端驾驶的动作条件生成式世界模型
-4. [EvoDriveVLA: Evolving Autonomous Driving Vision-Language-Action Model via Collaborative Perception-Planning Distillation](/202603/24/2603.09465v1-evodrivevla-evolving-autonomous-driving-vision-language-action-model-via-collaborative-perception-planning-distillation)  
+1. [Encoding Predictability and Legibility for Style-Conditioned Diffusion Policy](/202603/25/2603.16368v1-encoding-predictability-and-legibility-for-style-conditioned-diffusion-policy)  
    标签：评分：8.0/10、query:genad
-   evidence：用于端到端自动驾驶规划的视觉-语言-动作模型
-5. [FAR-Drive: Frame-AutoRegressive Video Generation in Closed-Loop Autonomous Driving](/202603/24/2603.14938v1-far-drive-frame-autoregressive-video-generation-in-closed-loop-autonomous-driving)  
+   evidence：用于协作环境中轨迹生成的样式条件扩散策略
+2. [DriveVLM-RL: Neuroscience-Inspired Reinforcement Learning with Vision-Language Models for Safe and Deployable Autonomous Driving](/202603/25/2603.18315v1-drivevlm-rl-neuroscience-inspired-reinforcement-learning-with-vision-language-models-for-safe-and-deployable-autonomous-driving)  
    标签：评分：8.0/10、query:genad
-   evidence：用于闭环自动驾驶模拟的生成式视频模型
-6. [WiT: Waypoint Diffusion Transformers via Trajectory Conflict Navigation](/202603/24/2603.15132v1-wit-waypoint-diffusion-transformers-via-trajectory-conflict-navigation)  
+   evidence：结合视觉语言模型与强化学习的自动驾驶端到端学习
+3. [TRACE: Trajectory Recovery with State Propagation Diffusion for Urban Mobility](/202603/25/2603.19474v1-trace-trajectory-recovery-with-state-propagation-diffusion-for-urban-mobility)  
    标签：评分：8.0/10、query:genad
-   evidence：用于轨迹生成和冲突导航的扩散 Transformer
+   evidence：用于城市移动轨迹恢复的状态传播扩散模型
+4. [Dreaming the Unseen: World Model-regularized Diffusion Policy for Out-of-Distribution Robustness](/202603/25/2603.21017v1-dreaming-the-unseen-world-model-regularized-diffusion-policy-for-out-of-distribution-robustness)  
+   标签：评分：8.0/10、query:genad
+   evidence：用于鲁棒视觉运动控制的世界模型正则化扩散策略
 
 ### 速读区论文标签
-1. [Risk-Controllable Multi-View Diffusion for Driving Scenario Generation](/202603/24/2603.11534v1-risk-controllable-multi-view-diffusion-for-driving-scenario-generation)  
-   标签：评分：8.0/10、query:genad
-   evidence：基于扩散模型的驾驶场景生成
-2. [Beyond Imitation: Reinforcement Learning Fine-Tuning for Adaptive Diffusion Navigation Policies](/202603/24/2603.12868v1-beyond-imitation-reinforcement-learning-fine-tuning-for-adaptive-diffusion-navigation-policies)  
-   标签：评分：8.0/10、query:genad
-   evidence：基于扩散的机器人导航策略与强化学习微调
-3. [FlowAD: Ego-Scene Interactive Modeling for Autonomous Driving](/202603/24/2603.13399v1-flowad-ego-scene-interactive-modeling-for-autonomous-driving)  
-   标签：评分：8.0/10、query:genad
-   evidence：自动驾驶自车-场景交互建模
-4. [Amortizing Trajectory Diffusion with Keyed Drift Fields](/202603/24/2603.14056v1-amortizing-trajectory-diffusion-with-keyed-drift-fields)  
-   标签：评分：8.0/10、query:genad
-   evidence：基于扩散模型的轨迹规划器
-5. [Chain-of-Trajectories: Unlocking the Intrinsic Generative Optimality of Diffusion Models via Graph-Theoretic Planning](/202603/24/2603.14704v1-chain-of-trajectories-unlocking-the-intrinsic-generative-optimality-of-diffusion-models-via-graph-theoretic-planning)  
+1. [ExpertGen: Scalable Sim-to-Real Expert Policy Learning from Imperfect Behavior Priors](/202603/25/2603.15956v1-expertgen-scalable-sim-to-real-expert-policy-learning-from-imperfect-behavior-priors)  
    标签：评分：7.0/10、query:genad
-   evidence：基于图论的扩散模型轨迹生成规划
-6. [ReMAP-DP: Reprojected Multi-view Aligned PointMaps for Diffusion Policy](/202603/24/2603.14977v1-remap-dp-reprojected-multi-view-aligned-pointmaps-for-diffusion-policy)  
+   evidence：在不完美演示上训练的机器人扩散策略
+2. [PanguMotion: Continuous Driving Motion Forecasting with Pangu Transformers](/202603/25/2603.16196v1-pangumotion-continuous-driving-motion-forecasting-with-pangu-transformers)  
    标签：评分：7.0/10、query:genad
-   evidence：用于机器人任务的双流扩散策略
-7. [ReMAP-DP: Reprojected Multi-view Aligned PointMaps for Diffusion Policy](/202603/24/2603.14977v2-remap-dp-reprojected-multi-view-aligned-pointmaps-for-diffusion-policy)  
+   evidence：连续自动驾驶场景的运动预测框架
+3. [Flow Matching Policy with Entropy Regularization](/202603/25/2603.17685v1-flow-matching-policy-with-entropy-regularization)  
    标签：评分：7.0/10、query:genad
-   evidence：用于机器人任务的双流扩散策略
-8. [NavThinker: Action-Conditioned World Models for Coupled Prediction and Planning in Social Navigation](/202603/24/2603.15359v1-navthinker-action-conditioned-world-models-for-coupled-prediction-and-planning-in-social-navigation)  
+   evidence：强化学习中用于生成式动作采样的流匹配策略
+4. [Flow Matching Policy with Entropy Regularization](/202603/25/2603.17685v2-flow-matching-policy-with-entropy-regularization)  
    标签：评分：7.0/10、query:genad
-   evidence：用于预测与规划的动作条件世界模型
-9. [TrajFlow: Nation-wide Pseudo GPS Trajectory Generation with Flow Matching Models](/202603/24/2603.15009v1-trajflow-nation-wide-pseudo-gps-trajectory-generation-with-flow-matching-models)  
+   evidence：强化学习中用于生成式动作采样的流匹配策略
+5. [Generative Control as Optimization: Time Unconditional Flow Matching for Adaptive and Robust Robotic Control](/202603/25/2603.17834v1-generative-control-as-optimization-time-unconditional-flow-matching-for-adaptive-and-robust-robotic-control)  
+   标签：评分：7.0/10、query:genad
+   evidence：使用流匹配进行机器人模仿学习的生成式控制
+6. [Uncertainty Matters: Structured Probabilistic Online Mapping for Motion Prediction in Autonomous Driving](/202603/25/2603.20076v1-uncertainty-matters-structured-probabilistic-online-mapping-for-motion-prediction-in-autonomous-driving)  
+   标签：评分：7.0/10、query:genad
+   evidence：自动驾驶管线中的在线建图与轨迹预测
+7. [ECHO: Edge-Cloud Humanoid Orchestration for Language-to-Motion Control](/202603/25/2603.16188v1-echo-edge-cloud-humanoid-orchestration-for-language-to-motion-control)  
    标签：评分：6.0/10、query:genad
-   evidence：用于GPS轨迹生成的流匹配模型
-10. [NavThinker: Action-Conditioned World Models for Coupled Prediction and Planning in Social Navigation](/202603/24/2603.15359v2-navthinker-action-conditioned-world-models-for-coupled-prediction-and-planning-in-social-navigation)  
+   evidence：用于类人机器人控制的基于扩散模型的文本到动作生成器
+8. [When the City Teaches the Car: Label-Free 3D Perception from Infrastructure](/202603/25/2603.16742v1-when-the-city-teaches-the-car-label-free-3d-perception-from-infrastructure)  
    标签：评分：6.0/10、query:genad
-   evidence：用于预测与规划耦合的世界模型
-11. [You've Got a Golden Ticket: Improving Generative Robot Policies With A Single Noise Vector](/202603/24/2603.15757v1-youve-got-a-golden-ticket-improving-generative-robot-policies-with-a-single-noise-vector)  
+   evidence：基于基础设施的自动驾驶车辆无标签3D感知
+9. [VisionNVS: Self-Supervised Inpainting for Novel View Synthesis under the Virtual-Shift Paradigm](/202603/25/2603.17382v1-visionnvs-self-supervised-inpainting-for-novel-view-synthesis-under-the-virtual-shift-paradigm)  
    标签：评分：6.0/10、query:genad
-   evidence：改进生成式扩散或流匹配机器人策略
+   evidence：自动驾驶轨迹下的新视角合成
+10. [dTRPO: Trajectory Reduction in Policy Optimization of Diffusion Large Language Models](/202603/25/2603.18806v1-dtrpo-trajectory-reduction-in-policy-optimization-of-diffusion-large-language-models)  
+   标签：评分：6.0/10、query:genad
+   evidence：基于扩散生成模型的策略优化
+11. [Bridging Semantic and Kinematic Conditions with Diffusion-based Discrete Motion Tokenizer](/202603/25/2603.19227v1-bridging-semantic-and-kinematic-conditions-with-diffusion-based-discrete-motion-tokenizer)  
+   标签：评分：6.0/10、query:genad
+   evidence：基于扩散模型的运动合成与规划框架
 
 
 <div class="dpr-home-promo-card">

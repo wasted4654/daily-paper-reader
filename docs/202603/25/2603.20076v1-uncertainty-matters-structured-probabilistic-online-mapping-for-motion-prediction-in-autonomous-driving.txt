@@ -1,0 +1,272 @@
+Title: Uncertainty Matters: Structured Probabilistic Online Mapping for Motion Prediction in Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2603.20076v1
+
+Published Time: Mon, 23 Mar 2026 01:05:46 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Uncertainty Matters: Structured Probabilistic Online Mapping for Motion Prediction in Autonomous Driving 
+
+Pritom Gogoi 1,2, Faris Janjoš 1, Bin Yang 2, Andreas Look 1,3
+
+Abstract — Online map generation and trajectory prediction are critical components of the autonomous driving perception-prediction-planning pipeline. While modern vectorized map-ping models achieve high geometric accuracy, they typically treat map estimation as a deterministic task, discarding struc-tural uncertainty. Existing probabilistic approaches often rely on diagonal covariance matrices, which assume independence between points and fail to capture the strong spatial correlations inherent in road geometry. To address this, we propose astructured probabilistic formulation for online map generation. Our method explicitly models intra-element dependencies by predicting a dense covariance matrix, parameterized via aLow-Rank plus Diagonal (LRPD) covariance decomposition. This formulation represents uncertainty as a combination of a low-rank component, which captures global spatial structure, and a diagonal component representing independent local noise, thereby capturing geometric correlations without the prohibitive computational cost of full covariance matrices. Evaluations on the nuScenes dataset demonstrate that our uncertainty-aware framework yields consistent improvements in online map generation quality compared to deterministic baselines. Furthermore, our approach establishes new state-of-the-art performance for map-based motion prediction, high-lighting the critical role of uncertainty in planning tasks. Code is published under link-available-soon .
+
+I. INTRODUCTION Safe, comfortable, and efficient autonomous driving re-quires a comprehensive and reliable understanding of both the static environment and the future motion of surrounding agents. Traditionally, this understanding has relied on pre-built High-Definition (HD) maps, which provide detailed geometric priors. However, the field is increasingly shifting toward Online Map Generation (OMG) to handle dynamic environmental changes, reduce maintenance costs, and scale to unmapped regions [1]. Unlike offline maps, OMG relies on real-time sensor data that is inherently imperfect. Errors caused by sensor noise, occlusion, limited perception range, and calibration issues can propagate downstream, severely degrading the performance of safety-critical trajectory pre-diction and planning modules. While modern vectorized mapping models such as MapTR [1] achieve impressive geometric accuracy, they typ-ically formulate map estimation as a deterministic regression task. This approach discards valuable information regarding prediction confidence, forcing downstream planners to treat a lane boundary predicted from sparse, distant LiDAR points with the same trust as one observed at close range. 
+
+> 1
+
+Bosch Center for AI, Germany, 2University of Stuttgart, Germany, 
+
+> 3
+
+Coburg University of Applied Sciences, Germany. 
+
+> As part of the IPCEI ME/CT the project is supported by the Federal Ministry for Economic Affairs and Energy, by the Ministry for Economic Affairs, Labor and Tourism of Baden-Württemberg and financed by the European Union – NextGenerationEU.
+
+Fig. 1: Illustration of different uncertainty representations in probabilistic mapping for a scene with an ego vehicle and a predicted vehicle. (Left) Treating each point within a map element (i.e. a polyline) in an independent manner can result in inconsistent covariance estimates across consecutive points. This stems from the inability to model naturally-present correlations between locations of points, such as a usually higher uncertainty for farther points. A limitation of the fully-diagonal covariance matrix representation present in the literature, this can result in erroneous predictions that in turn impact downstream planning. (Right) A representation that captures correlations between individual points models the underlying uncertainty more accurately. This is enabled by a covariance matrix with off-diagonal elements, which equips the probabilistic model with ability to reason about relationships between points. Recognizing this gap, recent works have begun to explore probabilistic map generation. In particular, [2], [3], [4] demonstrated that equipping map generators with uncertainty estimates can significantly improve the accuracy of trajectory prediction. However, these existing approaches typically rely on simplified uncertainty representations, such as diagonal covariance matrices. This assumption of independence treats a map element as a collection of unrelated points, failing to capture the spatial correlations inherent in road geometry. For instance, the curvature of a lane segment implies that positional errors are highly correlated across its points; if one point is shifted due to calibration noise, its neighbors are likely shifted similarly. This is illustrated in Fig. 1. Neglecting these correlations results in "jagged," spatially incoherent uncertainty estimates that fail to represent the true geometric ambiguity of the scene. We visualize this issue in Fig. 2, where samples drawn from a diagonal covariance model (left) exhibit unrealistic high-frequency oscillations. In contrast, samples drawn from our method (middle) are smooth and geometrically plausible. To address these limitations, we present a structured 
+
+> arXiv:2603.20076v1 [cs.RO] 20 Mar 2026
+
+Fig. 2: Qualitative comparison of OMG predictions on sev-eral nuScenes [5] scenarios. We display samples drawn from the predicted distribution as thin transparent lines, while the thick solid line represents the predictive mean. (Left) 
+
+Baseline models using diagonal covariance (independent uncertainty) fail to capture dependencies between points, resulting in jagged, spatially incoherent samples. (Middle) 
+
+Our proposed LRPD model explicitly accounts for spatial correlations, producing smooth and geometrically consistent samples. (Right) The Ground Truth HD map for reference. probabilistic framework for online map generation. Unlike prior methods that model point-wise variance in isolation, we propose a formulation that explicitly models the dependen-cies within map elements using a Low-Rank plus Diagonal 
+
+(LRPD) covariance decomposition. This allows the system to reason about the uncertainty. Our key contributions are summarized as follows: 1) We utilize a fully-probabilistic formulation of the un-derlying map uncertainty in OMG, without unrealistic and limiting assumptions present in existing work. This representation correctly captures spatial dependencies and geometric correlations within map elements. 2) We propose a structured and lean interface utilizing a low-rank plus diagonal covariance parameteriza-tion that enables training probabilistic representations in a stable and efficient manner, without the computa-tional cost of full covariance matrices. 3) We benchmark our method on the nuScenes dataset, es-tablishing new state-of-the-art performance for map-based motion prediction. Our experiments demonstrate that structured uncertainty modeling yields consistent gains over both deterministic baselines and methods relying on independent uncertainty assumptions. II. R ELATED WORK 
+
+In this section we contextualize our approach within the shift from static to online mapping and the growing need for probabilistic reasoning in autonomous driving. 
+
+A. Online Map Generation (OMG) 
+
+The reliance on pre-annotated HD maps restricts the scalability of autonomous driving systems due to high main-tenance costs and the inability to handle dynamic map changes [6]. Consequently, online map generation systems that infer the static road network in real-time from onboard sensors, have become prominent [7], [8], [9], [10], [1], [11], [12], [13]. Early approaches primarily focused on dense, rasterized Bird’s-Eye-View (BEV) semantic segmentation, lifting camera features into 3D space to predict drivable areas and lane markings [14], [7], [15], [16], [17], [18], [19]. However, downstream planning modules typically re-quire structured geometric representations rather than dense pixel grids. To address this, vectorization methods such as MapTR [1], MapTRv2 [20], or StreamPETR [11] have recently been proposed. These models utilize Transformer-based architectures to directly regress vectorized map ele-ments (polylines) from BEV features, achieving impressive geometric precision. Despite their accuracy, these state-of-the-art methods typically formulate map estimation as a deterministic regression task, discarding critical information regarding the model’s confidence in its own predictions. 
+
+B. Uncertainty in Mapping 
+
+Accurate uncertainty estimation is vital for safety-critical applications. While probabilistic object detection is well-studied [21], uncertainty in vectorized map construction remains underexplored. Recent works have begun to address this gap. Gu et al. [2] proposed a probabilistic formulation for map generation, demonstrating that modeling uncertainty can improve downstream prediction performance. However, their approach is limited to independent Laplace distributions. This assumption treats map points as independent entities, ignoring the strong spatial correlations inherent in continuous road structures like lane dividers. More recently, Zhang et al. [4] improved upon this by introducing a formulation that captures the correlation be-tween the x and y coordinates of a single point. While this allows for block-diagonal covariance (capturing point-wise ellipsoidal uncertainty), it still assumes that the error at one point is independent of its neighbors. In contrast, our work explicitly models spatial dependencies between distinct points within a map element using a low-rank plus diagonal decomposition. This enables the system to reason about the shape and structural ambiguity of the road geometry. 
+
+C. Map-Aware Trajectory Prediction 
+
+Trajectory prediction is a core component of the au-tonomous driving stack, with modern approaches heavily relying on map context to forecast agent motion. To ad-dress the inherent stochasticity of human driving behavior, recent pipelines have moved beyond deterministic regression to explicitly model the multi-modal distribution of future trajectories. Generative approaches such as CVAE-based frameworks [22], [23], diffusion models [24], or discrete autoregressive architectures [25], have shown great success in capturing diverse agent intentions, i.e. the probability of yielding versus proceeding or changing lanes versus maintaining course. These methods typically output non-deterministic forecasts either as samples from latent distri-butions [23] or by directly constructing Gaussian Mixture Models (GMMs) [26], [27] or occupancy heatmaps [28], [29], effectively handling the aleatoric uncertainty of motion. However, despite their sophisticated handling of agent dynamics, these methods typically assume perfect, ground-truth map inputs or rely on deterministic predictions from upstream mapping modules [30], [31]. This creates a critical disconnect: while the agents are modeled probabilistically, the map is treated as a fixed, certain reality. This assumption can lead to catastrophic errors when the map perception is noisy or occluded, as illustrated in Fig. 1. For instance, a diffusion-based predictor might correctly model a vehi-cle’s intent to follow a lane, but if the upstream mapper erroneously predicts a sharp turn due to sensor noise, the predicted trajectory will be confident yet incorrect. III. M ETHOD 
+
+Our framework addresses the problem of joint online map generation and trajectory prediction under uncertainty. We propose a two-stage pipeline: (1) a probabilistic mapping module that estimates vectorized map elements with struc-tured geometric uncertainty, and (2) an uncertainty-aware trajectory prediction module that uses these estimates to forecast agent motions robustly. 
+
+A. Problem Formulation 
+
+Let the local environment be represented by a set of map elements M = {m1, . . . , mK }. Each element mk (e.g., a lane divider or road boundary) can be described as a polyline consisting of N ordered points in the bird’s-eye-view (BEV) plane. The polyline mk is then mathematically represented as a flattened vector mk ∈ R2N containing a sequence of N
+
+2D points with coordinates (x1, y 1, . . . , x N , y N ).Conventionally, map generators regress the coordinates of points in mk deterministically. Instead, we model the conditional distribution P(mk|x), where x contains con-textual information such as sensor inputs (e.g., surround-view images). The distribution P(mk|x) is represented by a multivariate Gaussian 
+
+P(mk|x) = N (mk|μϕ,k (x), Σϕ,k (x)) , (1) parameterized by neural network parameters ϕ. Here, μϕ,k ∈
+
+R2N is the predicted mean position of the map element, and Σϕ,k ∈ R2N ×2N is the covariance matrix capturing the geometric uncertainty. As the prediction is generated for all K map elements in a scene, the overall output of the map generator can be described as a set of individual weighted distributions 
+
+P(M| x) = {(cϕ,k (x), P(mk|x)) }Kk=1 
+
+= {(cϕ,k (x), N (mk|μϕ,k (x), Σϕ,k (x))) }Kk=1 ,
+
+(2) where cϕ,k (x) ∈ [0 , 1] C resides on the standard simplex and denotes the predicted class probability vector assigned to the 
+
+k-th map element across C possible categories. A key challenge in the formulation above is the struc-ture of the covariance matrix Σϕ,k for every map ele-ment. Predicting a full, dense covariance matrix involves estimating O(N 2) parameters, which is not only compu-tationally prohibitive but also prone to severe optimization instability – a limitation we empirically demonstrate in Sec. IV. Consequently, prior works have resorted to simplifying assumptions that sacrifice geometric information:  
+
+> •
+
+Independent Uncertainty: Gu et al. [2] model the out-put as a Laplace distribution in which each coordinate is treated independently. This assumes Σϕ,k is strictly diagonal, ignoring all correlations.  
+
+> •
+
+Point-wise Correlation: Zhang et al. [4] extend this by using a Gaussian distribution that captures correlations between the x and y coordinates of a single point. In this case, Σϕ,k is block-diagonal consisting of N blocks of size 2 × 2, but correlations between different points are zero. In contrast, our work explicitly models the spatial depen-dencies between distinct points within a map element mk
+
+by assuming a full covariance matrix Σϕ,k that predicts all 
+
+2N × 2N elements. In the following, we describe how we maintain this high-capacity representation efficient. 
+
+B. Structured Geometric Uncertainty 
+
+A core challenge in vectorized mapping is modeling the spatial dependencies between points in an efficient manner. To address this challenge, we propose a Low-Rank Plus Diagonal (LRPD) parameterization. We decompose the co-variance matrix Σϕ,k into a diagonal component represent-ing independent noise and a low-rank component capturing spatial correlations 
+
+Σϕ,k = Dϕ,k + κLϕ,k LTϕ,k , (3) where  
+
+> •
+
+Dϕ,k = diag (dϕ, 1,k , . . . , d ϕ, 2N,k ) with dϕ,n,k > 0
+
+represents the independent variance of each coordinate and element,  
+
+> •
+
+Lϕ,k ∈ R2N ×R is a factor matrix with rank R ≪ 2N , 
+
+> •
+
+κ ≥ 0 is a scalar scaling factor controlling the influence of the low-rank component during model training. This formulation reduces the parameter space to O(N R ),making it tractable for real-time applications while pre-serving the expressivity needed to model geometric depen-dencies. The rank R is a hyperparameter that controls the complexity of the correlation structure; in our experiments, we find R = 24 sufficient to capture primary modes of uncertainty such as translation and curvature ambiguity. Notably, for 2N = 100 , this approach reduces the total number of parameters by a factor of four. 
+
+C. Alternative Uncertainty Representations 
+
+Prior to developing the proposed LRPD architecture, we explored more direct covariance representations. Specifically, we attempted to directly predict the full covariance matrix, including all off-diagonal elements. However, this approach proved highly unstable during training, frequently resulting in predicted matrices that were not positive semi-definite. To mitigate this instability, we experimented with several numerical strategies: applying custom weight initializations for off-diagonal elements, injecting noise, scheduling the separate prediction of diagonal and off-diagonal terms, and testing various combinations of freezing and fine-tuning the means and covariances. Ultimately, none of these alternative approaches yielded stable results, motivating the design of the proposed LRPD. 
+
+D. Probabilistic Learning Objective 
+
+During training, we incentivize the map generator to maximize the log-likelihood of observing the ground-truth map coordinates (x∗
+
+> 1
+
+, y ∗ 
+
+> 1
+
+, . . . , x ∗ 
+
+> N
+
+, y ∗ 
+
+> N
+
+) given the predicted distribution. The loss function is the Negative Log-Likelihood 
+
+(NLL) 
+
+LNLL = X
+
+> k
+
+log |Σϕ,k | + rTk Σ−1
+
+> ϕ,k
+
+rk , (4) for each dataset sample, where rk = m∗ 
+
+> k
+
+− μϕ,k represents the spatial residual, and m∗ 
+
+> k
+
+is the ground-truth polyline. Following standard set prediction architectures [20], [1], we also apply a classification loss to the predicted class labels 
+
+cϕ,k (x). Specifically, this is implemented as a Focal Loss to encourage cϕ,k (x) to match the ground-truth class labels. 
+
+E. Map-Uncertainty-Aware Trajectory Prediction 
+
+The predicted map distribution is consumed by a down-stream trajectory prediction module. Prediction modules usually consist of sequentially-ordered encoder and decoder networks. The encoder consumes the inferred map context 
+
+M as well as historical motion of relevant agents to construct latent features that describe the entire driving scene. These features are passed to the decoder, tasked with generating predicted future motion for agents of interest. As our inferred map representation M contains uncertainty, we must provide this information to the downstream encoding process. In the following, we introduce two complementary mechanisms. 
+
+1) Explicit Uncertainty Encoding: To explicitly incorpo-rate geometric uncertainty, we augment the input feature space of the trajectory prediction encoder. While standard approaches rely purely on spatial coordinates, we construct an enriched feature representation for each point in the map polyline element mk = ( x1, y 1, . . . , x N , y N ). Specifically, the input feature vector en,k ∈ R4+2 R for the n-th point in 
+
+mk is formed by concatenating: 1) the predicted mean coordinates μx,n , μ y,n ∈ R,2) the independent diagonal variances σ2
+
+> xx,n
+
+, σ 2 
+
+> yy,n
+
+∈ R+
+
+extracted from the diagonal matrix Dϕ,k , and 3) the corresponding row vectors lx,n , ly,n ∈ RR from the low-rank factor matrix Lϕ,k .Consequently, a single map element mk is represented by an N (4 + 2 R)-dimensional feature vector. By providing the encoder with the low-rank rows lx,n and ly,n , we enable the network to reason about spatial correlations and distinguish between noisy observations and precise geometric measure-ments at the feature level. 
+
+2) Confidence-Aware Feature Modulation: As an exten-sion, we introduce a mechanism to explicitly incorporate the predicted class label cϕ,k associated with each map element 
+
+mk. This enables the model to factor the relative confidence of a map element’s existence into the spatial uncertainty of its constituent polyline points. Following standard practices in recent literature [2], [4], we extract the predicted confi-dence score for a specific, predefined road type (e.g., lane centerlines) rather than utilizing the full probability simplex. This simplifies the predicted class label vector into a single scalar value. To integrate this scalar confidence, we employ 
+
+Feature-wise Linear Modulation (FiLM) [32], which serves as an effective, principled, and lightweight mechanism to dynamically adjust the per-point lane embeddings. First, we pass the feature vector en,k through a De-dim. linear layer to obtain an embedding ˜en,k = fθ (en,k ) for each point n in the k-th map element. Then, the class label score of each map element cϕ,k is assigned to each point in mk=( x1, y 1, . . . , x N , y N ). FiLM computes the resulting confidence-aware lane embedding ˆen,k by applying an affine transformation 
+
+ˆen,k = ReLU (γ(cϕ,k )) ⊙ ˜en,k + β(cϕ,k ) , (5) where γ(·), β(·) : R → RDe are learnable functions implemented as linear projections, ReLU (·) is the recti-fied linear unit activation function and ⊙ denotes element-wise multiplication. The modulation parameters scale and shift each feature dimension independently. This allows the confidence value to influence the contribution of lane information in a fine-grained manner. We choose De = 128 
+
+and ReLU as the activation function after determining its effectiveness empirically over different activations. We also evaluated alternative strategies for incorporating the confi-dence term, such as direct concatenation (without the FiLM layer), attention mechanisms [33], and sinusoidal Fourier embeddings. However, FiLM-based modulation consistently yielded superior performance. Finally, the downstream trajectory prediction module uti-lizing the probabilistic map information is intended to be general-purpose. We do not impose any structural constraints on the polyline encoder, other than its capacity to process the modulated features generated by the explicit uncertainty encoding and the FiLM layer. IV. E XPERIMENTS 
+
+Our experimental evaluation aims to verify two primary hypotheses: (i) that the LRPD formulation provides more stable and physically consistent map uncertainty than di-agonal baselines, and (ii) that these structured correlations directly improve the robustness of downstream trajectory prediction. We compare our approach against state-of-the-art deterministic and probabilistic mapping frameworks on large-scale real-world data. 
+
+A. Dataset and Preprocessing 
+
+We evaluate our approach on the nuScenes dataset [5], which provides 1,000 urban driving scenes across Boston and Singapore. The dataset includes comprehensive sensor modalities and high-quality vectorized map annotations. The standard nuScenes agent annotations are provided at 2 Hz. However, high-fidelity motion forecasting requires finer temporal resolution to capture subtle maneuvering dynamics. Following the protocol in [2], we utilize the trajdata 
+
+library [34] to upsample agent trajectories to 10 Hz via linear temporal interpolation. This ensures compatibility with standard trajectory prediction benchmarks and provides a denser supervision signal for training. 
+
+B. Evaluation Metrics 
+
+We assess performance across two distinct tasks to demon-strate the utility of structured uncertainty. 
+
+1) Map Generation Metrics: To measure the geometric accuracy of the predicted vectorized maps, we employ the 
+
+Mean Average Precision (mAP). We represent both the predicted and the ground-truth map element as ordered sets of sampled points. The similarity between them is measured using the bidirectional Chamfer distance. A predicted map element is considered a true positive if its Chamfer distance to a ground-truth element of the same class is within a predefined threshold. Following [1], we compute the average precision by integrating the precision-recall curve for each class across three distance thresholds {0.5m, 1.0m, 1.5m}.The final mAP is obtained by averaging the average precision across all map categories. 
+
+2) Trajectory Prediction Metrics: We evaluate forecasting performance using standard distance-based metrics for the 
+
+K = 6 most likely modes:  
+
+> •
+
+minADE 6: The average L2 distance between the ground-truth and the closest predicted trajectory over the full horizon.  
+
+> •
+
+minFDE 6: The L2 distance between the ground-truth position and the endpoint of the best predicted mode.  
+
+> •
+
+Miss Rate (MR): The percentage of cases where the minFDE exceeds 2.0 meters. 
+
+C. Implementation Details 1) Architecture: For the base mapping architecture, we adopt MapTR [1] and MapTRv2 [20]. We also evaluate an extension, MapTRv2-centerline (MapTRv2-CL), which explicitly models lane centerlines as a separate map element category. To enable probabilistic mapping, we modify the standard regression heads of these architectures to output the parameters of our proposed LRPD formulation. For downstream motion forecasting, we utilize HiVT [35], augmented with an uncertainty-aware encoder designed to consume our structured map covariances. We explicitly 
+
+Fig. 3: Uncertainty calibration of our method. (Left) Vi-sualization of predicted versus ground-truth map element. The prediction aligns closely with the ground truth initially, but the positional error gradually increases toward the end. 
+
+(Right) Predicted covariance demonstrating that our model’s uncertainty correlates with the error. Uncertainty grows correspondingly as the prediction diverges. Specifically, the model correctly outputs low uncertainty for the y-coordinate (where the error remains small) and appropriately assigns high uncertainty to the x-coordinate as its error increases. prioritize HiVT over other commonly cited modules like DenseTNT [36] because HiVT provides significantly lower trajectory prediction errors, serving as a highly accurate and established baseline in recent uncertainty-aware literature. We also acknowledge the notable recent work [37] that achieves further gains by combining a computationally cum-bersome raster representation obtained from BEV features with a diffusion mechanism in the prediction decoder. As their work does not focus on map uncertainty and draws on additional gains by the decoder, we instead aim to isolate and accurately measure the specific improvements yielded by the probabilistic map representation. Thus, we restrict our experimental baseline to the established HiVT architecture. 
+
+2) Training Procedure: Our model is trained in a two-stage fashion to ensure optimization stability. We use the AdamW optimizer [38] with a learning rate of 6 × 10 −4 and cosine annealing schedule. 
+
+Map Generation : The mapping module is trained using the NLL loss. A critical challenge in learning full covariance structures is early-stage instability. To mitigate this, we introduce a curriculum scheduling parameter that weights the off-diagonal terms of the covariance.  
+
+> •
+
+Warmup Phase: Initially, we set κ = 0 so that the model predicts only the diagonal covariance elements Dϕ,k .The learning problem reduces to predicting independent Gaussian uncertainty, which is easier to optimize.  
+
+> •
+
+Structured Learning Phase: After a fixed number of epochs, we gradually increase κ, allowing the model to learn spatial correlations. 
+
+Trajectory Prediction : The motion forecasting module is trained on the frozen outputs of the mapping stage. By keeping the map generator fixed, we ensure that the trajectory prediction head learns to interpret the structured uncertainty as a reliable signal of geometric ambiguity, rather than the two tasks competing for feature representations. This strategy is consistent with established protocols [2]. TABLE I: Online map generation performance for different backbones types and uncertainty estimation methods. 
+
+Map Model mAP ↑
+
+Backbone: MapTR [1] 
+
++ Deterministic 0.4488 + Uncertainty: iid [2] (reported) 0.4525 + Uncertainty: iid [2] (reproduced) 0.5158 + Uncertainty: LRPD (ours) 0.5589 
+
+Backbone: MapTRv2 [20] 
+
++ Deterministic 0.5540 + Uncertainty: iid [2] (reported) 0.5592 + Uncertainty: iid [2] (reproduced) 0.6121 + Uncertainty: LRPD (ours) 0.6345 
+
+Backbone: MapTRv2-CL [20] 
+
++ Deterministic 0.4789 + Uncertainty: iid [2] (reported) 0.4655 + Uncertainty: iid [2] (reproduced) 0.5204 + Uncertainty: LRPD (ours) 0.5915 
+
+D. Results 
+
+In this section, we present a quantitative evaluation of our structured uncertainty framework, focusing on map estima-tion quality and downstream prediction performance. 
+
+1) Online Map Generation Performance: Table I sum-marizes the map generation performance across different base architectures. To ensure a rigorous comparison, we reproduce results from existing literature [2] by re-running the provided codebases within our environment. We observe that extending the training schedule from the standard 24 epochs to 45 epochs yields consistent improvements in mAP for all models. When re-running the baseline code for 24 epochs, we achieve results identical to those reported in the literature; however, for completeness, we report both the original values and our reproduced long-schedule results. The evaluation across all three online map generation ar-chitectures reveals that equipping deterministic models with probabilistic outputs is inherently beneficial for geometric accuracy. Furthermore, incorporating structured uncertainty via our LRPD formulation provides additional gains, achiev-ing the highest mAP across all tested configurations. These results suggest that modeling spatial correlations not only improves the representation of uncertainty but also provides a more robust supervision signal for the geometric mean itself. Additionally, we qualitatively visualize a predicted and ground-truth map element alongside the predicted covariance in Fig. 3. We observe that the spatial error strongly correlates with predicted uncertainty, exhibiting a highly non-diagonal covariance structure. 
+
+2) Trajectory Prediction Performance: Table II details the impact of map uncertainty on motion forecasting. Our eval-uation reveals several key insights regarding the relationship between geometric uncertainty and prediction robustness. The bottom row of Table II, representing the performance using ground-truth HD map data, serves as the empirical lower bound for prediction error. Notably, our proposed method with the MapTRv2-CL backbone achieves perfor-mance remarkably close to this lower bound, only 1.9%, 1.8%, and 3.5% difference for the three metrics. TABLE II: Trajectory prediction performance for different backbones types and uncertainty estimation methods.                                                                               
+
+> Online Map Method minADE 6↓minFDE 6↓MR 6↓
+> Backbone: MapTR [1]
+> Deterministic 0.4015 0.8418 0.0981 + Uncertainty: iid [2] (reported) 0.3854 0.7909 0.0834 + Uncertainty: iid [2] (reproduced) 0.3870 0.8036 0.0898 + Uncertainty: iid [2] (reproduced) + score concat 0.3875 0.7966 0.0852 + Uncertainty: iid [2] (reproduced) + FiLM 0.3771 0.7679 0.0797 + Uncertainty: iid & Dual Dec. [4] 0.3672 0.7395 0.0756 + BEV [3] 0.3617 0.7401 0.0720 + BEV & Dual Dec. [4] 0.3498 0.7021 0.0651
+> + Uncertainty: LRPD (ours) 0.3573 0.7103 0.0652
+> Backbone: MapTRv2 [20]
+> Deterministic 0.4057 0.8499 0.0992 + Uncertainty: iid [2] (reported) 0.3930 0.8127 0.0857 + Uncertainty: iid [2] (reproduced) 0.3901 0.8103 0.0909 + Uncertainty: iid & Dual Dec. [4] 0.3670 0.7538 0.0708 + BEV [3] 0.3844 0.7848 0.0741 + BEV & Dual Dec. [4] 0.3475 0.6929 0.0661 + Uncertainty: LRPD (ours) 0.3573 0.7167 0.0627
+> Backbone: MapTRv2-CL [20]
+> Deterministic 0.3790 0.7822 0.0853 + Uncertainty: iid [2] (reported) 0.3727 0.7492 0.0726 + Uncertainty: iid [2] (reproduced) 0.3659 0.7385 0.0764 + Uncertainty: iid & Dual Dec. [4] 0.3659 0.7404 0.0721 + BEV [3] 0.3652 0.7323 0.0710 + BEV & Dual Dec. [4] 0.3496 0.7096 0.0679 + Uncertainty: LRPD (ours) 0.3423 0.6648 0.0555
+> GT Map 0.3357 0.6525 0.0536
+
+As with the map generation experiments, we re-evaluated the code from [2] and successfully reproduced the reported trends; however, our implementation achieved slightly lower prediction error in all cases except MapTR due to the optimized training schedule. This ensures that our LRPD gains are benchmarked against comparable and strongest possible version of the independent uncertainty baseline. The inclusion of uncertainty features consistently improves per-formance compared to deterministic baselines, as providing the prediction model with a measure of geometric reliability allows the network to better make use of predicted map elements. Furthermore, in the case of the MapTR backbone and diagonal uncertainty, we ablated the influence of the FiLM encoding of the confidence scores from Sec. III-E.2 versus a simple concatenation of the scores (rows 4 and 5). Observing better performance in the case of FiLM, we used it with all the MapTR, MapTRv2 and MapTRv2-CL backbones. Thus, all the bottom rows in Tab. II use the procedure in Sec. III-E.2, in addition to the explicit encoding of the LRPD representation from Sec. III-E.1. The results consistently demonstrate that structured un-certainty (LRPD) outperforms independent methods across all backbones. Specifically, on the MapTRv2-CL backbone, our method establishes a new state-of-the-art for online-map-based motion prediction with uncertainty. Finally, we compare our approach against the "Dual Decoder" extension [4] that utilizes significantly larger decoder heads. Despite having a more parameter-efficient head, our LRPD approach remains competitive or superior. Our structured-covariance formulation is inherently compat-ible with such architectural extensions, which represents a promising direction for future work. Overall, the highest prediction accuracy is achieved by combining our proposed LRPD formulation with the MapTRv2-CL backbone. V. C ONCLUSION 
+
+We presented a structured probabilistic framework for online map generation using a Low-Rank plus Diagonal (LRPD) covariance parameterization. This approach captures spatial correlations and geometric constraints without the computational overhead of full covariance matrices. Evaluations on nuScenes show that our formulation im-proves map generation metrics and establishes new state-of-the-art for map-based motion prediction. By closely ap-proaching the performance of ground-truth HD maps, our results emphasize the importance of structured uncertainty in bridging the gap between online perception and high-definition priors. Future research could expand the low-rank parameteri-zation beyond intra-element dependencies to capture inter-element correlations, such as relationships between adjacent lanes. Additionally, integrating these structured uncertainty estimates downstream would enable safety-aware trajectory planning. Finally, as our LRPD formulation is architecture-agnostic, integrating it with advanced diffusion-based de-coders [37] remains an exciting avenue for future work. REFERENCES [1] B. Liao, S. Chen, X. Wang, T. Cheng, Q. Zhang, W. Liu, and C. Huang, “MapTR: Structured Modeling and Learning for Online Vectorized HD Map Construction,” in Int. Conf. on Learning Representations , 2023. [2] X. Gu, G. Song, I. Gilitschenski, M. Pavone, and B. Ivanovic, “Producing and Leveraging Online Map Uncertainty in Trajectory Prediction,” in Conf. on Computer Vision and Pattern Rec. , 2024. [3] X. Gu, G. Song, I. Gilitschenski, B. Ivanovic, and M. Pavone, “Accelerating Online Mapping and Behavior Prediction via Direct BEV Feature Attention,” in European Conf. on Computer Vision , 2024. [4] Z. Zhang, X. Qiu, B. Zhang, G. Zheng, X. Gu, G. Chi, H.-a. Gao, L. Wang, Z. Liu, X. Li et al. , “Delving into Mapping Uncertainty for Mapless Trajectory Prediction,” in Int. Conf. on Intelligent Robots and Sys. , 2025. [5] H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan, and O. Beijbom, “nuScenes: A multimodal dataset for autonomous driving,” in Conf. on Computer Vision and Pattern Recognition , 2020. [6] K. Wong, Y. Gu, and S. Kamijo, “Mapping for autonomous driving: Opportunities and challenges,” IEEE Int. Transp. Sys. Magazine , 2020. [7] Q. Li, Y. Wang, Y. Wang, and H. Zhao, “HDMapNet: An Online HD Map Construction and Evaluation Framework,” in Int. Conf. on Robotics and Automation , 2022. [8] H. Dong, W. Gu, X. Zhang, J. Xu, R. Ai, H. Lu, J. Kannala, and X. Chen, “Superfusion: Multilevel lidar-camera fusion for long-range hd map generation,” in 2024 IEEE International Conference on Robotics and Automation (ICRA) . IEEE, 2024, pp. 9056–9062. [9] Y. Liu, T. Yuan, Y. Wang, Y. Wang, and H. Zhao, “VectorMapNet: end-to-end vectorized HD map learning,” in Int. Conf. on Machine Learning , 2023. [10] J. Shin, H. Jeong, F. Rameau, and D. Kum, “Instagram: Instance-level graph modeling for vectorized hd map learning,” IEEE Transactions on Intelligent Transportation Systems , vol. 26, no. 2, 2025. [11] S. Wang, Y. Liu, T. Wang, Y. Li, and X. Zhang, “Exploring Object-Centric Temporal Modeling for Efficient Multi-View 3D Object De-tection,” 2023. [12] Z. Xu, K.-Y. K. Wong, and H. Zhao, “InsMapper: Exploring inner-instance information for vectorized HD mapping,” in European Con-ference on Computer Vision . Springer, 2024. [13] X. Zhang, G. Liu, Z. Liu, N. Xu, Y. Liu, and J. Zhao, “Enhancing Vectorized Map Perception with Historical Rasterized Maps,” in 
+
+European Conference on Computer Vision . Springer, 2024. [14] J. Philion and S. Fidler, “Lift, Splat, Shoot: Encoding Images From Arbitrary Camera Rigs by Implicitly Unprojecting to 3D,” in European Conf. on Computer Vision , 2020. [15] Z. Liu, H. Tang, A. Amini, X. Yang, H. Mao, D. L. Rus, and S. Han, “Bevfusion: Multi-task multi-sensor fusion with unified bird’s-eye view representation,” in Int. Conf. on Robotics and Automation , 2023. [16] Y. Ma, T. Wang, X. Bai, H. Yang, Y. Hou, Y. Wang, Y. Qiao, R. Yang, and X. Zhu, “Vision-centric bev perception: A survey,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2024. [17] Y. B. Can, A. Liniger, O. Unal, D. Paudel, and L. Van Gool, “Understanding bird’s-eye view of road semantics using an onboard camera,” IEEE Robotics and Automation Letters , 2022. [18] Z. Li, W. Wang, H. Li, E. Xie, C. Sima, T. Lu, Q. Yu, and J. Dai, “Bev-former: learning bird’s-eye-view representation from lidar-camera via spatiotemporal transformers,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 47, no. 3, pp. 2020–2036, 2024. [19] H. Li, C. Sima, J. Dai, W. Wang, L. Lu, H. Wang, J. Zeng, Z. Li, J. Yang, H. Deng et al. , “Delving into the devils of bird’s-eye-view perception: A review, evaluation and recipe,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2023. [20] B. Liao, S. Chen, Y. Zhang, B. Jiang, Q. Zhang, W. Liu, C. Huang, and X. Wang, “MapTRv2: An End-to-End Framework for Online Vectorized HD Map Construction,” Int. J. Comput. Vision , 2024. [21] A. Kendall and Y. Gal, “What Uncertainties Do We Need in Bayesian Deep Learning for Computer Vision?” in Conf. on Neural Information Processing Systems , 2017. [22] T. Salzmann, B. Ivanovic, P. Chakravarty, and M. Pavone, “Trajec-tron++: Dynamically-Feasible Trajectory Forecasting With Heteroge-neous Data,” in European Conf. on Computer Vision , 2020. [23] F. Janjoš, M. Hallgarten, A. Knittel, M. Dolgov, A. Zell, and J. M. Zöllner, “Conditional Unscented Autoencoders for Trajectory Predic-tion,” arXiv preprint arXiv:2310.19944 , 2023. [24] C. Jiang, A. Cornman, C. Park, B. Sapp, Y. Zhou, D. Anguelov et al. ,“MotionDiffuser: Controllable Multi-Agent Motion Prediction using Diffusion,” in Conf. on Computer Vision and Pattern Rec. , 2023. [25] A. Seff, B. Cera, D. Chen, M. Ng, A. Zhou, N. Nayakanti, K. S. Refaat, R. Al-Rfou, and B. Sapp, “MotionLM: Multi-Agent Motion Forecasting as Language Modeling,” in ICCV , 2023. [26] A. Look, B. Rakitsch, M. Kandemir, and J. Peters, “Cheap and Deterministic Inference for Deep State-Space Models of Interacting Dynamical Systems,” Tran. on Machine Learning Research , 2023. [27] M. Liu, H. Cheng, L. Chen, H. Broszio, J. Li, R. Zhao, M. Sester, and M. Y. Yang, “LAformer: Trajectory Prediction for Autonomous Driving with Lane-Aware Scene Constraints,” in Conf. on Computer Vision and Pattern Recognition , 2024. [28] T. Gilles, S. Sabatini, D. Tsishkou, B. Stanciulescu, and F. Moutarde, “GOHOME: Graph-Oriented Heatmap Output for future Motion Esti-mation,” in Int. Conf. on Robotics and Automation , 2022. [29] ——, “THOMAS: Trajectory Heatmap Output with learned Multi-Agent Sampling,” in Int. Conf. on Learning Representations , 2022. [30] Y. Hu, J. Yang, L. Chen, K. Li, C. Sima, X. Zhu, S. Chai, S. Du, T. Lin, W. Wang, L. Lu, X. Jia, Q. Liu, J. Dai, Y. Qiao, and H. Li, “Planning-oriented Autonomous Driving,” in Conf. on Computer Vision and Pattern Recognition , 2023. [31] X. Weng, B. Ivanovic, Y. Wang, Y. Wang, and M. Pavone, “PARA-Drive: Parallelized Architecture for Real-time Autonomous Driving,” in Conf. on Computer Vision and Pattern Recognition , 2024. [32] E. Perez, F. Strub, H. De Vries, V. Dumoulin, and A. Courville, “Film: Visual reasoning with a general conditioning layer,” in Proceedings of the AAAI conference on artificial intelligence , 2018. [33] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention Is All You Need,” in 
+
+Conf. on Neural Information Processing Systems , 2017. [34] B. Ivanovic, G. Song, I. Gilitschenski, and M. Pavone, “trajdata: A Unified Interface to Multiple Human Trajectory Datasets,” in Conf. on Neural Information Processing Systems , 2023. [35] Z. Zhou, L. Ye, J. Wang, K. Wu, and K. Lu, “HiVT: Hierarchical Vector Transformer for Multi-Agent Motion Prediction,” in Conf. on Computer Vision and Pattern Recognition , 2022. [36] J. Gu, C. Sun, and H. Zhao, “DenseTNT: End-to-end Trajectory Prediction from Dense Goal Sets,” in Conf. on Computer Vision and Pattern Recognition , 2021. [37] Z. Sun, Y. Wang, A. Jiang, S. Wang, Y. Gao, Y. Heng, S. Zhang, A. He, H. Jiang, J. Chai et al. , “DiffSemanticFusion: Semantic Raster BEV Fusion for Autonomous Driving via Online Map Diffusion,” IEEE Robotics and Automation Letters , 2026. [38] I. Loshchilov and F. Hutter, “Decoupled Weight Decay Regulariza-tion,” in Int. Conf. on Learning Representations , 2019.
