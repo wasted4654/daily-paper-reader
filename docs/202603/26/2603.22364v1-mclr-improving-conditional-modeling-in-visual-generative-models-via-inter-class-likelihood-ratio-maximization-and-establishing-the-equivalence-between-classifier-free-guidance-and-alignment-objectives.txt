@@ -1,0 +1,2877 @@
+Title: MCLR: Improving Conditional Modeling in Visual Generative Models via Inter-Class Likelihood-Ratio Maximization and Establishing the Equivalence between Classifier-Free Guidance and Alignment Objectives
+
+URL Source: https://arxiv.org/pdf/2603.22364v1
+
+Published Time: Wed, 25 Mar 2026 00:06:42 GMT
+
+Number of Pages: 54
+
+Markdown Content:
+# MCLR: Improving Conditional Modeling in Visual Generative Models via Inter-Class Likelihood-Ratio Maximization and Establishing the Equiva-lence between Classifier-Free Guidance and Alignment Objectives 
+
+Xiang Li 1, ‡, Yixuan Jia 1, Xiao Li 1, Jeffrey A. Fessler 1, Rongrong Wang 2, Qing Qu 1
+
+University of Michigan 1 · Michigan State University 2 
+
+> ‡Corresponding author
+
+Abstract 
+
+Diffusion models have achieved state-of-the-art performance in generative modeling, but their success often relies heavily on classifier-free guidance (CFG), an inference-time heuristic that modifies the sampling trajectory. From a theoretical perspective, diffusion models trained with standard denoising score matching (DSM) are expected to recover the target data distribution, raising the question of why inference-time guidance is necessary in practice. In this work, we ask whether the DSM training objective can be modified in a principled manner such that standard reverse-time sampling, without inference-time guidance, yields effects comparable to CFG. We identify insufficient inter-class separation as a key limitation of standard diffusion models. To address this, we propose MCLR , a principled alignment objective that explicitly maximizes inter-class likelihood-ratios during training. Models fine-tuned with MCLR exhibit CFG-like improvements under standard sampling, achieving comparable qualitative and quantitative gains without requiring inference-time guidance. Beyond empirical benefits, we provide a theoretical result showing that the CFG-guided score is exactly the optimal solution to a weighted MCLR objective. This establishes a formal equivalence between classifier-free guidance and alignment-based objectives, offering a mechanistic interpretation of CFG. 
+
+Keywords: Diffusion Models, Classifier-Free Guidance, Contrastive Fine-Tuning, RL Alignment Algorithms 
+
+Date: March 25, 2026 
+
+Correspondence: forkobe@umich.edu 
+
+Resources: Code Repository 
+
+Figure 1: Conceptual Illustration of MCLR. (a) Samples generated from two classes using the same initial noises exhibit high visual similarity despite different conditioning labels, indicating insufficient separation of the learned conditional distributions. (b) MCLR mitigates this issue by encouraging class separation, resulting in generations with more distinct class-specific features. 1
+
+> arXiv:2603.22364v1 [cs.LG] 23 Mar 2026
+
+# Contents 
+
+1 Introduction 32 Preliminaries 4
+
+2.1 Basics of Diffusion Models . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42.2 Evidence Lower Bound for Diffusion Models . . . . . . . . . . . . . . . . . . . . . . . 52.3 Classifier-Free Guidance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52.4 Direct Preference Optimization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+
+3 Method 6
+
+3.1 Diffusion Models Lack Class-Specificity . . . . . . . . . . . . . . . . . . . . . . . . . . 63.2 Maximum Inter-Class Likelihood-Ratio Training . . . . . . . . . . . . . . . . . . . . . 63.3 Theoretical Analysis of MCLR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 83.4 Adapting DPO for Improved Conditional Modeling . . . . . . . . . . . . . . . . . . . 93.5 Approximating Log-Likelihood with ELBO . . . . . . . . . . . . . . . . . . . . . . . . 10 
+
+4 CFG as an Alignment Algorithm: A Mechanistic Interpretation 11 
+
+4.1 Formal Equivalence between CFG and Weighted MCLR . . . . . . . . . . . . . . . . . 11 4.2 Understanding CFG-Variants through the Alignment Lens . . . . . . . . . . . . . . . 12 
+
+5 Related Work 12 
+
+5.1 Visual Generation without Guidance. . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 5.2 Inference-Time Alignment via Guidance. . . . . . . . . . . . . . . . . . . . . . . . . . 13 
+
+6 Experimental Results 13 
+
+6.1 Experimental Setups . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13 6.2 Overall Algorithmic Behavior . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 
+
+7 Discussion and Conclusions 17 A Theoretical Analysis of MCLR 22 
+
+A.1 Main Theorem . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 A.2 Fine-tuning with MCLR . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 
+
+B Theoretical Analysis of CC-DPO 26 
+
+B.1 Basics of DPO . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 B.2 Improving Conditional Modeling with CC-DPO . . . . . . . . . . . . . . . . . . . . . 27 
+
+C Theoretical Analysis of CCA 30 D Theoretical Analysis of the Equivalence between CFG and Weighted MCLR 31 
+
+D.1 Proof of Theorem 3 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31 D.2 Extensions: CFG Variants under the Alignment Framework . . . . . . . . . . . . . . 34 
+
+E Practical Implementation Details 34 
+
+E.1 Approximating Log-Likelihood with ELBO . . . . . . . . . . . . . . . . . . . . . . . . 34 E.2 Building Training Data from a Minibatch . . . . . . . . . . . . . . . . . . . . . . . . . 37 E.3 Overall Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37 2E.4 Hyperparameters . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37 
+
+F Additional Experimental Results 37 
+
+F.1 Progressive Class Separation and the Fidelity-Diversity Trade-off. . . . . . . . . . . . 38 F.2 MCLR Outperforms Training-time Baselines. . . . . . . . . . . . . . . . . . . . . . . . 39 F.3 MCLR Achieves Comparable Performance as CFG. . . . . . . . . . . . . . . . . . . . . 39 
+
+G Ablation Study 39 
+
+G.1 MCLR does not Benefit from DSM. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39 G.2 Hyperparameter Sensitivity of CC-DPO . . . . . . . . . . . . . . . . . . . . . . . . . . 41 G.3 Hyperparameter Sensitivity of CCA . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41 
+
+H Discussion on Related Works 42 
+
+# 1 Introduction 
+
+Diffusion models [HJA20; Son+21b; Kar+22; Lip+23] have become the dominant paradigm for high-fidelity generative modeling, enabling state-of-the-art visual generation systems [Rom+22; Sah+22; Ram+22; Ess+24]. These models generate samples by reversing a forward noising process using a learned score function, typically trained via denoising score matching [Vin11]. Although the reverse sampling process is theoretically guaranteed to recover the target dis-tribution [And82], in practice it often yields samples of noticeably inferior quality: conditional generation frequently appears visually incoherent or insufficiently faithful to the intended class or prompt [BN24]. In fact, nearly all high-quality generation by diffusion models rely heavily on classifier-free guidance (CFG) [HS22], an inference modification of the reverse sampling process that injects an additional guidance term—the difference between conditional and unconditional scores. While CFG substantially improves sample quality, reducing FID scores by up to 75% in well-established works [PX23; Yu+25], its empirical necessity exposes a gap between the theoretical optimality of DSM and its practical behavior. This raises a central question: 
+
+Can the mechanisms underlying CFG be derived from first principles and integrated into the DSM training objective, such that standard reverse sampling, without inference-time guidance, naturally yields CFG-like behavior? 
+
+Recent observation [LWQ25] suggest that standard conditional models suffer from insufficient inter-class separation: generated samples are less distinguishable across classes than real data, indicating that class-dependent structures are not fully captured by diffusion models. Motivated by this insight, we propose MCLR , a principled alignment objective that explicitly prompts inter-class separability by Maximizing the inter-Class log-Likelihood Ratio. By encouraging the model to amplify density differences between a target class and other classes, MCLR strengthens class-specific structures in the learned score function. Empirically, models fine-tuned with MCLR exhibit CFG-like improvements under standard sampling, achieving substantial gains in fidelity without inference-time guidance. Beyond the empirical benefits, we provide a theoretical result showing that the CFG-guided score coincides exactly with the optimizer of a weighted MCLR objective. This estabilishes a formal equivalence between classifier-free guidance and alignment-based training objectives, revealing CFG as an implicit inference-time alignment algorithm. 3The core principle of MCLR—leveraging inter-class contrastive signals to improve conditional modeling—can also be realized with broader contrastive learning approaches such as Direct Pref-erence Optimization (DPO) [Raf+23]. To assess the uniqueness of MCLR, we adapt DPO to the conditional generation by treating samples from the target class 𝒄 as preferred and samples from other classes as non-preferred. We refer to this formulation as Conditional Contrastive DPO (CC-DPO ). We show that CC-DPO induces a “gamma-powered” distribution [BN24], reshaping the base model via the density ratio 𝑝 (𝒙 |𝒄 ) 
+
+> 𝑝 (𝒙 )
+
+. Moreover, we establish a previously unexplored con-nection between CC-DPO and a recently proposed algorithm, Conditional Contrastive Alignment (CCA) [Che+25b], demonstrating that both objectives admit the same optimal solution. Compre-hensive experiments reveal that MCLR consistently outperforms these alternatives across diverse models and datasets. 
+
+Summary of Contributions. Our main contributions are as follows: 
+
+• A Principled Alignment Objective for Conditional Modeling. We propose MCLR , a theoreti-cally grounded fine-tuning objective that explicitly maximizes inter-class log-likelihood ratios to improve conditional generative modeling. Across diverse models and datasets, MCLR achieves substantial improvements in sample fidelity under standard reverse sampling, consistently out-performing training-time contrastive alternatives such as CC-DPO and CCA. 
+
+• Theoretical Equivalence between CFG and Alignment Objectives. We prove that the classifier-free guidance (CFG)–induced score coincides exactly with the optimizer of a weighted MCLR objective. This establishes a formal connection between CFG and alignment-based training, providing a mechanistic interpretation of CFG as an implicit inference-time alignment algorithm. 
+
+• Understanding Contrastive Alternatives. We provide both theoretical and empirical analyses of contrastive alternatives such as DPO and CCA. When adapted to conditional generation, we show that DPO induces a gamma-powered density transformation equivalent to that of CCA—an equivalence that, to our knowledge, has not been previously established. 
+
+# 2 Preliminaries 
+
+2.1 Basics of Diffusion Models 
+
+Let 𝑝 data (𝒙 ) denote the ground-truth data distribution. Diffusion models construct a forward noising process that gradually perturbs 𝑝 data into a simple prior distribution using a stochastic differential equation (SDE): 
+
+𝑑 𝒙 = 𝒇 (𝒙 , 𝑡 )𝑑𝑡 + 𝑔 (𝑡 )𝑑 𝒘 , (1) where 𝒇 (· , 𝑡 ) is the drift coefficient, 𝑔 (𝑡 ) is the diffusion coefficient, and 𝒘 denotes the standard Brownian motion. Let 𝑝 𝑡 (𝒙 ) be the marginal distribution of 𝒙 (𝑡 ), and 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) the transition density from 𝒙 (0) to 𝒙 (𝑡 ). For sufficiently large 𝑇 , the distribution 𝑝 𝑇 (𝒙 ) becomes indistinguishable from a tractable prior 𝜋 (𝒙 ), e.g., an isotropic Gaussian. The SDE (1) admits a reverse-time probability-flow ODE [Son+21b]: 
+
+𝑑 𝒙 =  𝒇 (𝒙 , 𝑡 ) − 12 𝑔 2(𝑡 )∇ 𝒙 log 𝑝 𝑡 (𝒙 ) 𝑑𝑡. (2) 4Sampling from the reverse ODE requires access to the score function ∇𝒙 log 𝑝 𝑡 (𝒙 ), which can be approximated using a deep network 𝑠 𝜽 (𝒙 , 𝑡 ) trained via the denoising score matching (DSM) objective: 
+
+𝒥 DSM (𝜽 ; 𝑤 (·)) := 12
+
+∫ 𝑇 
+
+> 0
+
+E𝑝 (𝒙 ), 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) ∇𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡 ) 22
+
+i
+
+𝑑𝑡, (3) where 𝑤 (𝑡 ) is a positive weighting function. For conditional diffusion models, the score network takes a conditional embedding 𝒄 as input, and the DSM objective naturally extends to the conditional setting by taking the expectation over class labels and class-conditional data distributions: 
+
+𝒥 DSM (𝜽 , 𝒄 ; 𝑤 (·)) := 12
+
+∫ 𝑇 
+
+> 0
+
+E𝒄 ,𝑝 (𝒙 |𝒄 ),𝑝 0𝑡 (𝒙 𝑡 |𝒙 )[𝑤 (𝑡 )∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22]𝑑𝑡. (4) In this work, we focus on conditional diffusion models, for which the reverse ODE in (2) becomes: 
+
+𝑑 𝒙 =  𝑓 (𝒙 , 𝑡 ) − 12 𝑔 2(𝑡 )∇ 𝒙 log 𝑝 𝑡 (𝒙 |𝒄 ) 𝑑𝑡. (5) 
+
+2.2 Evidence Lower Bound for Diffusion Models 
+
+Let 𝑝 ode  
+
+> 𝜽
+
+(𝒙 ) denote the distributions induced by the reverse ODE (2) . Theorem 2 of [Son+21a] shows that, under certain regularity conditions, the log-likelihood satisfies: 
+
+E𝑝 (𝒙 )[log 𝑝 ode  
+
+> 𝜽
+
+(𝒙 )] 
+
+| {z }
+
+> Maximum Likelihood Estimation
+
+= −𝒥 DSM (𝜽 ; 𝑔 2(·)) + 𝐶, (6) where 𝐶 is a constant independent of 𝜽 . Equation (6) is analogous to the evidence lower bound (ELBO) in variational autoencoders, revealing a fundamental connection between DSM and maxi-mum likelihood estimation (MLE). This connection, enables likelihood-based training in diffusion models [Mar+23; Wal+24; Zhe+25]. 
+
+2.3 Classifier-Free Guidance 
+
+Although the reverse ODE in (5) is theoretically guaranteed to sample from the target conditional distribution, its practical generation quality is often unsatisfactory. In practice, high-quality con-ditional generation requires modifying the standard reverse process with an additional guidance term, known as classifier-free guidance (CFG) [HS22], which leads to the perturbed reverse ODE: 
+
+𝑑 𝒙 =  𝒇 (𝒙 , 𝑡 ) − 12 𝑔 2(𝑡 )(∇ 𝒙 log 𝑝 𝑡 (𝒙 |𝒄 ) + 𝛾 (∇ 𝒙 log 𝑝 𝑡 (𝒙 |𝒄 ) − ∇ 𝒙 log 𝑝 𝑡 (𝒙 )
+
+| {z }
+
+> CFG guidance
+
+) 𝑑𝑡, (7) where 𝛾 controls the guidance strength. Intuitively, CFG sharpens the class- or conditional-specific structure by amplifying the difference between conditional and unconditional scores. However, the CFG-perturbed reverse sampling process (7) does not, in general, correspond to any known forward process [BN24]. Despite recent progress towards understanding CFG [Wu+24; Chi+24; BN24; Pav+25; LWQ25; LJ25; JSG25; Yan+26; Ven+26], its underlying mechanisms remain only partially understood. This post-hoc modification of the sampling procedure motivates the search for principled alternatives that reproduce CFG-like improvements while preserving theoretical consistency, which may, in turn, shed light on the mechanisms underlying CFG itself. 52.4 Direct Preference Optimization 
+
+Direct preference optimization (DPO) is a widely used approach for aligning pretrained language or diffusion models with human preferences [Raf+23; Wal+24]. Under the Bradley-Terry (BT) model [BT52], the probability that a sample 𝒙 𝑤 is preferred over 𝒙 𝑙 given a condition 𝒄 is: 
+
+𝑝 (𝒙 𝑤 ≻ 𝒙 𝑙 |𝒄 ) = Sigmoid (𝑟 (𝒙 𝑤 |𝒄 ) − 𝑟 (𝒙 𝑙 |𝒄 )) , (8) where Sigmoid (·) := 1/( 1 + exp (− 𝒙 )) denotes the Sigmoid function, 𝒙 𝑤 and 𝒙 𝑙 denote the preferred and non-preferred samples, respectively, and 𝑟 (𝒙 |𝒄 ) represents the underlying reward function re-flecting human preference. DPO parameterizes this reward as 𝑟 𝜽 (𝒙 |𝒄 ) := 𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )− 𝛽 log 𝑝 ref (𝒙 |𝒄 )
+
+and estimates 𝜽 via maximum likelihood estimation on the BT model (8): 
+
+max  
+
+> 𝜽
+
+E(𝒄 ,𝒙 𝑤 ,𝒙 𝑙 )∼ 𝑆 
+
+log 𝑝 (𝒙 𝑤 ≻ 𝒙 𝑙 |𝒄 ) := E(𝒄 ,𝒙 𝑤 ,𝒙 𝑙 )∼ 𝑆 
+
+log Sigmoid (𝛽 log 𝑝 𝜽 (𝒙 𝑤 |𝒄 )
+
+𝑝 ref (𝒙 𝑤 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 𝑙 |𝒄 )
+
+𝑝 ref (𝒙 𝑙 |𝒄 ) ) ,
+
+(9) where 𝑝 ref denotes the pretrained base (reference) model, 𝛽 controls the strength of the KL regular-ization between 𝑝 𝜽 and 𝑝 ref , and 𝑆 represents the preference dataset. As we show later, DPO can be naturally adapted to enhance conditional modeling in visual generative models, providing a contrastive mechanism that parallels our MCLR objective. 
+
+# 3 Method 
+
+In this section, we first demonstrate that diffusion models learn conditional distributions that lack sufficient class distinctiveness ( section 3.1). To remedy this issue, we propose MCLR (sections 3.2, 3.3 and 3.5). For completeness, we also study a contrastive alternative obtained by adapting DPO to conditional generation (section 3.4). 
+
+3.1 Diffusion Models Lack Class-Specificity 
+
+In theory, if the score functions are learned accurately, standard reverse diffusion sampling should produce samples from the target conditional distribution. In practice, however conditional sam-pling often fails to exhibit strong class-specific structure [LWQ25]. A common failure mode is that the conditional generations are weakly distinguishable across classes: when starting from the same initial noises, samples generated under different class conditions frequently share similar global layouts while class-discriminative features are attenuated or missing as shown in Figure 1(a) and Figure 2. This suggests that the learned conditional distributions are insufficiently distinguish-able from one another. We illustrate this phenomenon conceptually in Figure 1, where the learned class-conditional distributions of a trained base model 𝑝 ref exhibit substantially less separation than the ground-truth data distribution 𝑝 data .
+
+3.2 Maximum Inter-Class Likelihood-Ratio Training 
+
+Motivated by the preceding discussion, we propose improving conditional modeling by explicitly encouraging inter-class separation in conditional models, as shown conceptually in Figure 1(b). Let 𝑝 𝜽 (𝒙 |𝒄 ) denote the model’s conditional distribution for class condition 𝒄 , where 𝜽 is the model parameter. We consider the following objective: 
+
+max  
+
+> 𝜽
+
+E𝒄 ,𝑝 (𝒙 |𝒄 ) log 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 
+
+2 E𝒄 , ˜𝒄 ,𝒙 ∼𝑝 (·| 𝒄 ),𝒚 ∼𝑝 (·| ˜ 𝒄 )
+
+
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒙 | ˜ 𝒄 ) + log 𝑝 𝜽 (𝒚 | ˜ 𝒄 )
+
+𝑝 𝜽 (𝒚 |𝒄 )
+
+
+
+, (10) 6Class 350 Class 456                                                          
+
+> Base Model
+> 𝜸 =𝟎 .𝟏 𝜸 =𝟎 .𝟑 𝜸 =𝟎 .𝟒 𝜸 =𝟎 .𝟗 𝜸 =𝟏 .𝟎
+> Base Model
+> 280 560 896 1232 1288
+> ImageNet 512x512
+> Base Model
+> 224 448 672 840 1008
+> MCLR Training Iterations (K images)
+> Base Model
+> Increasing CFG Scale (𝜸 )
+> 𝜸 =𝟎 .𝟏 𝜸 =𝟎 .𝟑 𝜸 =𝟎 .𝟒 𝜸 =𝟎 .𝟕 𝜸 =𝟏 .𝟎
+> Class  617  Class 299
+> ImageNet  64x64  Iters = 0
+> Iters = 0
+> 𝜸 =𝟎
+> 𝜸 =𝟎
+
+Figure 2: Effects of MCLR vs. CFG. We visualize the progressive emergence of class-specific structure under MCLR training and CFG. MCLR training induces effects analogous to increasing guidance strength in CFG, both substantially improving class-specific patterns. For each image block, samples from different classes are generated from the same initial noises. where 𝒄 and ˜𝒄 are two randomly sampled classes and 𝜂 controls regularization strength. Compared to standard MLE (equivalently, DSM under appropriate weighting) in (6) , eq. (10) explicitly encourages samples to have higher likelihood under their true class than under mismatched classes. Concretely, for a sample 𝒙 ∼ 𝑝 𝜽 (𝒙 |𝒄 ) (or 𝒚 ∼ 𝑝 𝜽 (𝒙 | ˜ 𝒄 )), MCLR explicitly encourages it to have higher likelihood under true class than under mismatched classes. In doing so, MCLR drives the model to increase the inter-class likelihood ratio, thereby pushing 𝑝 𝜽 (𝒙 |𝒄 ) to concentrate more probability mass in regions where the true class is favored over competing classes. Such regions typically correspond to samples with more pronounced class-specific features. Intuitively, MCLR encourages the model to fully exploit the label-conditioned information. Standard conditional model training simply feeds the conditional (class) label 𝒄 alongside the data to the model, optimizes the MLE (or DSM) objective, and relies on the deep networks to automatically discover and utilize the conditional structure. When labels are under-exploited, the conditional distributions can collapse and become weakly distinguishable, yielding 𝑝 𝜽 (𝒙 |𝒄 ) ≈ 𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+regardless of the true class of 𝒙 . Maximizing the log-likelihood ratio log 𝑝 𝜽 (𝒙 |𝒄 )  
+
+> 𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+directly penalizes this collapse and forces the model to discriminate between different conditions (classes) by leveraging the information encoded in the labels. Note that (10) admits the following equivalent form, which we use throughout unless otherwise stated: 
+
+max  
+
+> 𝜽
+
+E𝒄 , 𝑝 (𝒙 |𝒄 )
+
+ log 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 E𝒄 , ˜𝒄 , 𝒙 ∼𝑝 (𝒙 |𝒄 )
+
+h
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+i| {z }
+
+> MCLR Regularization
+
+. (11) It can also be written as: 7max  
+
+> 𝜽
+
+E𝒄 , 𝑝 (𝒙 |𝒄 )
+
+ log 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 E𝒄 , 𝒙 ∼𝑝 (·| 𝒄 ),𝒚 ∼𝑝 (·) 
+
+h
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒚 |𝒄 )
+
+i| {z }
+
+> MCLR Regularization (Form II)
+
+, (12) where 𝒚 ∼ 𝑝 (𝒙 ) denotes sampling from the unconditional density 𝑝 (𝒙 ) := E𝒄 [𝑝 (𝒙 |𝒄 )] .
+
+Fine-tuning with MCLR. When a pretrained (suboptimal) model 𝑝 ref (𝒙 ) that lacks class specificity is available, we can fine-tune it using MCLR in combination with KL regularization: 
+
+max  
+
+> 𝜽
+
+−E𝒄 
+
+𝐷 KL 
+
+ 𝑝 ref (𝒙 |𝒄 )∥ 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 E𝒄 , ˜𝒄 ,𝒙 ∼𝑝 (𝒙 |𝒄 )
+
+
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+
+
+. (13) In the next subsection, we analyze the optimal solution induced by (11) and (13) , which provides insight into MCLR’s effects. 
+
+3.3 Theoretical Analysis of MCLR 
+
+We begin by analyzing the optimization problem (11) . Define ℎ(𝒙 |𝒄 ) := 𝑝 (𝒙 |𝒄 ) + 𝜂  𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 ).We make the following assumptions. 
+
+Assumption 1. The function ℎ(𝒙 |𝒄 ) has compact support; that is, 
+
+supp ℎ(𝒙 |𝒄 ) ⊆ 𝐾, |𝐾 | < ∞. (14) 
+
+Assumption 2. For ∀𝒙 ∈ 𝐾 ,
+
+𝑝 𝜽 (𝒙 |𝒄 ) ≥ 𝛿 > 0. (15) Note that Assumption 1 is mild in practice, as image data typically occupies a bounded pixel range. Assumption 2 is a regularity assumption that ensures the log-likelihood is well-defined, avoiding the singularity that occurs when evaluating log 𝑝 𝜽 (𝒙 |𝒄 ) at zero density. Since 𝑝 𝜽 (𝒙 |𝒄 )
+
+integrates to one over 𝐾 , we necessarily have 𝛿 ≤ 1 
+
+> |𝐾 |
+
+. In the following, we further assume 𝛿 < 1 
+
+> |𝐾 |
+
+.
+
+Theorem 1. Based on the two assumptions above, the optimal solution to (11) is: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) =
+
+(max  ℎ(𝒙 |𝒄 ) 
+
+> 𝑍 (𝒄 )
+
+, 𝛿 , 𝒙 ∈ 𝐾, 
+
+0, 𝒙 ∉ 𝐾, (16) 
+
+where 𝑍 (𝒄 ) is the normalizing constant. 
+
+The proof is provided in section A.1. Intuitively, the optimal conditional distribution 𝑝 𝜽 ∗ (𝒙 |𝒄 )
+
+induced by MCLR is proportional to ℎ(𝒙 |𝒄 ) whenever ℎ(𝒙 |𝒄 ) > 𝑍 (𝒄 )𝛿 , while being clipped to the floor 𝛿 elsewhere. In the limit 𝛿 → 0, the floor disappears and the optimal distribution approaches: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = ℎ+(𝒙 |𝒄 )
+
+∫ 
+
+> 𝒙
+
+ℎ+(𝒙 |𝒄 )𝑑 𝒙 , (17) where ℎ+(𝒙 |𝒄 ) := max ℎ(𝒙 |𝒄 ), 0 , such that the negative part of ℎ(𝒙 |𝒄 ) is truncated to zero and then normalized to form a valid distribution. Note that (16) and (17) can be interpreted as the 8"sum-of-difference" distribution: MCLR reshapes 𝑝 (𝒙 |𝒄 ) by adding to it the difference between 
+
+𝑝 (𝒙 |𝒄 ) and 𝑝 (𝒙 ), such that the regions where 𝑝 (𝒙 |𝒄 ) > 𝑝 (𝒙 ) (i.e., samples with strong class-specific features) are amplified, and the regions where 𝑝 (𝒙 |𝒄 ) < 𝑝 (𝒙 ) (i.e., ambiguous samples lying near class boundaries) are suppressed. For the fine-tuning objective in (13) , it is easy to show that the optimal solution admits the same form as (16) , but in this case ℎ(𝒙 |𝒄 ) = 𝑝 ref (𝒙 |𝒄 ) + 𝜂 (𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 )) . This directly leads to the following corollary (the proof is provided in section A.2). 
+
+Corollary 1. If the base model 𝑝 ref satisfies the mixture error model: 
+
+𝑝 ref (𝒙 |𝒄 ) = (1 − 𝜂 ) 𝑝 (𝒙 |𝒄 ) + 𝜂 𝑝 (𝒙 ), (18) 
+
+where 𝜂 ∈ [ 0, 1], then finetuning 𝑝 ref (𝒙 |𝒄 ) with MCLR regularization (13) recovers the ground truth conditional distribution 𝑝 (𝒙 |𝒄 ).
+
+The mixture error model (18) posits that the base model suffers from cross-class "leakage"; specifically, the learned conditional density 𝑝 ref (𝒙 |𝒄 ) is a convex combination of the ground-truth conditional distribution 𝑝 (𝒙 |𝒄 ) and the unconditional counterpart 𝑝 (𝒙 ), which corresponds to a weighted average over all class-conditional distributions. MCLR addresses this leakage by explicitly subtracting a portion of the unconditional component from the base model, thereby suppressing the influence of competing classes. Notably, similar mixture-based error models have been employed in the design of guidance methods [Kou+25]. 
+
+3.4 Adapting DPO for Improved Conditional Modeling 
+
+The core principle behind MCLR is to improve conditional modeling by encouraging the model to exploit class-dependent structures through inter-class contrast. This idea can also be instantiated via other contrastive objectives such as DPO. Intuitively, given a condition (or prompt) 𝒄 and a pair consisting of a human-preferred sample 𝒙 𝑤 and a non-preferred sample 𝒙 𝑙 , the DPO objective (9) increases the relative density assigned by the fine-tuned model 𝑝 𝜽 (𝒙 |𝒄 ) to 𝒙 𝑤 , while decreasing its density on 𝒙 𝑙 , relative to the base model 𝑝 ref (𝒙 |𝒄 ). To adapt DPO for improving class specificity, we treat samples from the target 𝒄 as preferred ( 𝒙 𝑤 ) and samples from other randomly selected classes as non-preferred ( 𝒙 𝑙 ). This leads to the following objective: 
+
+min  
+
+> 𝜽
+
+−E𝒄 , ˜𝒄 , 𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑙 ∼𝑝 (𝒙 | ˜ 𝒄 ) log Sigmoid 
+
+
+
+𝛽 log 𝑝 𝜽 (𝒙 𝑤 |𝒄 )
+
+𝑝 ref (𝒙 𝑤 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 𝑙 |𝒄 )
+
+𝑝 ref (𝒙 𝑙 |𝒄 )
+
+
+
+. (19) We refer to (19) as Conditional Contrastive DPO (CC-DPO). Similar to MCLR, CC-DPO objective also admits a closed-form solution, as stated in the following theorem (the proof is provided in section B.2). 
+
+Theorem 2. Under certain regularity conditions, the optimal solution to (19) is: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 1
+
+˜𝑍 (𝒄 ) 𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+, (20) 
+
+where ˜𝑍 (𝒄 ) = ∫ 
+
+> 𝒙
+
+𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+> 𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+𝑑 𝒙 is the normalizing constant. 
+
+9Comparison between MCLR and CC-DPO. Despite sharing the same inter-class contrastive mech-anism, MCLR and CC-DPO differ in how they modify the base model. Unlike MCLR’s additive modification via the density difference 𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 ), CC-DPO reweights the base model multi-plicatively by a density ratio term 
+
+ 𝑝 (𝒙 |𝒄 )
+
+> 𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+, thereby amplifying regions where 𝑝 (𝒙 |𝒄 ) > 𝑝 (𝒙 ) while suppressing regions where 𝑝 (𝒙 |𝒄 ) < 𝑝 (𝒙 ). This distinction has important theoretical consequences. In particular, the multiplicative form adopted by CC-DPO can be overly aggressive. Consider a point ˜𝒙 such that 𝑝 ( ˜ 𝒙 ) ≈ 0 while 𝑝 ( ˜ 𝒙 |𝒄 ) > 0, a situation that naturally arises when 𝒄 are minority classes. In this case, the ratio   𝑝 ( ˜ 𝒙 |𝒄 )
+
+> 𝑝 ( ˜ 𝒙 )
+
+1/𝛽 becomes ill-conditioned, strongly amplifying the density at ˜𝒙 and potentially driving the learned conditional distribution toward degenerate or unstable solutions. By contrast, the optimal solution (16) induced by MCLR remains well-behaved. 
+
+Equivalence between CC-DPO and CCA. The optimal CC-DPO solution (20) is known as the 
+
+gamma-powered distribution. This distribution was initially conjectured to characterize the effect of classifier-free guidance (CFG) [HS22], but was later shown not to correspond to the true CFG dynamics [Kar+24a; BN24]. Interestingly, the same gamma-powered distribution also arises as the optimal solution of Conditional Contrastive Alignment (CCA) [Che+25b], a recently proposed method for autoregressive models (see section C). Our analysis therefore establishes a previously unrecognized equivalence between CC-DPO and CCA at the level of their induced optimal distribu-tions. Empirically, as we demonstrate in section G.3, CC-DPO matches or outperforms CCA while requiring fewer hyperparameters, making it simpler to deploy in practice. 
+
+3.5 Approximating Log-Likelihood with ELBO 
+
+Both MCLR (11) and CC-DPO (19) require access to the log-likelihood. While the log-likelihood can be computed exactly for autoregressive models [Tia+24], it is not directly available for diffusion models. We therefore approximate the log-likelihood using ELBO (6) , so that the MCLR objective in (11) becomes equivalent to (21): 
+
+min  
+
+> 𝜽
+
+𝒥 DSM (𝜽 , 𝒄 ; 𝑔 2(·)) + 𝜂 E 𝒄 , ˜𝒄 , 𝑡 ∼𝒰 [ 0,𝑇 ]  
+
+> 𝑝 (𝒙 |𝒄 ), 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑔 2(𝑡 )
+
+
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22 − ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i 
+
+,
+
+(21) which can be estimated with Monte Carlo sampling. Although the ELBO holds exactly only under a uniform time schedule and the specific weighting 𝑔 2(𝑡 ), following standard practice in the diffusion model literature, we treat these terms as tunable design choices. Specifically, we adopt a customized time sampling distribution 𝑝 (𝑡 ) and replace 𝑔 2(𝑡 ) with a chosen weighting function 𝑤 (𝑡 ).
+
+Interpreting MCLR from Denoising Perspective. Moreover, according to the equivalence between score function and optimal MMSE denoiser, the score network can be parameterized as 𝒔 𝜽 (𝒙 , 𝑡, 𝒄 ) =  
+
+> 𝒟 𝜽 (𝒙 ;𝜎 (𝑡 ),𝒄 )− 𝒙
+> 𝜎 2(𝑡 )
+
+, where 𝜎 (𝑡 ) is the standard deviation of additive noise at time 𝑡 (see section E.1 for details). As a result, the MCLR regularization with a customized training time schedule and adaptive weighting becomes equivalent to: 
+
+E 𝒄 , ˜𝒄 , 𝑡 ∼𝑝 (𝑡 )  
+
+> 𝑝 (𝒙 |𝒄 ), 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) ∥𝒙 − 𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), ˜𝒄 )∥ 22
+
+i
+
+. (22) 10 Eq. (22) provides an intuitive interpretation of MCLR from a denoising perspective: it trains conditional denoisers 𝒟( 𝒙 ; 𝜎 (𝑡 ), 𝒄 ) under an additional margin-like constraint. Specifically, for each sample 𝒙 ∼ 𝑝 (𝒙 |𝒄 ), the denoiser associated with the correct condition 𝒄 is encouraged to produce a better reconstruction than denoisers corresponding to mismatched conditions ˜𝒄 . In practice, we implement MCLR using this denoising formulation. 
+
+Remarks on the ELBO Approximation. Despite a standard practice in the literature, when re-placing log-likelihood with ELBO, the resulting objective (21) does not necessarily correspond to the original likelihood formulation (11) , since the ELBO does not enforce the regularity conditions required for the parameterized score function to define a valid score field. Consequently, ELBO-approximated MCLR should be viewed as an approximate likelihood-ratio maximization procedure for diffusion models. This issue does not arise for autoregressive models, where likelihoods are available exactly. 
+
+# 4 CFG as an Alignment Algorithm: A Mechanistic Interpretation 
+
+We now show that classifier-free guidance (CFG) is not merely an inference-time heuristic, but the exact optimal solution of an alignment objective. In particular, we prove that the CFG-guided score in (7) coincides with the unique minimizer of a sample-adaptive weighted MCLR objective. As established in the previous sections, the MCLR formulation in (11) (and its equivalent form (12) ) can be interpreted as a contrastive alignment objective, structurally analogous to methods such as DPO. The result below therefore provides a formal characterization of CFG as an inference-time alignment algorithm that approximately optimizes an inter-class likelihood-ratio objective. 
+
+4.1 Formal Equivalence between CFG and Weighted MCLR 
+
+We establish the following equivalence. The proof is provided in section D.1. 
+
+Theorem 3. For any time sampling distribution 𝑝 (𝑡 ) and weighting function 𝑤 (𝑡 ), the CFG-guided score 
+
+𝒔 cfg (𝒙 𝑡 , 𝑡, 𝒄 ) := ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) + 𝜂  ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) − ∇ 𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 )
+
+is the unique minimizer of a sample-adaptive weighted ELBO-approximated MCLR objective: 
+
+𝒔 cfg (·) = arg min  
+
+> 𝒔 𝜽 (·)
+
+E𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 )∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i
+
++ 𝜂 E 𝒄 , ˜𝒄 ,𝑡 ∼𝑝 (𝑡 )    
+
+> 𝒙 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 )
+
+
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+− 𝑝 𝑡 (𝒙 𝑡 | ˜ 𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i 
+
+.
+
+(23) The MCLR regularization term in (23) differs from that of standard MCLR objective (21) in that the negative component is reweighted by a sample-adaptive likelihood ratio 𝑝 𝑡 (𝒙 𝑡 | ˜ 𝒄 )   
+
+> 𝑝 𝑡 (𝒙 𝑡 )
+
+. This adaptive weighting transforms the standard MCLR into one whose minimizer coincides exactly with the CFG-guided score. Hence, CFG can be interpreted as approximately solving an inter-class likelihood-ratio alignment problem at inference time, where the approximation arises from (i) the ELBO-based training objective and (ii) the adaptive weighting. Furthermore, recent empirical works [Fra+25; Jin+25; Che+25c; JWL26] have observed that CFG-style inference-time guidance often produces effects similar to those of training-time alignment 11 methods. The equivalence established above provides a precise theoretical explanation for this phenomenon. Lastly, we note that the MCLR regularization term in (23) also admits an equivalent form: 
+
+E𝒄 ,𝑡 ∼𝑝 (𝑡 ),𝒙 ∼𝑝 (·| 𝒄 ),𝒚 ∼𝑝 (·)     
+
+> 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ),𝑝 0𝑡 (𝒚 𝑡 |𝒚 )
+
+h
+
+𝑤 (𝑡 )
+
+
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22 − 𝑝 𝑡 (𝒚 𝑡 |𝒄 )
+
+𝑝 𝑡 (𝒚 𝑡 ) ∥∇ 𝒚 𝑡 log 𝑝 0𝑡 (𝒚 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒚 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i 
+
+.
+
+(24) 
+
+4.2 Understanding CFG-Variants through the Alignment Lens 
+
+The equivalence above provides a unified perspective for interpreting CFG variants. By modifying the source distributions from which positive and negative samples are drawn in the contrastive objective, one recovers several existing guidance mechanisms as special cases. For example in (24) , if 𝒙 is sampled from a stronger model and 𝒚 is sampled from a weaker model, the resulting optimal solution recovers the score of Autoguidance [Kar+24a]. Similarly, if 𝒙 
+
+is sampled from a reinforcement-learning fine-tuned model and 𝒚 is sampled from the base model, the induced solution corresponds to the score used in CFGRL [Fra+25]. Thus, MCLR provides a unified alignment interpretation for a broad class of guidance algorithms. We summarize this unified framework in Figure 3 and defer a detailed generalization and discussion to section D.2. Contrastive Inter -distribution Alignment: Establishing the Equivalence between CFG and MCLR  
+
+> Inference time guidance -based method (CFG -variant): Amplify
+> Likelihood -ratio at inference
+
+𝒔 !"# $%&'(&)* 𝒙 *, 𝑡 : = ∇𝒙 ! log 𝑝 *
+
+> ,
+
+(𝒙 *) + 𝜂 ∇𝒙 ! log 𝑝 𝒕  
+
+> ,
+
+𝒙 𝒕 
+
+𝑝 *
+
+> $
+
+(𝒙 *) 
+
+> Training -time alignment (MCLR): Internalize alignment into training
+
+max  
+
+> .
+
+𝐸 /"(𝒙 ) log 𝑝 . (𝒙 ) + 𝜂 𝐸 𝒙 ∼/" ⋅ ,𝒚 ∼/#(⋅)[log 𝑝 𝜽 (𝒙 )
+
+𝑝 𝜽 (𝒚 )]              
+
+> CFG and its variants
+> 𝒑 !𝒙 𝒑 "𝒙
+> CFG
+> Autoguidance
+> CFGRL
+> 𝑝 𝒙 𝒄 𝑝 (𝒙 )
+> RL -fine -tuned
+> model Base model
+> Stronger model Weaker model
+> Approximate equivalence: MCLR ≈guidance -based method under (i) adaptive weighting
+> (ii) ELBO approximation
+
+Figure 3: A Unified Framework Connecting CFG Variants with Contrastive Alignment. CFG-based methods can be interpreted as implicitly optimizing a likelihood-ratio–based contrastive alignment objective between two distributions 𝑝 +(𝒙 ) and 𝑝 −(𝒙 ) at inference time. 
+
+# 5 Related Work 
+
+Our work relates to recent advances in conditional generative modeling and guidance in diffusion models. We provide a more comprehensive discussion in section H. 
+
+5.1 Visual Generation without Guidance. 
+
+Several recent works aim to induce CFG-like behavior by modifying the training objective, rather than applying classifier-free guidance (CFG) at inference time [Che+25b; Che+25a; Tan+25]. Among them, Conditional Contrastive Alignment (CCA) [Che+25b] is the most closely related to our work. CCA learns a gamma-powered distribution via Noise Contrastive Estimation [GH10]. In contrast, MCLR provides stronger empirical performance in diffusion models and achieves 12 cometitive performance in autoregressive settings. Moreover, we reveal a previously unexplored theoretical equivalence between DPO and CCA. Another related approach is Guidance-Free Training (GFT) [Che+25a; Tan+25], which aims to reproduce CFG-induced score functions through a modified denoising score matching (DSM) objective. While GFT mimics the functional form of CFG during training, our MCLR formulation instead reveals the underlying contrastive likelihood-ratio structure implicit in CFG, offering a clearer mechanistic interpretation. Several additional works [Yan+24; Lee+25; KMS24; YAA25] employ class-wise contrastive objectives to improve conditional generation. However, these methods mainly focus on empirical improvements and lack a formal characterization of the underlying theoretical properties. Finally, Direct Discriminative Optimization (DDO) [Zhe+25] contrasts real and synthetic sam-ples rather than class-conditional distributions, and serves as a baseline in our experiments. Al-though MCLR, as a unified framework (discussed in section D.2), can be extended to real-synthetic contrastive settings, we leave this direction for future investigation. 
+
+5.2 Inference-Time Alignment via Guidance. 
+
+Recent works [Fra+25; Jin+25; Che+25c; JWL26] observe that CFG-style inference-time guidance can produce effects resembling those of training-time alignment methods, including reinforcement learning-based approaches. These studies provide empirical evidence that guidance may implicitly induce alignment-like behavior. However, existing analyses are largely heuristic and often rely on unrealistic assumptions such as the guided score corresponds to that of the gamma-powered distribution (20) , an assumption that has been proven incorrect [Kar+24a; BN24]. As a result, a rigorous theoretical connection between CFG and alignment objectives remains incomplete. By establishing the equivalence between CFG and a weighted MCLR objective, our work provides a formal mechanistic interpretation of CFG as an inference-time alignment algorithm. To the best of our knowledge, this is the first result that rigorously connects CFG-style guidance with likelihood-ratio-based alignment objectives. 
+
+# 6 Experimental Results 
+
+In this section, we empirically evaluate the effectiveness of the proposed method. Our experiments demonstrate that: (i) MCLR substantially improves conditional generation quality and outperforms existing training-time baselines; and (ii) MCLR achieves performance comparable to CFG, exhibit-ing a similar fidelity–diversity trade-off and producing similar qualitative effects. Due to space constraints, we present only a subset of the results here and defer a more comprehensive evaluation to sections F and G. 
+
+6.1 Experimental Setups 
+
+Practical Implementation. In our experiments, we focus on fine-tuning pretrained models. The KL-regularized objective in (13) requires sampling from the base model, which incurs significant computational overhead. Although one can combine denoising score matching (DSM) with MCLR as in (11) , we empirically observe no performance gains from this formulation (see section G.1). Therefore, throughout the paper we fine-tune diffusion models using (22) alone. This simplified formulation yields strong empirical performance while reducing hyperparameter sensitivity, as MCLR introduces only a single hyperparameter, i.e., the learning rate. 13 The theoretical equivalence between MCLR and CFG requires an adaptive weighting scheme as in (23) , which is intractable in practice. While this weight could in principle be approximated via an ELBO approximation, we instead adopt the standard (without adaptive weighting) MCLR objective. Despite this simplification, we find that standard MCLR achieves comparable quantitative performance to CFG and produces similar qualitative effects. 
+
+Datasets, Models, and Baselines. We evaluate MCLR alongside several baselines, including CCA, CC-DPO, DDO, and CFG, on both diffusion and visual autoregressive models. For diffusion models, we fine-tune pretrained EDM2 models [Kar+24b] on ImageNet-64 ×64 and ImageNet-512 ×512. For visual autoregressive models, we fine-tune VAR-d24 model [Tia+24] on ImageNet-256 ×256. 
+
+Evaluation Metrics. We evaluate generative performance using Fréchet Distance (FD) [Heu+17], Precision and Recall [Kyn+19], and Inception score (IS) [Sal+16]. FD measures distributional alignment, IS favors class-discriminative samples with high prediction confidence, Precision reflects sample fidelity and Recall measures diversity. FD, Precision, and Recall can be computed using either Inception or DINOv2 features. For diffusion models, we primarily report FD computed with DINOv2 features (FD DINOv2 ). While FID (Inception-based FD) is widely used in the diffusion literature, we find that for strong pretrained model such as EDM2, it can be insensitive to perceptually meaningful improvements. In particular, although both CFG and MCLR lead to visually pronounced quality improvements, the FID score often does not improve and may even degrade. In contrast, FD DINOv2 consistently captures these improvements, aligning with prior findings that it correlates more strongly with human evaluations [Ste+23]. For visual autoregressive models, both FID and FD DINOv2 improve consistently. Precision and Recall exhibit consistent trends across feature extractors; we therefore report results computed with Inception features in the main text and defer DINOv2-based results to section F. 
+
+6.2 Overall Algorithmic Behavior 
+
+Progressive Class Separation and Fidelity–Diversity Trade-off. We first analyze the training dynamics induced by MCLR and their effect on conditional generation. Qualitatively, as shown in Figures 2 and 8 to 19, at early stages of training, images generated from the same initial noises share similar global structures across different class conditions, indicating weak class-conditional modeling by the base model. As training proceeds, generated images gradually develop distinct class-specific structures, reflecting increasing inter-class separation and improved conditional modeling. This behavior is also reflected quantitatively. As shown in Figure 4(b,d), both Inception Score (IS) and Precision increase steadily during training, indicating that the generated samples become more class-discriminative and visually faithful. However, excessive training reduces within-class diversity, as reflected by a decrease in Recall ( Figure 4(e)). As a consequence, FD DINOv2 initially improves as conditional modeling strengthens, but later deteriorates when diversity decreases, as shown in Figure 4(a), revealing a characteristic fidelity–diversity trade-off. Interestingly, this behavior closely mirrors the effect of increasing the guidance scale in CFG, where stronger guidance improves class fidelity at the cost of diversity. Similar trends are observed for other contrastive alignment objectives such as CC-DPO and CCA. Following prior works, we therefore report results at the checkpoint achieving the best FD DINOv2 score in table 1. 14 (g)  
+
+> (i)
+> (h)
+> (j)
+> (b)
+> (e)
+> (c)
+> (f)
+> (a)
+> (d)
+> ImageNet -512 EDM2 -LImageNet -256 VAR -d24
+
+Figure 4: Quantitative Results for EDM2-L and VAR-d24. (a), (b), (d), and (e) show the evolution of FD, Inception Score, Precision, and Recall, respectively, as functions of training iterations. (c), (g), and (h) illustrate the FD–IS trade-offs, while (f), (i), and (j) depict the Precision–Recall trade-offs. For EDM2 models, we evaluate classifier-free guid-ance (CFG) scales 𝛾 ∈ {0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1, 1.5, 2.0, 3.0}. For Var-d24 model, 𝛾 ∈{0.5, 0.8, 1.1, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10 .0, 15 .0}. Start denotes the performance of the base model, while End denotes the model obtained after a fixed finetuning duration. 
+
+MCLR Outperforms Training-time Baselines including CC-DPO and CCA. (i) Diffusion Models. 
+
+For diffusion models, MCLR achieves substantially better best-case FD DINOv2 scores than CCA, CC-DPO, and DDO on ImageNet (see table 1). Moreover, as shown in Figure 4 (c,f), MCLR traverses a significantly wider fidelity–diversity trade-off region steadily with a faster training speed. In contrast, CCA and CC-DPO converge early at suboptimal local minima and exhibit zigzag optimization trajectories, as evidenced by slowly improving or stalled learning curves. This behavior suggests that these objectives are more difficult to optimize in diffusion models. 
+
+(ii) Autoregressive Models. In contrast to diffusion models, MCLR, CC-DPO, and CCA achieve comparable performance improvements on VAR-d24, substantially improving both FD DINOv2 and FID (see Figure 4(g,h)). We hypothesize that this difference arises from how likelihood is computed in each framework. In diffusion models, the likelihood is only approximated, and CC-DPO and CCA additionally require estimating the base-model likelihood, introducing extra variance during training. In contrast, autoregressive models provide exact likelihoods, resulting in lower-variance optimization and more stable behavior. Despite this, MCLR consistently achieves higher precision in later training stages, as shown in Figure 4(i,j). 
+
+MCLR Achieves Comparable Performance as CFG Quantitatively. We next compare MCLR with classifier-free guidance (CFG). Overall, the two approaches achieve comparable performance, but exhibit different trade-offs across evaluation metrics. 
+
+(i) Diffusion Models. For EDM2 models, CFG generally exhibits a better FD–IS trade-off and achieves a lower best-case FD DINOv2 . Nevertheless, this gap is moderate, particularly for the EDM2-L model, where CFG attains a best-case FD DINOv2 of 39.86 compared to 42.50 for MCLR. When evaluated using Precision–Recall, MCLR exhibits competitive performance relative to CFG. Specifically, as shown in Figure 4(f), MCLR matches CFG in the high-recall regime corresponding to early training stages, and attains a substantially higher best-case precision in the high-precision regime at later training stages, where CFG begins to produce images with oversaturated colors. Furthermore, applying CFG on top of an MCLR-fine-tuned model further narrows the performance 15 Table 1: Quantitative results for MCLR, CFG and training-time baselines. For each algorithm, the metrics are reported at the model checkpoint achieving the best case FD DINOv2 . Precision and Recall are computed using Inception features. The best and second-best results are highlighted in bold 
+
+and underline, respectively.                                                                                            
+
+> Method NFE FD DINOv2 ↓Prec. ↑Rec. ↑IS ↑
+> ImageNet (64 ×64)
+> EDM2-S 63 95.20 0.705 0.614 60.43 +CFG 126 43.75 0.800 0.565 127.40
+> +DDO 63 72.97 0.689 0.642 65.84 +CCA 63 62.36 0.762 0.557 76.13 +CC-DPO 63 60.98 0.784 0.536 86.11
+> +MCLR (Ours) 63 52.69 0.800 0.505 90.68
+> ImageNet (256 ×256)
+> VAR-d24 10 182.12 0.672 0.623 67.92 +CFG 20 45.08 0.798 0.542 100.70 +CCA 10 46.82 0.873 0.448 98.92 +CC-DPO 10 46.63 0.881 0.433 100.12
+> +MCLR (Ours) 10 44.31 0.893 0.404 100.84 ImageNet (512 ×512)
+> EDM2-L 63 67.70 0.753 0.610 250.07 +CFG 126 39.86 0.844 0.512 360.30
+> +DDO 63 49.47 0.737 0.652 268.72 +CCA 63 51.45 0.790 0.574 281.45 +CC-DPO 63 51.92 0.812 0.544 298.89
+> +MCLR (Ours) 63 42.50 0.849 0.492 332.02
+
+gap between the two methods, yielding higher best-case Inception Score and Precision on both EDM2-S and EDM2-L models (see Figure 4(c,f) and Figure 5(c,f,i)). 
+
+(ii) Autoregressive Models. For VAR-d24 model, MCLR achieves a similar FD–IS trade-off to CFG in terms of both FD DINOv2 and FID, with CFG exhibiting a slightly better best-case FID. Consistent with diffusion models, MCLR outperforms CFG in the Precision–Recall trade-off and achieves a higher best-case precision. 
+
+MCLR Exhibits Similar Qualitative Effect as CFG. Qualitatively, MCLR and CFG produce highly similar visual effects, both substantially enhancing class-specific structures in the generated images, as shown in Figures 2 and 8 to 19. These observations are consistent with our theoretical analysis in section 4, which interprets CFG as an implicit contrastive alignment method. In particular, both MCLR and CFG improve conditional modeling by leveraging inter-class contrastive signals. The key distinction lies in how this mechanism is applied: MCLR internalizes it during training, whereas CFG introduces it at inference time. 
+
+Equivalence between CCA and CC-DPO. Finally, we observe that CC-DPO consistently matches or outperforms CCA on both EDM2 and VAR models. This empirical observation aligns with our theoretical analysis in section 3.4, which establishes the equivalence between these two objectives. 16 7 Discussion and Conclusions 
+
+In this work, we introduce MCLR, a training-time objective that improves conditional modeling in visual generative models by explicitly encouraging inter-class separation. Through extensive experiments, we demonstrate that MCLR consistently outperforms existing training-time baselines and achieves effects similar to classifier-free guidance (CFG), substantially improving the visual fidelity of conditional generation without requiring inference-time guidance and therefore enabling faster inference. Beyond empirical improvements, our analysis reveals a close connection between MCLR and CFG. In particular, we show that the CFG-guided score corresponds to the optimal solution of a weighted MCLR objective, providing a mechanistic interpretation of CFG as an implicit contrastive alignment algorithm. This connection sheds new light on CFG as approximately optimizing an inter-class likelihood-ratio objective. 
+
+Limitations and Future Directions. As a training-time method, MCLR produces a fixed model after training. Although it exhibits a fidelity–diversity trade-off similar to that of CFG, it lacks the flexibility of inference-time guidance to dynamically adjust this trade-off between generation quality and diversity through customized guidance strength. Moreover, CFG typically achieves stronger best-case performance in terms of FD and Inception Score. Bridging the gap between training-time objectives and inference-time guidance remains an important direction for future work. More fundamentally, these observations raise a broader question: 
+
+Should alignment be performed at training time, or is inference-time guidance a more effective paradigm? 
+
+Recent studies [Fra+25; Jin+25; Che+25c; JWL26] suggest that inference-time guidance can, in certain settings, outperform training-based alignment algorithms. These observations point toward a promising research direction: developing alignment algorithms that operate directly at inference time. Exploring this possibility may lead to a broader shift from traditional training-time alignment toward inference-time alignment paradigms. 
+
+# Acknowledgment 
+
+We acknowledge funding support from NSF CCF-2212066, NSF CCF- 2212326, NSF IIS 2402950, and ONR N000142512339. This research used the Delta advanced computing and data resource which is supported by the National Science Foundation (award OAC 2005572) and the State of Illinois. Delta is a joint effort of the University of Illinois Urbana-Champaign and its National Center for Supercomputing Applications[Boe+23]. 17 References 
+
+[And82] Brian DO Anderson. “Reverse-time diffusion equation models”. In: Stochastic Processes and their Applications 12.3 (1982), pp. 313–326. [BN24] Arwen Bradley and Preetum Nakkiran. “Classifier-free guidance is a predictor-corrector”. In: arXiv preprint arXiv:2408.09000 (2024). [Boe+23] Timothy J Boerner, Stephen Deems, Thomas R Furlani, Shelley L Knuth, and John Towns. “Access: Advancing innovation: Nsf’s advanced cyberinfrastructure coordina-tion ecosystem: Services & support”. In: Practice and Experience in Advanced Research Computing 2023: Computing for the Common Good . 2023, pp. 173–176. [BT52] Ralph Allan Bradley and Milton E Terry. “Rank analysis of incomplete block designs: I. The method of paired comparisons”. In: Biometrika 39.3/4 (1952), pp. 324–345. [BV04] Stephen P Boyd and Lieven Vandenberghe. Convex optimization . Cambridge university press, 2004. [Che+25a] Huayu Chen, Kai Jiang, Kaiwen Zheng, Jianfei Chen, Hang Su, and Jun Zhu. “Visual Generation Without Guidance”. In: Forty-second International Conference on Machine Learning . 2025. [Che+25b] Huayu Chen, Hang Su, Peize Sun, and Jun Zhu. “Toward Guidance-Free AR Visual Generation via Condition Contrastive Alignment”. In: The Thirteenth International Conference on Learning Representations . 2025. [Che+25c] Min Cheng, Fatemeh Doudi, Dileep Kalathil, Mohammad Ghavamzadeh, and Pan-ganamala R Kumar. “Diffusion Blend: Inference-Time Multi-Preference Alignment for Diffusion Models”. In: arXiv preprint arXiv:2505.18547 (2025). [Chi+24] Muthu Chidambaram, Khashayar Gatmiry, Sitan Chen, Holden Lee, and Jianfeng Lu. “What does guidance do? A fine-grained analysis in a simple setting”. In: The Thirty-eighth Annual Conference on Neural Information Processing Systems . 2024. [Ess+24] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. “Scaling rectified flow transformers for high-resolution image synthesis”. In: Forty-first international conference on machine learning . 2024. [Fra+25] Kevin Frans, Seohong Park, Pieter Abbeel, and Sergey Levine. “Diffusion guidance is a controllable policy improvement operator”. In: arXiv preprint arXiv:2505.23458 
+
+(2025). [GH10] Michael Gutmann and Aapo Hyvärinen. “Noise-contrastive estimation: A new esti-mation principle for unnormalized statistical models”. In: Proceedings of the thirteenth international conference on artificial intelligence and statistics . JMLR Workshop and Con-ference Proceedings. 2010, pp. 297–304. [Heu+17] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. “Gans trained by a two time-scale update rule converge to a local nash equilibrium”. In: Advances in neural information processing systems 30 (2017). [HJA20] Jonathan Ho, Ajay Jain, and Pieter Abbeel. “Denoising diffusion probabilistic models”. In: Advances in neural information processing systems 33 (2020), pp. 6840–6851. [HS22] Jonathan Ho and Tim Salimans. “Classifier-free diffusion guidance”. In: arXiv preprint arXiv:2207.12598 (2022). 18 [Jin+25] Luozhijie Jin, Zijie Qiu, Jie Liu, Zijie Diao, Lifeng Qiao, Ning Ding, Alex Lamb, and Xipeng Qiu. “Inference-time alignment control for diffusion models with reinforce-ment learning guidance”. In: arXiv preprint arXiv:2508.21016 (2025). [JSG25] Cheng Jin, Qitan Shi, and Yuantao Gu. “Stage-wise Dynamics of Classifier-Free Guid-ance in Diffusion Models”. In: arXiv preprint arXiv:2509.22007 (2025). [JWL26] Zhou Jiang, Yandong Wen, and Zhen Liu. “Rethinking Preference Alignment for Diffusion Models with Classifier-Free Guidance”. In: arXiv preprint arXiv:2602.18799 
+
+(2026). [Kar+22] Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine. “Elucidating the design space of diffusion-based generative models”. In: Advances in neural information processing systems 35 (2022), pp. 26565–26577. [Kar+24a] Tero Karras, Miika Aittala, Tuomas Kynkäänniemi, Jaakko Lehtinen, Timo Aila, and Samuli Laine. “Guiding a diffusion model with a bad version of itself”. In: Advances in Neural Information Processing Systems 37 (2024), pp. 52996–53021. [Kar+24b] Tero Karras, Miika Aittala, Jaakko Lehtinen, Janne Hellsten, Timo Aila, and Samuli Laine. “Analyzing and improving the training dynamics of diffusion models”. In: 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 2024, pp. 24174–24184. [KMS24] Zahra Kadkhodaie, Stéphane Mallat, and Eero P Simoncelli. “Feature-guided score dif-fusion for sampling conditional densities”. In: arXiv preprint arXiv:2410.11646 (2024). [Kou+25] Felix Koulischer, Florian Handke, Johannes Deleu, Thomas Demeester, and Luca Am-brogioni. “Feedback guidance of diffusion models”. In: arXiv preprint arXiv:2506.06085 
+
+(2025). [Kyn+19] Tuomas Kynkäänniemi, Tero Karras, Samuli Laine, Jaakko Lehtinen, and Timo Aila. “Improved precision and recall metric for assessing generative models”. In: Advances in neural information processing systems 32 (2019). [Lee+25] Jaa-Yeon Lee, Byunghee Cha, Jeongsol Kim, and Jong Chul Ye. “Aligning text to image in diffusion models is easier than you think”. In: arXiv preprint arXiv:2503.08250 (2025). [Lip+23] Yaron Lipman, Ricky TQ Chen, Heli Ben-Hamu, Maximilian Nickel, and Matthew Le. “Flow Matching for Generative Modeling”. In: The Eleventh International Conference on Learning Representations . 2023. [Liu+25] Jie Liu, Gongye Liu, Jiajun Liang, Yangguang Li, Jiaheng Liu, Xintao Wang, Pengfei Wan, Di Zhang, and Wanli Ouyang. “Flow-grpo: Training flow matching models via online rl”. In: arXiv preprint arXiv:2505.05470 (2025). [LJ25] Gen Li and Yuchen Jiao. “Provable Efficiency of Guidance in Diffusion Models for General Data Distribution”. In: Forty-second International Conference on Machine Learning .2025. [LWQ25] Xiang Li, Rongrong Wang, and Qing Qu. “Towards Understanding the Mechanisms of Classifier-Free Guidance”. In: arXiv preprint arXiv:2505.19210 (2025). [Mar+23] Morteza Mardani, Jiaming Song, Jan Kautz, and Arash Vahdat. “A Variational Perspec-tive on Solving Inverse Problems with Diffusion Models”. In: The Twelfth International Conference on Learning Representations . 2023. 19 [Miy+61] Koichi Miyasawa et al. “An empirical Bayes estimator of the mean of a normal popu-lation”. In: Bull. Inst. Internat. Statist 38.181-188 (1961), pp. 1–2. [OLV18] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. “Representation learning with contrastive predictive coding”. In: arXiv preprint arXiv:1807.03748 (2018). [Pav+25] Krunoslav Lehman Pavasovic, Jakob Verbeek, Giulio Biroli, and Marc Mezard. “Classifier-Free Guidance: From High-Dimensional Analysis to Generalized Guidance Forms”. In: arXiv preprint arXiv:2502.07849 (2025). [PX23] William Peebles and Saining Xie. “Scalable diffusion models with transformers”. In: 
+
+Proceedings of the IEEE/CVF international conference on computer vision . 2023, pp. 4195– 4205. [Raf+23] Rafael Rafailov, Archit Sharma, Eric Mitchell, Christopher D Manning, Stefano Ermon, and Chelsea Finn. “Direct preference optimization: Your language model is secretly a reward model”. In: Advances in Neural Information Processing Systems 36 (2023), pp. 53728–53741. [Ram+22] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen. “Hi-erarchical Text-Conditional Image Generation with CLIP Latents”. In: arXiv preprint arXiv:2204.06125 (2022). [Rom+22] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Om-mer. “High-resolution image synthesis with latent diffusion models”. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 2022, pp. 10684– 10695. [Sah+22] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily L Denton, Kamyar Ghasemipour, Raphael Gontijo Lopes, Burcu Karagol Ayan, Tim Salimans, et al. “Photorealistic text-to-image diffusion models with deep language understanding”. In: Advances in neural information processing systems 35 (2022), pp. 36479–36494. [Sal+16] Tim Salimans, Ian Goodfellow, Wojciech Zaremba, Vicki Cheung, Alec Radford, and Xi Chen. “Improved techniques for training gans”. In: Advances in neural information processing systems 29 (2016). [Son+21a] Yang Song, Conor Durkan, Iain Murray, and Stefano Ermon. “Maximum likelihood training of score-based diffusion models”. In: Advances in neural information processing systems 34 (2021), pp. 1415–1428. [Son+21b] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. “Score-Based Generative Modeling through Stochastic Differ-ential Equations”. In: International Conference on Learning Representations . 2021. [Ste+23] George Stein, Jesse Cresswell, Rasa Hosseinzadeh, Yi Sui, Brendan Ross, Valentin Villecroze, Zhaoyan Liu, Anthony L Caterini, Eric Taylor, and Gabriel Loaiza-Ganem. “Exposing flaws of generative model evaluation metrics and their unfair treatment of diffusion models”. In: Advances in Neural Information Processing Systems 36 (2023), pp. 3732–3784. [Tan+25] Zhicong Tang, Jianmin Bao, Dong Chen, and Baining Guo. “Diffusion models without classifier-free guidance”. In: arXiv preprint arXiv:2502.12154 (2025). [Tia+24] Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. “Visual autore-gressive modeling: Scalable image generation via next-scale prediction”. In: Advances in neural information processing systems 37 (2024), pp. 84839–84865. 20 [Ven+26] Enrico Ventura, Beatrice Achilli, Luca Ambrogioni, and Carlo Lucibello. “Emergence of Distortions in High-Dimensional Guided Diffusion Models”. In: arXiv preprint arXiv:2602.00716 (2026). [Vin11] Pascal Vincent. “A Connection Between Score Matching and Denoising Autoencoders”. In: Neural Computation 23.7 (2011), pp. 1661–1674. doi : 10.1162/NECO_a_00142 .[Wal+24] Bram Wallace, Meihua Dang, Rafael Rafailov, Linqi Zhou, Aaron Lou, Senthil Pu-rushwalkam, Stefano Ermon, Caiming Xiong, Shafiq Joty, and Nikhil Naik. “Diffusion model alignment using direct preference optimization”. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 2024, pp. 8228–8238. [Wu+24] Yuchen Wu, Minshuo Chen, Zihao Li, Mengdi Wang, and Yuting Wei. “Theoretical insights for diffusion guidance: A case study for Gaussian mixture models”. In: Forty-first International Conference on Machine Learning . 2024. [YAA25] Junno Yun, Yaşar Utku Alçalar, and Mehmet Akçakaya. “No Alignment Needed for Generation: Learning Linearly Separable Representations in Diffusion Models”. In: 
+
+arXiv preprint arXiv:2509.21565 (2025). [Yan+24] Divin Yan, Lu Qi, Vincent Tao Hu, Ming-Hsuan Yang, and Meng Tang. “Training class-imbalanced diffusion model via overlap optimization”. In: arXiv preprint arXiv:2402.10821 
+
+(2024). [Yan+26] Ruofeng Yang, Yiyu Qiu, Bo Jiang, Cheng Chen, and Shuai Li. Elucidating Guidance in Variance Exploding Diffusion Models: Fast Convergence and Better Diversity . OpenReview. 
+
+https://openreview.net/forum?id=tWbasgJA68 . 2026. [Yu+25] Sihyun Yu, Sangkyung Kwak, Huiwon Jang, Jongheon Jeong, Jonathan Huang, Jinwoo Shin, and Saining Xie. “Representation Alignment for Generation: Training Diffusion Transformers Is Easier Than You Think”. In: The Thirteenth International Conference on Learning Representations . 2025. [Zhe+25] Kaiwen Zheng, Yongxin Chen, Huayu Chen, Guande He, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. “Direct discriminative optimization: Your likelihood-based visual generative model is secretly a gan discriminator”. In: arXiv preprint arXiv:2503.01103 
+
+(2025). 21 Appendices 
+
+# A Theoretical Analysis of MCLR 
+
+A.1 Main Theorem 
+
+In this section, we provide the proof for Theorem 1. We first restate the assumptions and theorem. 
+
+Assumption 1. The function ℎ(𝒙 |𝒄 ) := 𝑝 (𝒙 |𝒄 ) + 𝜂 (𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 )) has compact support; that is, 
+
+supp ℎ(𝒙 |𝒄 ) ⊆ 𝐾, |𝐾 | < ∞. (25) 
+
+Assumption 2. For ∀𝒙 ∈ 𝐾 ,
+
+𝑝 𝜽 (𝒙 |𝒄 ) ≥ 𝛿 > 0, 𝛿 < 1
+
+|𝐾 | . (26) 
+
+Theorem 1. Under the two assumptions, the optimal solution to (11) is: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) =
+
+(max  ℎ(𝒙 |𝒄 ) 
+
+> 𝑍 (𝒄 )
+
+, 𝛿 , 𝒙 ∈ 𝐾, 
+
+0, 𝒙 ∉ 𝐾, (27) 
+
+where 𝑍 (𝒄 ) is the normalizing constant. Proof. Without loss of generality, we consider discrete classes in this proof; the theorem extends straightforwardly to continuous classes. Suppose there are 𝑀 classes {𝒄 𝑖 }𝑀 𝑖 =1, each class has prior probability 𝑝 (𝒄 𝑖 ) and Í𝑀 𝑖 =1 𝑝 (𝒄 𝑖 ) = 1, then the training objective (11) takes the following form: 
+
+max  
+
+> 𝜽
+
+ℒ( 𝜽 ) := E𝒄 ,𝑝 (𝒙 |𝒄 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 E𝒄 , ˜𝒄 ,𝒙 ∼𝑝 (𝒙 |𝒄 )
+
+
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+
+
+(28) 
+
+= max 
+
+> 𝜽
+> 𝑀
+
+Õ
+
+> 𝑖 =1
+
+𝑝 (𝒄 𝑖 )E𝑝 (𝒙 |𝒄 𝑖 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑖 ) + 𝜂 
+
+> 𝑀
+
+Õ
+
+> 𝑖 =1
+
+𝑝 (𝒄 𝑖 )
+
+> 𝑀
+
+Õ
+
+> 𝑗 =1
+
+𝑝 (𝒄 𝑗 )E𝒙 ∼𝑝 (𝒙 |𝒄 𝑖 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑖 ) (29) 
+
+−𝜂 
+
+> 𝑀
+
+Õ
+
+> 𝑖 =1
+
+𝑝 (𝒄 𝑖 )
+
+> 𝑀
+
+Õ
+
+> 𝑗 =1
+
+𝑝 (𝒄 𝑗 )E𝒙 ∼𝑝 (𝒙 |𝒄 𝑖 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑗 ) . (30) Note that we can decompose overall objective ℒ( 𝜽 ) as: 
+
+ℒ( 𝜽 ) =
+
+> 𝑀
+
+Õ
+
+> 𝑘 =1
+
+ℒ𝑘 (𝜽 ), (31) where ℒ𝑘 (𝜽 ) is the amount contributed by 𝑝 𝜽 (𝒙 |𝒄 𝑘 ):
+
+ℒ𝑘 (𝜽 ) = 𝑝 (𝒄 𝑘 )E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) + 𝜂 𝑝 (𝒄 𝑘 )E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) (32) 
+
+−𝜂 𝑝 (𝒄 𝑘 )
+
+> 𝑀
+
+Õ
+
+> 𝑖 =1
+
+𝑝 (𝒄 𝑖 )E𝑝 (𝒙 |𝒄 𝑖 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) (33) 
+
+= 𝑝 (𝒄 𝑘 )E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) + 𝜂 𝑝 (𝒄 𝑘 )E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) − 𝜂 𝑝 (𝒄 𝑘 )E𝑝 (𝒙 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) . (34) 22 Note that we can optimize 𝐿 𝑘 (𝜽 ) for each 𝑘 ∈ { 1, . . . , 𝑀 } to get the optimal conditional distribution 
+
+𝑝 (𝒙 |𝒄 𝑘 ) independently: 
+
+max  
+
+> 𝜽
+
+ℒ𝑘 (𝜽 ) ⇔ max    
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) + 𝜂 E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) − 𝜂 E𝑝 (𝒙 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) (35) 
+
+= max   
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+∫
+
+> 𝐾
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 )  𝑝 (𝒙 |𝒄 𝑘 ) + 𝜂 (𝑝 (𝒙 |𝒄 𝑘 ) − 𝑝 (𝒙 ))  𝑑 𝒙 . (36) In what follows, we drop the subscript 𝑘 , so that the optimization problem becomes: 
+
+max  
+
+> 𝑝 𝜽 (·| 𝒄 )
+
+∫
+
+> 𝐾
+
+log 𝑝 𝜽 (𝒙 |𝒄 )  𝑝 (𝒙 |𝒄 ) + 𝜂 (𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 ))  𝑑 𝒙 (37) 
+
+= max  
+
+> 𝑝 𝜽 (·| 𝒄 )
+
+∫
+
+> 𝐾
+
+log 𝑝 𝜽 (𝒙 |𝒄 )ℎ(𝒙 |𝒄 )𝑑 𝒙 (38) Note that (38) shares the similar form as KL divergence, but ℎ(𝒙 |𝒄 ) is not a valid probability distribution, since there could exists 𝒙 such that ℎ(𝒙 |𝒄 ) < 0. In this case, setting 𝑝 𝜽 (𝒙 |𝒄 ) = 0
+
+makes (38) approaches +∞ , hence the optimization problem does not have an attainable optimum. To make the optimization problem well-posed, we impose Assumption 2. Define the sets 
+
+𝐾 +(𝒄 ) = {𝒙 ∈ 𝐾 : ℎ(𝒙 |𝒄 ) > 0}, 𝐾 −(𝒄 ) = {𝒙 ∈ 𝐾 : ℎ(𝒙 |𝒄 ) ≤ 0}. (39) Under Assumption 2, it is straightforward to show the optimal distribution 𝑝 𝜽 ∗ (𝒙 |𝒄 ) must attain the lower bound 𝛿 for ∀𝒙 ∈ 𝐾 −(𝒄 ); otherwise increasing the density will decrease the objective (38) .Furthermore for 𝒙 ∈ 𝐾 𝑐 , where ℎ(𝒙 |𝒄 ) = 0, the optimal density must satisfy 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 0 for almost every 𝒙 ∈ 𝐾 𝑐 ; otherwise, probability mass could be shifted from 𝐾 𝑐 to 𝐾 +(𝒄 )to further increase the objective (38) . Therefore, the remaining optimization concerns the density on 𝐾 +(𝒄 ), which is the optimal solution to the following constrained optimization problem: 
+
+min  
+
+> 𝑝 𝜽 (·| 𝒄 )
+
+∫
+
+> 𝐾 +(𝒄 )
+
+− log 𝑝 𝜽 (𝒙 |𝒄 )ℎ(𝒙 |𝒄 )𝑑 𝒙 (40) s.t. − 𝑝 𝜽 (𝒙 |𝒄 ) + 𝛿 ≤ 0, ∀𝒙 ∈ 𝐾 +(𝒄 ) (41) 
+
+∫
+
+> 𝐾 +(𝒄 )
+
+𝑝 𝜽 (𝒙 |𝒄 )𝑑 𝒙 − 𝑚 (𝒄 ) = 0, (42) where 
+
+𝑚 (𝒄 ) = 1 −
+
+∫
+
+> 𝐾 −(𝒄 )
+
+𝛿 𝑑 𝒙 = 1 − 𝛿 |𝐾 −(𝒄 )| . (43) Since 𝛿 < 1 
+
+> |𝐾 |
+
+by assumption, we have 0 < 𝑚 (𝒄 ) ≤ 1.Note that this optimization problem is convex in 𝑝 𝜽 (𝒙 |𝒄 ). Treating 𝑝 𝜽 (𝒙 |𝒄 ) for each 𝒙 as opti-mization variables, the constraints are affien and Slater’s condition holds. Therefore strong duality applies, and the optimal solution can be characterized by the KKT conditions [BV04]. Define the Lagrangian as: 
+
+ℒ( 𝑝 𝜽 (·| 𝒄 ), 𝜆 , 𝑢 (·)) =
+
+∫
+
+> 𝐾 +(𝒄 )
+
+− log 𝑝 𝜽 (𝒙 |𝒄 )ℎ(𝒙 |𝒄 )𝑑 𝒙 + 𝜆  ∫
+
+> 𝐾 +(𝒄 )
+
+𝑝 𝜽 (𝒙 |𝒄 )𝑑 𝒙 − 𝑚 (𝒄 ) (44) 
+
++
+
+∫
+
+> 𝐾 +(𝒄 )
+
+𝑢 (𝒙 )(− 𝑝 𝜽 (𝒙 |𝒄 ) + 𝛿 )𝑑 𝒙 , (45) 23 where 𝜆 and 𝜇 (·) are the dual variables. For each 𝒙 ∈ 𝐾 +(𝒄 ), treating 𝑝 𝜽 ∗ (𝒙 |𝒄 ) as a pointwise optimization variable, let 𝑝 𝜽 ∗ (𝒙 |𝒄 ), 𝜆 ∗ and 
+
+𝑢 ∗(𝒙 ) be the corresponding optimal primal and dual variables. Applying stationary condition of the KKT conditions, we have: 
+
+∇𝑝 𝜽 ∗ (𝒙 |𝒄 )ℒ( 𝑝 𝜽 ∗ (𝒙 |𝒄 ), 𝜆 ∗ , 𝑢 ∗(𝒙 )) = 0 (46) 
+
+⇒ − ℎ(𝒙 |𝒄 )
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) + 𝜆 ∗ − 𝑢 ∗(𝒙 ) = 0. (47) Based on (47), we consider the following two cases: 
+
+• Suppose 𝑢 ∗(𝒙 ) = 0, we have 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = ℎ(𝒙 |𝒄 ) 
+
+> 𝜆 ∗
+
+.
+
+• Suppose 𝑢 ∗(𝒙 ) ≠ 0, by complementary slackness, we have 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 𝛿 and 𝑢 ∗(𝒙 ) = 𝜆 ∗ − ℎ(𝒙 |𝒄 ) 
+
+> 𝛿
+
+.Applying dual feasibility 𝑢 ∗(𝒙 ) ≥ 0, we have ℎ(𝒙 |𝒄 ) ≤ 𝜆 ∗ 𝛿 .Note that the above two cases can be combined as: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = max  ℎ(𝒙 |𝒄 )
+
+𝜆 ∗ , 𝛿 , ∀𝒙 ∈ 𝐾 +(𝒄 ). (48) Next, we prove 𝜆 ∗ exists, i.e., (48) is normalizable. By applying the primal feasibility, we have: 
+
+∫
+
+> 𝐾 +(𝒄 )
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 )𝑑 𝒙 = 𝑚 (𝒄 ) (49) 
+
+⇒
+
+∫ 
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 |𝒄 )≤ 𝜆 ∗𝛿 }
+
+𝛿 𝑑 𝒙 +
+
+∫ 
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 |𝒄 )>𝜆 ∗𝛿 )}
+
+ℎ(𝒙 |𝒄 )
+
+𝜆 ∗ 𝑑 𝒙 = 𝑚 (𝒄 ). (50) Define: 
+
+𝐴 (𝜆 ) :=
+
+∫
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 |𝒄 )≤ 𝜆𝛿 )}
+
+𝛿 𝑑 𝒙 +
+
+∫
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 |𝒄 )>𝜆𝛿 }
+
+ℎ(𝒙 |𝒄 )
+
+𝜆 𝑑 𝒙 . (51) Suppose 0 < 𝜆 1 < 𝜆 2, we have: 
+
+𝐴 (𝜆 2) − 𝐴 (𝜆 1) =
+
+∫  
+
+> 𝐾 +(𝒄 )∩{ 𝜆 1𝛿 ≤ℎ(𝒙 |𝒄 )≤ 𝜆 2𝛿 }
+
+𝛿 𝑑 𝒙 −
+
+∫  
+
+> 𝐾 +(𝒄 )∩{ 𝜆 1𝛿 ≤ℎ(𝒙 |𝒄 )≤ 𝜆 2𝛿 }
+
+ℎ(𝒙 |𝒄 )
+
+𝜆 1
+
+𝑑 𝒙 (52) 
+
++
+
+∫ 
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 |𝒄 )>𝜆 2𝛿 }
+
+( ℎ(𝒙 |𝒄 )
+
+𝜆 2
+
+− ℎ(𝒙 |𝒄 )
+
+𝜆 1
+
+)𝑑 𝒙 (53) 
+
+=
+
+∫  
+
+> 𝐾 +(𝒄 )∩{ 𝜆 1𝛿 ≤ℎ(𝒙 |𝒄 )≤ 𝜆 2𝛿 }
+
+(𝛿 − ℎ(𝒙 |𝒄 )
+
+𝜆 1
+
+)𝑑 𝒙 +
+
+∫ 
+
+> 𝐾 +(𝒄 )∩{ ℎ(𝒙 )>𝜆 2𝛿 }
+
+( ℎ(𝒙 |𝒄 )
+
+𝜆 2
+
+− ℎ(𝒙 |𝒄 )
+
+𝜆 1
+
+)𝑑 𝒙 (54) 
+
+< 0, (55) which implies 𝐴 (𝜆 ) is a monotonically decreasing function of 𝜆 > 0. By the assumption 𝛿 < 1 
+
+> |𝐾 |
+
+, we have 𝛿 |𝐾 −(𝒄 )| + 𝛿 |𝐾 +(𝒄 )| < 1, which implies 𝛿 |𝐾 +(𝒄 )| < 𝑚 (𝒄 ).Since: 
+
+lim  
+
+> 𝜆 →0
+
+𝐴 (𝜆 ) = +∞ , lim  
+
+> 𝜆 →+∞
+
+𝐴 (𝜆 ) = 𝛿 |𝐾 +(𝒄 )| , (56) as long as 𝛿 |𝐾 +(𝒄 )| < 𝑚 (𝒄 ), by the intermediate value theorem, there exists a finite dual optimal point 𝜆 ∗ > 0 such that 𝐴 (𝜆 ∗) = 𝑚 (𝒄 ), i.e., the primal feasibility (50) holds. Hence, 𝑝 𝜽 ∗ (𝒙 ) in (48) is a 24 valid, normalizable probability distribution. Since the exact value of 𝜆 ∗ is dependent on the specific condition 𝒄 , we replace it with the notation 𝑍 (𝒄 ), which leads to the final result: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) =
+
+
+
+max  ℎ(𝒙 |𝒄 ) 
+
+> 𝑍 (𝒄 )
+
+, 𝛿 , 𝒙 ∈ 𝐾 +(𝒄 ),
+
+𝛿 , 𝒙 ∈ 𝐾 −(𝒄 ),
+
+0, 𝒙 ∉ 𝐾. 
+
+(57) , which can be further simplified as: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) =
+
+(
+
+max  ℎ(𝒙 |𝒄 ) 
+
+> 𝜆 ∗
+
+, 𝛿 , 𝒙 ∈ 𝐾, 
+
+0, 𝒙 ∉ 𝐾. (58) In the limit 𝛿 → 0, the optimal distribution approaches: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = ℎ+(𝒙 |𝒄 )
+
+∫ 
+
+> 𝒙
+
+ℎ+(𝒙 |𝒄 )𝑑 𝒙 , ℎ+(𝒙 |𝒄 ) := max ℎ(𝒙 |𝒄 ), 0 (59) which simply zeros out the negative part of ℎ(𝒙 |𝒄 ) and renormalizes it as a valid distribution. This completes the proof. □
+
+A.2 Fine-tuning with MCLR 
+
+Given a base model 𝑝 ref (𝒙 ) that lacks class specificity, we may fine-tune it using MCLR combined with KL regularization: 
+
+max  
+
+> 𝜽
+
+−E𝒄 
+
+𝐷 KL 
+
+ 𝑝 ref (𝒙 |𝒄 )|| 𝑝 𝜽 (𝒙 |𝒄 ) + 𝜂 E𝒄 , ˜𝒄 ,𝒙 ∼𝑝 (𝒙 |𝒄 )
+
+
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 𝜽 (𝒙 | ˜ 𝒄 )
+
+
+
+. (60) Similar to (35) , we can get the optimal conditional distribution 𝑝 (𝒙 |𝒄 𝑘 ) for each 𝑘 ∈ { 1, . . . , 𝑀 } by solving the following optimization problem: arg max   
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+−𝐷 KL 
+
+ 𝑝 ref (𝒙 |𝒄 𝑘 )|| 𝑝 𝜽 (𝒙 |𝒄 𝑘 )+𝜂 E𝑝 (𝒙 |𝒄 𝑘 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) − 𝜂 E𝑝 (𝒙 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) (61) 
+
+= arg max   
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+∫
+
+> 𝐾
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 )  𝑝 ref (𝒙 |𝒄 𝑘 ) + 𝜂 (𝑝 (𝒙 |𝒄 𝑘 ) − 𝑝 (𝒙 ))  𝑑 𝒙 . (62) Note that optimization problem (62) shares the same structure as (36) , hence by letting ℎ(𝒙 |𝒄 ) :=
+
+𝑝 ref (𝒙 |𝒄 ) + 𝜂 (𝑝 (𝒙 |𝒄 ) − 𝑝 (𝒙 )) and under the same compact-support Assumption 1, we get the same optimal solution as in stated in Theorem 1. Importantly, in the fine-tuning setting, under a mixture error model, MCLR recovers the ground truth conditional distribution, as stated in the following corollary. 
+
+Corollary 1. If the base model satisfies the mixture error model: 
+
+𝑝 ref (𝒙 |𝒄 ) = (1 − 𝜂 )𝑝 (𝒙 |𝒄 ) + 𝜂 𝑝 (𝒙 ), (63) 
+
+then fine-tuning 𝑝 ref (𝒙 |𝒄 ) with MCLR objective (13) recovers the ground truth conditional distribution 
+
+𝑝 (𝒙 |𝒄 ).Proof. Under the mixture-error model (63), the optimization problem (62) becomes: arg max   
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+∫
+
+> 𝐾
+
+log 𝑝 𝜽 (𝒙 |𝒄 𝑘 )𝑝 (𝒙 |𝒄 𝑘 )𝑑 𝒙 = arg min   
+
+> 𝑝 𝜽 (·| 𝒄 𝑘 )
+
+𝐷 KL (𝑝 (𝒙 |𝒄 𝑘 )|| 𝑝 𝜽 (𝒙 |𝒄 𝑘 )) , (64) which has optimal solution 𝑝 𝜽 (𝒙 |𝒄 𝑘 ) = 𝑝 (𝒙 |𝒄 𝑘 ). Note that in this case, the proof does not depend on Assumption 1 and Assumption 2. This completes the proof. □
+
+25 B Theoretical Analysis of CC-DPO 
+
+B.1 Basics of DPO 
+
+Reward Modeling. For a given prompt 𝒄 and two associated outputs 𝒙 𝑤 and 𝒙 𝑙 , where the subscripts ’ 𝑤 ’ stands for ’winning’ while ’ 𝑙 ’ stands for ’losing’, implying that 𝒙 𝑤 is preferred over 𝒙 𝑙 ,DPO models the human preference distribution with the Bradley-Terry (BT) model [BT52]: 
+
+𝑝 (𝒙 𝑤 ≻ 𝒙 𝑙 |𝒄 ) = exp (𝑟 ∗(𝒙 𝑤 |𝒄 )) 
+
+exp (𝑟 ∗(𝒙 𝑤 |𝒄 )) + exp (𝑟 ∗(𝒙 𝑙 |𝒄 )) = Sigmoid (𝑟 ∗(𝒙 𝑤 |𝒄 ) − 𝑟 ∗(𝒙 𝑙 |𝒄 )) (65) where 𝑟 ∗(𝒙 |𝒄 ) is the underlying optimal reward function for prompt 𝒄 . Intuitively, the preferred samples 𝒙 𝑤 should have higher reward values compared to the non-preferred samples 𝒙 𝑙 . Assuming access to a dataset of sampled comparisons 𝒮 = {( 𝒄 𝑖 , 𝒙 𝑖 𝑤 , 𝒙 𝑖 𝑙 )} 𝑁 𝑖 =1, one can learn the optimal reward function via maximum likelihood estimation: 
+
+𝑟 ∗ = arg max 
+
+> 𝑟
+
+E(𝒄 ,𝒙 𝑤 ,𝒙 𝑙 )∼𝒮 
+
+log 𝑝 (𝒙 𝑤 ≻ 𝒙 𝑙 |𝒄 ) (66) 
+
+= arg min 
+
+> 𝑟
+
+−E(𝒄 ,𝒙 𝑤 ,𝒙 𝑙 )∼ 𝑆 
+
+log Sigmoid (𝑟 (𝒙 𝑤 |𝒄 ) − 𝑟 (𝒙 𝑙 |𝒄 ))  . (67) 
+
+RL fine-tuning Phase. Assuming access to the optimal preference reward function 𝑟 ∗, one can fine-tune a base model 𝑝 ref (𝒙 |𝒄 ) to align with the preference dataset by optimizing the following objective: 
+
+max  
+
+> 𝜽
+
+E𝒄 
+
+E𝒙 ∼𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑟 ∗(𝒙 |𝒄 )−𝛽 𝐷 𝐾𝐿 (𝑝 𝜽 (𝒙 |𝒄 )|| 𝑝 ref (𝒙 |𝒄 ))  , (68) where 𝛽 controls the KL-regularization strength. Intuitively, objective (68) encourages the fine-tuned model to achieve high reward value in expectation, and at the same time not deviate too much from the base model. 
+
+DPO Objective. Under certain regularity conditions, the optimal solution to the fine-tuning objective (68) admits the following closed-form: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 1
+
+𝑍 (𝒄 ) 𝑝 ref (𝒙 |𝒄 ) exp ( 1
+
+𝛽 𝑟 ∗(𝒙 |𝒄 )) , (69) where 𝑍 (𝒄 ) is a partition function for normalizing the density. To prove this, consider optimizing the fine-tuning objective (68) for a target condition 𝒄 :arg max 
+
+> 𝜽
+
+E𝒙 ∼𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑟 ∗(𝒙 |𝒄 ) − 𝛽 𝐷 𝐾𝐿 (𝑝 𝜽 (𝒙 |𝒄 )|| 𝑝 ref (𝒙 |𝒄 )) (70) 
+
+= arg max 
+
+> 𝜽
+
+E𝒙 ∼𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑟 ∗(𝒙 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
+ (71) 
+
+= arg min 
+
+> 𝜽
+
+E𝒙 ∼𝑝 𝜽 (𝒙 |𝒄 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) − 1
+
+𝛽 𝑟 ∗(𝒙 |𝒄 ) (72) 
+
+= arg min 
+
+> 𝜽
+
+E𝒙 ∼𝑝 𝜽 (𝒙 |𝒄 )
+
+log 𝑝 𝜽 (𝒙 |𝒄 ) 
+
+> 1
+> 𝑍 (𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) exp ( 1 
+
+> 𝛽
+
+𝑟 ∗(𝒙 |𝒄 )) − log 𝑍 (𝒄 ) , (73) 26 where 𝑍 (𝒄 ) is the partition function that normalizes 𝑝 ref (𝒙 |𝒄 ) exp ( 1 
+
+> 𝛽
+
+𝑟 ∗(𝒙 |𝒄 )) :
+
+𝑍 (𝒄 ) =
+
+∫
+
+> 𝒙
+
+𝑝 ref (𝒙 |𝒄 ) exp ( 1
+
+𝛽 𝑟 ∗(𝒙 |𝒄 )) 𝑑 𝒙 , (74) such that 𝑝 ∗(𝒙 |𝒄 ) := 1 
+
+> 𝑍 (𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) exp ( 1 
+
+> 𝛽
+
+𝑟 ∗(𝒙 |𝒄 )) is a valid probability distribution. Since 𝑍 (𝒄 ) is independent of 𝜽 , the fine-tuning objective (73) is equivalent to: 
+
+min  
+
+> 𝜽
+
+𝐷 KL (𝑝 𝜽 (𝒙 |𝒄 )|| 𝑝 ∗(𝒙 |𝒄 )) , (75) which achieves its minimum value 0 if and only if: 
+
+𝑝 𝜽 (𝒙 |𝒄 ) = 𝑝 ∗(𝒙 |𝒄 ) = 1
+
+𝑍 (𝒄 ) 𝑝 ref (𝒙 |𝒄 ) exp ( 1
+
+𝛽 𝑟 ∗(𝒙 |𝒄 )) . (76) With some algebra, the optimal reward function can be expressed with 𝑝 𝜽 ∗ (𝒙 |𝒄 ):
+
+𝑟 ∗(𝒙 |𝒄 ) = 𝛽 log 𝑝 𝜽 ∗ (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) + 𝛽 log 𝑍 (𝒄 ). (77) The relationship (77) between the optimal reward and the optimal fine-tuned distribution suggests a convenient parameterization of the reward model: 
+
+𝑟 𝜽 (𝒙 |𝒄 ) = 𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) . (78) Substitute (78) into (67) results in the DPO objective: arg min 
+
+> 𝜽
+
+−E(𝒄 ,𝒙 𝑤 ,𝒙 𝑙 )∼ 𝑆 
+
+log Sigmoid (𝛽 log 𝑝 𝜽 (𝒙 𝑤 |𝒄 )
+
+𝑝 ref (𝒙 𝑤 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 𝑙 |𝒄 )
+
+𝑝 ref (𝒙 𝑙 |𝒄 ) ) . (79) In this way, one can directly fine-tune the base model without explicitly modeling the reward. 
+
+B.2 Improving Conditional Modeling with CC-DPO 
+
+To adapt DPO for improving class specificity, we may treat samples from the target class 𝒄 as preferred data ( 𝒙 𝑤 ) and samples from other randomly selected classes as non-preferred data ( 𝒙 𝑙 ). This leads to the following objective: 
+
+min  
+
+> 𝜽
+
+−E𝒄 , ˜𝒄 ,𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 | ˜𝒄 )
+
+log Sigmoid (𝛽 log 𝑝 𝜽 (𝒙 𝑤 |𝒄 )
+
+𝑝 ref (𝒙 𝑤 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 𝑙 |𝒄 )
+
+𝑝 ref (𝒙 𝑙 |𝒄 ) ) (80) 
+
+= min  
+
+> 𝜽
+
+−E𝒄 ,𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 )
+
+log Sigmoid (𝛽 log 𝑝 𝜽 (𝒙 𝑤 |𝒄 )
+
+𝑝 ref (𝒙 𝑤 |𝒄 ) − 𝛽 log 𝑝 𝜽 (𝒙 𝑙 |𝒄 )
+
+𝑝 ref (𝒙 𝑙 |𝒄 ) ) , (81) which admits a closed-form solution as stated in the following theorem. 
+
+Theorem 2. Under certain regularity conditions, the optimal solution to (81) is: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 1
+
+˜𝑍 (𝒄 ) 𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+, (82) 
+
+where ˜𝑍 (𝒄 ) = ∫ 
+
+> 𝒙
+
+𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+> 𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+𝑑 𝒙 is the normalizing constant. 
+
+27 Proof. From (67) to (69) , it is clear that the optimal solution to CC-DPO (81) is fully determined by the base model and the optimal solution to the following reward modeling objective: 
+
+𝑟 ∗ = arg min 
+
+> 𝑟
+
+−E𝒄 ,𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 )
+
+log Sigmoid (𝑟 (𝒙 𝑤 |𝒄 ) − 𝑟 (𝒙 𝑙 |𝒄 ))  . (83) Note that 𝑟 ∗ is the collection of optimal rewards 𝑟 ∗(·| 𝒄 𝑘 ) for each 𝒄 𝑘 ∈ { 𝒄 𝑖 }𝑀 𝑖 =1. Without loss of generality, we drop the subscript and solve for the optimal reward for a single target 𝒄 :
+
+𝑟 ∗(·| 𝒄 ) = arg min 
+
+> 𝑟 (·| 𝒄 )
+
+−E𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 )
+
+log Sigmoid (𝑟 (𝒙 𝑤 |𝒄 ) − 𝑟 (𝒙 𝑙 |𝒄 ))  (84) 
+
+= arg max 
+
+> 𝑟 (·| 𝒄 )
+
+∫
+
+> 𝒙 𝑤
+
+∫
+
+> 𝒙 𝑙
+
+log Sigmoid (𝑟 (𝒙 𝑤 |𝒄 ) − 𝑟 (𝒙 𝑙 |𝒄 )) 𝑝 (𝒙 𝑤 |𝒄 )𝑝 (𝒙 𝑙 )𝑑 𝒙 𝑤 𝑑 𝒙 𝑙 . (85) Note that for any arbitrary pair of points (𝒙 1 , 𝒙 2), they contribute to the integral (85) for the following amount: 
+
+log Sigmoid (𝑟 (𝒙 1|𝒄 ) − 𝑟 (𝒙 2|𝒄 )) 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) + log Sigmoid (𝑟 (𝒙 2|𝒄 ) − 𝑟 (𝒙 1|𝒄 )) 𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1), (86) hence 𝑟 ∗(·| 𝒄 ) is an optimal solution to (85) if it maximizes (86) for ∀( 𝒙 1 , 𝒙 2). To find such 𝑟 ∗(·| 𝒄 ), let’s define 𝑤 = 𝑟 (𝒙 1|𝒄 ) − 𝑟 (𝒙 2|𝒄 ) and solve the following optimization problem: 
+
+max  
+
+> 𝒘
+
+ℒ( 𝑤 ) := log Sigmoid (𝑤 )𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) + log Sigmoid (− 𝑤 )𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1). (87) Note that: 
+
+∇𝑤 ℒ( 𝑤 ) = Sigmoid (− 𝑤 )𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) − Sigmoid (𝑤 )𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1), (88) which implies the stationary point 𝑤 ∗ must satisfy: 
+
+Sigmoid (𝑤 ∗)𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1) = Sigmoid (− 𝑤 ∗)𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) (89) 
+
+⇒ Sigmoid (𝑤 ∗) 𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1) + 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2)= 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) (90) 
+
+⇒ Sigmoid (𝑤 ∗) = 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2)
+
+𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1) + 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) (91) 
+
+⇒ Sigmoid (𝑤 ∗) = 11 + 𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1)
+
+> 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2)
+
+(92) 
+
+⇒ Sigmoid (𝑤 ∗) = 11 + exp  − log 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2)
+
+> 𝑝 (𝒙 1)𝑝 (𝒙 2|𝒄 )
+
+ (93) 
+
+⇒ 𝑤 ∗ = log 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2)
+
+𝑝 (𝒙 1)𝑝 (𝒙 2|𝒄 ) , (94) which implies: 
+
+𝑟 ∗(𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) + 𝐾, (95) where 𝐾 is any finite constant. Moreover, since: 
+
+∇2 
+
+> 𝑤
+
+ℒ( 𝑤 ) = −Sigmoid (𝑤 )Sigmoid (− 𝑤 )𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) − Sigmoid (− 𝑤 )Sigmoid (𝑤 )𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1) (96) 
+
+< 0, (97) 28 we know ℒ( 𝑤 ) is concave and 𝑤 ∗ is the global maximizer and consequently 𝑟 ∗(𝒙 |𝒄 ) is the optimal reward function. Since this optimal reward function is consistent for any arbitrary pair of points 
+
+(𝒙 1 , 𝒙 2), it is the global reward function that maximizes the full objective (84). Substitute (95) into (69), we obtain the optimal solution to CC-DPO: 
+
+𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 1
+
+˜𝑍 (𝒄 ) 𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+, (98) where ˜𝑍 (𝒄 ) = ∫ 
+
+> 𝒙
+
+𝑝 ref (𝒙 |𝒄 )
+
+ 𝑝 (𝒙 |𝒄 )
+
+> 𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+𝑑 𝒙 is the normalizing constant. This completes the proof. □
+
+Remark. Note that from (90) to (91) , we require 𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1) + 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2) > 0 for ∀𝒙 1 , 𝒙 2, which holds true if both 𝑝 (𝒙 |𝒄 ) and 𝑝 (𝒙 ) have full support on R𝑑 . Next, we discuss the corner cases where this assumption doesn’t hold. 1. Suppose 𝑝 (𝒙 1|𝒄 ) = 0 but 𝑝 (𝒙 1) > 0, then we have: 
+
+ℒ( 𝑤 ) = log Sigmoid  𝑟 (𝒙 2|𝒄 ) − 𝑟 (𝒙 1|𝒄 ) 𝑝 (𝒙 2|𝒄 )𝑝 (𝒙 1). (99) In this case, the objective is maximized if 𝑟 ∗(𝒙 1|𝒄 ) = −∞ .2. Suppose 𝑝 (𝒙 1|𝒄 ) > 0 but 𝑝 (𝒙 1) = 0, then we have: 
+
+ℒ( 𝑤 ) = log Sigmoid  𝑟 (𝒙 1|𝒄 ) − 𝑟 (𝒙 2|𝒄 ) 𝑝 (𝒙 1|𝒄 )𝑝 (𝒙 2). (100) In this case, the objective is maximized if 𝑟 ∗(𝒙 1|𝒄 ) = +∞ .3. Suppose 𝑝 (𝒙 1|𝒄 ) = 0 and 𝑝 (𝒙 1) = 0, then 𝒙 1 will never be sampled and it does not contribute to the overall objective. In such case, 𝑟 ∗(𝒙 1|𝒄 ) is undefined and will implicitly depend on the practical parameterization of the reward model. The first two cases are already covered by (82) . In particular, case 2 can lead to non-normalizable issue, as in this case 𝑝 𝜽 ∗ (·| 𝒄 ) will have infinite density at 𝒙 1. Although since 𝑝 (𝒙 1) = E𝒄 
+
+𝑝 (𝒙 1|𝒄 ), it will not be zero given 𝑝 (𝒙 1|𝒄 ) > 0. It is highly likely in practice, there exists 𝒙 1 such that 𝑝 (𝒙 1|𝒄 ) > 0
+
+but 𝑝 (𝒙 1) ≈ 0. In this regime, the ratio 
+
+ 𝑝 (𝒙 |𝒄 )
+
+> 𝑝 (𝒙 )
+
+ 1
+
+> 𝛽
+
+blows up, forcing 𝑝 𝜽 ∗ (·| 𝒄 ) to essentially place all its mass on such 𝒙 , which again leads to non-normalizable issue. 
+
+Error Model for CC-DPO. As with the MCLR case, CC-DPO recovers the ground truth conditional distribution under an appropriate error model, as stated in the following corollary. 
+
+Corollary 2. If the base model satisfies: 
+
+𝑝 ref (𝒙 |𝒄 ) ∝ 𝑝 (𝒙 |𝒄 )1− 1 
+
+> 𝛽
+
+𝑝 (𝒙 ) 1 
+
+> 𝛽
+
+(101) 
+
+then fine-tuning 𝑝 ref (𝒙 |𝒄 ) with the CC-DPO objective (19) recovers the ground-truth conditional distri-bution 𝑝 (𝒙 |𝒄 ).Proof. Substitute (101) into (98), we get 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 𝑝 (𝒙 |𝒄 ), which completes the proof. □
+
+29 C Theoretical Analysis of CCA 
+
+In section B.2, we’ve shown that the underlying optimal reward function induced by the CC-DPO objective (83) has the form of the log likelihood-ratio (95) . Interestingly, the same reward function can be obtained by minimizing the following optimization problem: 
+
+𝑟 ∗(·| 𝒄 ) = arg max 
+
+> 𝑟 (·| 𝒄 )
+
+E𝑝 (𝒙 |𝒄 ) log Sigmoid (𝑟 (𝒙 |𝒄 )) + E𝑝 (𝒙 ) log Sigmoid (− 𝑟 (𝒙 |𝒄 )) (102) 
+
+= arg max 
+
+> 𝑟 (·| 𝒄 )
+
+∫
+
+> 𝒙
+
+ log Sigmoid (𝑟 (𝒙 |𝒄 )) 𝑝 (𝒙 |𝒄 ) + log Sigmoid (− 𝑟 (𝒙 |𝒄 )) 𝑝 (𝒙 ) 𝑑 𝒙 . (103) Since the objective (103) decomposes pointwise over 𝒙 , the optimal reward function can be obtained by maximizing the integrand for each 𝒙 independently: 
+
+log Sigmoid (𝑟 (𝒙 |𝒄 )) 𝑝 (𝒙 |𝒄 ) + log Sigmoid (− 𝑟 (𝒙 |𝒄 )) 𝑝 (𝒙 ). (104) To find 𝑟 ∗(·| 𝒄 ), let’s define 𝑤 = 𝑟 (𝒙 |𝒄 ) and solve the following optimization problem: 
+
+max  
+
+> 𝑤
+
+ℒ( 𝑤 ) := log Sigmoid (𝑤 )𝑝 (𝒙 |𝒄 ) + log Sigmoid (− 𝑤 )𝑝 (𝒙 ). (105) Note that: 
+
+∇𝑤 ℒ( 𝑤 ) := Sigmoid (− 𝑤 )𝑝 (𝒙 |𝒄 ) − Sigmoid (𝑤 )𝑝 (𝒙 ), (106) which implies the stationary point 𝑤 ∗ is: 
+
+𝑤 ∗ = 𝑟 ∗(𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) . (107) Furthermore, since: 
+
+∇2 
+
+> 𝑤
+
+ℒ( 𝑤 ) = −Sigmoid (𝑤 )Sigmoid (− 𝑤 )𝑝 (𝒙 |𝒄 ) − Sigmoid (𝑤 )Sigmoid (− 𝑤 )𝑝 (𝒙 ) (108) 
+
+< 0, (109) we know ℒ( 𝑤 ) is concave and 𝑟 ∗(𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 ) 
+
+> 𝑝 (𝒙 )
+
+is the unique maximizer. Hence, we’ve proved that the optimization problems (83) and (103) lead to the same optimal reward up to an additive constant. Therefore, by parameterizing the reward function as: 
+
+𝑟 𝜽 (𝒙 |𝒄 ) = 𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) (110) , and substitute this in (103), we get the following optimization problem: 
+
+𝑝 𝜽 ∗ (·| 𝒄 ) = arg max  
+
+> 𝑝 𝜽 (·| 𝒄 )
+
+E𝑝 (𝒙 |𝒄 ) log Sigmoid  𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
++E𝑝 (𝒙 ) log Sigmoid  −𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
+ , (111) which has the global maximizer: 
+
+𝛽 log 𝑝 𝜽 ∗ (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) = 𝑟 ∗(𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) (112) 
+
+⇒ 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 𝑝 ref (𝒙 |𝒄 )  𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 )
+
+ 1 
+
+> 𝛽
+
+. (113) 30 One issue with the optimization objective (111) is that its optimal solution (113) is not a valid probability distribution because it is not normalized. To alleviate this issue, we consider a slightly modified version of (103) by introducing an additional constant 𝜆 :
+
+𝑟 ∗(·| 𝒄 ) = arg max 
+
+> 𝑟 (·| 𝒄 )
+
+E𝑝 (𝒙 |𝒄 ) log Sigmoid (𝑟 (𝒙 |𝒄 )) + 𝜆 E𝑝 (𝒙 ) log Sigmoid (− 𝑟 (𝒙 |𝒄 )) . (114) With similar proof technique, it can be shown that: 
+
+𝑟 ∗(𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) + log 1
+
+𝜆 . (115) Substitute (110) in (114), we get the following optimization problem: 
+
+𝑝 𝜽 ∗ (·| 𝒄 ) = arg max  
+
+> 𝑝 𝜽 (·| 𝒄 )
+
+E𝑝 (𝒙 |𝒄 ) log Sigmoid  𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
++𝜆 E𝑝 (𝒙 ) log Sigmoid  −𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
+ , (116) which has global maximizer: 
+
+𝛽 log 𝑝 𝜽 ∗ (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 ) = log 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) + log 1
+
+𝜆 (117) 
+
+⇒ 𝑝 𝜽 ∗ (𝒙 |𝒄 ) = 𝑝 ref (𝒙 |𝒄 )  𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 )
+
+ 1 
+
+> 𝛽
+
+( 1
+
+𝜆 ) 1 
+
+> 𝛽
+
+. (118) In this case, 𝑝 𝜽 ∗ (𝒙 |𝒄 ) is a valid probability distribution as long as: 
+
+𝜆 1 
+
+> 𝛽
+
+=
+
+∫
+
+> 𝒙
+
+𝑝 ref (𝒙 |𝒄 )( 𝑝 (𝒙 |𝒄 )
+
+𝑝 (𝒙 ) ) 1 
+
+> 𝛽
+
+𝑑 𝒙 . (119) Note that optimal solution to (116) exactly coincides with that of CC-DPO (19) . The formu-lation in (116) , known as the Conditional Contrastive Alignment (CCA), which is essentially a combination of the Noise Contrastive Estimation (NCE) [GH10] and a special model parameteri-zation (115) . This objective is first proposed by [Che+25b] for improving the generation quality of visual autoregressive models without relying on CFG. It should be noted that CCA is theoretically correct only when 𝜆 is fixed to a particular constant, and it must be tuned as a hyperparameter in practice. In contrast, we demonstrate that CC-DPO fine-tuning recovers the same optimal solution without introducing this additional hyperparameter 𝜆 .
+
+# D Theoretical Analysis of the Equivalence between CFG and Weighted MCLR 
+
+D.1 Proof of Theorem 3 
+
+In this section, we provide the proof for Theorem 3. To begin with, we introduce the following lemma: 
+
+Lemma 1. Let 𝑝 (𝒙 ) be the clean data distribution, 𝑝 𝑡 (𝒙 ) be the marginal distribution of 𝒙 (𝑡 ), and 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+be the transition density from 𝒙 (0) to 𝒙 (𝑡 ) as defined in section 2.1, then 
+
+∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 ) = E𝑝 (𝒙 |𝒙 𝑡 )
+
+∇𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) . (120) 31 Proof. 
+
+∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 ) = ∇𝒙 𝑡 𝑝 𝑡 (𝒙 𝑡 )
+
+𝑝 𝑡 (𝒙 𝑡 ) (121) 
+
+= ∇𝒙 𝑡 
+
+∫ 
+
+> 𝒙
+
+𝑝 (𝒙 )𝑝 0𝑡 (𝒙 𝑡 |𝒙 )𝑑 𝒙 
+
+𝑝 𝑡 (𝒙 𝑡 ) (122) 
+
+=
+
+∫
+
+> 𝒙
+
+𝑝 (𝒙 )𝑝 0𝑡 (𝒙 𝑡 |𝒙 )∇ 𝒙 𝑡 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+𝑝 𝑡 (𝒙 𝑡 )𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) 𝑑 𝒙 (123) 
+
+=
+
+∫
+
+> 𝒙
+
+𝑝 (𝒙 |𝒙 𝑡 )∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )𝑑 𝒙 (124) 
+
+= E𝑝 (𝒙 |𝒙 𝑡 )
+
+∇𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) . (125) This completes the proof. □
+
+We now restate the main theorem and proceed with the proof. 
+
+Theorem 3 . For any time sampling distribution 𝑝 (𝑡 ) and weighting function 𝑤 (𝑡 ), the CFG-guided score 
+
+𝒔 cfg (𝒙 𝑡 , 𝑡, 𝒄 ) := ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) + 𝜂  ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) − ∇ 𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 )
+
+is the unique minimizer of a sample-adaptive weighted ELBO-approximated MCLR objective (21) :
+
+𝒔 cfg (·) = arg min  
+
+> 𝒔 𝜽 (·)
+
+E𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 )∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i
+
++ 𝜂 E 𝒄 , ˜𝒄 ,𝑡 ∼𝑝 (𝑡 )    
+
+> 𝒙 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 )
+
+
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+− 𝑝 𝑡 (𝒙 𝑡 | ˜ 𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i 
+
+.
+
+(126) 
+
+Proof. First, note optimization problem (126) is equivalent to: 
+
+min   
+
+> 𝒔 𝜽 (·)
+
+(1 + 𝜂 ) E𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+𝑤 (𝑡 )||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+ (127) 
+
+− 𝜂 E 𝒄 , ˜𝒄 ,𝑡 ∼𝑝 (𝑡 )    
+
+> 𝒙 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) 𝑝 𝑡 (𝒙 𝑡 | ˜ 𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i
+
+. (128) Note that (128) can be further simplified as: 
+
+−𝜂 E˜𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 ), 𝑥 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) 𝑝 𝑡 (𝒙 𝑡 | ˜ 𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i
+
+. (129) Hence the original optimization problem (126) is equivalent to 
+
+min   
+
+> 𝒔 𝜽 (·)
+
+(1 + 𝜂 ) E𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+𝑤 (𝑡 )||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+
+
+− 𝜂 E𝒄 ,𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 (𝒙 ), 𝑥 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) 𝑝 𝑡 (𝒙 𝑡 |𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i
+
+,
+
+(130) which coincides exactly with (24). 32 In order to solve (130) , since the objective decomposes across 𝑡 and 𝒄 , the optimization can be performed independently for each pair (𝑡, 𝒄 ). Hence, we can fix a specific pair of 𝑡 and 𝒄 , and optimize the corresponding score 𝒔 𝜽 (𝒙 , 𝒕 , 𝒄 ) independently: 
+
+min   
+
+> 𝒔 𝜽 (· ,𝑡, 𝒄 )
+
+(1 + 𝜂 ) E𝒙 ∼𝑝 (𝒙 |𝒄 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+
+
+− 𝜂 E𝒙 ∼𝑝 (𝒙 ), 𝑥 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h 𝑝 𝑡 (𝒙 𝑡 |𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i (131) ,
+
+⇔ min   
+
+> 𝒔 𝜽 (· ,𝑡, 𝒄 )
+
+(1 + 𝜂 ) E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 |𝒄 ), 𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 ,𝒄 )
+
+||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+
+
+− 𝜂 E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 ), 𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 )
+
+h 𝑝 𝑡 (𝒙 𝑡 |𝒄 )
+
+𝑝 𝑡 (𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i (132) 
+
+⇔ min   
+
+> 𝒔 𝜽 (· ,𝑡, 𝒄 )
+
+(1 + 𝜂 ) E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 |𝒄 ), 𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 ,𝒄 )
+
+||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+
+
+− 𝜂 E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 |𝒄 ), 𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 )
+
+h
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i
+
+.
+
+(133) From (131) to (132) we use the Bayes rule: 𝑝 (𝒙 |𝒄 )𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) = 𝑝 (𝒙 , 𝒙 𝑡 |𝒄 ) = 𝑝 𝑡 (𝒙 𝑡 |𝒄 )𝑝 (𝒙 |𝒙 𝑡 , 𝒄 ). From (132) to (133) we use the identity: 𝑝 𝑡 (𝒙 𝑡 )𝑝 (𝒙 |𝒙 𝑡 ) 𝑝 𝑡 (𝒙 𝑡 |𝒄 )   
+
+> 𝑝 𝑡 (𝒙 𝑡 )
+
+= 𝑝 𝑡 (𝒙 𝑡 |𝒄 )𝑝 (𝒙 |𝒙 𝑡 ).Note that: 
+
+E𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 ,𝒄 )
+
+||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+
+
+= || 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22 − 2𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )𝑇 E𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 ,𝒄 )
+
+∇𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) + 𝐶 1
+
+= || 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22 − 2𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )𝑇 ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) + 𝐶 1 ,
+
+(134) where 𝐶 1 is a constant independent of 𝜽 , and the second equality follows from Lemma 1. Similarly, we have 
+
+E𝒙 ∼𝑝 (𝒙 |𝒙 𝑡 )
+
+||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+ = || 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22 − 2𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )𝑇 ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 ) + 𝐶 2 ,
+
+(135) , where 𝐶 2 is a constant independent of 𝜽 .Substituting (134) and (135) into (133), the optimization problem becomes equivalent to: 
+
+min   
+
+> 𝒔 𝜽 (· ,𝑡, 𝒄 )
+
+E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 |𝒄 )
+
+|| 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )|| 22 − 2𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )𝑇  (1 + 𝜂 )∇ 𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) − 𝜂 ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 ) (136) 
+
+⇔ min   
+
+> 𝒔 𝜽 (· ,𝑡, 𝒄 )
+
+E𝒙 𝑡 ∼𝑝 𝑡 (𝒙 𝑡 |𝒄 )
+
+|| 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 ) − 𝒔 cfg (𝒙 𝑡 , 𝑡, 𝒄 )|| 22
+
+ + 𝐶 3 , (137) where 𝐶 3 is a constant independent of 𝜽 . Therefore, the optimal solution is: 
+
+𝒔 𝜽 ∗ (𝒙 𝑡 , 𝑡, 𝒄 ) = 𝒔 cfg (𝒙 𝑡 , 𝑡, 𝒄 ) (138) 
+
+= ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) + 𝜂  ∇𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 |𝒄 ) − ∇ 𝒙 𝑡 log 𝑝 𝑡 (𝒙 𝑡 ). (139) This completes the proof. 
+
+□
+
+33 D.2 Extensions: CFG Variants under the Alignment Framework 
+
+The equivalence between CFG and weighted MCLR provides a unified perspective for interpreting CFG variants. This perspective is formalized in the following corollary. 
+
+Corollary 3. Consider two distributions 𝑝 +(𝒙 ) and 𝑝 −(𝒙 ). For any time sampling distribution 𝑝 (𝑡 ) and weighting function 𝑤 (𝑡 ), a generalized CFG-style score: 
+
+𝒔 cfg-variant (𝒙 𝑡 , 𝑡 ) := ∇𝒙 𝑡 log 𝑝 + 
+
+> 𝑡
+
+(𝒙 𝑡 ) + 𝜂 (∇ 𝒙 𝑡 log 𝑝 + 
+
+> 𝑡
+
+(𝒙 𝑡 ) − ∇ 𝒙 𝑡 log 𝑝 − 
+
+> 𝑡
+
+(𝒙 𝑡 )) (140) 
+
+is the unique minimizer of the following MCLR-style optimization problem: 
+
+min   
+
+> 𝒔 𝜽 (·)
+
+(1 + 𝜂 ) E𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 +(𝒙 ), 𝒙 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+𝑤 (𝑡 )||∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡 )|| 22
+
+
+
+− 𝜂 E𝑡 ∼𝑝 (𝑡 ), 𝒙 ∼𝑝 −(𝒙 ), 𝑥 𝑡 ∼𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) 𝑝 + 
+
+> 𝑡
+
+(𝒙 𝑡 )
+
+𝑝 − 
+
+> 𝑡
+
+(𝒙 𝑡 ) ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡 )∥ 22
+
+i (141) The proof is omitted, as it follows directly by adapting the proof of Theorem 3. The optimization problem (141) shares the same structure as the ELBO-approximated weighted MCLR (130), with the only difference that positive samples are drawn from 𝑝 +(𝒙 ) and negative samples from 𝑝 −(𝒙 ).This formulation unifies a broad class of CFG-style methods, as illustrated below. 
+
+• Standard CFG. Let 𝑝 +(𝒙 ) = 𝑝 (𝒙 |𝒄 ) and 𝑝 −(𝒙 ) = 𝑝 (𝒙 ). This recovers the standard CFG and corresponds to the weighted MCLR formulation discussed in previous sections. 
+
+• Autoguidance. Let 𝑝 +(𝒙 ) be the distribution induced by a strong diffusion model and 𝑝 −(𝒙 ) the distribution induced by a weaker model. We recover the Autoguidance [Kar+24a]. 
+
+• Inference-Time Alignment Guidance. Let 𝑝 +(𝒙 ) be the distribution induced by a diffusion model fine-tuned on high-reward data and 𝑝 −(𝒙 ) the distribution induced by the base model (or a low-reward fine-tuned model). We recover a family of inference-time alignment methods [Fra+25; Jin+25; Che+25c; JWL26]. Lastly, note that (141) without adaptive weighting is the ELBO-based approximation of the following likelihood-based objective, which is presented in Figure 3: 
+
+max  
+
+> 𝜽
+
+E𝑝 +(𝒙 )
+
+ log 𝑝 𝜽 (𝒙 ) + 𝜂 E𝒙 ∼𝑝 +(·) ,𝒚 ∼𝑝 −(·) 
+
+ log 𝑝 𝜽 (𝒙 )
+
+𝑝 𝜽 (𝒚 )
+
+| {z }
+
+> MCLR Regularization
+
+. (142) 
+
+# E Practical Implementation Details 
+
+E.1 Approximating Log-Likelihood with ELBO 
+
+Implementing MCLR requires access to the log-likelihood, which is not directly available for diffusion models. We therefore approximate the log-likelihood using the evidence lower bound (ELBO) in (6) . In the following, we describe how this approximation is used in MCLR, CC-DPO, and CCA. Before doing so, we state the following fact. 34 Equivalence between Score Function and MMSE Denoisers. For practical diffusion models, the drift coefficient 𝑓 (·) in (1) takes the form 𝑓 (𝒙 , 𝑡 ) = 𝑓 (𝑡 )𝒙 where 𝑓 (·) : R → R. As a result, the corresponding transition distribution is Gaussian and can be written as [Kar+22]: 
+
+𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) = 𝒩 ( 𝒙 𝑡 ; 𝑠 (𝑡 )𝒙 , 𝑠 2(𝑡 )𝜎 2(𝑡 )𝑰 ) (143) , where 𝒩 ( 𝒙 ; 𝝁 , 𝚺 ) denotes the Gaussian density with mean 𝝁 and covariance 𝚺 evaluated at 𝒙 ,
+
+𝑠 (𝑡 ) = exp (∫ 𝑡  
+
+> 0
+
+𝑓 (𝜉 )𝑑 𝜉 ) and 𝜎 (𝑡 ) =
+
+q∫ 𝑡  
+
+> 0
+> 𝑔 2(𝜉 )
+> 𝑠 2(𝜉 )
+
+𝑑 𝜉 . The score of this transition distribution is therefore given by: 
+
+∇𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) = 𝑠 (𝑡 )𝒙 − 𝒙 𝑡 
+
+𝑠 2(𝑡 )𝜎 2(𝑡 ) . (144) Accordingly, the score network can be parameterized in terms of a denoiser 𝒟 𝜽 (·) as: 
+
+𝒔 𝜽 (𝒙 , 𝑡, 𝒄 ) = 𝒟 𝜽 (𝒙 𝑡 ; 𝑠 2(𝑡 )𝜎 (𝑡 ), 𝒄 ) − 𝒙 𝑡 
+
+𝑠 2(𝑡 )𝜎 2(𝑡 ) . (145) Without loss of generality, we set 𝑠 (𝑡 ) = 1, under which the DSM objective in (3) becomes: 
+
+12
+
+∫ 𝑇 
+
+> 0
+
+E𝒄 ,𝑝 (𝒙 |𝒄 ),𝑝 0𝑡 (𝒙 𝑡 |𝒙 )[𝑤 (𝑡 )∥ 𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), 𝒄 ) − 𝒙 
+
+𝜎 2(𝑡 ) ∥22]𝑑𝑡 = ˜𝑤 (𝑡 )E𝒄 ,𝑡 ∼𝒰 [ 0,𝑇 ],𝑝 (𝒙 |𝒄 ),𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+||𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), 𝒄 ) − 𝒙 || 22
+
+ ,
+
+(146) where ˜𝑤 (𝑡 ) = 𝑇𝑤 (𝑡 ) 
+
+> 2𝜎 4(𝑡 )
+
+This shows that DSM is equivalent to training the MMSE denoiser 𝒟 𝜽 (· ; 𝜎 (𝑡 ), 𝒄 )
+
+for data from class 𝒄 corrupted by additive Gaussian noise with standard deviation 𝜎 (𝑡 ).In this setting, the score function is related to the MMSE denoiser via Tweedie’s formula [Miy+61]: 
+
+∇𝒙 log 𝑝 𝑡 (𝒙 | 𝒄 ) = 𝒟( 𝒙 ; 𝜎 (𝑡 ), 𝒄 ) − 𝒙 
+
+𝜎 2(𝑡 ) , (147) where 𝒟( 𝒙 ; 𝜎 (𝑡 ), 𝒄 ) denotes the MMSE denoiser and 𝑝 𝑡 (𝒙 |𝒄 ) = ∫ 𝑝 0𝑡 (𝒙 |𝒙 0)𝑝 data (𝒙 0)𝑑 𝒙 0 is the marginal distribution at time 𝑡 . We are now ready to present the practical ELBO-approximated objectives of MCLR, CC-DPO, and CCA for diffusion models. 
+
+ELBO-Approximated MCLR for Diffusion Models. Substitute ELBO (6) into (11) , the MCLR regularized DSM becomes: 
+
+min  
+
+> 𝜽
+
+𝒥 DSM (𝜽 ; 𝑔 2(·)) + 𝜂 E 𝒄 , ˜𝒄 , 𝑡 ∼𝒰 [ 0,𝑇 ]  
+
+> 𝑝 (𝒙 |𝒄 ), 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑔 2(𝑡 )
+
+
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22 − ∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 | 𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, ˜𝒄 )∥ 22
+
+i 
+
+.
+
+(148) Using the denoiser parameterization of the score network, together with a customized training-time noise sampling distribution 𝑝 (𝑡 ) and adaptive weighting 𝑤 (𝑡 ), the MCLR objective becomes: 
+
+E 𝒄 , ˜𝒄 , 𝑡 ∼𝑝 (𝑡 )  
+
+> 𝑝 (𝒙 |𝒄 ), 𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑤 (𝑡 ) ∥𝒙 − 𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 𝜽 (𝒙 𝑡 ; 𝜎 (𝑡 ), ˜𝒄 )∥ 22
+
+i
+
+, (149) which can be approximated with Monte Carlo sampling during training. Rather than parameterizing the noise level through the time variable 𝑡 ∼ 𝑝 (𝑡 ), one may equivalently define a training noise 35 distribution directly over 𝜎 , denoted by 𝑝 (𝜎 ) and a corresponding noise adaptive weighting 𝑤 (𝜎 ).Under this formulation, (149) can be rewritten as: 
+
+E𝒄 , ˜𝒄 ,𝝐 ∼𝒩 ( 0,𝑰 )
+
+> 𝜎 ∼𝑝 (𝜎 ),𝑝 (𝒙 |𝒄 )
+
+h
+
+𝑤 (𝜎 ) ∥𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , ˜𝒄 )∥ 22
+
+i
+
+. (150) As discussed in section G.1, combining DSM with MCLR regularization does not lead to benefit, hence we directly fine-tune pretrained model using (150). 
+
+ELBO-Approximated CC-DPO for Diffusion Models. The CC-DPO algorithm requires access to the log-likelihood ratio for individual data point. Similar to MCLR, we approximate it with the ELBO: 
+
+log 𝑝 𝜽 (𝒙 )
+
+𝑝 ref (𝒙 ) ≈ 𝑇 
+
+2 E𝑡 ∼𝒰 [ 0,𝑇 ],𝑝 0𝑡 (𝒙 𝑡 |𝒙 )
+
+h
+
+𝑔 2(𝑡 ) −∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 𝜽 (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22 + (151) 
+
+∥∇ 𝒙 𝑡 log 𝑝 0𝑡 (𝒙 𝑡 |𝒙 ) − 𝒔 ref (𝒙 𝑡 , 𝑡, 𝒄 )∥ 22
+
+i
+
+. (152) Using the denoiser parameterization of the score network, together with a customized training noise distribution and adaptive weighting, the log-likelihood ratio takes the following form: 
+
+log 𝑝 𝜽 (𝒙 )
+
+𝑝 ref (𝒙 ) ≈ E𝜎 ∼𝑝 train (𝜎 ),𝝐 ∼𝒩 ( 0,𝑰 )
+
+𝑤 (𝜎 )(−∥ 𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 + ∥ 𝒙 − 𝒟 ref (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22) . (153) Define: 
+
+Δ(𝒙 , 𝜎 , 𝝐 , 𝒄 ) := ∥𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 ref (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22. (154) By substituting (153) into DPO objective (19), we get the following optimization problem: 
+
+min  
+
+> 𝜽
+
+−E𝒄 , ˜𝒄 ,𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 | ˜ 𝒄 )
+
+log Sigmoid (𝛽 E𝜎 ,𝝐 [𝑤 (𝜎 )(− Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 ) + Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 ))])  . (155) Since the log-Sigmoid function is concave, applying Jensen’s inequality by moving the expecta-tion outside yields the following upper bound of objective (155): 
+
+min  
+
+> 𝜽
+
+−E𝒄 , ˜𝒄 ,𝒙 𝑤 ,𝒙 𝑙 ,𝜎 ,𝝐 
+
+log Sigmoid (𝛽 𝑤 (𝜎 )(− Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 ) + Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 )))  , (156) which serves as our final training objective. 
+
+CCA for Diffusion Models. The Conditional Contrastive Alignment (CCA) [Che+25b] objective takes the following form: 
+
+max  
+
+> 𝜽
+
+E𝒄 ,𝑝 (𝒙 |𝒄 ) log Sigmoid  𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
++𝜆 E𝒄 , ˜𝒄 ,𝑝 (𝒙 | ˜ 𝒄 ) log Sigmoid  −𝛽 log 𝑝 𝜽 (𝒙 |𝒄 )
+
+𝑝 ref (𝒙 |𝒄 )
+
+. (157) To adapt this optimization problem to diffusion models, we again approximate the log-likelihood with ELBO, resulting in the following optimization problem: 
+
+max  
+
+> 𝜽
+
+E𝒄 , ˜𝒄 ,𝒙 𝑤 ∼𝑝 (𝒙 |𝒄 ),𝒙 𝑙 ∼𝑝 (𝒙 | ˜ 𝒄 )
+
+log Sigmoid  𝛽 E𝜎 ,𝝐 
+
+−𝑤 (𝜎 )Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 )  +𝜆 log Sigmoid  𝛽 E𝜎 ,𝝐 
+
+𝑤 (𝜎 )Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 )  .
+
+(158) Since the log-sigmoid function is concave, applying Jensen’s inequality by moving the expectation outside yields the following lower bound of objective (158): 
+
+max  
+
+> 𝜽
+
+E𝒄 ,𝒙 𝑤 ,𝒙 𝑙 ,𝜎 ,𝝐 
+
+log Sigmoid  −𝛽 𝑤 (𝜎 )Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 )+𝜆 log Sigmoid  𝛽 𝑤 (𝜎 )Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 ) , (159) which serves as our final training objective. 36 E.2 Building Training Data from a Minibatch 
+
+Computing MCLR requires constructing contrastive tuples (𝒙 , 𝒄 , ˜𝒄 ), where 𝒙 ∼ 𝑝 (𝒙 |𝒄 ) and ˜𝒄 denotes a randomly chosen alternative class. Similarly, CC-DPO and CCA require constructing preference-style tuples (𝒙 𝑤 , 𝒙 𝑙 , 𝒄 ). In practice, we build these tuples directly from each training minibatch 
+
+(𝒙 𝑖 , 𝒄 𝑖 ) 𝑁 𝑖 =1. We consider two strategies, described below. 
+
+Approach 1: Building 𝑁 pairs. The simplest strategy constructs one contrastive (or preference) tuple per sample in the minibatch. For MCLR, given a sample (𝒙 , 𝒄 ), we randomly select another label ˜𝒄 from the same minibatch, forming a tuple (𝒙 , 𝒄 , ˜𝒄 ). Repeating this process independently for each 𝒙 (with replacement) yields 𝑁 tuples in total. The same strategy applies to CC-DPO and CCA, where we construct 𝑁 tuples (𝒙 𝑤 , 𝒙 𝑙 , 𝒄 ) from the minibatch. 
+
+Approach 2: Building 𝑁 𝐾 pairs. Alternatively, we can construct multiple contrastive tuples per sample. For MCLR, given each (𝒙 , 𝒄 ), we randomly select 𝐾 alternative labels { ˜ 𝒄 𝑘 }𝐾 𝑘 =1 from the same minibatch, yielding 𝐾 tuples (𝒙 , 𝒄 , ˜𝒄 𝑘 ). Repeating this procedure for all 𝑁 samples results in 
+
+𝑁 𝐾 tuples in total. An analogous strategy is applied to CC-DPO and CCA, producing 𝑁 𝐾 tuples 
+
+(𝒙 𝑤 , 𝒙 𝑙 , 𝒄 ) per minibatch. Compared to Approach 1, Approach 2 increases the number of training tuples constructed from each minibatch, allowing better exploitation of inter-class contrastive information. In our experi-ments, we adopt Approach 2 for EDM-based diffusion models, where it consistently yields improved quantitative performance. For VAR models, we use Approach 1 due to its lower computational overhead and comparable empirical performance. 
+
+E.3 Overall Algorithm 
+
+We are now ready to present the overall algorithm. The algorithm for MCLR is given in algorithm 1, while the algorithms for CC-DPO and CCA are presented in algorithm 2. 
+
+E.4 Hyperparameters 
+
+For each method, we carefully tune hyperparameters using grid search to ensure the best per-formance. The full set of hyperparameter configurations will be made publicly available upon publication. 
+
+# F Additional Experimental Results 
+
+In this section, we present additional experimental results that complement and extend those in the main text. In section 6, we focus on validating the following three claims: 
+
+• MCLR induces progressive class separation, leading to a fidelity–diversity trade-off analogous to that produced by increasing the guidance strength in classifier-free guidance (CFG). 
+
+• MCLR matches or outperforms training-time baselines, including CC-DPO and CCA. 
+
+• MCLR achieves performance comparable to CFG. Due to space constraints, the main text reports quantitative results only for ImageNet-512 ×512 with EDM2-L and ImageNet-256 ×256 with VAR-d24. Here, we provide the complete set of experi-mental results on ImageNet-64 ×64 with EDM2-S, ImageNet-512 ×512 with EDM2-L, and ImageNet-256 ×256 with VAR-d24. 37 Algorithm 1 MCLR 
+
+Require: Pre-trained base model 𝒟 𝜽 0 ; noise-adaptive weight function 𝑤 (·) ; training noise schedule 
+
+𝑝 (𝜎 ); learning rate 𝛼 ; training dataset representing 𝑝 (𝒙 , 𝒄 ); 𝐾 ≥ 1 (number of mismatched class labels per sample in Approach 2)  
+
+> 1:
+
+Initialize 𝜽 ← 𝜽 0 
+
+> 2:
+
+for each training iteration do  
+
+> 3:
+
+Sample a minibatch (x𝑖 , c𝑖 ) 𝑁 𝑖 =1 with (𝒙 𝑖 , 𝒄 𝑖 ) ∼ 𝑝 (𝒙 , 𝒄 ). 
+
+> 4:
+
+Sample {𝜎 𝑖 }𝑁 𝑖 =1 with 𝜎 𝑖 ∼ 𝑝 (𝜎 ) 
+
+> 5:
+
+Sample {𝝐 𝑖 }𝑁 𝑖 =1 with 𝝐 𝑖 ∼ 𝒩 ( 0, 𝑰 ) 
+
+> 6:
+
+Construct contrastive tuples from the minibatch:  
+
+> 7:
+
+if Approach 1 then  
+
+> 8:
+
+Set 𝑀 ← 𝑁  
+
+> 9:
+
+For each 𝑖 , sample ˜𝒄 𝑖 from minibatch labels with ˜𝒄 𝑖 ≠ 𝒄 𝑖  
+
+> 10:
+
+Define tuples {( 𝒙 𝑖 , 𝒄 𝑖 , ˜𝒄 𝑖 , 𝜎 𝑖 , 𝝐 𝑖 )} 𝑀 𝑖 =1 
+
+> 11:
+
+end if  
+
+> 12:
+
+if Approach 2 then  
+
+> 13:
+
+Set 𝑀 ← 𝑁 𝐾  
+
+> 14:
+
+For each 𝑖 and each 𝑘 = 1, . . . , 𝐾 , sample ˜𝒄 𝑖,𝑘 from minibatch with ˜𝒄 𝑖,𝑘 ≠ 𝒄 𝑖  
+
+> 15:
+
+Define tuples {( 𝒙 𝑖,𝑘 , 𝒄 𝑖,𝑘 , ˜𝒄 𝑖,𝑘 , 𝜎 𝑖,𝑘 , 𝝐 𝑖,𝑘 )} where 
+
+(𝒙 𝑖,𝑘 , 𝒄 𝑖,𝑘 ) = (𝒙 𝑖 , 𝒄 𝑖 ) and (𝜎 𝑖,𝑘 , 𝝐 𝑖,𝑘 ) = (𝜎 𝑖 , 𝝐 𝑖 ) 
+
+> 16:
+
+end if  
+
+> 17:
+
+ℒ ← 0 
+
+> 18:
+
+for each tuple (𝒙 , 𝒄 , ˜𝒄 , 𝜎 , 𝝐 ) do  
+
+> 19:
+
+ℒ + = 𝑤 (𝜎 )
+
+
+
+∥𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 ) − 𝒙 ∥22 − ∥𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , ˜𝒄 ) − 𝒙 ∥22
+
+ 
+
+> 20:
+
+end for  
+
+> 21:
+
+𝜽 ← 𝜽 − 𝛼 ∇𝜽 ℒ 
+
+> 22:
+
+end for  
+
+> 23:
+
+return 𝒟 𝜽 
+
+F.1 Progressive Class Separation and the Fidelity-Diversity Trade-off. 
+
+Training with MCLR induces notable progressive class separation , which gives rise to a fidelity– diversity trade-off similar that observed when increasing the guidance scale in CFG. This behavior is quantitatively supported by the following observations. 
+
+(i) Increased Precision and Inception Score. As shown in Figure 5(b,d,g) for ImageNet-64, Fig-ure 7(c,f,i) for ImageNet-256 and Figure 6(b,d,g) for ImageNet-512, continued training with MCLR leads to a progressive increase in Inception Score, indicating increasingly class-discriminative gen-erations. This is accompanied by a corresponding increase in Precision, reflecting improved image fidelity. 
+
+(ii) Decreased Recall. Conversely, as shown in Figure 5(e,h), Figure 6(g,j), and Figure 7(e,h), excessive training reduces within-class diversity, which manifests as a decrease in Recall (see also Figure 4(e)). Taken together, these effects result in FD–IS and Precision–Recall trade-offs that closely mirror those induced by CFG, as illustrated in Figure 5(c,f,i), Figure 6(c,f,i), and Figure 7(d,e,h,k). Quali-tatively, as shown in Figures 2 and 8 to 19, continued MCLR training leads to gradually enhanced distinct, class-specific visual characteristics in generated samples. 38 F.2 MCLR Outperforms Training-time Baselines. 
+
+Diffusion Models. As shown in Figures 5 and 6, for EDM models trained on ImageNet, MCLR achieves substantially better best-case FD DINOv2 scores than CCA, CC-DPO. Moreover, MCLR traverses significantly wider FD–IS and Precision–Inception trade-offs region with a faster training speed. In contrast, CCA and CC-DPO often converge early, exhibit zigzag training trajectories, and become trapped in suboptimal local minima, as evidenced by slowly improving or stalled learning curves. 
+
+Autoregressive Models. As shown in Figure 7, MCLR, CC-DPO, and CCA yield comparable performance improvement on VAR-d24. Specifically, we see MCLR consistently achieves higher precision (see Figure 7(f,h,i,k)) and inception score (see Figure 7(c)) in later stages of training. 
+
+F.3 MCLR Achieves Comparable Performance as CFG. 
+
+Diffusion Models. For EDM models trained on ImageNet, CFG generally exhibits a better FD–IS trade-off and achieves a lower best-case FD DINOv2 than MCLR. Nevertheless, this gap is moderate for EDM2-L model, where CFG attains a best-case FD DINOv2 of 39.86 compared to 42.50 for MCLR as shown in Figure 6(c). Moreover, for EDM2-L model, when evaluated using Precision–Recall, MCLR demonstrates competitive and in some regimes superior behavior. As shown in Figure 6(f,g), MCLR matches CFG in the high-recall regime (early training stages) and achieves a substantially higher best-case precision in the high-precision regime (later training stages), where CFG begins to generate images with oversaturated colors. Applying CFG on top of an MCLR-fine-tuned model further alleviates the performance gap between MCLR and CFG, yielding higher best-case Inception Score and Precision on both EDM2-S and EDM2-L models, as shown in Figure 5(c,f,i) and Figure 6(c,f,i). Qualitatively, MCLR and CFG often produce similar effects, both significantly enhancing class-specific structures in the generated images, as shown in Figures 2 and 8 to 19. This similarity is expected, as both methods improve conditional modeling through inter-class contrastive signals. The key distinction is that MCLR internalizes this mechanism during training, whereas CFG applies it at inference time. 
+
+Autoregressive Models. For VAR-d24 model, MCLR achieves a similar FD–IS trade-off to CFG in terms of both FD DINOv2 and FID, with CFG exhibiting a slightly better best-case FID. Consistent with diffusion models, MCLR outperforms CFG in the Precision–Recall trade-off and achieves a higher best-case precision. 
+
+# G Ablation Study 
+
+G.1 MCLR does not Benefit from DSM. 
+
+In section 3.2 we motivate MCLR as an additional regularization term applied on top of the standard denoising score matching (DSM) objective (or maximum likelihood estimation) as in (11) , or alternatively on top of the KL-divergence-based objective in (13) . While the latter requires drawing samples from the base model during training, which can be computationally prohibitive, it is natural to consider combining DSM with MCLR as in (11) . Intuitively, one may expect the DSM objective to mitigate excessive effects of fine-tuning, such as mode collapse, that are commonly observed in post-training objectives [Liu+25]. 39 (b) 
+
+> (e)
+> (c)
+> (f)
+> (a)
+> (d)
+
+ImageNet -64 EDM2 -S  
+
+> (g) (h) (i)
+
+Figure 5: Quantitative Results for EDM2-S trained on ImageNet-64 ×64. (a), (b), (d), (e), (g), (h) show the evolution of FD, Inception Score, Precision (calculated with Inception features), and Recall (calculated with Inception features), Precision (calculated with DINOv2 features), and Recall (calculated with DINOv2 features), respectively, as functions of training iterations. (c) shows the FD–IS trade-offs, while (f), (i) depict the Precision–Recall trade-offs calculated with Inception and DINOv2 features respectively. We evaluate classifier-free guidance (CFG) scales 
+
+𝛾 ∈ { 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1, 1.5, 2.0, 3.0}.However, perhaps surprisingly, we find that combining DSM with MCLR does not yield perfor-mance improvements. As shown in Figure 20, adding an explicit DSM term consistently harms the best achievable performance. Concretely, we fine-tune an EDM2-S base model on ImageNet-64 × 64 
+
+using the following objective with varying 𝛽 :
+
+𝛽 E 𝒄 ,𝝐 ∼𝒩 ( 0,𝑰 )
+
+> 𝜎 ∼𝑝 (𝜎 ),𝑝 (𝒙 |𝒄 )
+
+h
+
+𝑤 (𝜎 ) ∥𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22
+
+i| {z }
+
+> DSM Objective
+
++ E𝒄 , ˜𝒄 ,𝝐 ∼𝒩 ( 0,𝑰 )
+
+> 𝜎 ∼𝑝 (𝜎 ),𝑝 (𝒙 |𝒄 )
+
+h
+
+𝑤 (𝜎 ) ∥𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , ˜𝒄 )∥ 22
+
+i| {z }
+
+> MCLR Regularization
+
+.
+
+(160) Empirically, as shown in Figure 20, increasing 𝛽 leads to slower convergence and degrades both FD DINOv2 and Inception Score. As a result, throughout the paper we fine-tune diffusion models using the MCLR regularization alone. This choice not only yields strong empirical performance but 40 (b)   
+
+> (e)
+> (c)
+> (f)
+> (a)
+> (d)
+> ImageNet -512 EDM2 -L
+> (g) (h) (i)
+
+Figure 6: Quantitative Results for EDM2-L trained on ImageNet-512 ×512. (a), (b), (d), (e), (g), (h) show the evolution of FD, Inception Score, Precision (calculated with Inception features), and Recall (calculated with Inception features), Precision (calculated with DINOv2 features), and Recall (calculated with DINOv2 features), respectively, as functions of training iterations. (c) shows the FD–IS trade-offs, while (f), (i) depict the Precision–Recall trade-offs calculated with Incpetion and DINOv2 features respectively. We evaluate classifier-free guidance (CFG) scales 
+
+𝛾 ∈ { 0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1, 1.5, 2.0, 3.0}.also simplifies hyperparameter tuning, as MCLR introduces only a single hyperparameter, i.e., the learning rate. 
+
+G.2 Hyperparameter Sensitivity of CC-DPO 
+
+The hyperparameter 𝛽 in the CC-DPO objective (19) controls the strength of the KL regularization between the base model and the fine-tuned model. We study its effect on EDM2-S trained on ImageNet-64 × 64 . As shown in Figure 21, CC-DPO exhibits relatively stable performance across a wide range of 𝛽 values. In particular, smaller 𝛽 values achieve marginally better best-case FD DINOv2 
+
+and Inception Score. 
+
+G.3 Hyperparameter Sensitivity of CCA 
+
+The hyperparameter 𝜆 in the CCA objective (159) controls the strength of the contrastive term, with larger 𝜆 placing greater emphasis on penalizing the non-preferred sample 𝒙 𝑙 . We study its effect on EDM2-S trained on ImageNet-64 × 64 , fixing 𝛽 = 0.001 . As shown in Figure 22, 𝜆 has little impact on the best achievable FD DINOv2 ; however, smaller 𝜆 values lead to more stable and 41 smoother convergence. In contrast, larger 𝜆 values can yield slightly higher best-case Inception Scores, but often cause training instability and eventual collapse when training is prolonged. In practice, jointly tuning 𝛽 and 𝜆 is challenging. Although CCA and CC-DPO share the same theoretical optimal solution, CC-DPO requires tuning only a single hyperparameter 𝛽 . Empirically, CCA does not outperform CC-DPO under careful tuning as shown in Figure 22. Therefore, we recommend CC-DPO over CCA in practice. 
+
+# H Discussion on Related Works 
+
+Our work contributes to a growing line of research [Che+25b; Che+25a; Tan+25] that seeks to induce CFG-like effect by modifying the standard training objective, rather than applying CFG at inference time. The most closely related approach is CCA [Che+25b], which aims to learn the gamma-powered distribution (20) in autoregressive models using Noise Contrastive Estimation (NCE) [GH10]. While CCA also considers DPO as a baseline and reports inferior performance, our theoretical analysis demonstrates that CC-DPO and CCA admit the same optimal solution, and are therefore fundamentally equivalent at the population level. With a correct implementation, we find that CC-DPO consistently matches or exceeds the empirical performance of CCA while requiring fewer hyperparameters and simpler optimization. We further extend CCA to diffusion models by approximating log-likelihoods via the ELBO and include this variant as a baseline in our experiments. A detailed theoretical and empirical analysis of CCA is provided in section C. Another relevant direction is Guidance-Free Training (GFT) [Che+25a; Tan+25], which aims to directly train diffusion models to reproduce CFG-induced score functions. GFT relies on a reparameterization heuristic and inherits the same theoretical ambiguities associated with CFG itself. In contrast, the proposed MCLR objective provides a clearer mechanistic interpretation of CFG. Besides these approaches, several works sought to enhance conditional generative modeling through class-wise contrastive mechanisms. [Yan+24] introduce a contrastive objective to im-prove the modeling of tail classes; [Lee+25] employ an InfoNCE-style loss [OLV18] to strengthen text-image alignment in diffusion models; [KMS24] and [YAA25] regularize diffusion models by encouraging class separation in feature space. In contrast to MCLR, CC-DPO and CCA, these ap-proaches are primarily heuristic and do not provide a theoretical characterization of the conditional distribution induced by their objectives. Lastly, beyond class-wise contrast, another complementary strategy for improving generative modeling is to contrast high-quality (“real”) data against low-quality (“synthetic”) samples. Zheng et al. [Zhe+25] propose Direct Discriminative Optimization (DDO), which employs the same contrastive objective as CCA, but replaces class-conditioned contrast with a real–synthetic discrimi-nation signal. We include DDO as one of our baselines. 42 Algorithm 2 CC-DPO and CCA 
+
+Require: Pre-trained base model 𝒟 𝜽 0 ; noise-adaptive weight function 𝑤 (·) ; training noise schedule 
+
+𝑝 (𝜎 ); learning rate 𝛼 ; KL regularization strength 𝛽 ; CCA hyperparameter 𝜆 ; training dataset representing 𝑝 (𝒙 , 𝒄 ); 𝐾 ≥ 1 (number of mismatched class labels per sample in Approach 2)  
+
+> 1:
+
+Initialize 𝜽 ← 𝜽 0, 𝒟 ref ← 𝒟 𝜽 0 
+
+> 2:
+
+for each training iteration do  
+
+> 3:
+
+Sample a minibatch (x𝑖 , c𝑖 ) 𝑁 𝑖 =1 with (𝒙 𝑖 , 𝒄 𝑖 ) ∼ 𝑝 (𝒙 , 𝒄 ). 
+
+> 4:
+
+Sample {𝜎 𝑖 }𝑁 𝑖 =1 with 𝜎 𝑖 ∼ 𝑝 (𝜎 ) 
+
+> 5:
+
+Sample {𝝐 𝑖 }𝑁 𝑖 =1 with 𝝐 𝑖 ∼ 𝒩 ( 0, 𝑰 ) 
+
+> 6:
+
+Construct contrastive tuples from the minibatch:  
+
+> 7:
+
+if Approach 1 then  
+
+> 8:
+
+Set 𝑀 ← 𝑁  
+
+> 9:
+
+For each 𝑖 , sample ˜𝒙 𝑖 from minibatch samples with label ˜𝒄 𝑖 ≠ 𝒄 𝑖  
+
+> 10:
+
+Define tuples {( 𝒙 𝑖 , ˜𝒙 𝑖 , 𝒄 𝑖 , 𝜎 𝑖 , 𝝐 𝑖 )} 𝑀 𝑖 =1 
+
+> 11:
+
+end if  
+
+> 12:
+
+if Approach 2 then  
+
+> 13:
+
+Set 𝑀 ← 𝑁 𝐾  
+
+> 14:
+
+For each 𝑖 and each 𝑘 = 1, . . . , 𝐾 , sample ˜𝒙 𝑖,𝑘 from minibatch samples with label ˜𝒄 𝑖,𝑘 ≠ 𝒄 𝑖  
+
+> 15:
+
+Define tuples {( 𝒙 𝑖,𝑘 , ˜𝒙 𝑖,𝑘 , 𝒄 𝑖,𝑘 , 𝜎 𝑖,𝑘 , 𝝐 𝑖,𝑘 )} where 
+
+(𝒙 𝑖,𝑘 , 𝒄 𝑖,𝑘 ) = (𝒙 𝑖 , 𝒄 𝑖 ) and (𝜎 𝑖,𝑘 , 𝝐 𝑖,𝑘 ) = (𝜎 𝑖 , 𝝐 𝑖 ) 
+
+> 16:
+
+end if  
+
+> 17:
+
+ℒ ← 0 
+
+> 18:
+
+for each tuple (𝒙 , ˜𝒙 , 𝒄 , 𝜎 , 𝝐 ) do  
+
+> 19:
+
+Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 ) := ∥𝒙 − 𝒟 𝜽 (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 − ∥ 𝒙 − 𝒟 ref (𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 
+
+> 20:
+
+Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 ) := ∥ ˜ 𝒙 − 𝒟 𝜽 ( ˜ 𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 − ∥ ˜ 𝒙 − 𝒟 ref ( ˜ 𝒙 + 𝜎 𝝐 ; 𝜎 , 𝒄 )∥ 22 
+
+> 21:
+
+if CC-DPO then  
+
+> 22:
+
+ℒ + = − log Sigmoid (𝛽 𝑤 (𝜎 )(− Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 ) + Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 )))  
+
+> 23:
+
+end if  
+
+> 24:
+
+if CCA then  
+
+> 25:
+
+ℒ − = log Sigmoid  −𝛽 𝑤 (𝜎 )Δ(𝒙 𝑤 , 𝜎 , 𝝐 , 𝒄 )+𝜆 log Sigmoid  𝛽 𝑤 (𝜎 )Δ(𝒙 𝑙 , 𝜎 , 𝝐 , 𝒄 ) 
+
+> 26:
+
+end if  
+
+> 27:
+
+end for  
+
+> 28:
+
+𝜽 ← 𝜽 − 𝛼 ∇𝜽 ℒ 
+
+> 29:
+
+end for  
+
+> 30:
+
+return 𝒟 𝜽 
+
+43 (b) 
+
+> (g)
+> (d)
+> (h)
+> (a)
+> (f)
+
+ImageNet -256 VAR -d24    
+
+> (i)(j) (k)
+> (c) (e)
+
+Figure 7: Quantitative Results for VAR-d24 trained on ImageNet-64 ×64. (a), (b), (c), (f), (g), (i), (j) show the evolution of FD DINOv2 , FID, Inception Score, Precision (calculated with Inception features), and Recall (calculated with Inception features), Precision (calculated with DINOv2 features), and Recall (calculated with DINOv2 features), respectively, as functions of training iterations. (d), (e) shows the FD–IS trade-offs, while (h), (k) depict the Precision–Recall trade-offs calculated with Inception and DINOv2 features respectively. We evaluate classifier-free guidance (CFG) scales 𝛾 ∈ { 0.5, 0.8, 1.1, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10 .0, 15 .0}.44 𝛾 = 0.3 𝛾 = 0.7 𝛾 = 1    
+
+> Iters = 784 Iters = 224 Iters = 504
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR        
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+> 𝛾 =0.3 𝛾
+
+= 0.7 𝛾 = 1    
+
+> Iters = 1792 Iters = 448 Iters = 896
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 64x64 EDM2 -S
+
+ImageNet 512x512 EDM2 -L
+
+(a) 
+
+(b) Figure 8: Comparison between CFG and MCLR for Golden Retriever (Class 207). (a,b) demon-strate the progressive evolution of generated samples on ImageNet-64 ×64 and ImageNet-512 ×512, respectively. Increasing the CFG scale 𝛾 (top rows) and progressive MCLR training (bottom rows) produce similar effects, both enhancing class-specific structures in the generated images. 45 𝛾 = 0.3 𝛾 = 0.7 𝛾 = 1    
+
+> Iters = 784 Iters = 224 Iters = 504
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 64x64 EDM2 -S
+
+(a)     
+
+> 𝛾 =0.3 𝛾
+
+= 0.7 𝛾 = 1 
+
+> Iters = 1792 Iters = 448 Iters = 896
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 512x512 EDM2 -L
+
+(b) Figure 9: Comparison between CFG and MCLR for Warthog (Class 343). (a,b) demonstrate the progressive evolution of generated samples on ImageNet-64 ×64 and ImageNet-512 ×512, respectively. Increasing the CFG scale 𝛾 (top rows) and progressive MCLR training (bottom rows) produce similar effects, both enhancing class-specific structures in the generated images. 46 𝛾 = 0.3 𝛾 = 0.7 𝛾 = 1    
+
+> Iters = 784 Iters = 224 Iters = 504
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR        
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+> 𝛾 =0.3 𝛾
+
+= 0.7 𝛾 = 1    
+
+> Iters = 1792 Iters = 448 Iters = 896
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 64x64 EDM2 -S
+
+ImageNet 512x512 EDM2 -L
+
+(a) 
+
+(b) Figure 10: Comparison between CFG and MCLR for Trumpet (Class 513). (a,b) demonstrate the progressive evolution of generated samples on ImageNet-64 ×64 and ImageNet-512 ×512, respectively. Increasing the CFG scale 𝛾 (top rows) and progressive MCLR training (bottom rows) produce similar effects, both enhancing class-specific structures in the generated images. 47 𝛾 = 0.3 𝛾 = 0.7 𝛾 = 1    
+
+> Iters = 784 Iters = 224 Iters = 504
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR        
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+> 𝛾 =0.3 𝛾
+
+= 0.7 𝛾 = 1    
+
+> Iters = 1792 Iters = 448 Iters = 896
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 64x64 EDM2 -S
+
+ImageNet 512x512 EDM2 -L
+
+(a) 
+
+(b) Figure 11: Comparison between CFG and MCLR for Cowboy Hat (Class 515). (a,b) demonstrate the progressive evolution of generated samples on ImageNet-64 ×64 and ImageNet-512 ×512, re-spectively. Increasing the CFG scale 𝛾 (top rows) and progressive MCLR training (bottom rows) produce similar effects, both enhancing class-specific structures in the generated images. 48 𝛾 = 0.3 𝛾 = 0.7 𝛾 = 1    
+
+> Iters = 784 Iters = 224 Iters = 504
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR        
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+> 𝛾 =0.3 𝛾
+
+= 0.7 𝛾 = 1    
+
+> Iters = 1792 Iters = 448 Iters = 896
+
+Increasing CFG Scale ( 𝛾 )CFG 
+
+MCLR Training Iterations (K images) MCLR    
+
+> Base model Base model
+> 𝛾 =0
+> Iters = 0
+
+ImageNet 64x64 EDM2 -S
+
+(a) 
+
+ImageNet 512x512 EDM2 -L
+
+(b) Figure 12: Comparison between CFG and MCLR for Lab Coat (Class 617). (a,b) demonstrate the progressive evolution of generated samples on ImageNet-64 ×64 and ImageNet-512 ×512, respectively. Increasing the CFG scale 𝛾 (top rows) and progressive MCLR training (bottom rows) produce similar effects, both enhancing class-specific structures in the generated images. 49 Base Model                            
+
+> Iters = 0 224 448 672 840 1008
+> MCLR Training Iterations (K images)
+> Class 31
+> Class 96
+> Class 513
+> Class 515
+> Class 207
+> Base Model
+> 𝜸 =𝟎
+> Increasing CFG Scale (𝜸 )
+> 𝜸 =𝟎 .𝟏 𝜸 =𝟎 .𝟑 𝜸 =𝟎 .𝟒 𝜸 =𝟎 .𝟗 𝜸 =𝟏 .𝟏
+
+ImageNet 64x64 Figure 13: Comparison between CFG and MCLR. Left and right figures demonstrate the progressive evolution of generated samples for MCLR and CFG on ImageNet-64 ×64, respectively, with all images initialized from the same random noise. Increasing the CFG scale 𝛾 and progressive MCLR training produce similar effects, both enhancing class-specific structures in the generated images. Base Model                            
+
+> Iters = 0 224 448 672 840 1008
+> MCLR Training Iterations (K images)
+> Class 31
+> Class 96
+> Class 513
+> Class 515
+> Class 207
+> Base Model
+> 𝜸 =𝟎
+> Increasing CFG Scale (𝜸 )
+> 𝜸 =𝟎 .𝟏 𝜸 =𝟎 .𝟑 𝜸 =𝟎 .𝟒 𝜸 =𝟎 .𝟗 𝜸 =𝟏 .𝟏
+
+ImageNet 64x64 
+
+Figure 14: Comparison between CFG and MCLR. Same as Figure 13, but with a different initial random noise. 50 Base Model 
+
+Iters = 0 224 448 672 840 1008 
+
+MCLR Training Iterations (K images) 
+
+Class 31 
+
+Class 96 
+
+Class 513 
+
+Class 515 
+
+Class 207 
+
+Base Model 
+
+𝜸 = 𝟎 
+
+Increasing CFG Scale (𝜸 )
+
+𝜸 = 𝟎 . 𝟏 𝜸 = 𝟎 . 𝟑 𝜸 = 𝟎 . 𝟒 𝜸 = 𝟎 . 𝟗 𝜸 = 𝟏 . 𝟏 
+
+ImageNet 64x64 Figure 15: Comparison between CFG and MCLR. Same as Figure 13, but with a different initial random noise. MCLR Training Iterations (K images) 
+
+Class 350 
+
+Class 456 
+
+Class 207 
+
+Base Model 
+
+𝜸 = 𝟎 
+
+Increasing CFG Scale (𝜸 )
+
+𝜸 = 𝟎 . 𝟏 𝜸 = 𝟎 . 𝟑 𝜸 = 𝟎 . 𝟒 𝜸 = 𝟎 . 𝟗 𝜸 = 𝟏 . 𝟎 
+
+Base Model 
+
+Iters = 0 280 560 896 1232 1288 
+
+ImageNet 512x512 
+
+Class 96 
+
+Class 299 
+
+Figure 16: Comparison between CFG and MCLR. Same as Figure 13, but for ImageNet-512x512 with a different initial random noise. 51 MCLR Training Iterations (K images) 
+
+Class 31 
+
+Class 96 
+
+Class 513 
+
+Class 515 
+
+Class 207 
+
+Base Model 
+
+𝜸 = 𝟎 
+
+Increasing CFG Scale (𝜸 )
+
+𝜸 = 𝟎 . 𝟏 𝜸 = 𝟎 . 𝟑 𝜸 = 𝟎 . 𝟒 𝜸 = 𝟎 . 𝟗 𝜸 = 𝟏 . 𝟏 
+
+Base Model 
+
+Iters = 0 280 560 896 1232 1512 Figure 17: Comparison between CFG and MCLR. Same as Figure 13, but for ImageNet-512x512 with a different initial random noise. Base Model 
+
+Iters = 0 280 560 896 1232 1512 
+
+MCLR Training Iterations (K images) 
+
+Class 31 
+
+Class 96 
+
+Class 513 
+
+Class 515 
+
+Class 207 
+
+Base Model 
+
+𝜸 = 𝟎 
+
+Increasing CFG Scale (𝜸 )
+
+𝜸 = 𝟎 . 𝟏 𝜸 = 𝟎 . 𝟑 𝜸 = 𝟎 . 𝟒 𝜸 = 𝟎 . 𝟗 𝜸 = 𝟏 . 𝟏 
+
+ImageNet 512x512 
+
+Figure 18: Comparison between CFG and MCLR. Same as Figure 13, but for ImageNet-512x512 with a different initial random noise. 52 MCLR Training Iterations (K images)                            
+
+> Class 31
+> Class 96
+> Class 513
+> Class 515
+> Class 207
+> Base Model
+> 𝜸 =𝟎
+> Increasing CFG Scale (𝜸 )
+> 𝜸 =𝟎 .𝟏 𝜸 =𝟎 .𝟑 𝜸 =𝟎 .𝟒 𝜸 =𝟎 .𝟗 𝜸 =𝟏 .𝟏
+> Base Model
+> Iters = 0 280 560 896 1232 1512
+
+ImageNet 512x512 Figure 19: Comparison between CFG and MCLR. Same as Figure 13, but for ImageNet-512x512 with a different initial random noise. (a) (b) 
+
+Figure 20: Effects of Adding DSM to MCLR. (a,b) compare fine-tuning diffusion models using MCLR alone ( 𝛽 = 0) with variants that additionally include a DSM loss, evaluated on the EDM2-S model trained on ImageNet-64 × 64 . Performance is reported in terms of FD DINOv2 and Inception Score. Adding an explicit DSM term does not improve performance and but results in slower training speed and degrades the best achievable scores. 53 (a) (b) Figure 21: Effects of 𝛽 in CC-DPO. (a,b) compare fine-tuning diffusion models using CC-DPO with different 𝛽 evaluated on the EDM2-S model trained on ImageNet-64 × 64 . Performance is reported in terms of FD DINOv2 and Inception Score. CC-DPO achieves stable performance under different 𝛽 ,with a smaller 𝛽 leads to marginally better performance on selected metrics. (a) (b) 
+
+Figure 22: Effects of 𝜆 in CCA. (a,b) compare fine-tuning diffusion models using CCA with different 
+
+𝜆 evaluated on the EDM2-S model trained on ImageNet-64 × 64 . Performance is reported in terms of FD DINOv2 and Inception Score. Note with the same 𝛽 , CC-DPO achieves comparable performance as CCA while at the same time has less hyperparameters. 54

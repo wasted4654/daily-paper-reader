@@ -6,67 +6,61 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-25
-- 运行时间：2026-03-25 19:33:20 UTC
+- 最新运行日期：2026-03-26
+- 运行时间：2026-03-26 19:59:39 UTC
 - 运行状态：成功
-- 本次总论文数：15
-- 精读区：4
-- 速读区：11
+- 本次总论文数：13
+- 精读区：5
+- 速读区：8
 
 ### 今日简报（AI）
-今日聚焦 15 篇前沿成果，深度解析了风格化扩散策略的可预测性与神经科学启发的自动驾驶强化学习。
-重点推荐 DriveVLM-RL 框架以提升驾驶安全性，以及通过编码可预测性让机器人动作更符合人类直觉。
-建议关注多模态大模型与扩散策略在解决虚实迁移及复杂交互任务中的最新应用。
-- 详情：[/202603/25/README](/202603/25/README)
+今日聚焦自动驾驶效率革命，深度解析基于潜世界模型的强化学习与复杂场景推理技术。
+重点关注 DreamerAD 如何利用潜世界模型优化驾驶决策，以及 GHOST 在 SfM 轨迹投影上的创新应用。
+建议深入了解知识图谱与扩散模型在感知层面的融合，探索更具鲁棒性的智能驾驶方案。
+- 详情：[/202603/26/README](/202603/26/README)
 
 ### 精读区论文标签
-1. [Encoding Predictability and Legibility for Style-Conditioned Diffusion Policy](/202603/25/2603.16368v1-encoding-predictability-and-legibility-for-style-conditioned-diffusion-policy)  
+1. [DreamerAD: Efficient Reinforcement Learning via Latent World Model for Autonomous Driving](/202603/26/2603.24587v1-dreamerad-efficient-reinforcement-learning-via-latent-world-model-for-autonomous-driving)  
+   标签：评分：9.0/10、query:genad
+   evidence：用于自动驾驶的潜空间世界模型，利用扩散特征进行强化学习
+2. [GHOST: Ground-projected Hypotheses from Observed Structure-from-Motion Trajectories](/202603/26/2603.20583v1-ghost-ground-projected-hypotheses-from-observed-structure-from-motion-trajectories)  
    标签：评分：8.0/10、query:genad
-   evidence：用于协作环境中轨迹生成的样式条件扩散策略
-2. [DriveVLM-RL: Neuroscience-Inspired Reinforcement Learning with Vision-Language Models for Safe and Deployable Autonomous Driving](/202603/25/2603.18315v1-drivevlm-rl-neuroscience-inspired-reinforcement-learning-with-vision-language-models-for-safe-and-deployable-autonomous-driving)  
+   evidence：为自动驾驶分割可行的车辆轨迹
+3. [DiSCo: Diffusion Sequence Copilots for Shared Autonomy](/202603/26/2603.22787v1-disco-diffusion-sequence-copilots-for-shared-autonomy)  
    标签：评分：8.0/10、query:genad
-   evidence：结合视觉语言模型与强化学习的自动驾驶端到端学习
-3. [TRACE: Trajectory Recovery with State Propagation Diffusion for Urban Mobility](/202603/25/2603.19474v1-trace-trajectory-recovery-with-state-propagation-diffusion-for-urban-mobility)  
+   evidence：共享自主中用于规划动作序列的扩散策略
+4. [LongTail Driving Scenarios with Reasoning Traces: The KITScenes LongTail Dataset](/202603/26/2603.23607v1-longtail-driving-scenarios-with-reasoning-traces-the-kitscenes-longtail-dataset)  
    标签：评分：8.0/10、query:genad
-   evidence：用于城市移动轨迹恢复的状态传播扩散模型
-4. [Dreaming the Unseen: World Model-regularized Diffusion Policy for Out-of-Distribution Robustness](/202603/25/2603.21017v1-dreaming-the-unseen-world-model-regularized-diffusion-policy-for-out-of-distribution-robustness)  
+   evidence：针对长尾场景和推理的端到端驾驶新数据集
+5. [Toward Physically Consistent Driving Video World Models under Challenging Trajectories](/202603/26/2603.24506v1-toward-physically-consistent-driving-video-world-models-under-challenging-trajectories)  
    标签：评分：8.0/10、query:genad
-   evidence：用于鲁棒视觉运动控制的世界模型正则化扩散策略
+   evidence：用于自动驾驶仿真和视频生成的生成式世界模型
 
 ### 速读区论文标签
-1. [ExpertGen: Scalable Sim-to-Real Expert Policy Learning from Imperfect Behavior Priors](/202603/25/2603.15956v1-expertgen-scalable-sim-to-real-expert-policy-learning-from-imperfect-behavior-priors)  
+1. [Time-Reversed BSDEs for Accurate Gradient Estimation in Diffusion Models](/202603/26/2603.20455v1-time-reversed-bsdes-for-accurate-gradient-estimation-in-diffusion-models)  
    标签：评分：7.0/10、query:genad
-   evidence：在不完美演示上训练的机器人扩散策略
-2. [PanguMotion: Continuous Driving Motion Forecasting with Pangu Transformers](/202603/25/2603.16196v1-pangumotion-continuous-driving-motion-forecasting-with-pangu-transformers)  
+   evidence：通过随机最优控制微调扩散模型和生成式策略
+2. [KLDrive: Fine-Grained 3D Scene Reasoning for Autonomous Driving based on Knowledge Graph](/202603/26/2603.21029v1-kldrive-fine-grained-3d-scene-reasoning-for-autonomous-driving-based-on-knowledge-graph)  
    标签：评分：7.0/10、query:genad
-   evidence：连续自动驾驶场景的运动预测框架
-3. [Flow Matching Policy with Entropy Regularization](/202603/25/2603.17685v1-flow-matching-policy-with-entropy-regularization)  
+   evidence：知识图谱增强的自动驾驶场景大模型推理
+3. [Learning Sidewalk Autopilot from Multi-Scale Imitation with Corrective Behavior Expansion](/202603/26/2603.22527v1-learning-sidewalk-autopilot-from-multi-scale-imitation-with-corrective-behavior-expansion)  
    标签：评分：7.0/10、query:genad
-   evidence：强化学习中用于生成式动作采样的流匹配策略
-4. [Flow Matching Policy with Entropy Regularization](/202603/25/2603.17685v2-flow-matching-policy-with-entropy-regularization)  
+   evidence：人行道自动驾驶的端到端学习控制
+4. [Goal-Oriented Reactive Simulation for Closed-Loop Trajectory Prediction](/202603/26/2603.24155v1-goal-oriented-reactive-simulation-for-closed-loop-trajectory-prediction)  
    标签：评分：7.0/10、query:genad
-   evidence：强化学习中用于生成式动作采样的流匹配策略
-5. [Generative Control as Optimization: Time Unconditional Flow Matching for Adaptive and Robust Robotic Control](/202603/25/2603.17834v1-generative-control-as-optimization-time-unconditional-flow-matching-for-adaptive-and-robust-robotic-control)  
-   标签：评分：7.0/10、query:genad
-   evidence：使用流匹配进行机器人模仿学习的生成式控制
-6. [Uncertainty Matters: Structured Probabilistic Online Mapping for Motion Prediction in Autonomous Driving](/202603/25/2603.20076v1-uncertainty-matters-structured-probabilistic-online-mapping-for-motion-prediction-in-autonomous-driving)  
-   标签：评分：7.0/10、query:genad
-   evidence：自动驾驶管线中的在线建图与轨迹预测
-7. [ECHO: Edge-Cloud Humanoid Orchestration for Language-to-Motion Control](/202603/25/2603.16188v1-echo-edge-cloud-humanoid-orchestration-for-language-to-motion-control)  
+   evidence：自动驾驶的闭环轨迹预测
+5. [Partial Attention in Deep Reinforcement Learning for Safe Multi-Agent Control](/202603/26/2603.21810v1-partial-attention-in-deep-reinforcement-learning-for-safe-multi-agent-control)  
    标签：评分：6.0/10、query:genad
-   evidence：用于类人机器人控制的基于扩散模型的文本到动作生成器
-8. [When the City Teaches the Car: Label-Free 3D Perception from Infrastructure](/202603/25/2603.16742v1-when-the-city-teaches-the-car-label-free-3d-perception-from-infrastructure)  
+   evidence：自动驾驶多智能体安全控制的注意力机制
+6. [MCLR: Improving Conditional Modeling in Visual Generative Models via Inter-Class Likelihood-Ratio Maximization and Establishing the Equivalence between Classifier-Free Guidance and Alignment Objectives](/202603/26/2603.22364v1-mclr-improving-conditional-modeling-in-visual-generative-models-via-inter-class-likelihood-ratio-maximization-and-establishing-the-equivalence-between-classifier-free-guidance-and-alignment-objectives)  
    标签：评分：6.0/10、query:genad
-   evidence：基于基础设施的自动驾驶车辆无标签3D感知
-9. [VisionNVS: Self-Supervised Inpainting for Novel View Synthesis under the Virtual-Shift Paradigm](/202603/25/2603.17382v1-visionnvs-self-supervised-inpainting-for-novel-view-synthesis-under-the-virtual-shift-paradigm)  
+   evidence：改进视觉生成扩散模型中的条件建模
+7. [CATNAV: Cached Vision-Language Traversability for Efficient Zero-Shot Robot Navigation](/202603/26/2603.22800v1-catnav-cached-vision-language-traversability-for-efficient-zero-shot-robot-navigation)  
    标签：评分：6.0/10、query:genad
-   evidence：自动驾驶轨迹下的新视角合成
-10. [dTRPO: Trajectory Reduction in Policy Optimization of Diffusion Large Language Models](/202603/25/2603.18806v1-dtrpo-trajectory-reduction-in-policy-optimization-of-diffusion-large-language-models)  
+   evidence：使用视觉语言模型的零样本机器人导航和轨迹选择
+8. [PerturbationDrive: A Framework for Perturbation-Based Testing of ADAS](/202603/26/2603.23661v1-perturbationdrive-a-framework-for-perturbation-based-testing-of-adas)  
    标签：评分：6.0/10、query:genad
-   evidence：基于扩散生成模型的策略优化
-11. [Bridging Semantic and Kinematic Conditions with Diffusion-based Discrete Motion Tokenizer](/202603/25/2603.19227v1-bridging-semantic-and-kinematic-conditions-with-diffusion-based-discrete-motion-tokenizer)  
-   标签：评分：6.0/10、query:genad
-   evidence：基于扩散模型的运动合成与规划框架
+   evidence：ADAS和端到端驾驶鲁棒性的测试框架
 
 
 <div class="dpr-home-promo-card">
