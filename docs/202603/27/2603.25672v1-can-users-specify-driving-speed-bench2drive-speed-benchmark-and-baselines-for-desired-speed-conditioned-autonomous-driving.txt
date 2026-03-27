@@ -1,0 +1,614 @@
+Title: Can Users Specify Driving Speed? Bench2Drive-Speed: Benchmark and Baselines for Desired-Speed Conditioned Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2603.25672v1
+
+Published Time: Fri, 27 Mar 2026 01:28:57 GMT
+
+Number of Pages: 26
+
+Markdown Content:
+# Can Users Specify Driving Speed? Bench2Drive-Speed: Benchmark and Baselines for Desired-Speed Conditioned Autonomous Driving 
+
+Yuqian Shao 1, Xiaosong Jia 2 , Langechuan Liu 3, and Junchi Yan 1 
+
+> 1
+
+Sch. of Computer Science & Sch. of Artificial Intelligence, Shanghai Jiao Tong University  
+
+> 2
+
+Institute of Trustworthy Embodied AI (TEAI), Fudan University  
+
+> 3
+
+NVIDIA 
+
+Correspondence Authors 
+
+Fig. 1: Bench2Drive-Speed introduces target-speed commands and overtake/follow instructions, establishing the first benchmark for desired-speed conditioned autonomous driving. We quantita-tively evaluate model controllability across multiple dimensions: speed tracking, interaction strategy, comfort, traffic compliance, etc .
+
+Abstract. End-to-end autonomous driving (E2E-AD) has achieved re-markable progress. However, one practical and useful function has been long overlooked: users may wish to customize the desired speed of the policy or specify whether to allow the autonomous vehicle to overtake. To bridge this gap, we present Bench2Drive-Speed , a benchmark with metrics, dataset, and baselines for desired-speed conditioned autonomous driving . We introduce explicit inputs of users’ desired         
+
+> arXiv:2603.25672v1 [cs.RO] 26 Mar 2026 2Y. Shao et al. target-speed and overtake/follow instructions to driving policy models. We design quantitative metrics, including Speed-Adherence Score and Overtake Score, to measure how faithfully policies follow user specifi-cations, while remaining compatible with standard autonomous driving metrics. To enable training of speed-conditioned policies, one approach is to col-lect expert demonstrations that strictly follow speed requirements, an expensive and unscalable process in the real world. An alternative is to adapt existing regular driving data by treating the speed observed in future frames as the target speed for training. To investigate this, we construct CustomizedSpeedDataset , composed of 2,100 clips an-notated with experts demonstrations, enabling systematic investigation of supervision strategies. Our experiments show that, under proper re-annotation, models trained on regular driving data perform comparably to on expert demonstrations, suggesting that speed supervision can be introduced without additional complex real-world data col-lection . Furthermore, we find that while target-speed following can be achieved without degrading regular driving performance, executing over-taking commands remains challenging due to the inherent difficulty of interactive behaviors. All code, datasets and baselines are available at https://github.com/Thinklab-SJTU/Bench2Drive-Speed.
+> Keywords: End-to-End Autonomous Driving ·Target Speed ·Closed-Loop Benchmark
+
+## 1 Introduction 
+
+End-to-end autonomous driving (E2E-AD) has achieved significant progress in recent years [3,10,22]. However, one practical and useful function has long been overlooked: users may wish to customize the desired speed of the driving policy or specify whether to allow the autonomous vehicle to overtake other vehicles. A rushing user may expect the vehicle to maintain higher cruising speeds and overtake slower traffic, while a cautious user may prefer the vehicle to remain behind a leading car even when overtaking is feasible. Despite its clear practical value, this capability remains absent from most existing end-to-end autonomous driving methods and benchmarks. Ensuring reliable compliance with user-specified speed preferences is chal-lenging. First, in the regular AD data collection process, there is no annotation for the desired target speed. Second, pursuing users’ target speeds should not conflict with safety margins, which requires the policies to decide when to follow users’ desired speed. Third, achieving a desired speed often requires long-horizon interaction planning, such as overtaking [48, 54]. Fourth, increasing responsive-ness to user commands creates inherent trade-offs with comfort [1,30], as abrupt accelerations or frequent lane changes may compromise passenger experience. While traditional planning-and-control (PnC) pipelines can explicitly enforce speed following through structured optimization, such guarantees do not natu-rally extend to modern E2E-AD systems, where speed behavior emerges implic-itly from data-driven policies. Among existing works, style-aware and personal-Bench2Drive-Speed 3           
+
+> Fig. 2: We present Bench2Drive-Speed , including desired-speed conditioned task -with target speed and overtake/follow commands for speed control; dataset — 2,100 scenarios with extra commands annotated by expert demonstration and virtual tar-get speed strategies; benchmark — controllability metrics (speed adherence, over-take/follow) jointly evaluated with safety, comfort, traffic compliance, etc .; and base-line — the model takes visual and speed command inputs, capable of following target speed commands while attempting to execute overtake/follow behaviors.
+
+ized autonomous driving is most closely related to desired-speed adherence. Early works focused on characterizing human driving styles [17, 33], with recent ap-proaches incorporating personalized features into learning-based systems [26,42] or leveraging LLM/VLM-based language control [8, 14]. However, in these stud-ies, driving speed is typically embedded within abstract style categories (e.g., Conservative, Normal, Aggressive [16]) rather than formulated as an explicit and independently controllable objective. To our knowledge, no existing bench-mark provides a principled framework for quantitatively evaluating adherence to user-specified speed commands. In this work, we present Bench2Drive-Speed , which includes a benchmark, datasets, and baselines for desired-speed conditioned autonomous driving .
+
+Benchmark. We propose a closed-loop benchmark with the following features: 
+
+• Explicit speed-oriented command. We introduce users’ target speed 
+
+and overtake/follow commands as an extra input information. 
+
+• Quantitative metrics. We design speed-adherence score and overtake score to measure how faithfully policies follow given commands. 
+
+• Joint evaluation with safety and comfort. In addition to instruction adherence, the benchmark also reports scores of safety, traffic rule compliance, task completion, and comfort metrics. This enables systematic analysis of how speed controllability trades off with safety and passenger experience. 
+
+• Compatibility with standard AD benchmarks. Policies evaluated un-der Bench2Drive-Speed can also be directly assessed using the Bench2Drive benchmark, ensuring fair comparison with conventional autonomous driving methods within a unified evaluation ecosystem. 4 Y. Shao et al. 
+
+Dataset. We construct CustomizedSpeedDataset , consisting of 2,100 com-plex scenarios collected in CARLA simulator using a modified expert model from [2], PDM-Lite-Speed. Each scenario is annotated with explicit target speed and overtake/follow commands. Importantly, beyond experts’ demonstration, which is not in real-world datasets, we further introduce a re-annotation strat-egy that derives the target speed from the speed of future frames in regular driving data. We refer to this inferred signal as the virtual target speed .
+
+Baselines. We implement TCP-Speed with users’ speed command as inputs, based on TCP [51], under multiple configurations within the proposed bench-mark, reporting comprehensive evaluation results. Our experiments demonstrate that models trained with the virtual target speed achieve performance compara-ble to those trained with target speed from expert demonstration. This finding suggests that reliable target-speed supervision can be introduced in real-world datasets where internal planner parameters are inaccessible. Notably, while the baselines are able to partially follow the users’ target speed without significantly compromising safety, they still struggle to consistently ex-ecute overtaking commands. These results reveal a persistent gap between con-ventional driving performance and explicit speed controllability. All code, including the evaluation framework, data collection scripts, base-lines, and datasets, are publicly released at https://github.com/Thinklab-SJTU/ Bench2Drive-Speed. 
+
+## 2 Related Works 
+
+2.1 Benchmarking End-to-End Autonomous Driving 
+
+End-to-end driving models directly map sensory inputs to control signals or trajectories [6, 18, 24, 40, 43]. One way to evaluate them is open-loop [3]. How-ever, open-loop metrics ignore interactive traffic dynamics and cumulative er-ror [13, 31, 53]. Closed-loop evaluation in simulators such as CARLA [11] has therefore become the standard paradigm [22,28,57]. These benchmarks evaluate safety, route completion, etc . under interactive traffic conditions, while semi-closed-loop settings such as NAVSIM [10] enable ego rollouts in non-interactive environments. 
+
+2.2 Style-aware Autonomous Driving 
+
+Among existing works, style-aware and personalized autonomous driving is most closely related to desired-speed adherence. Early works focused on identify-ing and characterizing human driving styles [17,33], and this line of research con-tinues to grow [15,35,52]. Some approaches incorporate personalized features into learning-based driving systems [25, 29, 34, 37, 38, 42, 44, 55], or leverage them for driver intent prediction [4,19,32]. Other methods adapt personalized components to achieve customized performance in specific scenarios [5, 7, 36, 44, 46, 48, 56]. Style-aware planners further explore multi-objective trajectory generation that balances safety and efficiency [27, 39, 47]. More recently, LLM/VLM-based ap-proaches have opened new possibilities [12,41] by allowing users to change driving styles via language prompts [7, 8, 14, 26]. Bench2Drive-Speed 5
+
+Table 1: Comparison of Driving Benchmarks . Bench2Drive-Speed is the first benchmark to support closed-loop evaluation, end-to-end learning, and explicit speed-conditioned control for autonomous driving.                                         
+
+> Benchmark Source Closed-Loop E2E Style-Aware Speed-Conditioned
+> nuScenes [3] Real ✗✓✗✗
+> CARLA [11, 57] Simulator ✓✓✗✗
+> MetaDrive [28] Simulator ✓✓✗✗
+> Bench2Drive [22] Simulator ✓✓✗✗
+> NAVSIM [10] Real ✗✓✗✗
+> StyleDrive [16] Real ✗✓✓✗
+> Bench2Drive-Speed (Ours) Simulator ✓✓✓✓
+
+In several studies [16, 44, 47, 55], driving speed is treated as one aspect of driving style. However, it is typically embedded within abstract style categories (e.g., Conservative, Normal, Aggressive [16]) rather than formulated as an ex-plicit and independently controllable objective. Evaluation protocols frequently rely on qualitative case studies [26, 47] or abstract behavioral statistics [16, 50]. 
+
+## 3 Bench2Drive-Speed 
+
+We present Bench2Drive-Speed, which enables systematic evaluation of au-tonomous driving under explicit target-speed control. In this section, we give the task formulation (Sec. 3.1), describe the construction and annotation pipeline of CustomizedSpeedDataset (Sec. 3.2), and finally detail the evaluation protocol (Sec. 3.3). 
+
+3.1 Desired Speed Conditioned Autonomous Driving 
+
+Standard input formulations in AD models do not expose explicit control interfaces for desired-speed regulation, nor do existing scenarios evaluate speed adherence. To bridge this gap, we introduce additional users’ speed customiza-tion as inputs and dedicated scenario designs that explicitly evaluate compliance with target-speed instructions. 
+
+Extra Command Inputs. We define two high-level control commands: a 
+
+target-speed command and an overtaking command . The target-speed command provides a direct interface for controlling the model’s longitudinal velocity. The overtaking command specifies whether the policy should overtake a slower leading vehicle or remain behind it when traffic conditions permit. 
+
+Scenario Implementation. The closed-loop evaluation and data collection pipeline of Bench2Drive-Speed is built upon the CARLA [11] simulator, with extensions to support command-conditioned evaluation. First, we augment route configuration files with segment-wise target-speed specifications. Our evaluation pipeline parses these configurations and supplies target-speed signals according to the ego vehicle’s location. Second, to systematically evaluate overtaking behavior, we introduce a dedi-cated scenario containing a slow-moving lead vehicle. Under the overtake com-mand, the policy is expected to pass the leading vehicle; under the follow 
+
+command, it must maintain its position behind the vehicle. 6 Y. Shao et al. 
+
+> Fig. 3: Three Difficulty Levels in Bench2Drive-Speed . The difficulty of adhering to the desired speed increases from easy to hard. Overtaking and following adherence are evaluated only in the medium and hard scenarios.
+
+Diverse Difficulty. The dataset and evaluation routes in Bench2Drive-Speed are organized into three difficulty levels to enable stratified analysis of control-lability performance under progressively more challenging scenarios (Fig. 3): 
+
+Easy : Routes without interfering vehicles, allowing pure evaluation of com-mand adherence. 
+
+Medium : Routes containing slower vehicles in the ego lane, requiring lane changes and overtaking maneuvers to maintain target-speed compliance. 
+
+Hard : Complex traffic scenarios adapted from the CARLA Leaderboard v2 [11, 57], where the ego vehicle must handle dynamic incidents while simulta-neously satisfying the given control commands. 
+
+3.2 Dataset 
+
+CustomizedSpeedDataset consists of 2,100 driving scenes collected in the CARLA simulator by modified rule-based expert model PDM-Lite-Speed. The dataset provides the same data format as Bench2Drive [22], as well as newly introduced speed commands, including target speed and overtaking instructions, as shown in Fig. 4. 
+
+Data Collection. PDM-Lite-Speed is implemented based on PDM-Lite [2,45], which is inspired by PDM-Closed [9] and IDM [49]. It leverages privileged in-formation provided by the CARLA simulator, and demonstrates strong per-formance in challenging scenarios from CARLA Leaderboard 2.0. To support user-controllable speed-conditioned driving, PDM-Lite-Speed is extended with explicit mechanisms for following speed-related commands and enhanced to han-dle the newly introduced scenarios in Sec. 3.1. Bench2Drive-Speed 7       
+
+> Fig. 4: Illustration of CustomizedSpeedDataset . The dataset includes visual sen-sor inputs, ego-state information, bounding box annotations, overtaking commands, and target-speed commands from different sources.
+> Fig. 5: Illustration of different target-speed annotation methods. Expert demonstrations are precise but rely on the data collection model’s internal hyperpa-rameters—which are unavailable in practice—whereas re-annotation is more feasible.
+
+Target Speed Annotation. While overtake/follow commands can be directly derived from expert behaviors, defining a desired target speed is less straightfor-ward. We consider two supervision strategies for further discussions. 1. Expert Demonstration. Since CustomizedSpeedDataset is collected using PDM-Lite-Speed, the target speed can be obtained from its internal cruising-speed hyperparameter, reflecting the intended velocity under hazard-free con-ditions. This supervision signal is precise but relies on privileged access to the expert controller and is therefore unavailable in regular real-world datasets, which makes it a strong yet impractical baseline .2. Re-annotation Regular Driving Data. To avoid dependence on inter-nal controller parameters, we introduce a re-annotation strategy, referred to as Virtual Target Speed . It is computed in two stages. First, a tendency speed is extracted from short-horizon future speed sequences by identifying the maximal monotonic speed change trend. Secondly, to avoid information leakage, this tendency is extrapolated over a randomized temporal window , as shown in Fig. 5. 8 Y. Shao et al.  
+
+> Fig. 6: Diverse scenarios in CustomizedSpeedDataset. The ego vehicle adheres to target-speed and overtaking commands across various situations, with ample cover-age of complex scenarios.
+
+To analyze the influence of extrapolation strength, we provide two configura-tions for subsequent experiments: 
+
+– Long: longer temporal horizon and larger extension bound; 
+
+– Short: shorter horizon and conservative extension. This re-annotation strategy does not require privileged planner parameters, enabling the direct usage of existing massive driving data.         
+
+> Table 2: Composition of Customized SpeedDataset across difficulty levels and overtake/follow options. Difficulty Overtake Follow
+> Medium 570 570 Hard 480 480
+> Total 1,050 1,050
+
+CustomizedSpeedDataset con-sists of 2,100 driving routes collected in CARLA. The dataset is organized along two axes: difficulty (medium, hard) and overtaking decision (over-take, follow), resulting in four do-mains. The detailed distribution is summarized in Table 2. Each domain contains a comparable number of routes to maintain a balanced distribution across difficulty and behavior settings. CustomizedSpeedDataset has the follow-ing features: 
+
+• Challenging and Diverse Scenarios. To expose the model to complex and safety-critical traffic conditions during training, the hard routes in Cus-tomizedSpeedDataset incorporate 13 of the most demanding scenarios from the CARLA Leaderboard v2 [57] (Fig. 7), including static obstacle circumven-tion, dense traffic merging, multi-directional junction negotiation, and yield-ing to pedestrians and cyclists. By integrating these challenging situations, Bench2Drive-Speed 9         
+
+> Fig. 7: Target speed distribution in CustomizedSpeedDataset (Left) and Dis-tribution of difficult scenarios included in CustomizedSpeedDataset, following CARLA Leaderboard v2 [57] (Right).
+
+CustomizedSpeedDataset provides diverse supervisory trajectories that jointly stress safety, task completion, and desired-speed adherence (Fig. 6). 
+
+• Balanced Distribution Across Speed Commands and Environment Factors. To ensure unbiased supervision, CustomizedSpeedDataset enforces a balanced distribution across key controllability and environmental dimensions, including target-speed commands(Fig. 7), difficult scenarios, and weather con-ditions, etc .
+
+• Within-Route Command Variability. Unlike conventional datasets where control characteristics remain largely stationary within a route, Customized SpeedDataset assigns varying target-speed commands across different route segments. This design requires the ego vehicle to adapt its longitudinal behav-ior dynamically during execution, rather than relying on persistent temporal patterns, mitigating shortcut learning and reducing potential causal leakage. 
+
+3.3 Evaluation 
+
+In this section, we first describe the setup of our closed-loop evaluation sce-narios, followed by the detailed metrics used for assessment. 
+
+Scenario Settings. To construct a comprehensive closed-loop evaluation set, we select 16 representative scenarios for each of the three difficulty levels, re-sulting in a total of 48 evaluation cases. Each case consists of four distinct routes paired with four different sets of speed commands. This design prevents shortcut learning based solely on specific road layouts or fixed traffic situations , and ensures that model behavior differences arise from command execution rather than memorization of scenes. The detailed composition of the evaluation scenarios is summarized in Table 3. 
+
+Metrics. Our evaluation metrics are designed to quantify command adherence while preserving compatibility with standard autonomous driving benchmarks, which encompass the following metrics: 
+
+Speed-Adherence Score. We evaluate whether a policy adjusts its lon-gitudinal behavior according to the user-specified target speed in closed-loop driving. Given a reference route R of length L and a closed-loop trajectory 10 Y. Shao et al. 
+
+Table 3: Scenarios of Different Difficulty Levels .                          
+
+> Difficulty Route Layout Special Incidents
+> Easy Rural curving road None Easy Left turn at urban intersection None Easy Straight through urban intersection None Easy Wide street None Medium Rural curving road Overtake or follow one vehicle Medium Wide street Overtake or follow one vehicle Medium Right turn at rural intersection Overtake or follow one vehicle Medium Straight through urban intersection Overtake or follow one vehicle Hard Wide street Accident avoidance + overtake or follow one vehicle Hard Wide street Construction obstacle avoidance + overtake or follow one vehicle Hard Right turn at rural intersection Junction handling + overtake or follow one vehicle Hard Left turn at urban intersection Junction handling + pedestrian yielding + overtake or follow one vehicle
+
+{(xi, y i, vi)}Ni=1 , we project each ego position onto the route to obtain its arc-length coordinate si ∈ [0 , L ]. The actual speed is computed as vactual  
+
+> i
+
+= ∥vi∥2,and the target speed is from the user-defined speed profile vtarget  
+
+> i
+
+= vtarget (si).To reduce bias from non-uniform sampling or stationary states, we adopt distance-based weighting with wi = ∥(xi, y i) − (xi−1, y i−1)∥2. The relative speed error is defined as 
+
+ei = |vactual  
+
+> i
+
+− vtarget  
+
+> i
+
+|
+
+max( vtarget  
+
+> i
+
+, ϵ ) , (1) and converted into a per-step score score i = exp( −αe i), where α controls the penalty strength. The overall compliance score is computed as a distance-weighted average: 
+
+Score speed =
+
+PNi=2 wi · score i
+
+PNi=2 wi
+
+. (2) Especially, in Follow scenarios, when the ego vehicle is constrained by a slower lead vehicle ( vlead ≤ vactual  
+
+> i
+
+< v target  
+
+> i
+
+), we soften the penalty. 
+
+Overtake Score. For each route, all scenarios with explicit overtake or 
+
+follow commands are evaluated. A scenario is considered successful only if it is properly triggered and the model executes the commanded behavior correctly. Each scenario receives a binary score (100 or 0), and the final route-level score is computed as the success ratio over all required scenarios. Scenarios that fail to activate (e.g., due to not reaching the trigger waypoint) are counted as failures 
+
+to prevent models from artificially inflating performance by avoiding difficult scenarios .
+
+Comfort, Safety, and Route Completion Score. As our framework is built upon Bench2Drive [22], all standard CARLA and Bench2Drive evaluation metrics are fully supported. These include Driving Score (DS), Success Rate (SR), multi-ability metrics, efficiency, and comfort. 
+
+## 4 Experiments 
+
+In this section, we conduct comprehensive closed-loop evaluations to as-sess speed-conditioned driving performance under varying traffic complexity and Bench2Drive-Speed 11 
+
+Fig. 8: Overview of TCP-Speed. The encoded ego state and driving commands are concatenated with features extracted from RGB inputs. The fused representation is then fed into both the trajectory and control branches. Additionally, the target waypoint(goal) and target-speed command are used to guide trajectory generation. In practice, only the output of the trajectory branch is utilized. 
+
+Table 4: Different Training Data Configurations .          
+
+> Data Source From Expert From Re-annotation (Virtual Target Speed)
+> (Hyper-parameter) Long Extension Short Extension Bench2Drive1K –Bench2Drive1K-Long Bench2Drive1K-Short CustomizedSpeedDataset Expert2.1k Virtual2.1k-Long Virtual2.1k-Short
+
+command settings. We first describe the implemented baselines and the consti-tution of training datasets in Sec. 4.1. We then present quantitative results and detailed analyses in Sec. 4.2. 
+
+4.1 Baselines and Datasets Baselines. Our implemented baseline, TCP-Speed, is built upon TCP [51], due to its simplicity. Note that our speed-command-related designs are model-agnostic. For TCP-Speed, to align with the Bench2Drive setup, we adopt TCP’s trajectory-only variant for closed-loop implementation. In TCP-Speed, the target speed and overtake command are concatenated into the model input to enable speed-conditioned driving, as shown in Fig. 8. 
+
+Training Dataset Design. To study the effect of different supervision sources, we construct multiple dataset variants by combining data sources and target-speed annotation strategies. Bench2Drive-base1000 [22] contains 1000 scenes without speed commands, which only supports re-annotation of virtual speed. Our extended dataset records the desired speed, while it could be re-annotated with virtual target speed as well. The resulting dataset variants are summarized in Table 4. 
+
+4.2 Results. 
+
+We evaluate models trained from scratch on the 48 routes of Bench2Drive-Speed under different training dataset combinations to analyze the im-12 Y. Shao et al. 
+
+Fig. 9: Visualization of Speed Profile . The target speed adherence of TCP-Speed under the same route with different target speed specifications. 
+
+Table 5: Speed-Adherence Score and Overtake Score on 48 evaluation routes of Bench2Drive-Speed. Metrics are reported for All(A), Easy (E), Medium (M), and Hard (H). The best result of each score is highlighted in bold.                                                 
+
+> Model Dataset Speed-Adherence Score ↑Overtake Score ↑
+> AEMHAEMHTCP w/o Speed Command CustomizedSpeedDataset 41.54 42.00 40.95 41.67 18.75 -37.50 0.00 TCP-Speed Expert2.1k 68.79 76.80 65.38 64.20 21.88 -37.50 6.25 TCP-Speed Virtual2.1k-Short 69.23 76.18 68.71 62.81 40.63 -56.25 25.00
+> TCP-Speed Virtual2.1k-Long 68.36 73.17 67.93 63.98 40.63 -56.25 25.00
+
+pact of different target speed annotation strategies . Additionally, we as-sess their performance on Bench2Drive-220 [22] routes with a default command specification of 30 km/h, follow to assess whether traditional closed-loop driving abilities are preserved. Based on the evaluation results, the following questions could be answered: 
+
+1. To what extent can the baseline follow target-speed commands? 
+
+As shown in Table 5, models trained with explicit target-speed supervision con-sistently achieve significantly higher Speed-Adherence Scores compared to the vanilla TCP, demonstrating a basic ability to follow target-speed commands. 
+
+2. How do different annotation strategies affect speed adherence? 
+
+Comparing expert demonstration and re-annotations, minimal differences in Speed-Adherence Score are observed. This suggests that virtual target-speed provides supervision quality comparable to expert parameters , which is particularly important for real-world datasets where expert internal parame-ters are unavailable. In terms of virtual speed annotation, models trained under the virtual-short setting achieve marginally better speed adherence, whereas the virtual-long setting remains comparable but slightly less stable, as shown in Fig. 10. This is likely because the monotonic trend-based re-annotation becomes increasingly uncertain as the extrapolation horizon extends, leading to amplified noise in the constructed target speeds. Bench2Drive-Speed 13 
+
+> Fig. 10: Heatmap of TCP-Speed speed-adherence scores for models trained on different datasets, evaluated on Easy, Medium, Hard, and All routes.
+> Models trained with virtual target-speed supervision achieve performance comparable to those trained on expert demonstrations. Speed adherence is generally higher under the virtual-short setting than virtual-long.
+
+3. To what extent can the baseline follow overtaking commands? Mod-els trained with CustomizedSpeedDataset-based supervision successfully exhibit distinct behaviors in response to overtake and follow commands, as evidenced by different actions under different commands and some successful overtaking attempts (Fig. 11). However, the overtaking performance remains lim-ited , especially in Hard scenarios. Executing overtaking behaviors is intrinsically challenging, often requiring aggressive maneuvers that increase collision risks. In many cases, overtaking attempts lead to safety violations, reducing route com-pletion and consequently harming the overtake score. 
+
+4. How do traditional closed-loop metrics trade off ? 
+
+• Driving Score and Success Rate: Speed-conditioned models show no degra-dation compared to the original model. On the 220 routes of Bench2Drive (Table 6), TCP-Speed achieves slightly higher Driving Score and Success Rate than vanilla TCP when all of them are trained on the same Bench2Drive1K dataset without expert feature distillation, indicating that task completion and safety remain unaffected. 
+
+• Driving Smoothness (Comfort): TCP-Speed shows a negligible decrease in comfort compared to the original TCP, reflecting the increased complexity of longitudinal control when adhering to target-speed commands. However, the reduction is minor and does not significantly affect driving quality. 
+
+• Efficiency: Efficiency is significantly improved under speed-conditioned su-pervision. This improvement is mainly because speed-related tasks expose the 14 Y. Shao et al. 
+
+Fig. 11: Visualization of TCP-Speed Overtaking and Following. A successful overtaking case (upper) in which the ego vehicle passed the slow white vehicle ahead, and a successful following case (lower), in which the ego followed the vehicle till the end of the route. 
+
+Table 6: Closed-loop Planning Performance on 220 Route of Bench2Drive .All models are trained under Bench2Drive1K. * denotes expert feature distillation. Non-TCP methods and distilled methods are shown in gray for reference.                                                             
+
+> Method Driving Score ↑Success Rate(%) ↑Efficiency ↑Comfortness ↑
+> AD-MLP [53] 18.05 0.00 48.45 22.63 UniAD-Tiny [18] 40.73 13.18 123.92 47.04 UniAD-Base [18] 45.81 16.36 129.21 43.58 VAD [24] 42.35 15.00 157.94 46.01 DriveTransformer-Large [23] 63.46 35.01 100.64 20.78 ThinkTwice* [21] 62.44 31.23 69.33 16.22 DriveAdapter* [20] 64.22 33.08 70.22 16.01 TCP* [51] 40.70 15.00 54.26 47.80 TCP-ctrl* 30.47 7.27 55.97 51.51
+> TCP-traj* 59.90 30.00 76.54 18.08 TCP w/o Speed Command 49.30 20.45 78.78 22.96
+> TCP-Speed Bench2Drive1K-Short 54.15 22.73 195.48 20.92 TCP-Speed Bench2Drive1K-Long 51.84 21.36 195.96 22.64
+
+model to multiple target speeds, which are typically higher than those learned by single-policy models without speed-command guidance. 
+
+## 5 Conclusion 
+
+We present Bench2Drive-Speed, which introduces a closed-loop benchmark for evaluating speed-conditioned autonomous driving, together with correspond-ing datasets and baseline implementations. By incorporating target-speed inputs and overtaking commands, as well as designing dedicated evaluation tasks, we establish a controlled setting to study speed regulation in realistic closed-loop environments. Bench2Drive-Speed 15 
+
+## References 
+
+1. Aledhari, M., Rahouti, M., Qadir, J., Qolomany, B., Guizani, M., Al-Fuqaha, A.: Motion comfort optimization for autonomous vehicles: Concepts, methods, and techniques. IEEE Internet of Things Journal 11 (1), 378–402 (2024). https:// doi.org/10.1109/JIOT.2023.3287489 
+
+2. Beißwenger, J.: PDM-Lite: A rule-based planner for carla leaderboard 2.0. https: //github.com/OpenDriveLab/DriveLM/tree/DriveLM-CARLA (2024) 3. Caesar, H., Bankiti, V., Lang, A.H., Vora, S., Liong, V.E., Xu, Q., Krishnan, A., Pan, Y., Baldan, G., Beijbom, O.: NuScenes: A Multimodal Dataset for Au-tonomous Driving. In: 2020 IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR). pp. 11618–11628. IEEE Computer Society, Los Alami-tos, CA, USA (Jun 2020). https://doi.org/10.1109/CVPR42600.2020.01164 ,
+
+https://doi.ieeecomputersociety.org/10.1109/CVPR42600.2020.01164 
+
+4. Cao, Y., Jiang, Y., Zeng, X.: Adaptive game-theoretic decision-making with driv-ing style recognition for autonomous vehicles in uninterrupted traffic flows at intersections. Robotics and Autonomous Systems 194 , 105180 (2025). https: //doi.org/https://doi.org/10.1016/j.robot.2025.105180 , https://www. sciencedirect.com/science/article/pii/S0921889025002775 
+
+5. Chen, X., Chen, K., Zhu, M., Yang, H.F., Shen, S., Wang, X., Wang, Y.: Metafol-lower: Adaptable personalized autonomous car following. Transportation Research Part C: Emerging Technologies 169 , 104872 (2024). https://doi.org/https: //doi.org/10.1016/j.trc.2024.104872 , https://www.sciencedirect.com/ science/article/pii/S0968090X24003930 
+
+6. Codevilla, F., Müller, M., López, A., Koltun, V., Dosovitskiy, A.: End-to-end driv-ing via conditional imitation learning. In: 2018 IEEE International Conference on Robotics and Automation (ICRA). pp. 4693–4700 (2018). https://doi.org/10. 1109/ICRA.2018.8460487 
+
+7. Cui, C., Yang, Z., Zhou, Y., Ma, Y., Lu, J., Li, L., Chen, Y., Panchal, J., Wang, Z.: Personalized autonomous driving with large language models: Field experiments. In: 2024 IEEE 27th International Conference on Intelligent Transportation Systems (ITSC). pp. 20–27 (2024). https://doi.org/10.1109/ITSC58415.2024.10919978 
+
+8. Cui, C., Yang, Z., Zhou, Y., Peng, J., Park, S.Y., Zhang, C., Ma, Y., Cao, X., Ye, W., Feng, Y., Panchal, J., Li, L., Chen, Y., Wang, Z.: On-board vision-language models for personalized autonomous vehicle motion control: System design and real-world validation (2024), https://arxiv.org/abs/2411.11913 
+
+9. Dauner, D., Hallgarten, M., Geiger, A., Chitta, K.: Parting with misconceptions about learning-based vehicle motion planning. In: Proceedings of The 7th Confer-ence on Robot Learning. Proceedings of Machine Learning Research, vol. 229, pp. 1268–1281. PMLR (06–09 Nov 2023) 10. Dauner, D., Hallgarten, M., Li, T., Weng, X., Huang, Z., Yang, Z., Li, H., Gilitschenski, I., Ivanovic, B., Pavone, M., Geiger, A., Chitta, K.: Navsim: Data-driven non-reactive autonomous vehicle simulation and benchmarking. In: Ad-vances in Neural Information Processing Systems. vol. 37, pp. 28706–28719. Curran Associates, Inc. (2024). https://doi.org/10.52202/079017-0902 
+
+11. Dosovitskiy, A., Ros, G., Codevilla, F., Lopez, A., Koltun, V.: CARLA: An open urban driving simulator. In: Proceedings of the 1st Annual Conference on Robot Learning. Proceedings of Machine Learning Research, vol. 78, pp. 1–16. PMLR (13–15 Nov 2017) 12. Fu, H., Zhang, D., Zhao, Z., Cui, J., Liang, D., Zhang, C., Zhang, D., Xie, H., Wang, B., Bai, X.: Orion: A holistic end-to-end autonomous driving framework by 16 Y. Shao et al. vision-language instructed action generation. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 24823–24834 (October 2025) 13. Group, A.V.: Common mistakes in benchmarking ad. https : / / github . com / autonomousvision / carla _ garage / blob / leaderboard _ 2 / docs / common _ mistakes_in_benchmarking_ad.md (2023), accessed: 2025-04-25 14. Han, X., Chen, X., Cai, Z., Cai, P., Zhu, M., Chu, X.: From words to wheels: Automated style-customized policy generation for autonomous driving (2024), 
+
+https://arxiv.org/abs/2409.11694 
+
+15. Hao, J., Xie, H., Guo, F., Chen, Y., Song, K.: Vehicle trajectory prediction with driving style identification and intention fusion. In: 2024 8th CAA International Conference on Vehicular Control and Intelligence (CVCI). pp. 1–6 (2024). https: //doi.org/10.1109/CVCI63518.2024.10830035 
+
+16. Hao, R., Jing, B., Yu, H., Nie, Z.: Styledrive: Towards driving-style aware bench-marking of end-to-end autonomous driving (2025), https://arxiv.org/abs/2506. 23982 
+
+17. Hasenjäger, M., Wersing, H.: Personalization in advanced driver assistance systems and autonomous vehicles: A review. In: 2017 IEEE 20th International Conference on Intelligent Transportation Systems (ITSC). pp. 1–7 (2017). https://doi.org/ 10.1109/ITSC.2017.8317803 
+
+18. Hu, Y., Yang, J., Chen, L., Li, K., Sima, C., Zhu, X., Chai, S., Du, S., Lin, T., Wang, W., Lu, L., Jia, X., Liu, Q., Dai, J., Qiao, Y., Li, H.: Planning-oriented autonomous driving. In: 2023 IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR). pp. 17853–17862 (2023). https://doi.org/10.1109/CVPR52729. 2023.01712 
+
+19. Jain, A., Koppula, H.S., Soh, S., Raghavan, B., Singh, A., Saxena, A.: Brain4cars: Car that knows before you do via sensory-fusion deep learning architecture (2016), 
+
+https://arxiv.org/abs/1601.00740 
+
+20. Jia, X., Gao, Y., Chen, L., Yan, J., Liu, P.L., Li, H.: Driveadapter: Breaking the coupling barrier of perception and planning in end-to-end autonomous driving. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 7953–7963 (October 2023) 21. Jia, X., Wu, P., Chen, L., Xie, J., He, C., Yan, J., Li, H.: Think twice before driving: Towards scalable decoders for end-to-end autonomous driving. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 21983–21994 (June 2023) 22. Jia, X., Yang, Z., Li, Q., Zhang, Z., Yan, J.: Bench2drive: Towards multi-ability benchmarking of closed-loop end-to-end autonomous driving. In: Advances in Neu-ral Information Processing Systems. vol. 37, pp. 819–844. Curran Associates, Inc. (2024). https://doi.org/10.52202/079017-0025 
+
+23. Jia, X., You, J., Zhang, Z., Yan, J.: Drivetransformer: Unified transformer for scalable end-to-end autonomous driving. In: International Conference on Learning Representations (ICLR) (2025) 24. Jiang, B., Chen, S., Xu, Q., Liao, B., Chen, J., Zhou, H., Zhang, Q., Liu, W., Huang, C., Wang, X.: Vad: Vectorized scene representation for efficient autonomous driv-ing. In: 2023 IEEE/CVF International Conference on Computer Vision (ICCV). pp. 8306–8316 (2023). https://doi.org/10.1109/ICCV51070.2023.00766 
+
+25. Kim, D., Khalil, A., Nam, H., Kwon, J.: Ndst: Neural driving style transfer for human-like vision-based autonomous driving (2024), https://arxiv.org/abs/ 2407.08073 Bench2Drive-Speed 17 26. Kou, G., Jia, F., Mao, W., Liu, Y., Zhao, Y., Zhang, Z., Yoshie, O., Wang, T., Li, Y., Zhang, X.: Padriver: Towards personalized autonomous driving (2025), 
+
+https://arxiv.org/abs/2505.05240 
+
+27. Li, D., Li, C., Wang, Y., Ren, J., Wen, X., Li, P., Xu, L., Zhan, K., Jia, P., Lang, X., Xu, N., Zhao, H.: Learning personalized driving styles via reinforcement learning from human feedback (2025), https://arxiv.org/abs/2503.10434 
+
+28. Li, Q., Peng, Z., Feng, L., Zhang, Q., Xue, Z., Zhou, B.: MetaDrive: Compos-ing Diverse Driving Scenarios for Generalizable Reinforcement Learning. IEEE Transactions on Pattern Analysis & Machine Intelligence 45 (03), 3461–3475 (Mar 2023). https://doi.org/10.1109/TPAMI.2022.3190471 , https://doi. ieeecomputersociety.org/10.1109/TPAMI.2022.3190471 
+
+29. Li, S., Wei, C., Wu, G., Barth, M.J., Abdelraouf, A., Gupta, R., Han, K.: Person-alized trajectory prediction for driving behavior modeling in ramp-merging sce-narios. In: 2023 Seventh IEEE International Conference on Robotic Computing (IRC). pp. 1–4 (2023). https://doi.org/10.1109/IRC59093.2023.00054 
+
+30. Li, X.: Trade-off between safety, mobility and stability in automated vehicle fol-lowing control: An analytical method. Transportation Research Part B: Method-ological 166 , 1–18 (2022). https://doi.org/https://doi.org/10.1016/j. trb.2022.09.003 , https://www.sciencedirect.com/science/article/pii/ S0191261522001461 
+
+31. Li, Z., Yu, Z., Lan, S., Li, J., Kautz, J., Lu, T., Alvarez, J.M.: Is ego status all you need for open-loop end-to-end autonomous driving? In: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 14864– 14873 (2024). https://doi.org/10.1109/CVPR52733.2024.01408 
+
+32. Liao, X., Zhao, X., Wang, Z., Zhao, Z., Han, K., Gupta, R., Barth, M.J., Wu, G.: Driver digital twin for online prediction of personalized lane-change behavior. IEEE Internet of Things Journal 10 (15), 13235–13246 (2023). https://doi.org/ 10.1109/JIOT.2023.3262484 
+
+33. Liao, X., Zhao, Z., Barth, M.J., Abdelraouf, A., Gupta, R., Han, K., Ma, J., Wu, G.: A review of personalization in driving behavior: Dataset, modeling, and validation. IEEE Transactions on Intelligent Vehicles 10 (2), 1241–1262 (2025). https://doi. org/10.1109/TIV.2024.3425647 
+
+34. Ling, J., Li, J., Tei, K., Honiden, S.: Towards personalized autonomous driving: An emotion preference style adaptation framework. In: 2021 IEEE International Con-ference on Agents (ICA). pp. 47–52 (2021). https://doi.org/10.1109/ICA54137. 2021.00015 
+
+35. Liu, W., Hu, W., Jing, W., Lei, L., Gao, L., Liu, Y.: Learning to model di-verse driving behaviors in highly interactive autonomous driving scenarios with multiagent reinforcement learning. IEEE Systems Journal 19 (1), 317–326 (2025). 
+
+https://doi.org/10.1109/JSYST.2025.3528976 
+
+36. Lu, C., Gong, J., Lv, C., Chen, X., Cao, D., Chen, Y.: A personalized behav-ior learning system for human-like longitudinal speed control of autonomous ve-hicles. Sensors 19 (17) (2019). https://doi.org/10.3390/s19173672 , https: //www.mdpi.com/1424-8220/19/17/3672 
+
+37. Natarajan, M., Akash, K., Misu, T.: Toward adaptive driving styles for automated driving with users’ trust and preferences. In: 2022 17th ACM/IEEE International Conference on Human-Robot Interaction (HRI). pp. 940–944 (2022). https:// doi.org/10.1109/HRI53351.2022.9889313 
+
+38. Panagiotopoulos, I., Dimitrakopoulos, G.: Intelligent, in-vehicle autonomous decision-making functionality for driving style reconfigurations. Electronics 12 (6) 18 Y. Shao et al. (2023). https://doi.org/10.3390/electronics12061370 , https://www.mdpi. com/2079-9292/12/6/1370 
+
+39. Pei, S., Wang, Y., Zhu, Y., Sun, C., Li, Q., Zhao, Y., Tan, H.: Safe and stylized trajectory planning for autonomous driving via diffusion model (2026), https: //arxiv.org/abs/2602.04329 
+
+40. Prakash, A., Chitta, K., Geiger, A.: Multi-modal fusion transformer for end-to-end autonomous driving. In: 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 7073–7083 (2021). https://doi.org/10.1109/ CVPR46437.2021.00700 
+
+41. Renz, K., Chen, L., Arani, E., Sinavski, O.: Simlingo: Vision-only closed-loop au-tonomous driving with language-action alignment. In: Proceedings of the Computer Vision and Pattern Recognition Conference (CVPR). pp. 11993–12003 (June 2025) 42. Schrum, M.L., Sumner, E., Gombolay, M.C., Best, A.: Maveric: A data-driven approach to personalized autonomous driving. IEEE Transactions on Robotics 40 ,1952–1965 (2024). https://doi.org/10.1109/TRO.2024.3359543 
+
+43. Shao, H., Wang, L., Chen, R., Li, H., Liu, Y.: Safety-enhanced autonomous driving using interpretable sensor fusion transformer. In: Proceedings of The 6th Confer-ence on Robot Learning. Proceedings of Machine Learning Research, vol. 205, pp. 726–737. PMLR (14–18 Dec 2023), https://proceedings.mlr.press/v205/ shao23a.html 
+
+44. Sheng, S., Pakdamanian, E., Han, K., Wang, Z., Feng, L.: A study on learning and simulating personalized car-following driving style. In: 2022 IEEE 25th Inter-national Conference on Intelligent Transportation Systems (ITSC). pp. 1208–1215 (2022). https://doi.org/10.1109/ITSC55140.2022.9922548 
+
+45. Sima, C., Renz, K., Chitta, K., Chen, L., Zhang, H., Xie, C., Beißwenger, J., Luo, P., Geiger, A., Li, H.: Drivelm: Driving with graph visual question answer-ing. In: Computer Vision – ECCV 2024: 18th European Conference, Milan, Italy, September 29–October 4, 2024, Proceedings, Part LII. p. 256–274. Springer-Verlag, Berlin, Heidelberg (2024). https://doi.org/10.1007/978-3-031-72943-0_15 ,
+
+https://doi.org/10.1007/978-3-031-72943-0_15 
+
+46. Speidel, O., Graf, M., Phan-Huu, T., Dietmayer, K.: Towards courteous be-havior and trajectory planning for automated driving. In: 2019 IEEE Intelli-gent Transportation Systems Conference (ITSC). pp. 3142–3148 (2019). https: //doi.org/10.1109/ITSC.2019.8917033 
+
+47. Surmann, H., de Heuvel, J., Bennewitz, M.: Multi-objective reinforcement learning for adaptable personalized autonomous driving (2025), https://arxiv.org/abs/ 2505.05223 
+
+48. Tian, H., Wei, C., Jiang, C., Li, Z., Hu, J.: Personalized lane change planning and control by imitation learning from drivers. IEEE Transactions on Industrial Elec-tronics 70 (4), 3995–4006 (2023). https://doi.org/10.1109/TIE.2022.3177788 
+
+49. Treiber, M., Hennecke, A., Helbing, D.: Congested traffic states in empirical ob-servations and microscopic simulations. Phys. Rev. E 62 , 1805–1824 (Aug 2000). 
+
+https://doi.org/10.1103/PhysRevE.62.1805 , https://link.aps.org/doi/10. 1103/PhysRevE.62.1805 
+
+50. Wei, C., Qin, Z., Li, S., Zhang, Z., Zhao, X., Abdelraouf, A., Gupta, R., Han, K., Barth, M.J., Wu, G.: Pdb: Not all drivers are the same – a personalized dataset for understanding driving behavior (2025), https://arxiv.org/abs/2503.06477 
+
+51. Wu, P., Jia, X., Chen, L., Yan, J., Li, H., Qiao, Y.: Trajectory-guided control prediction for end-to-end autonomous driving: A simple yet strong baseline. In: Advances in Neural Information Processing Systems. vol. 35, pp. 6119–6132. Cur-ran Associates, Inc. (2022) Bench2Drive-Speed 19 52. Yang, R., Zhang, X., Fernandez-Laaksonen, A., Ding, X., Gong, J.: Driving style alignment for llm-powered driver agent. In: 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). pp. 11318–11324 (2024). 
+
+https://doi.org/10.1109/IROS58592.2024.10802629 
+
+53. Zhai, J.T., Feng, Z., Du, J., Mao, Y., Liu, J.J., Tan, Z., Zhang, Y., Ye, X., Wang, J.: Rethinking the open-loop evaluation of end-to-end autonomous driving in nuscenes (2023), https://arxiv.org/abs/2305.10430 
+
+54. Zhang, Y., Xu, Q., Wang, J., Wu, K., Zheng, Z., Lu, K.: A learning-based discretionary lane-change decision-making model with driving style awareness. IEEE Transactions on Intelligent Transportation Systems 24 (1), 68–78 (2023). 
+
+https://doi.org/10.1109/TITS.2022.3217673 
+
+55. Zhao, Z., Wang, Z., Han, K., Gupta, R., Tiwari, P., Wu, G., Barth, M.J.: Person-alized car following for autonomous driving with inverse reinforcement learning. In: 2022 International Conference on Robotics and Automation (ICRA). pp. 2891– 2897 (2022). https://doi.org/10.1109/ICRA46639.2022.9812446 
+
+56. Zhu, B., Yan, S., Zhao, J., Deng, W.: Personalized lane-change assistance system with driver behavior identification. IEEE Transactions on Vehicular Technology 
+
+67 (11), 10293–10306 (2018). https://doi.org/10.1109/TVT.2018.2867541 
+
+57. Zimmerlin, J., Beißwenger, J., Jaeger, B., Geiger, A., Chitta, K.: Hidden biases of end-to-end driving datasets (2024), https://arxiv.org/abs/2412.09602 20 Y. Shao et al. 
+
+# Can Users Specify Driving Speed? Bench2Drive-Speed: Benchmark and Baselines for Desired-Speed Conditioned Autonomous Driving 
+
+In the appendix, we provide additional details that were omitted from the main text. In section 6, we describe the methodology for specifying target speeds for autonomous driving tasks in Bench2Drive-Speed. In section 7, we present the detailed definition and underlying mechanisms of the overtake/follow scenario implemented in our work. In section 8, we provide comprehensive information on the data distribution and annotation procedures of the CustomizedSpeed Dataset. Finally, in section 9, we report supplementary experimental results that complement the findings presented in the main text. 
+
+## 6 Target Speed Specification 
+
+Formalization. To specify the target speed in route scenarios, we extend the standard route-based scenario definition by introducing segment-wise target speed control. Each segment can be represented as a tuple: 
+
+S = {(sstart i , s end i , v i)}, (3) where sstart i , s end i ∈ [0 , 1] denote normalized progress intervals along the route, and vi is the assigned target speed for that segment. Given route keypoints 
+
+{pk}Nk=1 , we compute cumulative arc-length distances: 
+
+dk =
+
+> k
+
+X
+
+> j=2
+
+∥pj − pj−1∥2, (4) with total route length L = dN . Each keypoint is thus associated with normalized progress dk/L .
+
+Segment-to-Keypoint Speed Assignment. For each speed segment, we convert normalized bounds to absolute arc-length: 
+
+[sstart i L, s end i L). (5) All keypoints whose cumulative distance falls within this interval are assigned target speed vi. Unassigned keypoints inherit the most recent valid speed to ensure a fully specified speed profile along the route. This process yields a dense global speed plan: 
+
+P = {(pk, v k)}Nk=1 . (6) 
+
+Runtime Target Speed Query. During execution, the autonomous agent re-trieves the instantaneous target speed based on the ego vehicle’s current location 
+
+xego . We perform nearest-neighbor matching over P:
+
+v∗ = vk∗ , k∗ = arg min  
+
+> k
+
+∥xego − pk∥2. (7) The selected v∗ serves as the planned target speed at runtime. Bench2Drive-Speed 21   
+
+> Fig. 12: Example of a configuration XML file. The configuration specifies route waypoints, traffic scenarios, target speed settings, and weather conditions, etc .
+
+## 7 Overtake/Follow Scenario Implementation 
+
+To evaluate whether an agent complies with efficiency-related lateral instruc-tions ( overtake or follow ) under controlled traffic conditions, we implement a custom scenario, OvertakeRoute, within the CARLA ScenarioRunner frame-work. 
+
+Scenario Overview. The scenario introduces a slow-moving vehicle ahead of the ego vehicle along a predefined route. Depending on the given command: 
+
+• Under the overtake command, the ego vehicle must pass the front vehicle and establish a lead. 
+
+• Under the follow command, the ego vehicle must remain behind the front vehicle, even if it is moving at a low speed. 
+
+Configuration Parameters. We extend the standard scenario configuration files with additional parameters: 
+
+• speed : target speed of the front vehicle, 
+
+• distance : initial longitudinal distance between ego and front vehicle, 
+
+• behavior : command type ( overtake or follow ), 
+
+• frequency : spawning frequency of oncoming vehicles (two-way variant only). These parameters are parsed at initialization and allow flexible difficulty adjustment across different route segments. An example of configuration file is provided in Fig. 12. 22 Y. Shao et al.      
+
+> (a) Weather distribution in Customized SpeedDataset.
+> (b) Town distribution in CustomizedSpeed Dataset.
+
+Fig. 13: (a) Distribution of weather conditions in CustomizedSpeedDataset. 
+
+It covers all predefined weathers in the simulator, uniformly distributed. (b) Distri-bution of towns in CustomizedSpeedDataset. Route counts roughly reflect each town’s size and number of routes. 
+
+Actor Initialization. At runtime, a front vehicle is spawned at a waypoint located a configurable distance ahead of the ego vehicle’s trigger point. The vehicle follows the route at the specified cruising speed. No other vehicle is spawned in the same lane to prevent violation of this scenario. Scenario Behavior. (1) Trigger Condition, the scenario activates when the ego vehicle enters a predefined trigger region near the route waypoint. (2) Front Vehicle Behavior, the front vehicle drives forward toward a distant waypoint at the configured cruising speed and continues indefinitely unless termination conditions are met. 
+
+Termination Conditions. The scenario terminates when one of the following occurs: (1) the ego vehicle successfully moves ahead of the front vehicle (overtake completed), (2) a predefined timeout is reached, (3) the route evaluation ends. 
+
+## 8 Dataset Details 
+
+8.1 Data Distribution 
+
+In the main section, we have demonstrated that the target speed distribution in CustomizedSpeedDataset is balanced. Furthermore, the front vehicle speed 
+
+vf is subsequently sampled from a uniform distribution over [ϵ, v t − δ], where ϵ
+
+denotes a small lower-bound threshold and δ represents a small speed margin ensuring that the front vehicle remains slower than the ego vehicle. Consequently, the marginal distribution of vf is biased toward lower speeds, as smaller speeds can be sampled for a wider range of ego target speeds, as shown in Fig. 14b. In addition to these speed-related variables, the weathers in CustomizedSpeed Dataset are also uniformly distributed, as shown in Fig. 13a. Bench2Drive-Speed 23    
+
+> (a) Scenario-wise distribution of hard routes. (b) Leading vehicle speed distribution in overtake/follow scenarios.
+
+Fig. 14: (a) Scenario-wise distribution of hard routes in CustomizedSpeed Dataset. Covering the most challenging scenarios in the simulator. (b) Distribution of leading vehicle speeds in overtake/follow scenarios within Customized SpeedDataset. This speed is sampled from a small range below the ego vehicle speed, resulting in a distribution biased toward lower speeds. 
+
+The distribution of towns is shown in Fig. 13b - route counts roughly correlate with the area and number of routes in each town, so most routes are located in Town12. In hard routes, a scenario from CARLA Leaderboard v2 occurs, forcing the autonomous driving agent to handle complex corner cases while adhering to style-related commands. The distribution of these scenarios is shown in Fig. 14a. 
+
+8.2 Virtual Target Speed Annotation 
+
+In addition to the target speed from the expert’s internal parameter, which is impossible to derive from real-life datasets, CustomizedSpeedDataset introduces a virtual target speed for each frame to facilitate style-aware driving tasks. 
+
+Tendency Speed. We first define the tendency speed vtend  
+
+> t
+
+at frame t as the maximal (or minimal) speed in a short future horizon that maintains the current monotonic trend: 
+
+vtend  
+
+> t
+
+=
+
+
+
+max   
+
+> i∈[1 ,F ]
+
+vt+i, if vt+1 > v t (acceleration trend )min   
+
+> i∈[1 ,F ]
+
+vt+i, if vt+1 < v t (deceleration trend )
+
+vt, otherwise 
+
+(8) where vt+i is the ego speed at frame t + i, and F is the number of future frames considered (in our implementation, F = 40 ). 
+
+Virtual Target Speed. Given the current tendency speed vtend  
+
+> t
+
+and the previ-ous tendency speed vtend  
+
+> t−1
+
+, the virtual target speed vvirt  
+
+> t
+
+is computed by linearly extrapolating the trend over a randomized short horizon ∆t :24 Y. Shao et al. 
+
+Table 7: Speed-Adherence Score and Overtake Score on 48 evaluation routes of Bench2Drive-Speed. Metrics are reported for All(A), Easy (E), Medium (M), and Hard (H). The best result of each score is highlighted in bold.                                                                                                       
+
+> Model Dataset Speed Adherence Score ↑Overtake Score ↑
+> AEMHAEMHTCP w/o Speed Command Bench2Drive1K 41.36 42.03 40.72 41.33 37.50 -50.00 25.00
+> TCP-Speed Bench2Drive1K-Short 67.95 71.01 69.63 63.21 31.25 -50.00 12.50 TCP-Speed Bench2Drive1K-Long 65.61 67.80 65.69 63.34 31.25 -43.75 18.75 TCP w/o Speed Command Bench2Drive1K+CustomizedSpeedDataset 41.60 42.11 40.98 41.70 25.00 -50.00 0.00 TCP-Speed Bench2Drive1K-Short+Virtual2.1k-Short 71.65 77.33 72.63 64.99 34.38 -50.00 18.75 TCP-Speed Bench2Drive1K-Long+Virtual2.1k-Long 71.21 79.02 69.16 66.40 34.38 -50.00 18.75 TCP w/o Speed Command CustomizedSpeedDataset 41.54 42.00 40.95 41.67 18.75 -37.50 0.00 TCP-Speed Virtual2.1k-Short 69.23 76.18 68.71 62.81 40.63 -56.25 25.00
+> TCP-Speed Virtual2.1k-Long 68.36 73.17 67.93 63.98 40.63 -56.25 25.00
+> TCP-Speed Expert2.1k 68.79 76.80 65.38 64.20 21.88 -37.50 6.25
+
+vvirt 
+
+t = max 
+
+
+
+vtend 
+
+t +∆v t, 0
+
+
+
+, ∆v t = ( vtend 
+
+t −vtend 
+
+t−1 )·FPS ·r, r ∼ U (Tmin , T max )
+
+(9) Here, FPS is the frame rate of the dataset, which is 10 ; r is a random factor uniformly sampled in [Tmin , T max ], and the resulting ∆v t is clipped to lie within 
+
+[−MAX_EXTEND , MAX_EXTEND ]
+
+to prevent unrealistic speed jumps. 
+
+Short vs Long Virtual Target Speed. To support different experimental setups, CustomizedSpeedDataset provides two versions of virtual target speed annotations: 
+
+• Long : uses MAX_EXTEND = 10 .0 m /s and Tmax = 3 .0 s , which emphasizes long-horizon extrapolation and captures extended acceleration/deceleration trends. 
+
+• Short : uses MAX_EXTEND = 3 .0 m /s and Tmax = 1 .5 s , which focuses on short-term variations and preserves finer temporal detail. 
+
+## 9 Experiment Details 
+
+Training. All baseline models are trained on a single NVIDIA A100 GPU using PyTorch Lightning. The optimizer is Adam with an initial learning rate of ( 1 × 10 −4) and weight decay ( 1 × 10 −7). The learning rate is scheduled using a StepLR scheduler with a decay factor of 0.5 every 30 epochs. All models are trained for 60 epochs with a batch size of 300. 
+
+Speed-Related Task Evaluations. We evaluate the baseline models on the 48 routes of Bench2Drive-Speed. In Table 7, we report the performance of the 48 routes in Bench2Drive-Speed, broken down by difficulty level across the primary evaluation metrics. The results indicate that 
+
+• Compared to the vanilla TCP, our baseline achieves higher Speed and Over-take Scores but slightly lower Driving Score and Success Rate. This drop is Bench2Drive-Speed 25 
+
+Table 8: Overall closed-loop performance on traditional metrics (Driving Score, Success Rate, Efficiency, Comfortness) on 48 evaluation routes of Bench2Drive-Speed. The best overall result of each score is highlighted in bold. 
+
+Model Dataset Driving Score ↑ Success Rate (%) ↑ Efficiency ↑ Comfortness ↑
+
+TCP w/o Speed Command Bench2Drive1K 56.52 20.83 44.39 24.79 TCP-Speed Bench2Drive1K-Short 40.23 20.83 158.32 30.27 TCP-Speed Bench2Drive1K-Long 45.18 27.08 145.22 29.67 TCP w/o Speed Command Bench2Drive1K+CustomizedSpeedDataset 52.71 27.08 52.17 33.00 TCP-Speed Bench2Drive1K-Short+Virtual2.1k-Short 30.19 16.67 158.32 30.27 TCP-Speed Bench2Drive1K-Long+Virtual2.1k-Long 48.40 31.25 145.22 29.67 TCP w/o Speed Command CustomizedSpeedDataset 45.13 18.75 48.67 36.34 TCP-Speed Virtual2.1k-Short 29.66 18.75 169.84 35.57 TCP-Speed Virtual2.1k-Long 28.37 14.58 177.21 38.37 TCP-Speed Expert2.1k 34.84 25.00 139.37 39.83 
+
+Table 9: Closed-loop Planning Performance on 220 routes of Bench2Drive .* denotes expert feature distillation. Non-TCP methods and expert-feature-distilled methods are shown in gray for reference. 
+
+Method Driving Score ↑ Success Rate(%) ↑ Efficiency ↑ Comfortness ↑
+
+AD-MLP 18.05 0.00 48.45 22.63 UniAD-Tiny 40.73 13.18 123.92 47.04 UniAD-Base 45.81 16.36 129.21 43.58 VAD 42.35 15.00 157.94 46.01 DriveTransformer-Large 63.46 35.01 100.64 20.78 ThinkTwice* 62.44 31.23 69.33 16.22 DriveAdapter* 64.22 33.08 70.22 16.01 TCP* 40.70 15.00 54.26 47.80 TCP-ctrl* 30.47 7.27 55.97 51.51 
+
+TCP-traj* 59.90 30.00 76.54 18.08 TCP w/o Speed Command 49.30 20.45 78.78 22.96 
+
+TCP-Speed Bench2Drive1K-Short 54.15 22.73 195.48 20.92 TCP-Speed Bench2Drive1K-Long 51.84 21.36 195.96 22.64 TCP w/o Speed Command Bench2Drive1K+CustomizedSpeedDataset 55.23 25.45 77.69 27.26 
+
+TCP-Speed Bench2Drive1K-Short+Virtual2.1k-Short 53.66 22.73 192.17 21.59 TCP-Speed Bench2Drive1K-Long+Virtual2.1k-Long 54.80 24.09 195.63 24.14 
+
+Table 10: Multi-Ability Results of E2E-AD Methods on Bench2Drive220 routes. * denotes expert feature distillation. Non-TCP methods and expert-feature-distilled methods are shown in gray for reference. 
+
+Method Merging Overtaking Emergency Brake Give Way Traffic Sign Mean 
+
+AD-MLP 0.00 0.00 0.00 0.00 0.00 0.00 UniAD-Tiny 7.04 10.00 21.82 20.00 14.61 14.69 UniAD-Base 12.16 20.00 23.64 10.00 13.89 15.94 VAD 7.14 20.00 16.36 20.00 20.22 16.75 DriveTransformer-Large 17.57 35.00 48.36 40.00 52.10 38.60 
+
+DriveAdapter* 14.55 22.61 54.04 50.00 50.45 38.33 ThinkTwice* 13.72 22.93 52.99 50.00 47.78 37.48 TCP* 16.18 20.00 20.00 10.00 6.99 14.63 TCP-ctrl* 10.29 4.44 10.00 10.00 6.45 8.23 TCP-traj* 12.50 24.29 51.67 40.00 46.28 34.22 TCP w/o Speed Command 17.14 6.67 40.00 50.00 28.72 28.51 TCP-Speed Bench2Drive1K-Short 22.50 6.67 35.00 50.00 41.05 31.04 
+
+TCP-Speed Bench2Drive1K-Long 21.25 8.89 35.00 40.00 45.79 30.19 TCP w/o Speed Command Bench2Drive1K+CustomizedSpeedDataset 19.30 11.11 45.00 40.00 43.42 31.77 
+
+TCP-Speed Bench2Drive1K-Short+Virtual2.1k-Short 18.75 15.56 35.00 50.00 38.95 31.65 TCP-Speed Bench2Drive1K-Long+Virtual2.1k-Long 23.75 8.89 35.00 40.00 38.94 29.32 
+
+attributed to the increased complexity introduced by diverse target-speed and overtaking commands, which pose additional challenges for target-speed-aware models. 26 Y. Shao et al. 
+
+• Models trained on the re-annotated datasets demonstrate comparable speed adherence as models trained on expert demonstrations. 
+
+• Models trained on the re-annotated datasets achieve even better overtake scores and efficiency than those trained on expert demonstrations. This sug-gests that the model may struggle to capture the implicit relationship between the expert-annotated target speed and the ego vehicle speed in complex sce-narios such as overtaking. As a result, the learned policy tends to converge to an averaged behavior across scenarios sharing the same target speed, leading to a lower speed tendency. 
+
+• Models trained on expert demonstrations achieve slightly higher driving scores and success rates. Expert demonstrations reflect more complex, context-dependent speed choices, resulting in less direct adherence to target speeds but better overall driving performance, while re-annotated speeds are derived straight-forwardly from observed trajectories and may overfit. 
+
+Traditional AD Metrics Evaluations. Since evaluating the full set of 220 routes in the original Bench2Drive benchmark requires a substantial amount of time, only a subset of baseline methods were evaluated on the complete set. Table 9 reports the results on four core metrics—Driving Score, Success Rate, Efficiency, and Comfort—while Table 10 presents the multi-ability evaluation re-sults. From the Bench2Drive-220 evaluation, we observe that in both dataset con-figurations, including Bench2Drive1K-only and Bench2Drive1K + Customized SpeedDataset, 
+
+• TCP-Speed achieves Driving Score and Success Rate comparable to the orig-inal TCP, indicating that speed conditioning preserves the core safety-related capabilities. 
+
+• Style-aware models consistently obtain higher Efficiency scores, suggesting reduced overly conservative behaviors compared to the single-style policy im-plicitly on traditional datasets. 
+
+• The Comfort metric remains largely comparable to the original model, indi-cating that following target speeds only slightly affects driving smoothness. 
+
+• The multi-ability evaluation shows competitive performance on challenging maneuvers such as merging and overtaking.
