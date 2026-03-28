@@ -1,0 +1,610 @@
+Title: Interaction-Aware Predictive Environmental Control Barrier Function for Emergency Lane Change
+
+URL Source: https://arxiv.org/pdf/2603.21958v1
+
+Published Time: Tue, 24 Mar 2026 02:20:27 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Interaction-Aware Predictive Environmental Control Barrier Function for Emergency Lane Change 
+
+Ying Shuai Quan 1, Paolo Falcone 1, Jonas Sj ¨oberg 1
+
+Abstract— Safety-critical motion planning in mixed traffic remains challenging for autonomous vehicles, especially when it involves interactions between the ego vehicle (EV) and surrounding vehicles (SVs). In dense traffic, the feasibility of a lane change depends strongly on how SVs respond to the EV motion. This paper presents an interaction-aware safety framework that incorporates such interactions into a control barrier function (CBF)-based safety assessment. The proposed method predicts near-future vehicle positions over a finite horizon, thereby capturing reactive SV behavior and embedding it into the CBF-based safety constraint. To address uncertainty in the SV response model, a robust extension is developed by treating the model mismatch as a bounded disturbance and incorporating an online uncertainty estimate into the barrier condition. Compared with classical environmental CBF methods that neglect SV reactions, the proposed approach provides a less conservative and more informative safety representation for interactive traffic scenar-ios, while improving robustness to uncertainty in the modeled SV behavior. 
+
+I. Introduction Autonomous driving in mixed traffic requires safety-critical decision making in environments where surround-ing vehicles (SVs) react to the ego vehicle (EV). This coupling is particularly important in emergency lane changes: when a suddenly appearing road user (RU) blocks the current lane, the feasibility of the maneuver depends not only on the current gap in the target lane, but also on whether the SV yields to the EV. Therefore, safety assessment based only on instantaneous geometry or non-reactive environment models can be overly conservative or even misleading. This is illustrated in Fig. 1, where accounting for the SV reaction opens a feasible gap for lane change, whereas a nominal non-reactive prediction deems the maneuver infeasible. Control barrier functions (CBFs) have been widely used in autonomous driving for safety-critical con-trol, since they provide forward-invariance guarantees for safe sets while remaining compatible with online optimization-based control synthesis [1], [2]. Environ-mental CBFs (ECBFs) extend this framework to dynamic environments by reasoning over joint EV–environment dynamics [3]. However, many existing formulations, including ECBFs, still model surrounding traffic as          
+
+> This work is funded by the Fordonsstrategisk Forskning och Innovation program of Vinnova under the grant 2018-05005.
+> 1Ying Shuai Quan, Paolo Falcone and Jonas Sj ¨oberg are with the Mechatronics group at the Department of Electrical Engi-neering, Chalmers University of Technology, Gothenburg, Sweden {quany,paolo.falcone,jonas.sjoberg}@chalmers.se
+> Fig. 1. Interactive versus nominal planning in an obstacle-avoidance lane-change scenario. Faded yellow and blue vehicles indicate predicted future positions of the SV and EV. The blue dotted curve shows interactive planning, where the SV is expected to decelerate and open a feasible gap for lane change. The red dotted curve shows nominal planning, where the SV is assumed to maintain constant velocity, making the maneuver infeasible.
+
+exogenous or non-interactive, which is insufficient for interactive mixed-traffic scenarios. To capture such interaction in mixed traffic, the SV response must be modeled rather than treated as exoge-nous. Car-following models provide a natural description of SV longitudinal behavior and can be extended to account for anticipatory reactions to the EV [4]. In practice, however, the true SV behavior is uncertain and may deviate from the nominal model. Such mismatch affects both the magnitude of the SV response and the timing at which the interaction becomes active. A practical interaction-aware safety framework should therefore incorporate both an explicit SV response model and robustness to model uncertainty, while remaining computationally tractable online. Motivated by this, we propose an interaction-aware predictive environmental control barrier function (IECBF) for emergency lane change. The method incor-porates a joint EV–SV model into the ECBF framework, with P-IDM used to capture anticipatory SV interaction, and constructs a predictive barrier inspired by [5] that evaluates the most critical EV–SV configuration over a finite horizon. To address model uncertainty, we further develop a robust extension that combines observer-based correction for acceleration mismatch with a multi-model rollout for gateway uncertainty. The main contributions of this paper are: 1) We formulate an interaction-aware joint EV–SV model within an ECBF framework and construct a predictive IECBF that evaluates the most critical EV–SV configuration over a finite horizon. 2) We develop a robust extension under SV-model uncertainty by combining observer-based correction for acceleration mismatch with a multi-model rollout for gateway uncer-tainty. 3) We demonstrate in simulation that compared with a baseline ECBF using a non-reactive SV model, 
+
+> arXiv:2603.21958v1 [eess.SY] 23 Mar 2026
+
+the proposed method improves feasibility and reduces conservatism in interactive emergency lane-change sce-narios. II. Preliminaries A. Scenario Description The road is modeled as a straight two-lane segment. We consider an emergency lane-change scenario in which the EV must leave its initial lane due to a suddenly appearing RU and merge into a target lane occupied by a single SV. Throughout the maneuver, the SV is assumed to remain in its lane and react only through longitudinal braking or acceleration. The objective is to design the EV control input to guarantee collision avoidance while accounting for the SV’s reactive behavior through the proposed IECBF framework. CBF constraints enforce safety with respect to both the SV and the suddenly appearing RU, modeled as a temporary static obstacle during lane change, while CLF-based constraints encode the EV’s nominal tracking objective. B. EV Dynamics We consider continuous-time dynamics. Let x(t) ∈ Rnx
+
+and u(t) ∈ Rnu denote the EV state and control input as: 
+
+x := [Xe Ye ψe ve
+
+]⊤ , u := [ae δe
+
+]⊤ , (1) where (Xe, Y e) denotes the position of the EV center of gravity (CG) in the inertial frame, ψe is the heading angle, ve is the longitudinal speed, ae is the EV lon-gitudinal acceleration and δe is the steering angle. The admissible input set is U := {u = [ ae, δ e]⊤ ∈ R2 : δe ∈
+
+[δe, min , δ e, max ]}. Under a small-angle assumption, the EV dynamics is written as 
+
+˙x = f (x) + g(x)u, (2) with 
+
+f (x) = 
+
+
+
+ve cos ψe
+
+ve sin ψe
+
+00
+
+ , g (x) = 
+
+
+
+0 −ve sin ψe
+
+0 ve cos ψe
+
+0 ve
+
+ℓr
+
+1 0
+
+ ,
+
+where ℓr is the distance from the vehicle CG to the rear axle. C. CLF Design for Lane Change We employ standard control Lyapunov function (CLF) constraints to encode the nominal lane-change objec-tive [1]. Let Ytarget denote the center line of the target lane. During the lane-change maneuver, it serves as the reference for the EV lateral position and heading. We define 
+
+Vy (x) := (Ye − Ytarget 
+
+)2, Vψ (x) := ψ2 
+
+> e
+
+, (3) where Vy penalizes lateral deviation from the target-lane center, while Vψ penalizes heading deviation from the road direction. The corresponding CLF constraints are imposed as soft constraints in a quadratic programming (QP) problem: 
+
+Lf Vy (x) + Lg Vy (x) u ≤ − αy
+
+(Vy (x)) + δy , (4) 
+
+Lf Vψ (x) + Lg Vψ (x) u ≤ − αψ
+
+(Vψ (x)) + δψ , (5) where αy,ψ are class-K functions and δy,ψ ≥ 0 are slack variables. These soft constraints promote lateral tracking and heading regulation whenever compatible with safety. D. Baseline ECBF Formulation This subsection presents a baseline ECBF design for the lane-change scenario using an EV–SV joint-state representation equivalent to the augmented-state form in [3], with the SV modeled as non-reactive at constant velocity. 1) Baseline joint EV–SV model: Let the SV state be xs := [Xs Ys vs
+
+]⊤, where (Xs, Y s) denotes the position of the SV CG in the inertial frame, and vs
+
+denotes its longitudinal speed. The joint EV–SV state is then defined as 
+
+z := [x⊤ x⊤
+
+> s
+
+]⊤ . (6) With SV’s nominal dynamics given by ˙xs = ¯fs(xs),
+
+¯fs(xs) := 
+
+[ vs
+
+02×1
+
+]
+
+and combining with (2), the nominal joint dynamics are 
+
+˙z = ¯F (z) + ¯G(z)u, ¯F (z) := 
+
+[ f (x)¯fs(xs)
+
+]
+
+, ¯G(z) := 
+
+[g(x)
+
+03×2
+
+]
+
+.
+
+(7) 2) ECBF Design: For the baseline joint system (7), define the safe set Cz := {z ∈ Z : H(z) ≥ 0} , where H :
+
+Z → R is continuously differentiable. Definition 1 (ECBF). A continuously differentiable func-tion H : Z → R is called an ECBF for (7) if there exists a class-K function αH such that, for all z ∈ C z ,
+
+sup 
+
+> u∈U
+
+(LF H(z) + LGH(z) u) ≥ − αH
+
+(H(z)). (8) If a locally Lipschitz controller u : Cz → U satisfies 
+
+LF H(z) + LGH(z) u(z) ≥ − αH
+
+(H(z)), ∀z ∈ C z , (9) then Cz is forward invariant [3]. To enforce collision avoidance between the EV and the SV, we choose HSV (z) based on the relative EV–SV position expressed in the EV body frame, let 
+
+[∆X
+
+∆Y
+
+]
+
+=
+
+R(ψe)⊤
+
+[Xs − Xe
+
+Ys − Ye
+
+]
+
+with R(ψe) =
+
+[cos ψe − sin ψe
+
+sin ψe cos ψe
+
+]
+
+.Here, ∆X and ∆Y denote the longitudinal and lateral gaps in the EV body frame, respectively. We then define the ECBF candidate as 
+
+HSV (z) = aSV ∆X2 + bs∆Y 2 − 1, (10) where aSV = 1 /(rSV  
+
+> a
+
+)2 and bSV = 1 /(rSV  
+
+> b
+
+)2, with rSV 
+
+> a
+
+and rSV  
+
+> b
+
+denoting the longitudinal and lateral semi-axes of the ellipsoidal safety envelope. Then with αSV as a class-K function, the baseline ECBF constraint is 
+
+L ¯F HSV (z) + L ¯GHSV (z) u ≥ − αSV 
+
+(HSV (z)). (11) E. RU ECBF The suddenly appearing RU is modeled as a static obstacle at fixed position (XRU , Y RU ) over the short emergency lane change, which is a special case of the ECBF framework with constant environment state. We define the RU barrier as 
+
+HRU (x) := aRU (Xe − XRU )2 + bRU (Ye − YRU )2 − 1, (12) where aRU = 1 /(rRU  
+
+> a
+
+)2 and bRU = 1 /(rRU  
+
+> b
+
+)2. Since the RU position is constant, HRU depends only on the EV state, and its Lie derivatives are taken with respect to the EV dynamics (2). The corresponding ECBF constraint is 
+
+Lf HRU (x) + Lg HRU (x) u ≥ − αRU 
+
+(HRU (x)). (13) where αRU is a class-K function. Since ae does not appear in (13), the constraint is affine only in δe and reduces to 
+
+[Lg HRU (x)] 2 δe ≥ − αRU 
+
+(HRU (x)) − Lf HRU (x). (14) III. Interaction-aware ECBF Design A. SV Dynamics via P-IDM The proposed method models SV dynamics based on the P-IDM car-following model in [4]. Unlike standard IDM, which assigns the leader based on the candidate vehicle’s current lateral position and thus reacts only after lane intrusion, P-IDM uses the predicted lateral position at a short horizon Np ahead. This better cap-tures anticipatory SV behavior in lane-change scenarios, where the candidate vehicle is the EV. To encode this leader-selection logic compactly, we introduce the gate variable 
+
+ω := 
+
+{1, if Xe > X s and 
+
+∣∣∣ ˜Ye,N p − Ys
+
+∣∣∣ < c, 
+
+0, otherwise, (15) where c is a cooperation threshold that determines the SV’s willingness to yield. Thus, ω = 1 means that the EV is treated as the SV’s leader based on its predicted lane intrusion. When the EV is selected as leader, the SV longitudinal acceleration is computed using the standard IDM [6], 
+
+aidm := amax 
+
+[
+
+1 −
+
+( vs
+
+v∗
+
+)4
+
+−
+
+( s∗(vs, ∆vs)∆xs
+
+)2]
+
+, (16) where v∗ is the desired speed, amax is the maximum acceleration, ∆xs = Xe − Xs is the bumper-to-bumper gap between the EV and the SV, and ∆vs = vs − ve is the relative approach speed. The desired minimum gap is given by s∗(vs, ∆vs) = s0 + vs Tidm + vs ∆vs 
+
+> 2√amax b
+
+, where 
+
+s0 is the standstill distance, Tidm is the desired time headway, and b is the comfortable deceleration. afree := 
+
+amax 
+
+[
+
+1 − ( vs
+
+> v∗
+
+)4]
+
+. Then the resulting P-IDM acceleration can be written as 
+
+apidm := ω a idm (∆ xs, v s, ∆vs) + (1 − ω) afree (vs). (17) Accordingly, the SV dynamics in the proposed model are 
+
+˙xs = fs(x, x s), fs(x, x s) := 
+
+
+
+vs
+
+0
+
+apidm 
+
+ , (18) where the dependence on the EV state enters through 
+
+apidm .B. Interaction-Aware Joint EV–SV Model To explicitly capture the interaction between the EV and SV, we combine (2) with (18). With the joint state (6), the interaction-aware joint dynamics take the control-affine form 
+
+˙z = F (z) + G(z)u, (19) where F (z) := 
+
+[ f (x)
+
+fs(x, x s)
+
+]
+
+, G (z) := 
+
+[g(x)
+
+03×2
+
+]
+
+. Here, F (z)
+
+represents the natural evolution of the combined EV–SV state, including the SV response, and G(z) specifies how the EV input u enters the joint dynamics. C. IECBF Constraints for SV In the proposed method, safety assessment is extended over a short prediction horizon under the interaction-aware SV response, since interaction effects may not be immediately visible but emerge as the SV reacts to the EV. Accordingly, we use two ECBF constraints: a current-position ECBF for present-state safety and a predictive ECBF over the finite horizon under the interaction-aware joint model. 1) One-Step IECBF: We use the same SV barrier function Hcurr SV (z) = HSV (z) as in the baseline ECBF (10). From here on, we write Hcurr SV := Hcurr SV (z) for brevity. The one-step ECBF constraint under the joint dynamics (19) is then 
+
+LF Hcurr SV + LGHcurr SV u ≥ − αSV 
+
+(Hcurr SV 
+
+). (20) Compared with the baseline (11), the term LF Hcurr SV 
+
+now reflects the interaction-aware SV dynamics through 
+
+apidm .2) Predictive ECBF: To explicitly account for near-future interaction, we construct a predictive barrier by rolling out the joint model (19) over a finite horizon N .a) Nominal rollout controller: To roll out (19), we use a nominal steering controller that drives the EV toward the target lane while satisfying the RU ECBF constraint (13). The SV barrier is not enforced in the rollout, since SV safety is handled by the outer predictive ECBF and enforcing it in the inner rollout would bias the predicted trajectory. By (14), the RU ECBF together with the steering bounds yields the feasible interval δe ∈ [δRU min , δ RU max ].Within this interval, the nominal steering is chosen from the 1-D soft CLF–CBF problem 
+
+min 
+
+> δe∈[δRU min , δ RU max ]
+
+Hδ δ2 
+
+> e
+
++ py max(0 , ϕ y )2 + pψ max(0 , ϕ ψ )2,
+
+where ϕy := Lf Vy + [ Lg Vy ]2 δe + αy (Vy ), ϕ ψ := 
+
+Lf Vψ + [ Lg Vψ ]2 δe + αψ (Vψ ), following the standard soft-constraint CLF–CBF construction of [1]. Since this is a scalar soft CLF–CBF problem, its minimizer admits a closed-form solution [2], so no online optimization is required in the rollout. Denoting the resulting steering command at prediction step k by δnom  
+
+> e,k
+
+, the nominal rollout input is 
+
+unom  
+
+> k
+
+:= 
+
+[ 0
+
+δnom 
+
+> e,k
+
+]
+
+. (21) The nominal rollout sets ae = 0 because the CLF and RU ECBF terms used here determine only the steering input δe; ae is neither constrained nor optimized in the inner rollout. b) Predictive barrier and constraint: Let {zk}Nk=0 
+
+denote the rollout from the current state z0, where the EV is propagated using (2) under the nominal control (21) over a horizon N . At each rollout step, we evaluate 
+
+HSV (zk). The most critical predicted step is 
+
+k∗ = arg min   
+
+> k∈{ 0,...,N }
+
+HSV (zk). (22) We then define the predictive barrier as 
+
+Hpred SV (z0) := HSV (zk∗ ), (23) i.e., the minimum predicted barrier value along the rollout. Let Jk∗ := ∂z k∗ /∂z 0 denote the rollout Jacobian from the current state to the critical predicted state. Then 
+
+LF Hpred SV (z0) = ∇z HSV (zk∗ ) Jk∗ F (z0),LGHpred SV (z0) = ∇z HSV (zk∗ ) Jk∗ G(z0). (24) Using the same class-K function αSV as in (20), and writing Hpred SV := Hpred SV (z0) for brevity, the predictive ECBF constraint enforced in the outer QP is 
+
+LF Hpred SV + LGHpred SV u ≥ − αSV 
+
+(Hpred SV 
+
+). (25) Constraint (25) complements the one-step constraint (20): the latter enforces safety at the current state, while the former accounts for the most critical EV– SV configuration over the prediction horizon under the interaction-aware joint model. D. Nominal CLF-IECBF QP The nominal CLF–IECBF QP is finally given as 
+
+u⋆ = arg min   
+
+> u∈U ,δy, δ ψ
+
+12 u⊤Qu + 12 py δ2 
+
+> y
+
++ 12 pψ δ2
+
+> ψ
+
+s.t. (4) , (5) , (13) , (20) , (25) .
+
+(26) IV. Robust IECBF Under IDM Model Uncertainty The IECBF in Section III uses a nominal P-IDM model for SV prediction. In practice, the true SV behavior may deviate due to uncertain driver characteristics. This mismatch appears in both the SV acceleration magnitude after interaction becomes active and the timing of interaction gate activation. To address both, this section extends the IECBF with observer-based correction for acceleration mismatch and a multi-style rollout for gateway uncertainty. A. Uncertainty Modeling 1) IDM Parameter Uncertainty: Let θ := (amax , v ∗, s 0, T idm , b ) denote the IDM parameter vector. For later use in the multi-model rollout, let j ∈ J index a finite set of representative IDM parameter presets, with each j associated with an IDM parameter vector θ(j). Let θnom denotes the preset nominal parameter set. Let θ∗ denote the unknown true IDM parameter vector. Then the true SV longitudinal acceleration is modeled as 
+
+˙vs = aidm (θnom ) + ∆ θ , (27) where ∆θ := aidm (θ∗) − aidm (θnom ). Accordingly, the interaction-aware joint dynamics (19) are rewritten as 
+
+˙z = F (z) + G(z)u + Bs ∆θ , (28) where Bs := [0 0 0 0 0 0 1]⊤.We assume that the uncertainty and its rate of change are bounded: 
+
+|∆θ | ≤ δb, | ˙∆θ | ≤ δL, (29) for known constants δb, δ L > 0, determined offline from the admissible range of SV driver behavior. The sensitivity of the predictive barrier to the accelera-tion perturbation Bs∆θ at the current state is defined as 
+
+σ := ∇z HSV (zk∗ ) Jk∗ Bs = [ ∇z HSV (zk∗ ) Jk∗ ]vs , i.e., the 
+
+vs-component of the propagated gradient. σ quantifies how the current SV acceleration perturbation affects the barrier at the critical step k∗, and is used below in the robust predictive IECBF constraint. 2) Gateway activation uncertainty: To capture gate-way activation uncertainty, we consider a finite set of representative P-IDM gateway parameter pairs φ(i) =(N (i), c (i)th ), i ∈ I . Since gate activation depends on both the gateway preset and the IDM model used in the rollout, we denote the corresponding interaction gate for model pair (i, j ) by ω(i,j ), where i ∈ I and j ∈ J .Hence, even for the same φ(i), different IDM presets θ(j)
+
+can yield different gate activations and switching times between free-road and car-following behavior along the predicted trajectory. This uncertainty is relevant only when ω(i,j ) = 1 , i.e., when the SV is predicted to react to the EV through the IDM car-following model under 
+
+(φ(i), θ (j)). When ω(i,j ) = 0 , the SV follows the free-road model afree (θ(j)), so the car-following mismatch 
+
+∆θ is inactive. Accordingly, the robust correction for IDM parameter uncertainty is applied only while the corresponding gate ω(i,j ) is active. B. Gate-Activated Car-Following Observer Following [7], we estimate the SV car-following accel-eration mismatch online from the measured SV speed 
+
+vs, only when the corresponding interaction gate is active, i.e., ω(i,j ) = 1 . Define the uncertainty estimate as ˆ∆θ := λsvs − ξ, where ξ ∈ R is the observer state and λs > 0 is the observer gain. During intervals with ω(i,j ) = 1 , the observer dynamics are 
+
+˙ξ = λs
+
+(aidm (θ(j)) + ˆ∆θ
+
+). (30) At each 0 → 1 transition of ω(i,j ), the observer state is reset according to ξ ← λsvs so that ˆ∆θ = 0 at the reset instant. Let tcf ≥ 0 denote the elapsed time since the most recent observer-gate activation, and define the estimation error as 
+
+eθ := ∆ θ − ˆ∆θ . (31) Lemma 1. Suppose the uncertainty ∆θ satisfies (29). Then, along each interval with ω(i,j ) = 1 , the estimation error eθ satisfies ˙eθ = ˙∆θ − λseθ , and is bounded by 
+
+|eθ (t)| ≤ ¯e(tcf ) := 
+
+(
+
+δb − δL
+
+λs
+
+)
+
+e−λstcf + δL
+
+λs
+
+, (32) for all tcf ≥ 0.Proof. The result follows directly from Lemma 1 in [7]. Thus, the bound resets to δb at each 0 → 1 transition of 
+
+ω(i,j ) and then decays monotonically to δL/λ s during the corresponding interaction-active interval. Define tconv := 2/λ s, i.e., two time constants after gate activation. Since the exponential term in (32) is then reduced to e−2 ≈
+
+13 .5% of its initial value, tconv is used as a conservative proxy for observer convergence, and ˆ∆θ is treated as reliable only when tcf > t conv .C. Robust Predictive ECBF Constraint 1) Case-Dependent Predictive Rollout: The overall uncertainty set is the Cartesian product M := I × J ,where each model m = ( i, j ) ∈ M defines one complete SV driver description by combining one gateway preset and one IDM kinematic preset. Prediction is then orga-nized by ω(i,j ), tcf ≥ 0, and a braking detection condition evaluated once the observer has converged. Specifically, let 
+
+B(i,j ) := 
+
+{
+
+aidm (θ(j)) + ˆ∆θ < a free (θ(j)) − ε
+
+}
+
+, (33) denote the event that, under the model pair (i, j ),the observer-corrected SV acceleration falls below the corresponding free-flow prediction by a margin ε > 0,indicating that the SV has begun car-following decel-eration. Based on ω(i,j ), tcf , and B(i,j ), three cases are considered. a) Case 1: ω(i,j ) = 0 for all (i, j ) ∈ M.: No interaction gate is active under any model pair, so the SV remains in free-flow for all (i, j ) ∈ M . The observer is inactive, and no online correction is available. b) Case 2: ω(i,j ) = 1 for at least one (i, j ) ∈ M and 
+
+tcf ≤ tconv .: At least one gate is active and the observer is running, but ˆ∆θ is still transient and not yet reliable. c) Case 3: ω(i,j ) = 1 for at least one (i, j ) ∈ M , tcf >tconv , and B(i,j ) holds.: The observer has converged and the corrected prediction confirms active SV deceleration for the corresponding model pair (i, j ). Only in this case does prediction switch from the multi-model evaluation over M to a single observer-corrected rollout for the active model pair, with correction ˆ∆θ injected. If ω(i,j ) = 1 for at least one (i, j ) ∈ M and tcf > t conv 
+
+but B(i,j ) does not hold, then the observer has converged but the SV still remains in free-flow under the active model pair. The situation therefore reduces to Case 1. The observer continues running, and the system switches to Case 3 once B(i,j ) is satisfied. 2) Multi-Model Rollout for Cases 1 and 2: In Cases 1 and 2, all |M| models are rolled out from the current state z0. For each m = ( i, j ) ∈ M , N forward steps are simulated using the joint dynamics f , with the SV acceleration at step k given by a(m)sv ,k = apidm 
+
+(θ(j)). No observer correction is injected. The worst-case evaluation point is selected over all trajectories and prediction steps: 
+
+(m∗, k ∗) := arg min  
+
+> m∈M ,k∈{ 1,...,N }
+
+HSV 
+
+(z(m)
+
+> k
+
+). (34) 
+
+Jk∗ = d zk∗ /dz0 is then propagated through the winning trajectory {z(m∗) 
+
+> k
+
+} using the parameter set of m∗.3) Observer-Corrected Rollout for Case 3: In Case 3, the observer has converged and SV braking is confirmed for a model pair (i, j ) via B(i,j ) in (33). A single rollout is then performed for that pair, with observer correction injected: 
+
+a(i,j )sv ,k = apidm 
+
+(θ(j), φ (i)) + ˆ∆θ ω(i,j ) 
+
+> k
+
+. (35) The critical step k∗ is selected via (22), and the Jacobian in (24) is propagated along the resulting corrected trajectory. 4) Robust Predictive and Current-Position IECBF Constraints: This subsection applies only to Case 3. In this case, both the predictive barrier and its current-position special case are evaluated from the observer-corrected rollout in (35). a) Predictive IECBF: Under the perturbed joint dynamics (28), the time derivative of Hpred SV along the true trajectory satisfies ˙Hpred SV = LF Hpred SV + LGHpred SV u +
+
+σ ∆θ ≥ ˜LF Hpred SV + LGHpred SV u, where τ := |σ| ¯e(tcf ) and 
+
+˜LF Hpred SV := LF Hpred SV + σ ˆ∆θ . Accordingly, the robust predictive IECBF constraint for Case 3 is 
+
+˜LF Hpred SV + LGHpred SV u − τ ≥ − αSV 
+
+(Hpred SV 
+
+). (36) b) Current-position guard: The current-position guard is the N = 0 special case of the predictive barrier, i.e., Hcurr SV = HSV (z0). Accordingly, define σ0 :=  
+
+> ∂H curr SV
+> ∂v s
+
+(z0), τ0 := |σ0| ¯e(tcf ) and ˜LF Hcurr SV := LF Hcurr SV +
+
+σ0 ˆ∆θ , then the robust current-position guard for Case 3 is 
+
+˜LF Hcurr SV + LGHcurr SV u − τ0 ≥ − αSV 
+
+(Hcurr SV 
+
+). (37) Theorem 1 (Robust current-position safety in Case 3). Consider Case 3. Suppose the true SV acceleration satis-fies (27) and (29), and let ˆ∆θ and ¯e(tcf ) be generated as in Section IV-B. If u is locally Lipschitz and satisfies (37) for all t ≥ 0, then the set Ccurr SV = {z ∈ Z | Hcurr SV (z) ≥ 0}
+
+is forward invariant. Hence, if Hcurr SV (z(0)) ≥ 0 at t = 0 ,then Hcurr SV (z(t)) ≥ 0 for all t ≥ 0.Proof. By (37), ˙Hcurr SV (z) ≥ − αSV 
+
+(Hcurr SV (z)). Since αSV is class-K, the standard CBF comparison argument yields forward invariance of Ccurr SV [7]. The predictive IECBF constraint is used as an an-ticipatory constraint that accounts for the most critical predicted EV–SV configuration over the finite horizon. Unlike the current-position guard, it is not used here to claim a separate forward-invariance result, since Hpred SV 
+
+is defined through a rollout-based minimum and is generally nonsmooth due to switching of the critical step 
+
+k∗.D. Robust CLF–IECBF QP For ℓ ∈ { pred , curr }, define ̂
+
+LF Hℓ 
+
+> SV
+
+:= 
+
+{
+
+LF Hℓ
+
+> SV
+
+, Cases 1–2 ,
+
+˜LF Hℓ 
+
+> SV
+
+− τℓ, Case 3 ,
+
+with τpred = τ and τcurr = τ0. The robust CLF–IECBF QP is finally given as 
+
+u⋆ = arg min   
+
+> u∈U ,δy, δ ψ
+
+12 u⊤Qu + 12 py δ2 
+
+> y
+
++ 12 pψ δ2
+
+> ψ
+
+s.t. (4) , (5) , (13) ,̂
+
+LF Hℓ 
+
+> SV
+
++ LGHℓ 
+
+> SV
+
+u ≥ − αSV 
+
+(Hℓ
+
+> SV
+
+), ℓ ∈ { pred , curr }.
+
+(38) V. Simulation Results The proposed framework is built on top of highway-env [8]. All simulations were run on a MacBook Pro equipped with an Apple M3 chip. The simulation is set up as described in Section II-A. The representative P-IDM settings are shown in Table I and the remaining design parameters are shown in Table II. During the simulation, the true SV behavior is generated by a con-servative IDM model with a cautious gateway, whereas the EV nominal joint model assumes an aggressive SV IDM model with a cooperative gateway. The EV is initialized in the upper lane at (Xe(0) , Y e(0)) =(20 , Y upper ), and the SV is initialized in the lower lane at 
+
+(Xs(0) , Y s(0)) = ( Xe(0) − 5.5, Y lower ). The RU is placed in the upper lane at (XRU , Y RU ) = ( Xe(0) + 6 , Y upper ).The simulation sampling time is ∆t = 0.1 s. Here, 
+
+Yupper and Ylower denote the lateral positions of the centers of the upper and lower lanes, respectively. Linear class-K functions are used for both the CLF and CBF constraints: αRU (s) = κRU s, α SV (s) = κSV s, α y (s) = 
+
+κy s, α ψ (s) = κψ s, where κSV > 0, κRU > 0, κy > 0,and κψ > 0 are design parameters. Baseline, nominal and robust proposed controllers are compared in the simulation. For a fair comparison, the baseline controller also adopts the predictive CBF structure, including both the current and the predictive SV safety constraint together with the RU CBF constraint. The difference is that its predictive rollout is based on the baseline non-interactive model (7).                                                                          
+
+> Table I: P-IDM presets IDM preset amax [m/s 2]b[m/s 2] Gateway preset Npc[m] Conservative 2.0 3.0 Cautious 10 1.0 Normal 4.0 5.0 Normal 20 2.0 Aggressive 6.0 6.0 Cooperative 40 3.0 All presets share s0= 10 m, T= 1 .5s, δ= 4 , and v0= 10 m/s. Table II: Simulation, controller, and robust-design parameters. Parameter Value Parameter Value Parameter Value
+> ve(0) 10 m/s py25 λs10 s−1
+> vs(0) 12 .5m/s pψ15 δb0.5m/s 2
+> rRU
+> a, r RU
+> b2.0mκy, κ ψ1.5δL0.5m/s 3
+> rSV
+> a4.5mκSV 5δe, min −1.8rad
+> rSV
+> b2.5mN20 δe, max +1 .8rad
+
+Figures 2 compare the baseline, nominal proposed, and robust proposed controllers. The baseline controller becomes infeasible immediately. As a result, both the steering and acceleration inputs remain zero, the EV cannot initiate an effective avoidance maneuver, and the vehicle continues toward the RU. This is further confirmed by the RU barrier value HRU which drops below zero at around 0.4 s , indicating loss of safety. The corresponding global trajectory in Figure 3 shows that the EV eventually collides with the RU obstacle. In contrast, both the nominal proposed and robust proposed controllers remain feasible throughout the ma-neuver and generate feasible control actions from solving the QP, as shown in Figure 2. The difference between the nominal proposed and robust proposed controllers is more clearly seen in the global trajectories in Figure 3. For the nominal proposed controller, the internal joint model assumes a more cooperative SV response than the true one. Because of this model mismatch, although the EV completes the maneuver safely and the barrier values remain nonnegative, the true SV exhibits a small lateral deviation, visible in its trajectory. This deviation is generated by the built-in background-vehicle behavior in highway-env, where SVs follow IDM longitudinal dy-namics together with a MOBIL-based lateral policy [8]. By contrast, the robust proposed controller accounts for this mismatch through the multi-model predictive rollout and observer-based tightening, and therefore avoids this undesirable lateral displacement of the SV while still maintaining feasibility and safety. Figure 2 shows that the nominal proposed and robust proposed controllers keep the barrier values nonnegative throughout the ma-neuver, whereas the baseline controller violates the RU safety constraint. These results show that the proposed interaction-aware predictive CBF improves feasibility relative to the baseline model, and that the robust extension further improves the physical consistency of the interaction. VI. Conclusions This paper proposed an IECBF for emergency lane change in mixed traffic, incorporating an interaction-t [s]     
+
+> 00.5 11.5
+> δe [rad]
+> -2 02
+
+EV Steering Angle 
+
+> Baseline Nominal Proposed Robust Proposed
+
+t [s]     
+
+> 00.5 11.5
+> ae [m/s 2]
+> 0246
+
+EV Longitudinal Acceleration 
+
+> Baseline Nominal Proposed Robust Proposed
+
+t [s]    
+
+> 00.5 11.5
+> H(z)
+> -2 024
+
+CBF Values ( H > 0 is safe)       
+
+> HSV – Baseline
+> HRU – Baseline
+> HSV – Nominal Proposed
+> HRU – Nominal Proposed
+> HSV – Robust Proposed
+> HRU – Robust Proposed
+
+Fig. 2. EV control inputs δe and ae and CBF values generated by the baseline, nominal proposed, and robust proposed controllers. X [m]                        
+
+> -290 -285 -280 -275 -270 -265 -260
+> Y [m]
+> -5 05Global Trajectory: Baseline
+> EV Trajectory (Baseline) X[m]
+> -290 -285 -280 -275 -270 -265 -260
+> Y [m]
+> -5 05Global Trajectory: Nominal Proposed
+> EV Trajectory (Nominal) X[m]
+> -290 -285 -280 -275 -270 -265 -260
+> Y [m]
+> -5 05Global Trajectory: Robust Proposed
+> EV Trajectory (Robust)
+
+Fig. 3. Global trajectories for the baseline, nominal proposed, and robust proposed controllers. In all three plots, the SV is the black vehicle in the lower lane and the RU is the red circular obstacle. 
+
+aware joint EV–SV model with P-IDM into the ECBF framework. As demonstrated in simulation, compared with classical ECBF neglecting SV reactions, the pro-posed method improves feasibility and safety. A robust extension combining multi-model rollout with observer-based correction addresses SV-model uncertainty, fur-ther improving feasibility under model mismatch. References 
+
+[1] A. D. Ames, X. Xu, J. W. Grizzle, and P. Tabuada, “Control barrier function based quadratic programs for safety critical systems,” IEEE Transactions on Automatic Control, vol. 62, no. 8, pp. 3861–3876, 2016. [2] M. Jankovic, “Robust control barrier functions for constrained stabilization of nonlinear systems,” Automatica, vol. 96, pp. 359–367, 2018. [3] T. G. Molnar, A. K. Kiss, A. D. Ames, and G. Orosz, “Safety-critical control with input delay in dynamic environment,” IEEE transactions on control systems technology, vol. 31, no. 4, pp. 1507–1520, 2022. [4] B. Brito, A. Agarwal, and J. Alonso-Mora, “Learning interaction-aware guidance for trajectory optimization in dense traffic scenarios,” IEEE Transactions on Intelligent Transporta-tion Systems, vol. 23, no. 10, pp. 18 808–18 821, 2022. [5] J. Breeden and D. Panagou, “Predictive control barrier func-tions for online safety critical control,” in 2022 IEEE 61st Conference on Decision and Control (CDC). IEEE, 2022, pp. 924–931. [6] M. Treiber, A. Hennecke, and D. Helbing, “Congested traffic states in empirical observations and microscopic simulations,” Physical review E, vol. 62, no. 2, p. 1805, 2000. [7] E. Daş and J. W. Burdick, “Robust control barrier functions us-ing uncertainty estimation with application to mobile robots,” IEEE Transactions on Automatic Control, vol. 70, no. 7, pp. 4766–4773, 2025. [8] E. Leurent, “An environment for autonomous driving decision-making,” https://github.com/eleurent/highway-env, 2018.
