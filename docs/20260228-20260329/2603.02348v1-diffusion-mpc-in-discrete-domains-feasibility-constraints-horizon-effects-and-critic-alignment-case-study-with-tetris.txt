@@ -1,0 +1,316 @@
+Title: Diffusion-MPC in Discrete Domains: Feasibility Constraints, Horizon Effects, and Critic Alignment: Case study with Tetris
+
+URL Source: https://arxiv.org/pdf/2603.02348v1
+
+Published Time: Wed, 04 Mar 2026 01:06:49 GMT
+
+Number of Pages: 7
+
+Markdown Content:
+# Diffusion-MPC in Discrete Domains: Feasibility Constraints, Horizon Effects, and Critic Alignment: Case study with Tetris 
+
+## Haochuan Kevin Wang Massachusetts Institute of Technology 
+
+## hcw@mit.edu 
+
+## March 4, 2026 
+
+Abstract 
+
+We present D IFF TETRIS , a diffusion-style model predictive control (MPC) planner for Tetris that samples candidate placement sequences with a discrete denoiser and selects actions via reranking. We study three axes: (1) feasibility-constrained sampling via logit masking with valid placement masks; (2) reranking using a heuristic board score, a pretrained DQN critic, and a hybrid combination; and (3) compute scaling in the number of candidates. Our find-ings are fourfold. First, feasibility filtering is essential in this discrete domain: masking removes invalid action mass (mean masked fraction ≈ 46% ) and yields a 6.8× score gain and 5.6× survival gain over unconstrained sam-pling. Second, naive DQN reranking is sys-tematically misaligned with the rollout objec-tive, producing large decision regret (mean 17.6, p90 36.6; regret > 10 in 63% of de-cisions at H = 8 ). Third, shorter horizons can outperform longer ones (heuristic H =4: 1.48 score, 1663ms; H = 8 : 0.89 score, 2761ms), consistent with sparse/delayed re-wards and uncertainty compounding in longer imagined rollouts. Fourth, compute choices 
+
+(K, H ) shape the dominant failure mode: small 
+
+K limits candidate quality, while larger H
+
+amplifies mismatch and misranking. 
+
+## 1 Introduction 
+
+Diffusion models have emerged as powerful generative models across images, video, and most recently, sequen-tial decision-making [Ho et al., 2020, Janner et al., 2022, Ajay et al., 2023]. In the planning setting, a diffusion model generates candidate action trajectories conditioned on the current state, and the best trajectory is selected for execution—a paradigm known as diffusion-MPC [Janner et al., 2022, Liang et al., 2024]. A key challenge in applying diffusion planners to dis-crete, combinatorial domains is ensuring that sampled tra-jectories respect environment constraints. Unlike continu-ous control where small deviations may be tolerable, dis-crete action spaces with hard validity constraints—such as piece placement legality in Tetris—mean that a single infeasible action renders an entire candidate trajectory un-usable. We study this problem in the domain of Tetris, a canon-ical combinatorial puzzle known to be NP-hard even to approximate [Demaine et al., 2003]. Tetris provides an ideal testbed: the action space is discrete (rotation × x-position), validity constraints are piece-dependent and board-state-dependent, and episodes are long enough to expose compounding errors. Our contributions are as follows. First, we imple-ment and evaluate a MaskGIT-style [Chang et al., 2022] discrete diffusion planner for Tetris, where a conditional Transformer denoiser generates candidate (rotation, x )
+
+token sequences. Second, we demonstrate that feasibility-constrained sampling —masking logits against valid place-ment masks at each autoregressive step—is necessary for performance, improving mean score from 0.13 to 0.89 and survival rate from 5% to 28% by restoring a valid search space. Third, we show that replacing the heuris-tic reranking function with a learned DQN critic [Mnih et al., 2015] harms performance despite the critic being trained on the same domain, and we diagnose this fail-ure using decision-level regret : the gap between the roll-out score of the chosen candidate and the best available candidate. Finally, we characterize how compute choices 
+
+(K, H ) change failure modes: increasing K strongly im-proves quality at fixed H, whereas increasing horizon can degrade both quality and latency; a hybrid reranking ap-proach recovers heuristic-level performance while limit-ing critic harm. 1
+
+> arXiv:2603.02348v1 [cs.LG] 2 Mar 2026
+
+## 2 Background and Related Work 
+
+Diffusion models for planning. Diffuser [Janner et al., 2022] introduced diffusion models as trajectory genera-tors for offline reinforcement learning, sampling full state-action trajectories and using classifier guidance or reward-weighted sampling for optimization. Decision Diffuser [Ajay et al., 2023] showed that conditional generation can subsume many decision-making paradigms. AdaptDif-fuser [Liang et al., 2023] extended this with self-evolving adaptation. Diffusion Policy [Chi et al., 2023] applied diffusion-based action generation to visuomotor control. These works primarily operate in continuous state-action spaces; our work extends diffusion planning to discrete 
+
+combinatorial domains with hard feasibility constraints. 
+
+Model predictive control with sampling. Sampling-based MPC generates candidate action sequences from a pro-posal distribution and selects the best according to a scor-ing function [Williams et al., 2017, Nagabandi et al., 2018]. Our approach follows this paradigm, using a trained diffusion model as the proposal distribution and evaluat-ing candidates via forward simulation. 
+
+Masked generative models. MaskGIT [Chang et al., 2022] introduced iterative parallel decoding for discrete token generation, where tokens are progressively unmasked based on confidence. Our PlanDenoiser adopts this archi-tecture for action sequence generation, with the critical addition of feasibility masking at sampling time. 
+
+Deep Q-Networks. DQN [Mnih et al., 2015] learns state-action value functions from environment interaction. We use a pre-trained DQN as a candidate reranking critic, evaluating whether learned value estimates can improve upon heuristic scoring in the MPC selection step. 
+
+## 3 Method 
+
+3.1 Problem Setup 
+
+We consider Tetris on a 20 × 10 board. At each deci-sion step, the agent observes the current board state b ∈{0, 1}20 ×10 , the current piece identity c ∈ { 0, . . . , 6}, and the next piece identity n ∈ { 0, . . . , 6}. The action space is the set of placements (r, x ) where r ∈ { 0, 1, 2, 3} is the rotation index and x ∈ { 0, . . . , 9} is the horizontal posi-tion, yielding |A| = 40 discrete actions. Not all actions are valid for a given (b, c ) pair; the set of valid actions 
+
+V(b, c ) ⊆ A depends on the piece geometry and board configuration.                      
+
+> Diffusion-MPC Planning Step Input: State (b, c, n ), denoiser fθ, candidates K, horizon
+> H
+> for k= 1 , . . . , K do
+> 1. Sample sk={(rh, x h)}Hh=1 from fθ
+> 2. Simulate skin cloned environment 3. Compute reranking score vk
+> end for
+> k∗←arg max kvk
+> return first action of sk∗
+
+Figure 1: Pseudocode for the diffusion-MPC planning step. 
+
+3.2 PlanDenoiser Architecture 
+
+The core generative model is a conditional Transformer [Vaswani et al., 2017] that we call PlanDenoiser . It takes as input the board state (encoded via a 2-layer CNN), piece embeddings for c and n, and a sequence of partially-masked (r, x ) token pairs of length H (the planning hori-zon). The model outputs logits over rotation ( RB×H×4)and x-position ( RB×H×W ). Specifically, the board is encoded as CNN (b) ∈ Rdflat ,concatenated with learned piece embeddings ec, e n ∈ R16 ,and projected to the model dimension d = 128 . This condition vector serves as the first token in a sequence of H + 1 tokens. The remaining H tokens are the sum of rotation and x-position embeddings. A learned positional embedding is added, and the sequence is processed by a 4-layer Transformer encoder with 4 attention heads. 
+
+Training. The model is trained with a MaskGIT-style [Chang et al., 2022] masked prediction objective. During training, a random fraction of the H token positions are replaced with mask tokens, and the model is trained to predict the original tokens at masked positions via cross-entropy loss. Training data consists of expert trajectories generated by a heuristic Tetris agent. 
+
+3.3 MPC Planning Loop 
+
+At evaluation time, we use the trained PlanDenoiser within a sampling-based MPC framework (Algorithm 1). Given the current state (b, c, n ), we sample K candidate action sequences of length H from the denoiser, score each can-didate by forward simulation, and execute the first action of the highest-scoring candidate. 
+
+3.4 Feasibility-Constrained Sampling 
+
+In the unconstrained setting (sampling_constraints=none), the denoiser uses the standard MaskGIT iterative refine-ment procedure: all K candidates are sampled in parallel 2using S denoising steps, progressively locking in the most confident tokens. In the feasibility-constrained setting (sampling con-straints = mask_logits), we modify the sampling to be au-toregressive over the horizon. At each horizon step h, we compute the valid placement mask m ∈ { 0, 1}4W for the current simulated board state using valid_placement_mask, which enumerates all (r, x ) pairs and checks geometric feasibility. We form joint logits over the flattened action space as ℓr,x = ℓ(rot ) 
+
+> r
+
++ ℓ(pos ) 
+
+> x
+
+and mask invalid entries: 
+
+ℓr,x ← −∞ where mrW +x = 0 . Sampling from the re-sulting softmax distribution guarantees that every sampled action is feasible. This masking incurs a computational cost: candidates must be sampled sequentially rather than in parallel, since each step requires simulating the previous action to ob-tain the updated board state for masking. In our experi-ments, approximately 46% of the action space is masked on average, indicating that nearly half of all placements are infeasible at any given step. 
+
+3.5 Reranking Strategies 
+
+After sampling K candidates, we must select which can-didate to execute. We study three reranking strategies: 
+
+Heuristic reranking. Each candidate is scored by sim-ulating its action sequence in a cloned environment and evaluating the resulting board state with a hand-crafted heuristic: v = 5 .0 · lines − 0.8 · holes − 0.05 · height −
+
+0.03 · bump − 0.02 · max_h. This heuristic captures well-known properties of good Tetris play. 
+
+DQN reranking. We replace the heuristic scorer with a pre-trained DQN critic [Mnih et al., 2015]. The DQN is a CNN-based Q-network trained via standard deep Q-learning on the same Tetris environment. The value of a candidate is V (b′) = max a∈V (b′,c ′) Q(b′, c ′, n ′; a), where 
+
+b′ is the board state after simulating the candidate. 
+
+Hybrid reranking. We combine both signals: vhybrid  
+
+> k
+
+=
+
+vrollout  
+
+> k
+
++ α · z(vdqn  
+
+> k
+
+), where vrollout  
+
+> k
+
+is the heuristic roll-out score, z(·) denotes z-score normalization across the 
+
+K candidates, and α is a mixing weight. The z-scoring ensures the DQN contribution is scale-invariant. 
+
+3.6 Decision-Level Regret 
+
+We introduce decision-level regret as a diagnostic for rerank-ing quality. For each decision step, we compute the heuris-tic rollout score of every candidate and define regret as: regret t = max  
+
+> k
+
+vrollout  
+
+> k
+
+− vrollout  
+
+> k∗
+
+, (1) where k∗ is the candidate selected by the reranking strat-egy. When the reranking criterion aligns with the rollout score (as in heuristic reranking), regret is identically zero. When a misaligned critic selects a different candidate, re-gret measures the opportunity cost. 
+
+## 4 Experimental Setup 
+
+Environment. We use a custom Tetris implementation with a 20 ×10 board, 7 standard tetrominoes, and placement-based actions. Each episode runs until game over or a maximum of 2000 steps. All evaluations use 100 episodes with a fixed random seed for reproducibility. 
+
+PlanDenoiser training. The denoiser is trained on ex-pert trajectories from a heuristic agent using the “loose” dataset variant. The model uses d = 128 , 4 Transformer layers, 4 heads, and is trained with a MaskGIT masked prediction objective on sequences of horizon H = 8 . The denoising process uses S = 8 iterative refinement steps at temperature τ = 1 .0.
+
+DQN critic. The DQN is a CNN-based Q-network with separate current-piece and next-piece embeddings, trained via standard DQN with experience replay on the same Tetris environment. 
+
+Horizon mismatch handling. When evaluating with a horizon Heval < H train , the learned positional embedding is truncated to the first Heval + 1 positions. This allows a single checkpoint trained at H = 8 to be evaluated at 
+
+H = 4 without retraining. 
+
+Configurations. We evaluate the following configura-tions: • Baseline : No masking + heuristic reranking ( K =64 , H = 8 )• Mask + Heuristic : Feasibility masking + heuristic (K = 64 , H = 8 )• Mask + DQN : Feasibility masking + DQN rerank-ing ( K = 64 , H ∈ { 4, 8})• Mask + Hybrid : Feasibility masking + hybrid with 
+
+α = 0 .05 (K = 64 , H = 8 )• Scaling : Mask + heuristic with K ∈ { 16 , 32 , 64 }
+
+(H = 8 )
+
+## 5 Results 
+
+5.1 Main Results 
+
+Table 1 presents the full results across all configurations. 3Table 1: Main evaluation results across configurations (100 episodes each). Regret measures the gap between chosen and best candidate rollout scores. All runs use S = 8 denoising steps and τ = 1 .0.Configuration Constraint Rerank H K Mean Med. Steps %>0 ms/dec Mask% Regret (mean / p90) No Mask + Heur none heuristic 8 64 0.13 0.0 16.0 5% 521 0.0% 0.00 / 0.0 Mask + Heur mask heuristic 8 64 0.89 0.0 25.9 28% 2761 46.3% 0.00 / 0.0 Mask + Heur ( K=16) mask heuristic 8 16 0.31 0.0 24.4 12% 677 47.5% 0.00 / 0.0 Mask + Heur ( K=32) mask heuristic 8 32 0.44 0.0 25.1 16% 1364 47.3% 0.00 / 0.0 Mask + Heur ( H=4) mask heuristic 4 64 1.48 0.0 27.3 38% 1663 45.2% 0.00 / 0.0 Mask + DQN ( H=8) mask dqn 8 64 0.14 0.0 23.5 7% 2492 48.5% 17.59 / 36.6 Mask + DQN ( H=4) mask dqn 4 64 0.14 0.0 22.8 7% 1564 46.8% 11.47 / 24.6 Mask + Hybrid mask hybrid 8 64 0.89 0.0 25.5 29% 2832 46.2% 0.00 / 0.0 No Mask 
+
+> + Heur
+> Mask
+> + Heur
+> Mask
+> + DQN
+> Mask
+> + Hybrid
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Mean Score
+> Effect of Feasibility Masking and Reranking
+> Mean Score
+> % Score > 0
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> % Episodes Score > 0
+
+Figure 2: Effect of feasibility masking and reranking strat-egy on mean episode score and percentage of episodes achieving score > 0. Masking yields a 6.8× improve-ment. DQN reranking erases the masking benefit. 
+
+5.2 Effect of Feasibility Masking 
+
+Figure 2 shows the impact of feasibility-constrained sam-pling. Without masking, the baseline achieves a mean score of only 0.13 with 5% of episodes scoring above zero, surviving an average of 16 steps before termination. With masking enabled (and the same heuristic reranking), mean score increases to 0.89 ( 6.8×), survival rate to 28% (5.6×), and mean steps to 25.9 ( 1.6×). The masked fraction of approximately 46% confirms that nearly half of all candidate placements are geomet-rically infeasible at any given step. This indicates that masking is not merely a small regularizer; it changes the planner from sampling many non-executable actions to searching within feasible trajectories. Using episode length as a proxy for failure-to-act, 91% of unmasked episodes terminate within 20 steps versus 23% with masked heuris-tic sampling at H = 8 . Thus, the primary gain from masking is restoring effective candidate diversity in the executable action space. 
+
+5.3 Compute-Quality Frontier and Critic Alignment 
+
+Figure 3 summarizes the quality-latency tradeoff across all evaluated configurations. The shortest-horizon masked heuristic configuration ( H = 4 ) lies on the Pareto frontier and dominates the standard H = 8 setup, achieving both higher score (1.48 vs. 0.89) and lower latency (1663ms vs. 2761ms). This suggests that in this domain, longer looka-head can be counterproductive when rollout uncertainty compounds over horizon. Replacing the heuristic reranker with the DQN critic dramatically degrades performance at both horizons: mean score drops to 0.14 and survival to 7%. In contrast, the hybrid reranker remains close to heuristic performance at 
+
+H = 8 (0.89 score, 29% survival), indicating that bounded critic influence is safer than pure critic selection. Decision-level regret makes the failure mode explicit: DQN rerank-ing has high regret (mean 17.59 at H = 8 , 11.47 at H =4), regret > 10 in 63.1% ( H = 8 ) and 48.3% ( H = 4 )of decisions, whereas heuristic and hybrid reranking stay near zero. Because regret is defined as the gap to the best available candidate under the same rollout evaluator, posi-tive regret directly certifies anti-helpful selections relative to that objective. Regret is highest early in episodes (mean 30.3 in the first quartile of steps for DQN H = 8 , versus 5.7 in the last quartile), indicating that critic misranking occurs before deep-horizon compounding dominates. This indicates a fundamental misalignment between the DQN’s value estimates and actual board quality as measured by forward simulation. The DQN may have learned a value function that is accurate in expectation over its own policy but misleading when used to evaluate trajectories generated by a different proposal distribution. 
+
+5.4 Hybrid Reranking 
+
+The hybrid strategy with α = 0 .05 recovers the full per-formance of heuristic reranking (mean score 0.89, sur-vival 29%) while maintaining near-zero regret (mean 4.2×
+
+10 −4, p90 = 0.0). The small α ensures that the DQN sig-nal acts only as a tiebreaker when rollout scores are close, preventing the critic from overriding clearly better candi-4500 1000 1500 2000 2500 
+
+> Mean Decision Latency (ms)
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> Mean Episode Score
+> NoMask-H8
+> MaskHeur-K16
+> MaskHeur-K32
+> MaskHeur-H8
+> MaskHeur-H4
+> MaskDQN-H8 MaskDQN-H4
+> MaskHybrid-H8
+
+Quality-Latency Frontier     
+
+> 500 1000 1500 2000 2500
+> Mean Decision Latency (ms)
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> % Episodes with Score > 0
+> NoMask-H8
+> MaskHeur-K16
+> MaskHeur-K32
+> MaskHeur-H8
+> MaskHeur-H4
+> MaskDQN-H8 MaskDQN-H4
+> MaskHybrid-H8
+
+Survival-Latency Frontier 
+
+> Heuristic
+> DQN
+> Hybrid
+> H=4
+> H=8
+> No mask
+
+Figure 3: Compute-aware frontier across configurations. Left : mean score vs. decision latency. Right : survival rate (% episodes with score > 0) vs. latency. Dashed lines show Pareto frontiers. The masked heuristic H = 4 configuration is both faster and stronger than masked H = 8 , while DQN reranking is off-frontier at both horizons. dates. This demonstrates that learned critics can be safely integrated into sampling-based planners when their influ-ence is appropriately bounded. 
+
+5.5 Compute Scaling 
+
+Figure 4 shows mean score as a function of the num-ber of candidates K with masking and heuristic rerank-ing at H = 8 . Performance scales monotonically: K =16 achieves 0.31, K = 32 achieves 0.44, and K = 64 
+
+achieves 0.89. This strongly increasing trend suggests that proposal quality is compute-limited in this regime: larger 
+
+K increases the chance of sampling high-quality trajec-tories from the same denoiser. However, wall-clock time scales linearly with K (from 677ms to 2761ms per de-cision), presenting a clear compute-performance tradeoff. Latency-normalized score ( 1000 ·mean score /ms per decision) peaks at K = 16 (0.458) while raw score peaks at K = 64 
+
+(0.89), showing that deployment objectives (throughput vs. absolute quality) select different operating points. 
+
+5.6 Horizon Effects 
+
+An unexpected finding is that the shorter horizon H = 4 
+
+with heuristic reranking (mean score 1.48, survival 38%) 
+
+outperforms H = 8 (mean score 0.89, survival 28%). This is consistent with sparse/delayed reward structure and objective mismatch: the denoiser is behavior-cloned on short-horizon targets, while planning quality depends on long-term return. With H = 8 , a larger fraction of each candidate trajectory relies on imagined futures (unknown 16 32 64 
+
+Number of Candidates ( K)
+
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Mean Score
+> 0.31
+> 0.44
+> 0.89
+
+Compute Scaling: Score vs. K
+
+Figure 4: Compute scaling: mean episode score vs. num-ber of candidates K, with feasibility masking and heuris-tic reranking ( H = 8 ). Performance increases strongly with K, while latency grows approximately linearly. piece sequences beyond the next piece), increasing dis-tribution shift in simulated states and making late-token completions less reliable. The H = 4 configuration also benefits from lower computational cost per candidate (1663ms vs. 2761ms), since fewer autoregressive steps require fewer environment simulations for masking. Under DQN rerank-ing, shortening horizon also reduces misranking severity (mean regret 17.59 → 11.47; p90 36.6 → 24.6), further supporting the view that longer-horizon rollouts amplify critic-planner mismatch. 56 Discussion and Limitations 
+
+Regret as a diagnostic. Our decision-level regret met-ric provides a model-free diagnostic for critic quality in sampling-based planners. When regret is consistently zero (as under heuristic reranking), the selection criterion is aligned with trajectory quality. When regret is large (as under DQN reranking), the critic is systematically misiden-tifying good candidates. Since regret is computed against the best available candidate at each decision, it is a di-rect per-step certificate of anti-helpful critic behavior un-der the rollout objective. This diagnostic does not require ground-truth value functions and can be computed online during evaluation. 
+
+Why does DQN reranking fail? We hypothesize sev-eral contributing factors. First, the DQN was trained un-der its own behavioral distribution, which differs from the diffusion planner’s proposal distribution; Q-values may not transfer to out-of-distribution states encountered dur-ing rollouts. Second, the DQN evaluates single-step state quality, while the rollout heuristic evaluates multi-step outcomes— these objectives may conflict. Third, the heuristic explic-itly penalizes holes and bumpiness, which are strong pre-dictors of near-term survival in Tetris; the DQN may have learned a smoother but less locally-accurate value func-tion. Fourth, this mismatch worsens with horizon as roll-outs move deeper into imagined futures, which increases critic OOD exposure. 
+
+Compute-dependent failure modes. Our sweeps sug-gest two distinct regimes. At low candidate count K,quality is dominated by proposal scarcity: increasing K
+
+substantially improves outcomes. At larger horizon H,quality is dominated by alignment and uncertainty: critic misranking and long-horizon simulation error become the limiting factors even when K is fixed. Thus, (K, H ) tun-ing is not only a speed-accuracy tradeoff; it determines which failure mechanism dominates. 
+
+Limitations. Our study has several limitations. First, absolute performance remains modest (mean score < 2), reflecting the difficulty of Tetris and limited denoiser ca-pacity/data. Second, rewards are sparse and delayed, while our denoiser is trained by behavior cloning rather than re-turn optimization; this may inherently favor short-horizon proxy quality over long-horizon return. Third, our regret metric is defined relative to heuristic rollout score, which is a consistent internal objective but not true environment return. Fourth, feasibility-constrained masking requires sequential simulation to compute validity masks, reduc-ing parallelism and increasing inference cost. Fifth, we evaluate on a single domain with 100 episodes per con-figuration; broader generalization and tighter uncertainty estimates remain open. 
+
+Future work. Several directions are promising. Scaling the denoiser capacity and training data could improve base plan quality. Adaptive α scheduling for hybrid rerank-ing could dynamically balance heuristic and critic signals. Constrained parallel sampling methods could recover the efficiency of batch generation while maintaining feasibil-ity. Finally, training the denoiser with a planning-aware objective (e.g., decision-time fine-tuning) rather than pure behavior cloning could better align the proposal distribu-tion with high-quality plans. 
+
+## 7 Conclusion 
+
+We presented D IFF TETRIS , a diffusion-style MPC plan-ner for Tetris that combines a MaskGIT-based discrete denoiser with feasibility-constrained sampling and candi-date reranking. Our results show that diffusion-MPC per-formance in discrete sparse-reward planning hinges less on generative modeling alone than on feasibility filter-ing, critic alignment, and compute choices. Feasibility-constrained masking converts a large invalid action mass (≈ 46% ) into executable candidates and delivers large gains in score and survival. Naive DQN reranking is not merely noisy but systematically anti-helpful under the roll-out objective, with large decision regret and frequent se-vere misranking. Shorter horizon can dominate longer horizon on both quality and latency, consistent with uncer-tainty compounding through imagined futures and behavior-cloned short-term priors rather than direct long-term re-turn optimization. Finally, (K, H ) tuning changes which failure mode dominates: proposal scarcity at low K ver-sus alignment and rollout uncertainty at larger H. These findings suggest that diffusion-MPC for combinatorial con-trol should prioritize feasibility-aware sampling, regret-based alignment diagnostics, and compute-aware operating-point selection; learned critics likely require explicit dis-tributional alignment or return-aware training objectives before they can be safely trusted for reranking. 
+
+## Acknowledgements 
+
+We used the Tetris codebase from github.com/William-Pig/tetris_ai to set up the Tetris playing ground used in this work. 
+
+## References 
+
+Anurag Ajay, Yilun Du, Abhi Gupta, Joshua B Tenen-baum, Tommi Jaakkola, and Pulkit Agrawal. Is condi-tional generation all you need for decision-making? In 6International Conference on Learning Representations ,2023. Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T Freeman. MaskGIT: Masked generative im-age transformer. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition ,pages 11315–11325, 2022. Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin Burchfiel, and Shuran Song. Dif-fusion policy: Visuomotor policy learning via action diffusion. In Robotics: Science and Systems , 2023. Erik D Demaine, Susan Hohenberger, and David Liben-Nowell. Tetris is hard, even to approximate. Interna-tional Journal of Computational Geometry & Applica-tions , 13(06):495–519, 2003. Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Advances in Neu-ral Information Processing Systems , volume 33, pages 6840–6851, 2020. Michael Janner, Yilun Du, Joshua B Tenenbaum, and Sergey Levine. Planning with diffusion for flexible be-havior synthesis. In International Conference on Ma-chine Learning , pages 9902–9915. PMLR, 2022. Guangyao Liang, Nishit Patel, Michael Luo, Zixuan Zhang, Debadeepta Dey, and Azalia Mirhoseini. Dif-fusion model predictive control. In arXiv preprint arXiv:2408.09349 , 2024. Zhixuan Liang, Yao Mu, Mingyu Ding, Fei Ni, Masayoshi Tomizuka, and Ping Luo. AdaptDiffuser: Diffusion models as adaptive self-evolving planners. In Interna-tional Conference on Machine Learning , pages 20725– 20745. PMLR, 2023. Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei A Rusu, Joel Veness, Marc G Bellemare, Alex Graves, Martin Riedmiller, Andreas K Fidjeland, Georg Ostrovski, et al. Human-level control through deep reinforcement learning. Nature , 518(7540):529– 533, 2015. Anusha Nagabandi, Gregory Kahn, Ronald S Fearing, and Sergey Levine. Neural network dynamics for model-based deep reinforcement learning with model-free fine-tuning. In IEEE International Conference on Robotics and Automation , pages 7559–7566, 2018. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems ,volume 30, 2017. Grady Williams, Nolan Wagener, Brian Goldfain, Paul Drews, James M Rehg, Byron Boots, and Evangelos A Theodorou. Information theoretic MPC for model-based reinforcement learning. IEEE International Con-ference on Robotics and Automation , pages 1714–1721, 2017. 7
