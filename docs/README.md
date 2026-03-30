@@ -6,34 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-29
-- 运行时间：2026-03-29 19:58:18 UTC
+- 最新运行日期：2026-03-30
+- 运行时间：2026-03-30 20:12:50 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：1
-- 速读区：3
+- 本次总论文数：2
+- 精读区：2
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦强化学习与扩散模型的底层融合，从薛定谔桥视角重构 PPO 算法并探索物理对齐的世界模型。
-重点推荐路径空间下的策略优化新范式，以及具备物理一致性的机器人交互模型 ABot-PhysWorld。
-建议读者深入理解生成模型在流形数据与离散快照中的数学机理，把握 AI 与物理规律深度结合的技术趋势。
-- 详情：[/202603/29/README](/202603/29/README)
+今日深入研读具身智能前沿，聚焦机器人导航抓取一体化与物理对齐的世界模型。
+重点推荐 DiffusionAnything 的端到端上下文学习框架，以及 ABot-PhysWorld 在物理仿真交互中的精准对齐。
+建议关注扩散模型与物理基础模型如何协同，显著提升机器人在复杂环境下的操作泛化性。
+- 详情：[/202603/30/README](/202603/30/README)
 
 ### 精读区论文标签
-1. [Proximal Policy Optimization in Path Space: A Schrödinger Bridge Perspective](/202603/29/2603.21621v1-proximal-policy-optimization-in-path-space-a-schrdinger-bridge-perspective)  
+1. [DiffusionAnything: End-to-End In-context Diffusion Learning for Unified Navigation and Pre-Grasp Motion](/202603/30/2603.26322v1-diffusionanything-end-to-end-in-context-diffusion-learning-for-unified-navigation-and-pre-grasp-motion)  
+   标签：评分：9.0/10、query:diffpl
+   evidence：用于导航和运动规划的统一图像空间扩散策略
+2. [ABot-PhysWorld: Interactive World Foundation Model for Robotic Manipulation with Physics Alignment](/202603/30/2603.23376v2-abot-physworld-interactive-world-foundation-model-for-robotic-manipulation-with-physics-alignment)  
    标签：评分：8.0/10、query:diffpl
-   evidence：将扩散策略视为轨迹级生成过程
+   evidence：用于机器人操作与规划的扩散 Transformer 模型
 
 ### 速读区论文标签
-1. [ABot-PhysWorld: Interactive World Foundation Model for Robotic Manipulation with Physics Alignment](/202603/29/2603.23376v1-abot-physworld-interactive-world-foundation-model-for-robotic-manipulation-with-physics-alignment)  
-   标签：评分：7.0/10、query:diffpl
-   evidence：用于机器人操作和规划的扩散Transformer模型
-2. [Diffusion Model for Manifold Data: Score Decomposition, Curvature, and Statistical Complexity](/202603/29/2603.20645v1-diffusion-model-for-manifold-data-score-decomposition-curvature-and-statistical-complexity)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：结构化数据扩散模型的理论理解
-3. [Generalized Discrete Diffusion from Snapshots](/202603/29/2603.21342v1-generalized-discrete-diffusion-from-snapshots)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：适用于生成任务的离散扩散建模统一框架
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
