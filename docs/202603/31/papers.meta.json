@@ -1,0 +1,79 @@
+{
+  "label": "2026-03-31",
+  "date": "2026-03-31",
+  "generated_at": "2026-03-31T20:26:49",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202603/31/2603.25741v2-vega-learning-to-drive-with-natural-language-instructions",
+      "section": "deep",
+      "title_en": "Vega: Learning to Drive with Natural Language Instructions",
+      "authors": "Sicheng Zuo, Yuxuan Li, Wenzhao Zheng, Zheng Zhu, Jie Zhou, Jiwen Lu",
+      "date": "2026-03-26",
+      "pdf": "https://arxiv.org/pdf/2603.25741v2",
+      "score": "9.0",
+      "evidence": "基于扩散范式的指令驱动自动驾驶生成与规划",
+      "tldr": "本研究针对现有自动驾驶模型缺乏遵循多样化指令能力的局限，提出了Vega模型。通过构建包含10万个场景的InstructScene指令驾驶数据集，Vega结合了自回归（处理视觉与语言）与扩散模型（生成预测与轨迹）的优势。该模型实现了视觉、语言、世界建模与动作的统一，不仅提升了规划性能，还赋予了系统强大的指令遵循能力，为个性化智能驾驶奠定了基础。",
+      "tags": "query:genad",
+      "abstract_en": "Vision-language-action models have reshaped autonomous driving to incorporate languages into the decision-making process. However, most existing pipelines only utilize the language modality for scene descriptions or reasoning and lack the flexibility to follow diverse user instructions for personalized driving. To address this, we first construct a large-scale driving dataset (InstructScene) containing around 100,000 scenes annotated with diverse driving instructions with the corresponding trajectories. We then propose a unified Vision-Language-World-Action model, Vega, for instruction-based generation and planning. We employ the autoregressive paradigm to process visual inputs (vision) and language instructions (language) and the diffusion paradigm to generate future predictions (world modeling) and trajectories (action). We perform joint attention to enable interactions between the modalities and use individual projection layers for different modalities for more capabilities. Extensive experiments demonstrate that our method not only achieves superior planning performance but also exhibits strong instruction-following abilities, paving the way for more intelligent and personalized driving systems.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202603/31/2603.26747v1-from-diffusion-to-flow-efficient-motion-generation-in-motiongpt3",
+      "section": "quick",
+      "title_en": "From Diffusion To Flow: Efficient Motion Generation In MotionGPT3",
+      "authors": "Jaymin Ban, JiHong Jeon, SangYeop Jeong",
+      "date": "2026-03-23",
+      "pdf": "https://arxiv.org/pdf/2603.26747v1",
+      "score": "7.0",
+      "evidence": "基于扩散先验的文本条件动作生成",
+      "tldr": "本研究探讨了在MotionGPT3框架下，将扩散模型替换为修正流（Rectified Flow）目标函数对文本驱动动作生成的影响。通过在HumanML3D数据集上的受控实验，研究发现修正流在训练收敛速度、推理效率及动作质量方面均优于传统扩散模型，为连续潜空间动作生成提供了更高效的先验选择，显著优化了生成效率与质量的权衡。",
+      "tags": "query:diffpl",
+      "abstract_en": "Recent text-driven motion generation methods span both discrete token-based approaches and continuous-latent formulations. MotionGPT3 exemplifies the latter paradigm, combining a learned continuous motion latent space with a diffusion-based prior for text-conditioned synthesis. While rectified flow objectives have recently demonstrated favorable convergence and inference-time properties relative to diffusion in image and audio generation, it remains unclear whether these advantages transfer cleanly to the motion generation setting. In this work, we conduct a controlled empirical study comparing diffusion and rectified flow objectives within the MotionGPT3 framework. By holding the model architecture, training protocol, and evaluation setup fixed, we isolate the effect of the generative objective on training dynamics, final performance, and inference efficiency. Experiments on the HumanML3D dataset show that rectified flow converges in fewer training epochs, reaches strong test performance earlier, and matches or exceeds diffusion-based motion quality under identical conditions. Moreover, flow-based priors exhibit stable behavior across a wide range of inference step counts and achieve competitive quality with fewer sampling steps, yielding improved efficiency--quality trade-offs. Overall, our results suggest that several known benefits of rectified flow objectives do extend to continuous-latent text-to-motion generation, highlighting the importance of the training objective choice in motion priors.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202603/31/2603.27573v1-spread-spatial-physical-reasoning-via-geometry-aware-diffusion",
+      "section": "quick",
+      "title_en": "SPREAD: Spatial-Physical REasoning via geometry Aware Diffusion",
+      "authors": "Minzhang Li, Kuixiang Shao, Xuebing Li, Yuyang Jiao, Yinuo Bai, Hengan Zhou, Sixian Shen, Jiayuan Gu, Jingyi Yu",
+      "date": "2026-03-29",
+      "pdf": "https://arxiv.org/pdf/2603.27573v1",
+      "score": "7.0",
+      "evidence": "基于扩散模型的具身智能空间推理与避障框架",
+      "tldr": "SPREAD是一个基于扩散模型的3D场景生成框架，旨在解决现有方法在空间和物理建模方面的不足。它通过图变换器学习空间与物理关系，并结合场景点云实现几何感知。该模型引入了碰撞规避、关系约束和重力等可微引导，确保生成的场景在物理上连贯且稳定。实验证明，SPREAD在空间推理和物理指标上达到了领先水平，生成的场景可直接用于具身智能仿真。",
+      "tags": "query:diffpl",
+      "abstract_en": "Automated 3D scene generation is pivotal for applications spanning virtual reality, digital content creation, and Embodied AI. While computer graphics prioritizes aesthetic layouts, vision and robotics demand scenes that mirror real-world complexity which current data-driven methods struggle to achieve due to limited unstructured training data and insufficient spatial and physical modeling. We propose SPREAD, a diffusion-based framework that jointly learns spatial and physical relationships through a graph transformer, explicitly conditioning on posed scene point clouds for geometric awareness. Moreover, our model integrates differentiable guidance for collision avoidance, relational constraint, and gravity, ensuring physically coherent scenes without sacrificing relational context. Our experiments on 3D-FRONT and ProcTHOR datasets demonstrate state-of-the-art performance in spatial-relational reasoning and physical metrics. Moreover, \\ours{} outperforms baselines in scene consistency and stability during pre- and post-physics simulation, proving its capability to generate simulation-ready environments for embodied AI agents.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202603/31/2603.27756v1-heracles-bridging-precise-tracking-and-generative-synthesis-for-general-humanoid-control",
+      "section": "quick",
+      "title_en": "Heracles: Bridging Precise Tracking and Generative Synthesis for General Humanoid Control",
+      "authors": "Zelin Tao, Zeran Su, Peiran Liu, Jingkai Sun, Wenqiang Que, Jiahao Ma, Jialin Yu, Jiahang Cao, Pihai Sun, Hao Liang, Gang Han, Wen Zhao, Zhiyuan Xu, Yijie Guo, Jian Tang, Qiang Zhang",
+      "date": "2026-03-29",
+      "pdf": "https://arxiv.org/pdf/2603.27756v1",
+      "score": "7.0",
+      "evidence": "用于类人机器人控制的状态条件扩散中间件",
+      "tldr": "针对通用人形机器人控制中精确跟踪与灵活性难以兼顾的问题，本文提出Heracles框架。该框架引入一种状态条件扩散中间件，连接高层参考运动与底层物理跟踪器。Heracles能根据机器人实时状态隐式调整行为：在状态对齐时保持高精度跟踪，在遭遇严重干扰时无缝切换为生成式合成器以产生拟人化的恢复轨迹。该方法显著增强了机器人在极端环境下的鲁棒性，推动了从刚性跟踪向生成式通用控制的转变。",
+      "tags": "query:diffpl",
+      "abstract_en": "Achieving general-purpose humanoid control requires a delicate balance between the precise execution of commanded motions and the flexible, anthropomorphic adaptability needed to recover from unpredictable environmental perturbations. Current general controllers predominantly formulate motion control as a rigid reference-tracking problem. While effective in nominal conditions, these trackers often exhibit brittle, non-anthropomorphic failure modes under severe disturbances, lacking the generative adaptability inherent to human motor control. To overcome this limitation, we propose Heracles, a novel state-conditioned diffusion middleware that bridges precise motion tracking and generative synthesis. Rather than relying on rigid tracking paradigms or complex explicit mode-switching, Heracles operates as an intermediary layer between high-level reference motions and low-level physics trackers. By conditioning on the robot's real-time state, the diffusion model implicitly adapts its behavior: it approximates an identity map when the state closely aligns with the reference, preserving zero-shot tracking fidelity. Conversely, when encountering significant state deviations, it seamlessly transitions into a generative synthesizer to produce natural, anthropomorphic recovery trajectories. Our framework demonstrates that integrating generative priors into the control loop not only significantly enhances robustness against extreme perturbations but also elevates humanoid control from a rigid tracking paradigm to an open-ended, generative general-purpose architecture.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202603/31/2603.28522v1-rad-lad-rule-and-language-grounded-autonomous-driving-in-real-time",
+      "section": "quick",
+      "title_en": "RAD-LAD: Rule and Language Grounded Autonomous Driving in Real-Time",
+      "authors": "Anurag Ghosh, Srinivasa Narasimhan, Manmohan Chandraker, Francesco Pittaluga",
+      "date": "2026-03-30",
+      "pdf": "https://arxiv.org/pdf/2603.28522v1",
+      "score": "6.0",
+      "evidence": "用于自动驾驶的实时语言-动作规划器",
+      "tldr": "本研究提出了RAD-LAD系统，旨在解决自动驾驶中实时性与可解释性的平衡问题。LAD是一个实时语言-动作规划器，支持快速运动规划及文本推理，延迟比前代模型低3倍。RAD是改进的规则规划器，克服了PDM-Closed的局限。通过结合两者，混合系统实现了规则的可靠性与语言的自适应决策能力的互补，在nuPlan等基准测试中达到SOTA水平。",
+      "tags": "query:genad",
+      "abstract_en": "We present LAD, a real-time language--action planner with an interruptible architecture that produces a motion plan in a single forward pass (~20 Hz) or generates textual reasoning alongside a motion plan (~10 Hz). LAD is fast enough for real-time closed-loop deployment, achieving ~3x lower latency than prior driving language models while setting a new learning-based state of the art on nuPlan Test14-Hard and InterPlan. We also introduce RAD, a rule-based planner designed to address structural limitations of PDM-Closed. RAD achieves state-of-the-art performance among rule-based planners on nuPlan Test14-Hard and InterPlan. Finally, we show that combining RAD and LAD enables hybrid planning that captures the strengths of both approaches. This hybrid system demonstrates that rules and learning provide complementary capabilities: rules support reliable maneuvering, while language enables adaptive and explainable decision-making.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -6,29 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-30
-- 运行时间：2026-03-30 20:12:50 UTC
+- 最新运行日期：2026-03-31
+- 运行时间：2026-03-31 20:26:40 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：2
-- 速读区：0
+- 本次总论文数：5
+- 精读区：1
+- 速读区：4
 
 ### 今日简报（AI）
-今日深入研读具身智能前沿，聚焦机器人导航抓取一体化与物理对齐的世界模型。
-重点推荐 DiffusionAnything 的端到端上下文学习框架，以及 ABot-PhysWorld 在物理仿真交互中的精准对齐。
-建议关注扩散模型与物理基础模型如何协同，显著提升机器人在复杂环境下的操作泛化性。
-- 详情：[/202603/30/README](/202603/30/README)
+今日聚焦大模型赋能的具身智能，重点推介得分 9.0 的自然语言驱动驾驶系统 Vega。
+核心看点在于 Vega 如何将语言指令转化为精准驾驶决策，以及人形机器人控制与高效动作生成技术的最新融合。
+建议优先研读 Vega 了解“言传身教”式驾驶范式，并关注几何感知扩散模型在物理推理中的应用。
+- 详情：[/202603/31/README](/202603/31/README)
 
 ### 精读区论文标签
-1. [DiffusionAnything: End-to-End In-context Diffusion Learning for Unified Navigation and Pre-Grasp Motion](/202603/30/2603.26322v1-diffusionanything-end-to-end-in-context-diffusion-learning-for-unified-navigation-and-pre-grasp-motion)  
-   标签：评分：9.0/10、query:diffpl
-   evidence：用于导航和运动规划的统一图像空间扩散策略
-2. [ABot-PhysWorld: Interactive World Foundation Model for Robotic Manipulation with Physics Alignment](/202603/30/2603.23376v2-abot-physworld-interactive-world-foundation-model-for-robotic-manipulation-with-physics-alignment)  
-   标签：评分：8.0/10、query:diffpl
-   evidence：用于机器人操作与规划的扩散 Transformer 模型
+1. [Vega: Learning to Drive with Natural Language Instructions](/202603/31/2603.25741v2-vega-learning-to-drive-with-natural-language-instructions)  
+   标签：评分：9.0/10、query:genad
+   evidence：基于扩散范式的指令驱动自动驾驶生成与规划
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [From Diffusion To Flow: Efficient Motion Generation In MotionGPT3](/202603/31/2603.26747v1-from-diffusion-to-flow-efficient-motion-generation-in-motiongpt3)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：基于扩散先验的文本条件动作生成
+2. [SPREAD: Spatial-Physical REasoning via geometry Aware Diffusion](/202603/31/2603.27573v1-spread-spatial-physical-reasoning-via-geometry-aware-diffusion)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：基于扩散模型的具身智能空间推理与避障框架
+3. [Heracles: Bridging Precise Tracking and Generative Synthesis for General Humanoid Control](/202603/31/2603.27756v1-heracles-bridging-precise-tracking-and-generative-synthesis-for-general-humanoid-control)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：用于类人机器人控制的状态条件扩散中间件
+4. [RAD-LAD: Rule and Language Grounded Autonomous Driving in Real-Time](/202603/31/2603.28522v1-rad-lad-rule-and-language-grounded-autonomous-driving-in-real-time)  
+   标签：评分：6.0/10、query:genad
+   evidence：用于自动驾驶的实时语言-动作规划器
 
 
 <div class="dpr-home-promo-card">
