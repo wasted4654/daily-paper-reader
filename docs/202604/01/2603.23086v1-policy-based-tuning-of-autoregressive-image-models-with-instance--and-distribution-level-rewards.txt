@@ -1,0 +1,1269 @@
+Title: Policy-based Tuning of Autoregressive Image Models with Instance- and Distribution-Level Rewards
+
+URL Source: https://arxiv.org/pdf/2603.23086v1
+
+Published Time: Wed, 25 Mar 2026 01:18:18 GMT
+
+Number of Pages: 47
+
+Markdown Content:
+# Policy-based Tuning of Autoregressive Image Models with Instance- and Distribution-Level Rewards 
+
+Orhun Buğra Baran 1 , Melih Kandemir 2 , and Ramazan Gokberk Cinbis 1 
+
+> 1
+
+Middle East Technical University (METU), Ankara, Turkey 
+
+{bugra,gcinbis}@ceng.metu.edu.tr  
+
+> 2
+
+University of Southern Denmark, Odense, Denmark 
+
+kandemir@imada.sdu.dk 
+
+Abstract. Autoregressive (AR) models are highly effective for image generation, yet their standard maximum-likelihood estimation training lacks direct optimization for sample quality and diversity. While rein-forcement learning (RL) has been used to align diffusion models, these methods typically suffer from output diversity collapse. Similarly, concur-rent RL methods for AR models rely strictly on instance-level rewards, often trading off distributional coverage for quality. To address these lim-itations, we propose a lightweight RL framework that casts token-based AR synthesis as a Markov Decision Process, optimized via Group Rela-tive Policy Optimization (GRPO). Our core contribution is the introduc-tion of a novel distribution-level Leave-One-Out FID (LOO-FID) reward; by leveraging an exponential moving average of feature moments, it ex-plicitly encourages sample diversity and prevents mode collapse during policy updates. We integrate this with composite instance-level rewards (CLIP and HPSv2) for strict semantic and perceptual fidelity, and stabi-lize the multi-objective learning with an adaptive entropy regularization term. Extensive experiments on LlamaGen and VQGAN architectures demonstrate clear improvements across standard quality and diversity metrics within only a few hundred tuning iterations. The results also show that the model can be updated to produce competitive samples even without Classifier-Free Guidance, and bypass its 2x inference cost. 
+
+# 1 Introduction 
+
+Autoregressive (AR) models have recently re-emerged as a strong and scalable framework for high-fidelity image generation. By modeling pixel or token se-quences with Transformer decoders, they unify visual synthesis with the lan-guage modeling paradigm underlying GPT-style systems [28]. Advances such as VQVAE and VQGAN tokenizers [10, 23], hierarchical scaling [39, 45], and continuous-token variants [12, 19] have enabled AR models like LlamaGen [37] to match or even surpass diffusion models [16] in both quality and throughput. Despite this progress, most AR generators remain trained solely via maximum likelihood estimation (MLE), which does not directly optimize semantic align-ment or perceptual preference and thus limits post-training controllability. 
+
+> arXiv:2603.23086v1 [cs.LG] 24 Mar 2026
+
+2 Baran, Kandemir, Cinbis Maximum likelihood training 
+
+> AR model
+> …
+> Per-image reward (quality, correctness)
+> Distribution alignment reward
+> Real images
+> Policy fine-tuning
+> 𝑥 t
+
+Fig. 1: Maximum-likelihood training (Left): maximize true token xt probability from its groundtruth context. Proposed method (Right): maximize image-level correctness and distribution-level alignment. 
+
+Reinforcement learning (RL) has proven central to shaping the behavior of large language models. The RLHF pipeline [5, 25, 49]–combining supervised in-struction tuning, preference-model training, and policy optimiza-tion via PPO [34], DPO [29], or GRPO [35]–yields models that better follow instructions and re-flect human intent. A parallel trend has emerged in diffusion-based image generation, where models originally trained with reconstruction losses are post-trained using exter-nal reward models such as CLIP [27], HPSv2 [42], or ImageReward [44]. Existing approaches include offline supervised finetuning [13], differentiating through the denoising process [26, 43], and preference or policy optimization via DDPO [2], DRaFT [6], or Diffusion-DPO [40]. 
+
+Motivation. We investigate policy-based tuning as an effective post-training mechanism for autoregressive image generators. In contrast to diffusion models, AR decoders naturally follow a token-level policy, enabling stable PPO/GRPO-style updates [34, 35] with minimal overhead. In addition, unlike the prior work on policy learning for diffusion models [2, 6, 40], which are known to suffer from output diversity collapse [1, 36], our AR policy learning method allows for the explicit joint optimization of instance-level alignment and distributional cover-age . Furthermore, by embedding instance level rewards and distribution align-ment directly into the base policy, our framework produces high-quality samples without relying on Classifier-Free Guidance (CFG), effectively avoiding the 2×
+
+computational overhead typically incurred during test-time generation. 
+
+Contributions. We propose a lightweight RL framework that casts token-based image synthesis as an MDP and efficiently fine-tunes AR image generators via RL, with the following key contributions: 
+
+– Novel distribution-level LOO-FID reward. To our knowledge, we are the first to explicitly optimize for distribution-level fidelity during AR policy fine-tuning. To overcome the severe instability and high variance of small-batch statistics, we introduce a leave-one-out (LOO) FID reward based on an Exponential Moving Average (EMA) of the generator’s feature moments. This tracks each sample’s marginal contribution to the global distribution, directly encouraging coverage and preventing mode collapse. 
+
+– Instance-level alignment with adaptive regularization. Alongside the distribution reward, we integrate composite instance-level signals (CLIP and HPSv2) to enforce strict semantic fidelity and perceptual preference. To sta-bilize this multi-objective policy learning, we propose a dynamic, adaptive entropy bonus that actively prevents premature convergence and preserves target token diversity throughout training. Policy-based Tuning of AR Image Models 3
+
+– Efficient improvements and a 2× inference speedup. Our approach demonstrates strong generalizability across diverse architectures (Llama-Gen [37] and VQGAN [10]), yielding clear improvements in both quantitative metrics (FID, IS, CLIPScore, Precision and Recall) and human evaluation. Furthermore, by fundamentally improving the base autoregressive policy, our method enables semantically aligned synthesis without relying on Classifier-Free Guidance (CFG), effectively bypassing the 2× test-time overhead. 
+
+# 2 Related Work 
+
+Autoregressive image models. AR modeling, foundational to language mod-els [28], was first applied to images via pixel-level generation [22, 24]. The devel-opments in image tokenization [10, 23] shifted the focus to modeling quantized image patches, enhancing both efficiency and perceptual quality. Subsequent advances brought further improvements: MaskGIT [4] introduced masked par-allel decoding with iterative denoising steps to accelerate generation; Parti [45] demonstrated that large-scale AR training with rich token vocabularies can pro-duce photorealistic results; and LlamaGen [37] showed that scaling AR architec-tures can rival diffusion models [30,31]. More recent works focus on compressing sequences (e.g., next-scale prediction [39]) or continuous latent representations (e.g., TiTok [46], Fluid [12]) to improve efficiency and fidelity. Our approach is orthogonal to these architectural innovations. 
+
+Policy optimization for generative models. The recent success of large lan-guage models (LLMs) has been strongly driven by policy optimization methods, such as Reinforcement Learning from Human Feedback (RLHF) [5, 25], which maps pretrained AR policies to human intent using reward models trained on human preferences. Subsequent works optimized preferences directly [29], while more recently, Group Relative Policy Optimization (GRPO) [35] introduced an on-policy variant that samples multiple responses per prompt and uses their rela-tive rewards to determine the policy gradient. This eliminates the value network while improving sample efficiency and stability. Analogous techniques have been extended to guide diffusion models using reward models like CLIP [27] and HPSv2 [42] via policy or preference optimiza-tion [2,6,40,43]. However, diffusion-based alignment often suffers from poor sam-ple efficiency and severe diversity collapse, tending to overfit to narrow reward directions [1, 2, 36]. While some approaches like AIG [17] address this reward– diversity trade-off, they rely on modifying diffusion-specific noise schedules or sampling dynamics. In contrast, we formulate autoregressive image generation directly as a discrete policy learning problem. 
+
+Policy optimization for AR models. Recently, several concurrent, unpub-lished preprints have also explored applying reinforcement learning to autore-gressive image generators [20,21,41,47,48]. Among these, AR-GRPO [47] serves as the most direct application of standard policy optimization, making it the natural baseline for our work. The remaining works focus on orthogonal im-4 Baran, Kandemir, Cinbis 
+
+provements to the optimization pipeline itself, such as variational pixel-aware alignment [20], similarity-aware advantage reweighting [21], multi-stage pretrain-ing pipelines [41], and critical-token selection in GRPO [48]. Our work diverges fundamentally from these approaches: while the aforementioned methods rely strictly on instance/sequence-level rewards for maximization, our primary con-tribution introduces a novel distributional reward to guide the RL process. To the best of our knowledge, we are the first to explicitly optimize for distribution-level fidelity, encouraging sample diversity and statistical alignment directly during RL fine-tuning. Furthermore, we improve training stability by coupling this with adaptive entropy regularization. Importantly, because our distributional reward formulation is agnostic to the underlying RL optimizer, the GRPO-specific im-provements proposed in these concurrent works are entirely orthogonal and can be readily integrated into our framework to yield complementary gains. 
+
+Reward models for generative image models. Recent research has shown that learned reward models can effectively align image generation with human aesthetic and semantic preferences. Early approaches leveraged CLIP [27] di-rectly as a reward function to steer optimization in generative models [7,8]. Sub-sequent works introduced human-trained preference models such as ImageRe-ward [44], Human Preference Score v2 (HPSv2) [42], and PickScore, which learn regression-based reward functions over large annotated datasets to better cap-ture human judgments of realism and prompt fidelity. These reward models have become central to diffusion fine-tuning frameworks including DDPO [2], Diffusion-DPO [40], AlignProp [26], ReNO [11] DiffExp [3], and DRaFT [6]. 
+
+# 3 Our Approach 
+
+Preliminaries. We adopt a standard autoregressive (AR) formulation for class-conditional image generation over discrete image tokens. Let an image be rep-resented as a sequence of tokens x = ( x1, . . . , x T ) produced by a learned tok-enizer, and let c denote the class label. The joint distribution is factorized as 
+
+pθ (x | c) = QTt=1 pθ (xt | x<t , c ), where x<t denotes all previously generated to-kens. The established AR model training approach [10, 37, 46] is maximizing the log-likelihood of observed sequences under this factorization, while sampling proceeds sequentially by drawing each token from pθ (· | x<t , c ). Following recent autoregressive image models [4, 10, 37, 39, 46], we operate in a compressed latent space instead of pixel space. A discrete tokenizer maps each image to a shorter sequence of codebook indices, which both reduces sequence length and preserves semantic fidelity. In this work we use LlamaGen [37] family as our baseline. LlamaGen com-bines a learned discrete tokenizer with a Transformer-based autoregressive de-coder that models pθ (xt | x<t , c ) over codebook indices. We keep this architecture and tokenizer fixed, and in the following subsections we describe how we apply policy-based fine-tuning on top of a pretrained autoregressive model using our composite reward and GRPO-style objective. Policy-based Tuning of AR Image Models 5
+
+3.1 Policy Based Fine-Tuning of AR Image Model 
+
+We cast class-conditional generation as an MDP with state st = ( c, x <t ), action 
+
+at = xt, and policy πθ (at | st). After generating a full sequence x1: T , we decode to an image and assign a scalar reward : r ∈ R. We adopt Group Relative Policy Optimization (GRPO), a PPO-style method with group-normalized advantages, which eliminates the need to learn a value function. Given a group of G samples with rewards {rj }Gj=1 , advantage is defined as the normalized reward: 
+
+Aj = rj − ¯rsr + ε
+
+where ε is a small positive constant, and the per-batch reward statistics are given by 
+
+¯r = 1
+
+> GG
+
+X
+
+> j=1
+
+rj , sr =
+
+vuut 1
+
+> GG
+
+X
+
+> j=1
+
+(rj − ¯r)2.
+
+Based on the sequence-level probability ratio by ρj (θ):
+
+ρj (θ) = πθ (xj | cj )
+
+πθold (xj | cj ) =
+
+> T
+
+Y
+
+> t=1
+
+πθ (xj,t | c, x j,<t )
+
+πθold (xj,t | c, x j,<t ) , (1) the GRPO objective is given by 
+
+LGRPO (θ) = − 1
+
+G
+
+> G
+
+X
+
+> j=1
+
+min 
+
+
+
+ρj (θ) Aj , clip( ρj (θ), 1 − ϵ, 1 + ϵ) Aj
+
+
+
+(2) where ϵ is the clipping threshold. To induce conservative policy search, following [25, 34, 35], we use an approximate KL divergence [33] loss term: 
+
+DKL (πθ ∥πref ) = πref (xi | c)
+
+πθ (xi | c) − log πref (xi | c)
+
+πθ (xi | c) − 1. (3) The subsequent sections explain how we apply this framework to autoregres-sive image models using a combination of instance-level and distribution-level rewards, and our motivation to introduce a variance-preserving entropy term. 
+
+3.2 Instance-level and Distribution-level Rewards 
+
+We aim to guide the image model towards producing results that are realistic, diverse, and consistent with the desired conditioning. For this purpose, we define a composite reward function rj :
+
+rj = rclip  
+
+> j
+
++ rhps  
+
+> j
+
++ rdist  
+
+> j
+
+. (4) The instance-level terms rclip  
+
+> j
+
+(CLIPScore) and rhps  
+
+> j
+
+(HPS) encourage text/label consistency and human-preference alignment on a per-image basis. More specif-ically, the CLIPScore term uses prompts of the form “a photo of {class-name}” 6 Baran, Kandemir, Cinbis 
+
+and scores each generated image by the cosine similarity between the CLIP im-age embedding and the corresponding text embedding, yielding a higher reward when the image semantically matches its class prompt [27]. Similarly, the HPS term applies the pretrained Human Preference Score v2 (HPSv2) model [42] to the generated image and assigns its scalar output as a reward, thereby encourag-ing images that align with human aesthetic and preference judgments by using the same prompts as CLIPScore. We note that the maximum-likelihood training optimizes token-level cross-entropy conditioned on ground-truth tokens , whereas the per-image reward terms provide end-to-end feedback using the images au-toregressively synthesized based on generated tokens , which allows directly tar-geting perceptual quality and content alignment. Per-image terms, however, cannot enforce that the distribution of generated images matches the target data distribution; they may score individually plau-sible samples while tolerating mode collapse, poor coverage, or batch outliers. To address this, we add a distribution-level reward rdist  
+
+> j
+
+that measures how each image contributes to aligning the generated distribution with the real one in the feature space. Concretely, let (μr , σ r ) ∈ RD × RD 
+
+> ≥0
+
+be the pre-computed refer-ence mean and per-dimension standard deviation, and let (ˆ μ, ˆσ) denote estimated moments of the generated distribution. Using diagonal covariance for compute efficiency, the FID is 
+
+FID diag (μr , σ r ; ˆ μ, ˆσ) = ∥μr − ˆμ∥22 + ∥σr − ˆσ∥22. (5) To attribute this distribution-level signal to each image, we define a leave-one-out (LOO) mechanism based reward. For each sample j with Inception [38] features 
+
+fj , we recompute moments (ˆ μ−j , ˆσ−j ) excluding fj :
+
+rdist  
+
+> j
+
+= FID diag (μr , σ r ; ˆ μ−j , ˆσ−j ) − FID diag (μr , σ r ; ˆ μ, ˆσ). (6) This value is positive only if removing j worsens FID, i.e., when sample j helps align the generated distribution to the reference. A naive implementation would compute (ˆ μ, ˆσ) from a single minibatch only. However, such per-batch estimates depend strongly on the transient composi-tion of the current batch, have high variance, and do not reflect the generator’s 
+
+running distribution as training evolves; in practice this can tolerate mode col-lapse across batches or overreact to outliers. Instead, we maintain an exponential moving average (EMA) of generated moments that tracks the long-run generated distribution while smoothing batch noise. Let (μ(t), m (t)2 ) be the EMA mean and second raw moment at step t, and let (ˆ μ, cm2) be the current batch estimates. With decay α ∈ (0 , 1) , EMA update is given by 
+
+μ(t+1) = (1 − α) μ(t) + α ˆμ, (7) 
+
+m(t+1) 2 = (1 − α) m(t)2 + α cm2, (8) and σ(t+1) =
+
+q
+
+max  m(t+1) 2 − μ(t+1) ⊙μ(t+1) , 0 + ε, where ε is a small positive constant. To attribute a per-image contribution with respect to the EMA state, Policy-based Tuning of AR Image Models 7
+
+we form a hypothetical LOO update by replacing (ˆ μ, cm2) with (ˆ μ−j , cm2−j ),yielding μ(t+1)  
+
+> −j
+
+and m(t+1) 2,−j . Let d(t+1)  
+
+> j
+
+= m(t+1) 2,−j − μ(t+1)  
+
+> −j
+
+⊙μ(t+1)  
+
+> −j
+
+and σ(t+1)  
+
+> −j
+
+=
+
+q
+
+max  d(t+1)  
+
+> j
+
+, 0 + ε. We then define the per-image distribution-level reward di-rectly as the change in EMA-aligned FID: 
+
+rdist  
+
+> j
+
+= FID diag 
+
+ μr , σ r ; μ(t+1)  
+
+> −j
+
+, σ (t+1) 
+
+> −j
+
+ (9) 
+
+− FID diag 
+
+ μr , σ r ; μ(t+1) , σ (t+1) . (10) Thus rdist  
+
+> j
+
+> 0 when omitting sample j reduces EMA-aligned FID, i.e., improves distributional alignment. EMA helps to both reduce variance and tie the reward to the evolving generator distribution. In the Appendix Section B, we provide full details about the LOO-FID reward and a 2D distribution-matching ex-ample , which demonstrates that LOO-FID enables stable convergence without mode collapse, mirroring our image-generation results. 
+
+3.3 Adaptive Entropy Regularization 
+
+To prevent premature collapse to low-entropy token distributions, we include an adaptive entropy bonus. At each position t, we compute the token entropy 
+
+Ht = − P 
+
+> v
+
+pθ (xt=v | st) log pθ (xt=v | st) from the softmax distribution over the model logits. Let Hmax = log K for vocabulary size K. We track the normalized entropy fraction ˆH = 1
+
+> T
+
+P 
+
+> t
+
+Ht/H max and maintain ˆH near a target ˆHtarget by adjusting the coefficient c.The base schedule csched (p) uses cosine decay (with warmup), based on train-ing progress p ∈ [0 , 1] . A closed-loop correction applies when the entropy deviates beyond a deadband δ:
+
+ceff = clip  csched (p) e k( ˆHtarget − ˆH), c min , c max 
+
+,
+
+where k controls sensitivity. The final loss becomes L(θ) = LGRPO (θ)− ceff 
+
+> T
+
+P 
+
+> t
+
+Ht.This dynamic rule increases ceff when entropy drops below target and reduces it when entropy is excessive, stabilizing exploration throughout training (more details are in the Appendix Section C). 
+
+# 4 Experiments 
+
+Training setup. In all our experiments based on LlamaGen-B/L/XL and VQ-GAN , we use a 16 × downsampling tokenizer with 16384 codebook entries. For 
+
+VQGAN , we use VQGAN’s c-IN architecture. Each model is trained for 600 it-erations over four NVIDIA A100 GPUs, taking 10–14 train hours, depending on the backbone (see Appendix Section D). The same hyper-parameters are used in all experiments, across the backbones. Dataset and metrics. We use 256 ×256 ImageNet dataset [9] for class-conditional generation. We use full 50k examples of ImageNet validation set. We use Fréchet 8 Baran, Kandemir, Cinbis 
+
+Table 1: Effect of our reward-based training. All experiments use CLIPScore, HPSv2, and FID rewards (weight 1.0 each). Training and testing use CFG scale 1.5.                                        
+
+> Model FID ↓IS ↑CLIPScore ↑Precision ↑Recall ↑
+> LlamaGen-B 7.06 119.52 0.2262 0.74 0.61
+> LlamaGen-B + ours 6.31 163.37 0.2347 0.82 0.54 LlamaGen-L 4.64 196.78 0.2350 0.78 0.63 LlamaGen-L + ours 3.83 215.90 0.2360 0.79 0.63 LlamaGen-XL 3.96 187.75 0.2346 0.74 0.67 LlamaGen-XL + ours 3.82 195.58 0.2370 0.77 0.67
+
+Table 2: Effect of reward-based fine-tuning without Classifier-Free Guidance (CFG). All runs use CLIPScore, HPSv2, and FID rewards with equal weights ( 1.0 each). Train-ing and testing both use CFG scale 1.0.                                        
+
+> Model FID ↓IS ↑CLIPScore ↑Precision ↑Recall ↑
+> LlamaGen-B 20.89 47.96 0.2082 0.47 0.46 LlamaGen-B + ours 8.91 112.83 0.2304 0.78 0.54
+> LlamaGen-L 10.24 82.38 0.2200 0.53 0.48 LlamaGen-L + ours 5.12 143.32 0.2325 0.77 0.63
+> LlamaGen-XL 12.66 78.02 0.2192 0.60 0.74
+> LlamaGen-XL + ours 4.55 148.16 0.2305 0.74 0.68
+
+Inception Distance (FID) [15], Inception Score (IS) [32] and Precision/Recall [18] as our primary quantitative metrics. To ensure fair comparison, we rerun all pre-trained baselines and compute the scores using the official TensorFlow evaluation code from LlamaGen [37]. For individual image quality and semantic consistency, we additionally report CLIPScore [14] and a human study. 
+
+LlamaGen results. Table 1 3 reports the main results on three different Llama-Gen backbones ( B/L/XL ). From the table, we observe consistent improvements in FID, IS, and CLIPScore across all backbones, together with higher precision, while recall is largely preserved (except a slight reduction for LlamaGen-B ). The results, overall, indicate improved sample quality with strong coverage. 
+
+Training and testing without CFG. To further isolate the effect of our proposed reward-based training, we also evaluate all models without Classifier-Free Guidance (CFG). In this setting, we disable CFG during both training and inference, setting the guidance scale to 1.0. This experiment directly measures the contribution of our method to the base autoregressive policy, independent of external conditioning strength. As shown in Table 2, our approach achieves substantial improvements across all metrics, confirming that the observed gains come from the learned policy refinement itself rather than reliance on CFG scaling. In addition, the gains in the no-CFG setting can be of major practical importance, since it halves the test-time AR inference steps . 
+
+> 3
+
+In all tables, ↓ lower is better; ↑ higher is better. Policy-based Tuning of AR Image Models 9
+
+Table 3: Human preference study using pretrained LlamaGen-L baseline versus ours (with CLIPScore, HPSv2 and LOO-FID rewards), for both CFG and no-CFG cases. Setting Task Ours Tie Pretrained CFG Realism 117 41 102 Ref. Match 135 31 94 No CFG Realism 318 103 149 Ref. Match 291 96 183 
+
+Table 4: Comparison of our approach vs ARGRPO using LlamaGen-L backbone. Training and testing use CFG scale 1.5.                        
+
+> Model FID ↓IS ↑Precision ↑Recall ↑
+> AR-GRPO (CLIPScore + HPSv2) 6.37 223.95 0.82 0.56 Ours (CLIPScore + HPSv2) 3.83 215.90 0.79 0.63
+> AR-GRPO (CLIPScore + HPSv2 + MANIQA) 9.34 147.30 0.70 0.59 Ours (CLIPScore + HPSv2 + MANIQA) 6.43 175.34 0.74 0.64
+
+Human Study for Quality Assessment. Although the quantitative image generation metrics are well established and widely used, we conducted a small scale human study to support our findings. On LlamaGen-L backbone for both CFG and no-CFG cases, we ran paired A/B comparisons against the pretrained model on two tasks: realism (choose the more realistic image) and reference match (choose which image best matches 5 ImageNet-val reference images). The participants are asked to select ours / pretrained / tie to reflect their preferences in total for 260 pair per task for CFG and 570 pair per task for no-CFG; we report preferences in Table 3. Under CFG (260 pairs/task), ours is preferred (Realism: 117 vs 102; Ref. match: 135 vs 94). Under no-CFG (570 pairs/task), the preference is stronger (Realism: 318 vs 149; Ref. match: 291 vs 183). Therefore, the proposed approach not only improves visual plausibility for both cases, but also suggests an effective way to avoid the costly CFG heuristic. 
+
+Comparison to AR-GRPO. AR-GRPO [47] is the closest related autoregres-sive RL method to ours. For a fair comparison, we instantiate AR-GRPO within our framework by disabling our adaptive entropy regularization and LOO-FID reward, and train using the same hyperparameters and number of iterations. The results are shown in Table 4. Our method achieves substantially better FID in both settings (CLIPScore+HPSv2: 6.37 →3.83 ; CLIPScore+HPSv2+MANIQA: 9.34 →6.43 ) and consistently improves Recall (0.56 →0.63 ; 0.59 →0.64 ), indicat-ing better distributional coverage. In the CLIPScore+HPSv2+MANIQA setting, our method also improves IS and Precision (147.30 →175.34 , 0.70 →0.74 ). In the CLIPScore+HPSv2 setting, AR-GRPO attains slightly higher IS/Precision (223.95 vs. 215.90, 0.82 vs. 0.79), suggesting a quality–coverage trade-off while our method remains stronger on distributional fidelity and coverage. 
+
+Comparison to VA-π. VA-π [20] is a related concurrent work that also applies RL to improve autoregressive image generation. We use the authors’ released 10 Baran, Kandemir, Cinbis                                                                           
+
+> Table 5: Comparison of our approach vs VA-π[20] using LlamaGen-XL backbone. If applied, CFG scale is 1.5 for each model.
+> Model CFG FID ↓IS ↑Precision ↑Recall ↑
+> LlamaGen-XL –12.66 78.02 0.60 0.74
+> VA-π[20] –7.65 102.96 0.69 0.66 Ours –4.55 148.16 0.74 0.68 LlamaGen-XL ✓3.96 187.75 0.74 0.67
+> VA-π[20] ✓6.62 212.60 0.80 0.58 Ours ✓3.82 195.58 0.77 0.67 Table 6: Effect of our reward-based training on VQGAN backbone. All experiments use CLIPScore, HPSv2, and FID rewards (weight 1.0each). Training and testing use no top-k sampling (top-rows) and top-k 100 (bottom rows).
+> Model topk FID ↓IS ↑Precision ↑Recall ↑
+> VQGAN 021.90 49.81 0.57 0.67
+> VQGAN + ours 015.47 66.21 0.59 0.66 VQGAN 100 16.42 78.32 0.62 0.57 VQGAN + ours 100 13.04 97.23 0.69 0.58
+
+code with LlamaGen-XL checkpoints to generate samples both with and without Classifier-Free Guidance (CFG), and evaluate all outputs using the same eval-uation pipeline used throughout this paper. As shown in Table 5, our method consistently outperforms VA-π in the no-CFG setting across all reported metrics (FID: 7.65 →4.55, IS: 102.96 →148.16, Precision: 0.69 →0.74, Recall: 0.66 →0.68), indicating better sample quality and stronger distributional coverage. With CFG enabled, VA-π attains higher IS and Precision (212.60/0.80 vs. 195.58/0.77), but our method achieves substantially better FID and Recall (6.62 →3.82 and 0.58 →0.67), suggesting a more favorable quality–coverage trade-off and stronger distributional fidelity, highlighting the importance of the distributional reward. 
+
+Architecture generality. To further demonstrate generalizability across ar-chitectures, we evaluate our approach on VQGAN using the same hyperparam-eters. Table 6 shows consistent improvements in FID and IS across both sam-pling settings (no top-k and top-k=100 ). Precision also increases (0.57 →0.59 and 0.62 →0.69) while Recall remains stable, indicating improved sample quality without sacrificing distributional coverage. 
+
+Analysis of instance-level rewards. To assess the contribution of alignment-based rewards, we examine the effects of CLIPScore and HPSv2 independently and in combination, excluding the FID reward. This experiment is conducted using the LlamaGen-L backbone to focus on the influence of semantic align-ment and perceptual quality signals. The results from Table 7 show that using both rewards together yields the best overall performance in terms of Inception Score, confirming that CLIPScore and HPSv2 are complementary in guiding the policy toward semantically aligned and visually coherent generations. However, Policy-based Tuning of AR Image Models 11                                        
+
+> Table 7: Ablation on alignment-based rewards using the LlamaGen-L backbone. We compare CLIPScore and HPSv2 rewards individually and jointly (w/o FID reward).
+> Model CLIP HPS FID ↓IS ↑
+> LlamaGen-L (pretrained) ––4.64 196.78 LlamaGen-L + CLIP only ✓–6.00 217.54 LlamaGen-L + HPS only –✓7.30 176.73 LlamaGen-L + CLIP + HPS ✓✓6.21 220.28 Table 8: FID reward only policy training, with and without KL regularization.
+> Model KL weight βFID ↓IS ↑
+> LlamaGen-L (pretrained) –4.64 196.78
+> LlamaGen-L + FID-only 3.0 4.07 183.91 LlamaGen-L + FID-only 0.0 3.97 188.08
+
+the FID score degrades in the absence of the diversity-promoting FID reward, highlighting its importance for maintaining distributional coverage. 
+
+Analysis of distribution-level reward. We also investigate the impact of our distribution-level reward by isolating the FID-only signal during training. As shown in Table 8, even without instance-level rewards, optimizing for FID leads to measurable improvements in distributional quality compared to the pretrained baseline. In this case, we observe that KL regularization does not yield any additional improvements, possibly due to the regularizing effect of the FID-based distribution-level reward. 
+
+Analysis of distribution-level reward. We investigate whether the improve-ments in FID stem from KL regularization or from our distribution-level reward by training with only the FID signal. Table 8 shows that FID-only optimization consistently improves over the pretrained baseline. Crucially, KL regularization provides no benefit in this setting: even when KL is removed entirely, our method still achieves FID improvements while keeping IS comparable. These results indi-cate that the distribution-level reward itself can effectively drive the FID gains. 
+
+Diagonal approximation in LOO-FID. An important technical detail of LOO-FID estimator is the diagonal approximation of the covariance matrix. Table 9 compares diagonal vs. full-covariance LOO-FID under a controlled 128-D setting, where we apply PCA to reduce Inception features [38] from 2048 to 128 for both methods. At 128D, full-covariance achieves a slightly lower FID (4.13 vs. 4.30) but a worse IS (209.45 vs. 224.16), while being ∼18 × slower (550 ms vs. 30 ms). In contrast, the diagonal approximation maintains essentially the same cost at the native 2048-D features (still ∼30 ms) and enables further FID improvements (3.83). 12 Baran, Kandemir, Cinbis 
+
+Table 9: Diagonal vs. full-covariance LOO-FID with 128-D (PCA) Inception features. All experiments use CLIPScore, HPSv2, and LOO-FID rewards (weight 1.0 each). Training and evaluation use CFG scale 1.5. Time reports the LOO-FID reward com-putation time per iteration (ms) on a single A100.                   
+
+> Model Feat. dim LOO-FID time (ms) FID ↓IS ↑
+> Ours (Diag. LOO-FID, PCA) 128 ∼30 4.30 224.16
+> Ours (Full-cov. LOO-FID, PCA) 128 ∼550 4.13 209.45 Ours (Diag. LOO-FID, no PCA) 2048 ∼30 3.83 215.90
+
+Table 10: Effect of KL regularization on 
+
+LlamaGen-L using all rewards.              
+
+> KL weight βFID ↓IS ↑
+> 3.0 3.83 215.90 2.0 4.86 237.52 1.0 5.83 273.69 None 10.14 342.91
+
+Table 11: Effect of entropy regulariza-tion coefficient on the LlamaGen-L back-bone using all rewards.               
+
+> Entropy coeff. FID ↓IS ↑
+> 4×10 −33.83 215.90
+> 4×10 −44.89 224.24
+> 0.04.96 228.79
+
+Contribution of KL regularization. We further analyze the role of KL reg-ularization by varying its weight β during training (using LlamaGen-L with all rewards). As shown in Table 10, stronger KL regularization (larger β) leads to lower FID scores, indicating improved distributional consistency and sample di-versity. However, this comes at the cost of reduced Inception Score, suggesting overly strong regularization constrains the policy’s ability to generate visually distinctive samples. Conversely, weaker or no KL regularization increases IS but degrades FID, confirming the expected trade-off between fidelity and diversity. 
+
+Effect of entropy regularization. We evaluate the role of entropy regulariza-tion by varying its coefficient. Table 11 shows that stronger entropy regulariza-tion improves FID, suggesting better sample diversity, while lower or no entropy encourages higher IS, indicating sharper but less diverse generations. 
+
+Training dynamics of our approach. We analyze optimization behavior on the LlamaGen-L backbone using all rewards (CLIPScore, HPSv2, FID) with KL and entropy regularization (Table 1). Figure 2 summarizes three signals over 600 iterations. First, the CLIP + HPS composite reward exhibits a gradual upward trend with high-frequency noise; the smoothed trace indicates steady improve-ment in semantic/perceptual alignment. Second, the EMA FID fluctuates due to minibatch stochasticity but follows a slowly decreasing trajectory, consistent with the smoothing induced by the EMA of generator moments. Third, the mean token entropy increases over training, showing that the adaptive entropy bonus preserves exploration and prevents premature collapse while policy quality im-proves. Together, these curves indicate that our policy update simultaneously strengthens alignment (higher CLIP/HPS reward), improves distributional fi-delity (lower EMA FID), and maintains sampling diversity (rising entropy). Policy-based Tuning of AR Image Models 13 0 100 200 300 400 500 600             
+
+> Iteration
+> 0.46
+> 0.47
+> 0.48
+> 0.49
+> CLIP+HPS reward
+> CLIP+HPS reward
+> per-iter
+> smoothed (window=10) 0100 200 300 400 500 600
+> Iteration
+> 10.0
+> 12.5
+> 15.0
+> 17.5
+> 20.0
+> 22.5
+> EMA FID
+> EMA FID
+> per-iter
+> smoothed (window=10) 0100 200 300 400 500 600
+> Iteration
+> 6.6
+> 6.8
+> 7.0
+> 7.2
+> Mean token entropy
+> Mean token entropy
+> per-iter
+> smoothed (window=10)
+
+Fig. 2: Training dynamics on LlamaGen-L with all rewards, KL regulariza-tion, and entropy regularization. Solid blue lines show a moving average; light traces show per-iteration values. Improvements in alignment (left) co-occur with a gradual reduction in EMA FID (middle) and a controlled rise in entropy (bottom), in-dicating stable learning with preserved exploration. Titles correspond to y-axis labels. 
+
+Table 12: Policy-based vs. maxi-mum likelihood training. 
+
+Post-training FID ↓ IS ↑
+
+LlamaGen-L 4.64 196.78 +MLE (500 iter.) 4.62 200.61 +MLE (5000 iter.) 4.54 202.43 +ours (600 iter.) 3.83 215.90 
+
+Comparison with MLE. We compare our policy-based approach against standard maximum likelihood estimation (MLE) fine-tuning, using LlamaGen-L as the baseline. As shown in Table 12, conventional MLE training yields only modest improvements even after substantially more updates: run-ning MLE for 500 or 5000 iterations reduces FID slightly and increases IS only marginally over the pretrained baseline. In contrast, our reward-based method achieves clearly better results in both met-rics within only 600 training iterations, outperforming the best MLE result by a clear margin. These results highlight that policy optimization provides a far more sample-efficient mechanism for improving distributional quality and se-mantic alignment than additional autoregressive likelihood training. 
+
+Qualitative comparison. Figure 3 and Figure 4 show samples from the pre-trained and policy-trained models, with and without CFG. Our approach con-sistently yields clearer structure and more semantically faithful generations. The gains are often more dramatic in the no-CFG setting as the guidance is unable to compensate for model limitations in this case. More examples can be found in the Appendix Section F. 
+
+# 5 Conclusion 
+
+In this work, we introduced a lightweight reinforcement learning framework for tuning large autoregressive image generators using a combination of instance-level and distribution-level rewards. By formulating token-based image synthesis as an MDP and optimizing the policy with GRPO, our method enables sta-ble, value-free policy updates that directly target semantic alignment and per-ceptual quality. Complementary rewards–CLIPScore and HPSv2 for alignment, and a leave-one-out FID reward for distributional fidelity–guide the model to-14 Baran, Kandemir, Cinbis   
+
+> Necklace
+> LlamaGen-L (baseline)
+> LlamaGen-L + ours
+> Fig. 3: Qualitative comparison of models with classifier-free guidance (scale=1.5).
+> Ambulance
+> LlamaGen-L (baseline)
+> LlamaGen-L + ours
+> Fig. 4: Qualitative comparison of models without classifier-free guidance.
+
+ward both realistic and diverse generations, with further improvements using adaptive entropy regularization. Across LlamaGen-B/L/XL and VQGAN backbones, using the same hyper-parameters, our approach consistently improves standard metrics with only a few hundred tuning iterations, substantially outperforming conventional MLE-based continuation. Experiments with and without classifier-free guidance further show that the improvements come from refining the underlying AR policy rather than amplifying conditioning signals. Qualitative comparisons similarly demonstrate that our method yield improvements in coherence and semantic alignment. 
+
+Limitations and future work. The framework currently relies on pretrained per-ceptual models for alignment rewards, and performance may vary with their bi-ases or failure modes. Future work may explore richer distribution-level rewards, improved credit assignment strategies, integration with larger-scale AR back-bones, and task-conditioned or user-in-the-loop reward formulations. Extending this policy-based tuning approach to video, 3D, or multimodal AR models also presents promising directions. Policy-based Tuning of AR Image Models 15 
+
+# Acknowledgements 
+
+This work was supported in part by the METU Research Fund Project ADEP-312-2024-11525 and BAGEP Award of the Science Academy. The numerical cal-culations reported in this paper were partially performed using the MareNos-trum 5 pre-exascale supercomputing system. We gratefully acknowledge the Barcelona Supercomputing Center (BSC) and the Scientific and Technological Research Council of Turkey (TÜBİTAK) for providing access to these resources and supporting this research. We also gratefully acknowledge the computational resources kindly provided by METU ImageLab and METU ROMER. 
+
+# References 
+
+1. Barceló, R., Alcázar, C., Tobar, F.: Avoiding mode collapse in diffusion models fine-tuned with reinforcement learning. arXiv e-prints arXiv:2410.08315 (Oct 2024) 2. Black, K., Janner, M., Du, Y., Kostrikov, I., Levine, S.: Training Diffusion Models with Reinforcement Learning. arXiv e-prints arXiv:2305.13301 (May 2023) 3. Chae, D., Choi, J.S., Kim, J., Lee, K.: Diffexp: Efficient exploration in reward fine-tuning for text-to-image diffusion models. Proceedings of the AAAI Conference on Artificial Intelligence 39 (15), 15696–15703 (Apr 2025). https://doi.org/10. 1609/aaai.v39i15.33723 , https://ojs.aaai.org/index.php/AAAI/article/ view/33723 
+
+4. Chang, H., Zhang, H., Jiang, L., Liu, C., Freeman, W.T.: Maskgit: Masked genera-tive image transformer. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 11315–11325 (June 2022) 5. Christiano, P.F., Leike, J., Brown, T., Martic, M., Legg, S., Amodei, D.: Deep reinforcement learning from human preferences. In: Guyon, I., Luxburg, U.V., Bengio, S., Wallach, H., Fergus, R., Vishwanathan, S., Garnett, R. (eds.) Ad-vances in Neural Information Processing Systems. vol. 30. Curran Associates, Inc. (2017), https://proceedings.neurips.cc/paper_files/paper/2017/file/ d5e2c0adad503c91f91df240d0cd4e49-Paper.pdf 
+
+6. Clark, K., Vicol, P., Swersky, K., Fleet, D.J.: Directly Fine-Tuning Diffusion Mod-els on Differentiable Rewards. arXiv e-prints arXiv:2309.17400 (Sep 2023) 7. Crowson, K.: Clip guided diffusion. https://github.com/crowsonkb/clip-guided-diffusion (2021) 8. Crowson, K., Biderman, S., Kornis, D., Stander, D., Hallahan, E., Castricato, L., Raff, E.: Vqgan-clip: Open domain image generation and editing with natural language guidance. In: Avidan, S., Brostow, G., Cissé, M., Farinella, G.M., Hassner, T. (eds.) Computer Vision – ECCV 2022. pp. 88–105. Springer Nature Switzerland, Cham (2022) 9. Deng, J., Dong, W., Socher, R., Li, L.J., Li, K., Fei-Fei, L.: Imagenet: A large-scale hierarchical image database. In: 2009 IEEE Conference on Computer Vision and Pattern Recognition. pp. 248–255 (2009) 10. Esser, P., Rombach, R., Ommer, B.: Taming transformers for high-resolution image synthesis. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 12873–12883 (June 2021) 11. Eyring, L., Karthik, S., Roth, K., Dosovitskiy, A., Akata, Z.: Reno: Enhanc-ing one-step text-to-image models through reward-based noise optimization. In: 16 Baran, Kandemir, Cinbis Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., Zhang, C. (eds.) Advances in Neural Information Processing Systems. vol. 37, pp. 125487–125519. Curran Associates, Inc. (2024). https://doi.org/10.52202/ 079017- 3987 , https://proceedings.neurips.cc/paper_files/paper/2024/ file/e31bdea0a93741c2157eea705dd219eb-Paper-Conference.pdf 
+
+12. Fan, L., Li, T., Qin, S., Li, Y., Sun, C., Rubinstein, M., Sun, D., He, K., Tian, Y.: Fluid: Scaling Autoregressive Text-to-image Generative Models with Continuous Tokens. arXiv e-prints arXiv:2410.13863 (Oct 2024) 13. Fan, Y., Watkins, O., Du, Y., Liu, H., Ryu, M., Boutilier, C., Abbeel, P., Ghavamzadeh, M., Lee, K., Lee, K.: Dpok: Reinforcement learning for fine-tuning text-to-image diffusion models. In: Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., Levine, S. (eds.) Advances in Neural Informa-tion Processing Systems. vol. 36, pp. 79858–79885. Curran Associates, Inc. (2023), https : / / proceedings. neurips.cc/ paper_files/ paper/2023/ file/ fc65fab891d83433bd3c8d966edde311-Paper-Conference.pdf 
+
+14. Hessel, J., Holtzman, A., Forbes, M., Le Bras, R., Choi, Y.: CLIPScore: A reference-free evaluation metric for image captioning. In: Moens, M.F., Huang, X., Specia, L., Yih, S.W.t. (eds.) Proceedings of the 2021 Conference on Empirical Meth-ods in Natural Language Processing. pp. 7514–7528. Association for Compu-tational Linguistics, Online and Punta Cana, Dominican Republic (Nov 2021). 
+
+https://doi.org/10.18653/v1/2021.emnlp-main.595 , https://aclanthology. org/2021.emnlp-main.595/ 
+
+15. Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., Hochreiter, S.: Gans trained by a two time-scale update rule converge to a local nash equilibrium. In: Guyon, I., Luxburg, U.V., Bengio, S., Wallach, H., Fergus, R., Vishwanathan, S., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 30. Curran Associates, Inc. (2017), https://proceedings.neurips.cc/paper_files/paper/ 2017/file/8a1d694707eb0fefe65871369074926d-Paper.pdf 
+
+16. Ho, J., Jain, A., Abbeel, P.: Denoising diffusion probabilistic models. In: Larochelle, H., Ranzato, M., Hadsell, R., Balcan, M., Lin, H. (eds.) Advances in Neu-ral Information Processing Systems. vol. 33, pp. 6840–6851. Curran Associates, Inc. (2020), https://proceedings.neurips.cc/paper_files/paper/2020/file/ 4c5bcfec8584af0d967f1ab10179ca4b-Paper.pdf 
+
+17. Jena, R., Taghibakhshi, A., Jain, S., Shen, G., Tajbakhsh, N., Vahdat, A.: Elu-cidating optimal reward-diversity tradeoffs in text-to-image diffusion models. In: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV). pp. 232–242 (2025). https://doi.org/10.1109/WACV61041.2025.00033 
+
+18. Kynkäänniemi, T., Karras, T., Laine, S., Lehtinen, J., Aila, T.: Improved precision and recall metric for assessing generative models. In: Wallach, H., Larochelle, H., Beygelzimer, A., d 'Alché-Buc, F., Fox, E., Garnett, R. (eds.) Ad-vances in Neural Information Processing Systems. vol. 32. Curran Associates, Inc. (2019), https://proceedings.neurips.cc/paper_files/paper/2019/file/ 0234c510bc6d908b28c70ff313743079-Paper.pdf 
+
+19. Li, T., Tian, Y., Li, H., Deng, M., He, K.: Autoregressive image generation without vector quantization. In: Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., Zhang, C. (eds.) Advances in Neural Information Processing Sys-tems. vol. 37, pp. 56424–56445. Curran Associates, Inc. (2024). https://doi. org/10.52202/079017-1797 , https://proceedings.neurips.cc/paper_files/ paper/2024/file/66e226469f20625aaebddbe47f0ca997-Paper-Conference.pdf Policy-based Tuning of AR Image Models 17 20. Liao, X., He, Q., Xu, K., Qu, X., Li, Y., Wei, W., Yao, A.: VA-π: Varia-tional Policy Alignment for Pixel-Aware Autoregressive Generation. arXiv e-prints arXiv:2512.19680 (Dec 2025). https://doi.org/10.48550/arXiv.2512.19680 
+
+21. Ma, X., Qiu, H., Zhang, G., Zeng, Z., Yang, S., Ma, L., Zhao, F.: STAGE: Sta-ble and Generalizable GRPO for Autoregressive Image Generation. arXiv e-prints arXiv:2509.25027 (Sep 2025). https://doi.org/10.48550/arXiv.2509.25027 
+
+22. van den Oord, A., Kalchbrenner, N., Espeholt, L., kavukcuoglu, k., Vinyals, O., Graves, A.: Conditional image generation with pixelcnn decoders. In: Lee, D., Sugiyama, M., Luxburg, U., Guyon, I., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 29. Curran Associates, Inc. (2016), https : / / proceedings. neurips.cc/ paper_files/ paper/2016/ file/ b1301141feffabac455e1f90a7de2054-Paper.pdf 
+
+23. van den Oord, A., Vinyals, O., kavukcuoglu, k.: Neural discrete representation learning. In: Guyon, I., Luxburg, U.V., Bengio, S., Wallach, H., Fergus, R., Vish-wanathan, S., Garnett, R. (eds.) Advances in Neural Information Processing Sys-tems. vol. 30. Curran Associates, Inc. (2017), https://proceedings.neurips.cc/ paper _ files / paper / 2017 / file / 7a98af17e63a0ac09ce2e96d03992fbc - Paper . pdf 
+
+24. van den Oord, A., Kalchbrenner, N., Kavukcuoglu, K.: Pixel recurrent neural net-works. In: Balcan, M.F., Weinberger, K.Q. (eds.) Proceedings of The 33rd In-ternational Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 48, pp. 1747–1756. PMLR, New York, New York, USA (20–22 Jun 2016), https://proceedings.mlr.press/v48/oord16.html 
+
+25. Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P.F., Leike, J., Lowe, R.: Train-ing language models to follow instructions with human feedback. In: Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D., Cho, K., Oh, A. (eds.) Advances in Neu-ral Information Processing Systems. vol. 35, pp. 27730–27744. Curran Associates, Inc. (2022), https://proceedings.neurips.cc/paper_files/paper/2022/file/ b1efde53be364a73914f58805a001731-Paper-Conference.pdf 
+
+26. Prabhudesai, M., Goyal, A., Pathak, D., Fragkiadaki, K.: Aligning Text-to-Image Diffusion Models with Reward Backpropagation. arXiv e-prints arXiv:2310.03739 (Oct 2023) 27. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., Sutskever, I.: Learning transferable visual models from natural language supervision. In: Meila, M., Zhang, T. (eds.) Proceedings of the 38th International Conference on Machine Learning. Proceed-ings of Machine Learning Research, vol. 139, pp. 8748–8763. PMLR (18–24 Jul 2021), https://proceedings.mlr.press/v139/radford21a.html 
+
+28. Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., Sutskever, I.: Language models are unsupervised multitask learners (2019) 29. Rafailov, R., Sharma, A., Mitchell, E., Manning, C.D., Ermon, S., Finn, C.: Di-rect preference optimization: Your language model is secretly a reward model. In: Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., Levine, S. (eds.) Ad-vances in Neural Information Processing Systems. vol. 36, pp. 53728–53741. Curran Associates, Inc. (2023), https://proceedings.neurips.cc/paper_files/paper/ 2023/file/a85b405ed65c6477a4fe8302b5e06ce7-Paper-Conference.pdf 
+
+30. Ramesh, A., Pavlov, M., Goh, G., Gray, S., Voss, C., Radford, A., Chen, M., Sutskever, I.: Zero-shot text-to-image generation. In: Meila, M., Zhang, T. (eds.) 18 Baran, Kandemir, Cinbis Proceedings of the 38th International Conference on Machine Learning. Proceed-ings of Machine Learning Research, vol. 139, pp. 8821–8831. PMLR (18–24 Jul 2021), https://proceedings.mlr.press/v139/ramesh21a.html 
+
+31. Saharia, C., Chan, W., Saxena, S., Li, L., Whang, J., Denton, E.L., Ghasemipour, K., Gontijo Lopes, R., Karagol Ayan, B., Salimans, T., Ho, J., Fleet, D.J., Norouzi, M.: Photorealistic text-to-image diffusion models with deep language understand-ing. In: Koyejo, S., Mohamed, S., Agarwal, A., Belgrave, D., Cho, K., Oh, A. (eds.) Advances in Neural Information Processing Systems. vol. 35, pp. 36479–36494. Curran Associates, Inc. (2022), https://proceedings.neurips.cc/paper_files/ paper/2022/file/ec795aeadae0b7d230fa35cbaf04c041-Paper-Conference.pdf 
+
+32. Salimans, T., Goodfellow, I., Zaremba, W., Cheung, V., Radford, A., Chen, X., Chen, X.: Improved techniques for training gans. In: Lee, D., Sugiyama, M., Luxburg, U., Guyon, I., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 29. Curran Associates, Inc. (2016), https : / / proceedings. neurips.cc/ paper_files/ paper/2016/ file/ 8a3363abe792db2d8761d6403605aeb7-Paper.pdf 
+
+33. Schulman, J.: Approximating kl divergence. https://joschu.net/blog/kl-approx.html (2020) 34. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., Klimov, O.: Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 (2017) 35. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y., Wu, Y., Guo, D.: Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 (2024) 36. Sorokin, D., Nakhodnov, M., Kuznetsov, A., Alanov, A.: ImageReFL: Balanc-ing Quality and Diversity in Human-Aligned Diffusion Models. arXiv e-prints arXiv:2505.22569 (May 2025) 37. Sun, P., Jiang, Y., Chen, S., Zhang, S., Peng, B., Luo, P., Yuan, Z.: Autoregres-sive Model Beats Diffusion: Llama for Scalable Image Generation. arXiv e-prints arXiv:2406.06525 (Jun 2024) 38. Szegedy, C., Vanhoucke, V., Ioffe, S., Shlens, J., Wojna, Z.: Rethinking the incep-tion architecture for computer vision. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) (June 2016) 39. Tian, K., Jiang, Y., Yuan, Z., Peng, B., Wang, L.: Visual autoregressive modeling: Scalable image generation via next-scale prediction. In: Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., Zhang, C. (eds.) Advances in Neural Information Processing Systems. vol. 37, pp. 84839– 84865. Curran Associates, Inc. (2024). https://doi.org/10.52202/079017-2694 , https : / / proceedings . neurips . cc / paper _ files / paper / 2024 / file / 9a24e284b187f662681440ba15c416fb-Paper-Conference.pdf 
+
+40. Wallace, B., Dang, M., Rafailov, R., Zhou, L., Lou, A., Purushwalkam, S., Ermon, S., Xiong, C., Joty, S., Naik, N.: Diffusion model alignment using direct preference optimization. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 8228–8238 (June 2024) 41. Wang, J., Tian, Z., Wang, X., Zhang, X., Huang, W., Wu, Z., Jiang, Y.G.: SimpleAR: Pushing the Frontier of Autoregressive Visual Generation through Pretraining, SFT, and RL. arXiv e-prints arXiv:2504.11455 (Apr 2025). https: //doi.org/10.48550/arXiv.2504.11455 
+
+42. Wu, X., Hao, Y., Sun, K., Chen, Y., Zhu, F., Zhao, R., Li, H.: Human Preference Score v2: A Solid Benchmark for Evaluating Human Preferences of Text-to-Image Synthesis. arXiv e-prints arXiv:2306.09341 (Jun 2023) Policy-based Tuning of AR Image Models 19 43. Wu, X., Hao, Y., Zhang, M., Sun, K., Huang, Z., Song, G., Liu, Y., Li, H.: Deep reward supervisions for tuning text-to-image diffusion models. In: Leonardis, A., Ricci, E., Roth, S., Russakovsky, O., Sattler, T., Varol, G. (eds.) Computer Vision – ECCV 2024. pp. 108–124. Springer Nature Switzerland, Cham (2025) 44. Xu, J., Liu, X., Wu, Y., Tong, Y., Li, Q., Ding, M., Tang, J., Dong, Y.: Imagere-ward: Learning and evaluating human preferences for text-to-image generation. In: Oh, A., Naumann, T., Globerson, A., Saenko, K., Hardt, M., Levine, S. (eds.) Ad-vances in Neural Information Processing Systems. vol. 36, pp. 15903–15935. Curran Associates, Inc. (2023), https://proceedings.neurips.cc/paper_files/paper/ 2023/file/33646ef0ed554145eab65f6250fab0c9-Paper-Conference.pdf 
+
+45. Yu, J., Xu, Y., Koh, J.Y., Luong, T., Baid, G., Wang, Z., Vasudevan, V., Ku, A., Yang, Y., Ayan, B.K., Hutchinson, B., Han, W., Parekh, Z., Li, X., Zhang, H., Baldridge, J., Wu, Y.: Scaling autoregressive models for content-rich text-to-image generation. Transactions on Machine Learning Research (2022), https:// openreview.net/forum?id=AFDcYJKhND , featured Certification 46. Yu, Q., Weber, M., Deng, X., Shen, X., Cremers, D., Chen, L.C.: An im-age is worth 32 tokens for reconstruction and generation. In: Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., Zhang, C. (eds.) Advances in Neural Information Processing Systems. vol. 37, pp. 128940– 128966. Curran Associates, Inc. (2024). https://doi.org/10.52202/079017-4096 , https : / / proceedings . neurips . cc / paper _ files / paper / 2024 / file / e91bf7dfba0477554994c6d64833e9d8-Paper-Conference.pdf 
+
+47. Yuan, S., Liu, Y., Yue, Y., Zhang, J., Zuo, W., Wang, Q., Zhang, F., Zhou, G.: AR-GRPO: Training Autoregressive Image Generation Models via Reinforcement Learning. arXiv e-prints arXiv:2508.06924 (Aug 2025) 48. Zhang, G., Yu, H., Ma, X., Zhang, J., Pan, Y., Yao, M., Xiao, J., Huang, L., Zhao, F.: Group Critical-token Policy Optimization for Autoregressive Image Generation. arXiv e-prints arXiv:2509.22485 (Sep 2025). https://doi.org/10.48550/arXiv. 2509.22485 
+
+49. Ziegler, D.M., Stiennon, N., Wu, J., Brown, T.B., Radford, A., Amodei, D., Chris-tiano, P., Irving, G.: Fine-Tuning Language Models from Human Preferences. arXiv e-prints arXiv:1909.08593 (Sep 2019) 20 Appendix 
+
+# Appendix A Introduction 
+
+This appendix provides additional technical details, ablation descriptions, and extended qualitative analyses that complement the main paper. We begin by presenting the full formulation of our distribution-level reward using Leave–One– Out (LOO) approach, followed by the detailed implementation of our adaptive entropy regularization mechanism and the complete GRPO training algorithm used in all experiments. In the qualitative experiments section, we compare images generated by two models: (i) the pretrained LlamaGen-L model (baseline), and (ii) the policy-fine-tuned LlamaGen-L model obtained using our GRPO-based training with both sample-level and distribution-level rewards. For each selected ImageNet class, we generate images using identical sampling configurations for both models and display all resulting outputs without cherry-picking. These comparisons high-light the systematic improvements brought by our approach, including sharper local structure, more coherent global geometry, and better alignment with class semantics. 
+
+# B Details of the distribution-level reward using Leave–One–Out (LOO) estimators 
+
+The method section of the original paper provides an intuitive summary of our FID reward definition. The equations below provide a more detailed definition for reference. Please refer to the original paper to put these equations into context. Let xi ∈ RD be the Inception [38] features for the i-th generated image in a batch {xi}Ni=1 . Let (μr , σ r ) ∈ RD × RD 
+
+> ≥0
+
+be the reference (real) per-dimension mean and standard deviation. Due to its cheapness we use diagonal moments only and denote elementwise product by ⊙.
+
+Batch moments. 
+
+S1 =
+
+> N
+
+X
+
+> i=1
+
+xi, S2 =
+
+> N
+
+X
+
+> i=1
+
+xi ⊙ xi, (11) 
+
+ˆμ = 1 
+
+> N
+
+S1, cm2 = 1 
+
+> N
+
+S2, (12) 
+
+ˆv = max( cm2 − ˆμ ⊙ ˆμ, 0) , ˆσ = √ˆv + ε.  (13) 
+
+Diagonal FID. 
+
+FID diag (μ, σ ; μ′, σ ′) = ∥μ − μ′∥22 + ∥σ − σ′∥22. (14) Appendix 21 
+
+Vectorized LOO moments. For each i:
+
+S1,−i = S1 − xi, S2,−i = S2 − xi ⊙ xi, (15) 
+
+ˆμ−i = 1  
+
+> N−1
+
+S1,−i, cm2−i = 1  
+
+> N−1
+
+S2,−i, (16) 
+
+ˆv−i = max( cm2−i − ˆμ−i ⊙ ˆμ−i, 0) , (17) 
+
+ˆσ−i = pˆv−i + ε.  (18) 
+
+LOO–Batch reward. 
+
+Fbatch = FID diag (μr , σ r ; ˆ μ, ˆσ), (19) 
+
+F−i = FID diag (μr , σ r ; ˆ μ−i, ˆσ−i), (20) 
+
+rLOO-batch  
+
+> i
+
+= F−i − Fbatch . (21) Positive ri means removing xi worsens FID [15], i.e. xi is helpful. 
+
+EMA updates. 
+
+˜μ(t+1) = (1 − α)μ(t) + αˆμ, (22) 
+
+˜m(t+1) 2 = (1 − α)m(t)2 + α cm2. (23) 
+
+EMA–LOO reward. Let 
+
+F full = FID diag (μr , σ r ; μ(t+1) , σ (t+1) ). (24) Define the LOO EMA by replacing (ˆ μ, cm2) with (ˆ μ−i, cm2−i), yielding μ(t+1)  
+
+> −i
+
+and 
+
+m(t+1) 2,−i . For brevity, let d(t+1)  
+
+> i
+
+= m(t+1) 2,−i − μ(t+1)  
+
+> −i
+
+⊙μ(t+1)  
+
+> −i
+
+. Then 
+
+σ(t+1)  
+
+> −i
+
+=
+
+q
+
+max  d(t+1)  
+
+> i
+
+, 0 + ε, (25) 
+
+F LOO  
+
+> i
+
+= FID diag 
+
+ μr , σ r ; μ(t+1)  
+
+> −i
+
+, σ (t+1) 
+
+> −i
+
+, (26) 
+
+rEMA-LOO  
+
+> i
+
+= F LOO  
+
+> i
+
+− F full . (27) This mathematical framework enables the calculation of individual rewards based on global distribution metrics, facilitating stable policy optimization. We now demonstrate the effectiveness of this approach through a simplified 2D sim-ulation. 
+
+B.1 2D illustration of distribution-level reward 
+
+To provide an intuitive view of how the leave-one-out (LOO) FID reward shapes the optimization dynamics, we simulate a simplified 2D setting where the policy learns to match a target distribution. The policy is a diagonal Gaussian πθ (x|z),whose parameters are produced by a lightweight neural network. Given a la-tent input z ∼ N (0 , I ), the network outputs the mean and log standard devia-tion, μθ (z) and log σθ (z), defining πθ (x|z) = N (μθ (z), diag( σ2 
+
+> θ
+
+(z))) . Samples are 22 Appendix 0 250 500 750 1000 1250 1500       
+
+> Step
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> FID
+> FID vs step 7.5 5.0 2.5 0.0 2.5 5.0 7.5
+> dim 1
+> 7.5
+> 5.0
+> 2.5
+> 0.0
+> 2.5
+> 5.0
+> 7.5
+> dim 2
+> 2D real vs generated
+> Real
+> Generated
+
+Fig. 5: 2D example for distribution-level reward. A simple line dataset is used to demonstrate the convergence of the policy with the proposed LOO-FID reward. 
+
+drawn using the reparameterization trick, x = μθ (z)+ σθ (z)⊙ϵ, with ϵ ∼ N (0 , I ),trained using the proposed LOO-FID reward only. The results shown in Figure 5 for the example case using a line dataset demonstrate that the proposed EMA-based statistics estimator and the LOO-FID reward drive convergence without destabilizing variance or mode collapse, mirroring the behavior we observe in high-dimensional image generation. 
+
+# C Entropy Regularization: Implementation Details 
+
+In the main paper (Sec. 3.3), we introduce an adaptive entropy regularization term that prevents premature collapse of the token distribution while preserving exploration. Here we provide the full implementation details of this term. 
+
+Token Entropy and Normalization. Let πθ (· | x<t , c ) denote the autoregres-sive policy over a vocabulary V of size K, with logits zt ∈ RK at step t. At each decoding step, we obtain token probabilities empirically by applying a softmax to these logits: 
+
+pt,v = πθ (v | x<t , c ) = exp( zt,v )
+
+P 
+
+> u∈V
+
+exp( zt,u ) . (28) The Shannon entropy at step t is 
+
+Ht = − X
+
+> v∈V
+
+pt,v log pt,v . (29) For a sequence of length T , we define the mean token entropy 
+
+¯H = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+Ht. (30) The maximum entropy for a uniform distribution over the vocabulary is 
+
+Hmax = log K.  (31) Appendix 23 
+
+We therefore define the normalized entropy fraction 
+
+bH = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+Ht
+
+Hmax 
+
+∈ [0 , 1] . (32) Following the main paper, we maintain bH near a target bHtarget by adapting the effective entropy coefficient ceff . In practice, the quantities above are computed independently for each training example, and the entropy term in the final loss corresponds to the average of these per-instance mean entropies across the batch. 
+
+Base Schedule for the Entropy Coefficient. In all of our experiments we use a single scalar coefficient ceff to weight the entropy bonus. Rather than keeping this coefficient fixed, we follow a simple schedule csched (p) that depends on the normalized training progress p ∈ [0 , 1] (current iteration divided by the total number of iterations). The schedule has three phases: 
+
+– Warmup (early training). During the first 5% of training we increase the coefficient linearly from 0 up to a nominal value c0.
+
+– Flat region (mid training). For most of training ( p ∈ [0 .05 , 0.85] ) we keep the coefficient approximately constant at c0. This encourages exploration while the policy is still changing rapidly. 
+
+– Cosine decay (late training). In the last 15% of training we smoothly reduce the coefficient towards a smaller value using a cosine decay, so that the model can focus more on reward optimization once the policy has stabilized. Numerically, we set c0 = 2 .2 × 10 −3, with lower and upper bounds cmin =7 × 10 −5 and cmax = 4 × 10 −3. The exact values are not critical; we found that any schedule with a similar magnitude and shape (moderate entropy pressure early on, gently reduced near the end) behaves similarly in practice. The function 
+
+csched (p) in our code simply implements this warmup–flat–decay pattern. 
+
+Adaptive Entropy Regulation. The schedule above controls the overall scale of the entropy bonus as training progresses. In addition, we adapt the coefficient on-line so that the mean token entropy stays near a desired target. Let bH ∈ [0 , 1] denote the normalized mean token entropy, obtained by av-eraging the per-token entropies and dividing by the maximum possible entropy 
+
+log K (for a vocabulary of size K). We use a fixed target bHtarget = 0 .78 chosen to provide slight increase relative to the pretrained model’s typical normalized entropy ( ∼ 0.70 ). 
+
+e = bHtarget − bH. 
+
+When bH is below the target ( e > 0), we would like to increase the entropy pressure; when it is above the target ( e < 0), we would like to reduce it. To avoid reacting to tiny fluctuations, we use a small deadband δ = 0 .015 : if 
+
+|e| ≤ δ we leave the coefficient unchanged. Outside this band we apply a simple 24 Appendix 
+
+exponential feedback with gain k = 3 .0, and then clamp the result to the range 
+
+[cmin , c max ]:
+
+ceff = clip 
+
+
+
+csched (p) exp  ke , c min , c max 
+
+
+
+. (33) Here clip( ·, c min , c max ) denotes scalar clamping. Intuitively, ceff increases when the model becomes overly “confident” (entropy below the natural pretrained level) and decreases when the distribution becomes overly diffuse (high entropy), keeping the sampling behaviour in a reasonable range throughout training. Un-less otherwise specified, all hyperparameters associated with the entropy regu-larization mechanism remain fixed across all experiments in which entropy regu-larization is applied. No per-experiment tuning or adjustment of these quantities is performed, ensuring that all reported results reflect a consistent regularization scheme, and we empirically observe that the method is stable and only weakly sensitive to its hyperparameters. 
+
+Final Entropy-Regularized Objective. Let LGRPO (θ) denote the GRPO [35] objective (with group-relative advantages and PPO-style clipping) as defined in the main paper. The final loss combines the policy objective with the entropy bonus: 
+
+L(θ) = LGRPO (θ) − ceff 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+Ht, (34) which is exactly the form stated in the main paper: 
+
+L(θ) = LGRPO (θ) − ceff 
+
+1
+
+T
+
+X
+
+> t
+
+Ht.
+
+The function EntropySchedule() in Algorithm 1 implements Eqs. (33) and (34), using the numerically specified constants above. 
+
+# D Algorithm and Training Details 
+
+We summarize our complete training process in Algorithm 1. All components described in the previous subsections (policy-based tuning, reward modeling, and entropy regularization) are integrated into a single GRPO iteration for policy optimization. The algorithm shows the training loop used in all our experiments. During training, we generate groups of 12 (G) images per iteration with 12 distinct class prompts. Unless otherwise specified, the classifier-free guidance (CFG) scale is fixed to 1.5, top-k sampling is disabled, and the top-p parameter is set to 1.0. We use a learning rate of 1 × 10 −5, an EMA decay α = 0 .5 for batch estimates, and a clipping parameter ϵ = 0 .2 for sequence level probability ratio 
+
+ρj (θ).
+
+# E Computational Costs 
+
+We report the wall-clock time of one training iteration on a single NVIDIA A100 GPU, with all reward computations executed on-device to minimize host–device Appendix 25 
+
+transfers and (since we use a single GPU) without network communication. Each iteration uses a batch of 144 class-conditional prompts. Image generation for 144 samples takes ∼43.4 s, and the backward pass plus parameter update takes ∼2.4 s. Reward computation adds ∼11.37 s in total: CLIPScore ∼0.14 s, HPS ∼11.20 s, and diagonal LOO-FID ∼0.03 s. Thus, the diagonal LOO-FID component introduces negligible overhead ( ∼0.03 s; < 0.1% of the iteration time and ∼0.3% of reward time). 
+
+# F Additional Qualitative Experiments 
+
+In this section, we provide an extended set of qualitative comparisons between the pretrained LlamaGen [37] models and our policy fine-tuned model (LlamaGen-L only). For these qualitative comparisons, we only select the classes to visualize. For each chosen class, we report all images generated by both the pretrained and fine-tuned model under the same sampling configuration, without cherry-picking or manual selection of individual outputs . Across these examples, the fine-tuned policy generally produces images with sharper local structure, more consistent global geometry, and improved alignment to the semantic con-tent of the class, reflecting the types of refinements encouraged by our reward design. Images are best viewed at high resolution, and we recommend zooming in for optimal visual inspection. 26 Appendix 
+
+Bobsled 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Golf Ball 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 6: Additional qualitative comparison between pretrained LlamaGen-L and our pol-icy fine-tuned model without classifier-free guidance on selected ImageNet classes. Appendix 27 
+
+Algorithm 1 Single GRPO Iteration (single pass) 
+
+Require: policy πθ (autoregressive), decoder D; class tokens c, prompts P
+
+Require: length T ; groups G, epochs K; sampling (τ, k, p ); clip ϵ
+
+Require: weights wc, w h (CLIP [14],HPS [42]); optional FID weight wfid ; optional EMA ref πθref with weight β
+
+1: Generate and decode G samples per prompt 
+
+2: for i = 1 ..G do 
+
+3: xi ← Generate( πθ , c, T ; CFG , τ, k, p ) ▷ token sequence 4: Ii ← D (xi) ▷ image 5: end for 
+
+6: Compute scalar rewards and group advantage 
+
+7: rCLIP  
+
+> i
+
+, r HPS  
+
+> i
+
+← CLIP /HPS( Ii, P)
+
+8: rFID  
+
+> i
+
+← FID _reward( Ii) if enabled else 0
+
+9: ri ← wc rCLIP  
+
+> i
+
++ wh rHPS  
+
+> i
+
++ wfid rFID 
+
+> i
+
+10: ¯r ← 1
+
+> G
+
+PGj=1 rj , sr ←
+
+q 1
+
+> G
+
+PGj=1 (rj − ¯r)2
+
+11: Ai ← (ri − ¯r)(sr + 10 −4)
+
+12: Cache old sequence log-probs (no masks) 
+
+13: for i = 1 ..G do 
+
+14: ℓold  
+
+> i
+
+[t] ← log πθold (xi,t | c, x i,<t ) ∀t
+
+15: ¯ℓold  
+
+> i
+
+← 1
+
+> T
+
+PTt=1 ℓold  
+
+> i
+
+[t] ▷ mean over tokens 16: end for 
+
+17: K optimization epochs (single pass) 
+
+18: for e = 1 ..K do 
+
+19: zero _grad() ; L ← 0
+
+20: for i = 1 ..G do 
+
+21: ℓi[t] ← log πθ (xi,t | c, x i,<t ) ∀t
+
+22: ¯ℓi ← 1
+
+> T
+
+PTt=1 ℓi[t]
+
+23: ρi(θ) ← exp  ¯ℓi − ¯ℓold 
+
+> i
+
+ (ratio, cf. Eq. 1 from main paper) 24: ˜ρi ← clip  ρi(θ), 1 − ϵ, 1 + ϵ
+
+25: LGRPO ← Emin   − ρi(θ) Ai, −˜ρi Ai
+
+ (cf. Eq. 2 from main paper) 26: H ← TokenEntropy( xi)
+
+27: ceff ← EntropySchedule() 
+
+28: L += LGRPO − ceff · E[H]
+
+29: if β > 0 and πθref available then 
+
+30: ¯ℓref  
+
+> i
+
+← 1
+
+> T
+
+P 
+
+> t
+
+log πθref (xi,t | c, x i,<t )
+
+31: ∆i ← ¯ℓref  
+
+> i
+
+− ¯ℓi
+
+32: KL approx ← e∆i − ∆i − 1 (cf. Eq. 3 from main paper) 33: L += β · E[KL approx ]
+
+34: end if 
+
+35: end for 
+
+36: backprop( L); clip _grad( θ, 1.0) ; optimizer .step() 
+
+37: end for 28 Appendix 
+
+Monitor 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Wine Bottle 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 7: Additional qualitative comparison between pretrained LlamaGen-L and our pol-icy fine-tuned model with classifier-free guidance (scale=1.5) on selected ImageNet classes. Appendix 29 
+
+Thunder Snake 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Goldfish 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 8: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Thunder snake: 
+
+our fine-tuned model produces images that convey the class-specific semantics more clearly, offering more descriptive and recognizable visual attributes compared to the pretrained model. Goldfish: pretrained model often exhibits inconsistencies in body structure and overall geometry, whereas our fine-tuned model generates shapes that are more coherent and anatomically plausible. 30 Appendix 
+
+Hen 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Ostrich 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 9: Additional qualitative comparison between pretrained LlamaGen-L and our pol-icy fine-tuned model with classifier-free guidance (scale=1.5). Hen: Our model pro-duces faces with clearer structure and more coherent anatomical details. Ostrich: The overall body geometry and structural consistency are improved in our results. Appendix 31 
+
+Scorpion 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Kite 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 10: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Scorpion: Both mod-els produce images of comparable visual quality for this class. Kite: Our model gener-ates images that more faithfully capture the characteristic visual features of the class, whereas the pretrained model often displays noticeable geometric distortions. 32 Appendix 
+
+Bald Eagle 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Vulture 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 11: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Bald Eagle: Our generations exhibit higher aesthetic quality and more coherent detail overall. Vulture: 
+
+The pretrained model often produces images that are difficult to associate with the target class and appear visually generic, whereas our model yields outputs that are more clearly identifiable and better aligned with the characteristic features of the class. Appendix 33 
+
+Jellyfish 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Spotted Salamander 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 12: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Jellyfish: The pre-trained model often produces shapes that lack clear structure and show irregular forms. Our model generates jellyfish with more coherent body geometry, smoother outlines, and tentacles that better reflect the characteristic of the class. Spotted Salaman-der: The pretrained model sometimes produces body shapes that lack proper limb proportion. Our model generally yields more anatomically coherent salamanders with clearer limb structure, resulting in images that better match the class’ defining visual attributes. 34 Appendix 
+
+Beagle 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Norwegian Elkhound 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 13: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Beagle: The pre-trained model generally captures the overall dog shape but often produces faces with blurred or softened features. Our model yields clearer facial definition. Overall, the fine-tuned model provides more recognizable, aesthetically better and visually coher-ent beagle depictions. Norwegian Elkhound: The pretrained model often produces dogs with somewhat blurred facial regions, and the overall body shape can appear loosely defined. Our model generates images with clearer facial structure, resulting in more recognizable and visually consistent elkhound depictions. Appendix 35 
+
+Golden Retriever 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Bee 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 14: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Golden Retriever: 
+
+The pretrained model generally captures the overall dog shape but often produces facial regions that appear soft or slightly distorted, and the fur texture lacks the characteristic smooth, layered appearance of the breed. Our model produces dogs with clearer facial definition, more coherent head and ear geometry, and fur patterns that appear more natural, giving the resulting images a more recognizable and visually consistent golden retriever appearance. Bee: The pretrained model often produces bodies and wings with irregular geometry. Our model yields bees with more coherent body structure, better-defined wing shapes, and markings that more closely resemble the expected striped pattern, resulting in images that are visually clearer and more class-consistent. 36 Appendix 
+
+Starfish 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Hare 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 15: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Starfish: The pre-trained model sometimes produces starfish with uneven arm shapes or irregular overall geometry. Our model generates starfish with more consistent five-arm structure, clearer separation between the arms, resulting in images that better reflect the expected mor-phology of the class. Hare: Both models produce plausible hare images, but the pre-trained outputs often appear softer and less structured. Our generations show clearer facial and ear definition and slightly improved overall aesthetic coherence. Appendix 37 
+
+Backpack 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Bakery 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 16: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Backpack: The pre-trained model often produces backpacks with slightly distorted shapes. Our generations show better-defined structural elements, giving the images a cleaner and more coherent overall aesthetic. Bakery: Both models produce recognizable indoor scenes, but the pretrained outputs more often contain warped shelves or irregular object placement. 38 Appendix 
+
+Balloon 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Boathouse 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 17: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Balloon: The pre-trained model often produces balloons with irregular outlines or distorted surface shad-ing. Our generations show smoother, more symmetric shapes, resulting in images that appear more visually coherent. Boathouse: The pretrained model sometimes produces buildings with less distinct edges or inconsistent roof geometry. Our generations tend to show clearer structural lines and more stable scene composition, yielding images that look more coherent and visually well-formed. Appendix 39 
+
+Cinema 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Coffee Mug 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 18: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Cinema: Both mod-els produce plausible cinema façades. In our generations, the building structure and marquee region typically appear more coherent and readable, whereas the pretrained model more often exhibits distortions in the signage and surrounding geometry. Coffee Mug: The pretrained model produces mugs that frequently exhibits distorted geom-etry. Our fine-tuned model generates more coherent and visually structured prints on the mug surface. Overall, our samples better capture the intended decorative patterns while maintaining plausible mug geometry. 40 Appendix 
+
+Crate 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+File 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 19: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Crate: The pre-trained model frequently produces crates with inconsistent wood textures, or par-tially corrupted object boundaries. Our generations exhibit more regular box geometry, clearer structure, and more coherent wood patterns, resulting in crates that appear more stable and visually plausible overall. File: Our model produces cleaner drawer alignment, more consistent handle placement, and generally better-defined cabinet ge-ometry, yielding images that look more orderly and realistic. Appendix 41 
+
+Forklift 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Greenhouse 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 20: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Forklift: The pre-trained model often produces forklifts with incomplete or distorted mechanical parts, and several samples show structural artifacts. Our generations exhibit more coherent vehicle geometry resulting in forklifts that appear more plausible and visually stable. 
+
+Greenhouse: Our model produces images with clearer glass framing, more coherent interior organization, and more realistic plant arrangements, leading to greenhouses that read as cleaner and more structurally consistent. 42 Appendix 
+
+Handkerchief 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Hourglass 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 21: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Handkerchief: Both models produce images of comparable visual quality for this class. Hourglass: Pre-trained samples frequently exhibit distorted frame shapes. Our model produces hour-glasses with more symmetric frame geometry, clearer separation between the upper and lower chambers, and smoother visual structure, resulting in images that more reliably reflect the intended object. Appendix 43 
+
+Ipod 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Mailbox 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 22: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). iPod: Our model pro-duces units with clearer geometry, more recognizable screen interfaces, and more stable overall proportions, yielding images that better reflect the intended device. Mailbox: 
+
+Pretrained samples frequently contain irregular shapes or unstable surface details. Our generations offer cleaner cylindrical forms, more consistent mailbox openings, and im-proved color and material coherence, resulting in images that are easier to interpret as real-world mailboxes. 44 Appendix 
+
+Palace 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Pillow 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 23: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Palace: Our model produces palaces with clearer structural organization, more stable rooflines, and better-preserved details, resulting in images that read as more coherent and architecturally plausible. Pillow: Pretrained samples occasionally contain distorted shapes or fabric textures that appear uneven or partially collapsed. Our generations show smoother contours, more natural fabric shading, and more consistent pillow geometry. Appendix 45 
+
+Table Lamp 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Vase 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 24: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Table Lamp: Our generations contain more stable lamp silhouettes, more consistent geometry, and more details within the scene, resulting in table lamps that appear more realistic and struc-turally consistent. Vase: Our model yields vases with smoother profiles, better-defined openings and necks, and more coherent decorative textures, producing images that more reliably reflect the intended object category. 46 Appendix 
+
+Water Tower 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Mushroom 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 25: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Water Tower: The pretrained model often produces towers with warped tank shapes or inconsistent sup-port structures. Our model generates water towers with cleaner cylindrical forms, more coherent leg geometry, and better separation between structural elements, resulting in images that read as more stable and realistic. Mushroom: Pretrained outputs oc-casionally display uneven cap shapes, or unclear gill structure. Our generations have smoother cap curvature, and more consistent geometry, yielding samples that more faithfully capture the natural morphology of the class. Appendix 47 
+
+Pineapple 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Coral Reef 
+
+LlamaGen-L 
+
+LlamaGen-L + ours 
+
+Fig. 26: Additional qualitative comparison between pretrained LlamaGen-L and our policy fine-tuned model with classifier-free guidance (scale=1.5). Pineapple: Our gen-erations show more coherent skin structure, better-organized leaf crowns, and improved overall fruit geometry, yielding images that more reliably capture the distinctive visual features of pineapples. Coral Reef: Pretrained samples sometimes contain muddled textures or blended coral forms that make the scene visually ambiguous. Our model produces clearer reef structures with more distinct elements, richer textural diversity, and better separation between foreground coral and background water, resulting in images that are more interpretable and easy to identify.

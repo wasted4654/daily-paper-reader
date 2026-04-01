@@ -1,0 +1,682 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-01T20:18:41.454563+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 10,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 12,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2603.25730v1",
+      "title": "PackForcing: Short Video Training Suffices for Long Video Sampling and Long Context Inference",
+      "abstract": "Autoregressive video diffusion models have demonstrated remarkable progress, yet they remain bottlenecked by intractable linear KV-cache growth, temporal repetition, and compounding errors during long-video generation. To address these challenges, we present PackForcing, a unified framework that efficiently manages the generation history through a novel three-partition KV-cache strategy. Specifically, we categorize the historical context into three distinct types: (1) Sink tokens, which preserve early anchor frames at full resolution to maintain global semantics; (2) Mid tokens, which achieve a massive spatiotemporal compression (32x token reduction) via a dual-branch network fusing progressive 3D convolutions with low-resolution VAE re-encoding; and (3) Recent tokens, kept at full resolution to ensure local temporal coherence. To strictly bound the memory footprint without sacrificing quality, we introduce a dynamic top-$k$ context selection mechanism for the mid tokens, coupled with a continuous Temporal RoPE Adjustment that seamlessly re-aligns position gaps caused by dropped tokens with negligible overhead. Empowered by this principled hierarchical context compression, PackForcing can generate coherent 2-minute, 832x480 videos at 16 FPS on a single H200 GPU. It achieves a bounded KV cache of just 4 GB and enables a remarkable 24x temporal extrapolation (5s to 120s), operating effectively either zero-shot or trained on merely 5-second clips. Extensive results on VBench demonstrate state-of-the-art temporal consistency (26.07) and dynamic degree (56.25), proving that short-video supervision is sufficient for high-quality, long-video synthesis. https://github.com/ShandaAI/PackForcing",
+      "authors": [
+        "Xiaofeng Mao",
+        "Shaohao Rui",
+        "Kaining Ying",
+        "Bo Zheng",
+        "Chuanhao Li",
+        "Mingmin Chi",
+        "Kaipeng Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-03-26T17:59:05+00:00",
+      "link": "https://arxiv.org/pdf/2603.25730v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Autoregressive video diffusion models and KV-cache management",
+      "llm_evidence_cn": "自回归视频扩散模型与KV缓存管理",
+      "llm_evidence": "自回归视频扩散模型与KV缓存管理",
+      "canonical_evidence": "自回归视频扩散模型与KV缓存管理",
+      "llm_tldr_en": "PackForcing optimizes autoregressive video diffusion via a novel three-partition KV-cache strategy for long videos.",
+      "llm_tldr_cn": "PackForcing通过新型三分区KV缓存策略优化了自回归视频扩散模型的长视频生成效率。",
+      "llm_tldr": "PackForcing通过新型三分区KV缓存策略优化了自回归视频扩散模型的长视频生成效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.24835v1",
+      "title": "DCARL: A Divide-and-Conquer Framework for Autoregressive Long-Trajectory Video Generation",
+      "abstract": "Long-trajectory video generation is a crucial yet challenging task for world modeling primarily due to the limited scalability of existing video diffusion models (VDMs). Autoregressive models, while offering infinite rollout, suffer from visual drift and poor controllability. To address these issues, we propose DCARL, a novel divide-and-conquer, autoregressive framework that effectively combines the structural stability of the divide-and-conquer scheme with the high-fidelity generation of VDMs. Our approach first employs a dedicated Keyframe Generator trained without temporal compression to establish long-range, globally consistent structural anchors. Subsequently, an Interpolation Generator synthesizes the dense frames in an autoregressive manner with overlapping segments, utilizing the keyframes for global context and a single clean preceding frame for local coherence. Trained on a large-scale internet long trajectory video dataset, our method achieves superior performance in both visual quality (lower FID and FVD) and camera adherence (lower ATE and ARE) compared to state-of-the-art autoregressive and divide-and-conquer baselines, demonstrating stable and high-fidelity generation for long trajectory videos up to 32 seconds in length.",
+      "authors": [
+        "Junyi Ouyang",
+        "Wenbin Teng",
+        "Gonglin Chen",
+        "Yajie Zhao",
+        "Haiwei Chen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-25T22:07:09+00:00",
+      "link": "https://arxiv.org/pdf/2603.24835v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "combines structural stability of divide-and-conquer with high-fidelity VDMs",
+      "llm_evidence_cn": "结合了分治方案的结构稳定性和视频扩散模型的高保真生成",
+      "llm_evidence": "结合了分治方案的结构稳定性和视频扩散模型的高保真生成",
+      "canonical_evidence": "结合了分治方案的结构稳定性和视频扩散模型的高保真生成",
+      "llm_tldr_en": "DCARL is an autoregressive framework combining divide-and-conquer schemes with video diffusion for long videos.",
+      "llm_tldr_cn": "DCARL 是一种结合了分治方案与视频扩散模型的自回归框架，用于长视频生成。",
+      "llm_tldr": "DCARL 是一种结合了分治方案与视频扩散模型的自回归框架，用于长视频生成。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.26364v1",
+      "title": "LLaDA-TTS: Unifying Speech Synthesis and Zero-Shot Editing via Masked Diffusion Modeling",
+      "abstract": "Large language model (LLM)-based text-to-speech (TTS) systems achieve remarkable naturalness via autoregressive (AR) decoding, but require N sequential steps to generate N speech tokens. We present LLaDA-TTS, which replaces the AR LLM with a masked diffusion model that completes generation in a fixed number of parallel steps, decoupling inference latency from sequence length. Remarkably, using only 50 hours of fine-tuning data, we successfully transfer a pretrained AR checkpoint to the masked diffusion paradigm via bidirectional attention. At 64 steps, LLaDA-TTS achieves 0.98% CER (zh) and 1.96% WER (en) on Seed-TTS-Eval, matching the original CosyVoice 3 baseline performance while delivering a 2x LLM-stage speedup--a notable acceleration achieved despite the absence of KV cache, an optimization the AR baseline heavily relies on. Beyond acceleration, the bidirectional architecture naturally enables zero-shot speech editing--including word-level insertion, deletion, and substitution--without any additional training. Theoretically, we prove that AR-pretrained weights are near-optimal for bidirectional masked prediction under the locality property of acoustic tokens, explaining this rapid convergence. This general method modifies only the attention mask and objective, applying seamlessly to any LLM-based AR TTS system. Code and audio samples will be available at https://deft-piroshki-b652b5.netlify.app/.",
+      "authors": [
+        "Xiaoyu Fan",
+        "Huizhi Xie",
+        "Wei Zou",
+        "Yunzhang Chen"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-03-27T12:45:35+00:00",
+      "link": "https://arxiv.org/pdf/2603.26364v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "transferring pretrained AR checkpoint to masked diffusion paradigm",
+      "llm_evidence_cn": "将预训练的自回归检查点转换为掩码扩散范式",
+      "llm_evidence": "将预训练的自回归检查点转换为掩码扩散范式",
+      "canonical_evidence": "将预训练的自回归检查点转换为掩码扩散范式",
+      "llm_tldr_en": "LLaDA-TTS unifies speech synthesis by replacing autoregressive decoding with parallel masked diffusion modeling.",
+      "llm_tldr_cn": "LLaDA-TTS 通过将自回归解码替换为并行掩码扩散建模，实现了语音合成的统一。",
+      "llm_tldr": "LLaDA-TTS 通过将自回归解码替换为并行掩码扩散建模，实现了语音合成的统一。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.25406v1",
+      "title": "MMaDA-VLA: Large Diffusion Vision-Language-Action Model with Unified Multi-Modal Instruction and Generation",
+      "abstract": "Vision-Language-Action (VLA) models aim to control robots for manipulation from visual observations and natural-language instructions. However, existing hierarchical and autoregressive paradigms often introduce architectural overhead, suffer from temporal inconsistency and long-horizon error accumulation, and lack a mechanism to capture environment dynamics without extra modules. To this end, we present MMaDA-VLA, a fully native pre-trained large diffusion VLA model that unifies multi-modal understanding and generation in a single framework. Our key idea is a native discrete diffusion formulation that embeds language, images, and continuous robot controls into one discrete token space and trains a single backbone with masked token denoising to jointly generate a future goal observation and an action chunk in parallel. Iterative denoising enables global, order-free refinement, improving long-horizon consistency while grounding actions in predicted future visual outcomes without auxiliary world models. Experiments across simulation benchmarks and real-world tasks show state-of-the-art performance, achieving 98.0% average success on LIBERO and 4.78 average length on CALVIN.",
+      "authors": [
+        "Yang Liu",
+        "Pengxiang Ding",
+        "Tengyue Jiang",
+        "Xudong Wang",
+        "Wenxuan Song",
+        "Minghui Lin",
+        "Han Zhao",
+        "Hongyin Zhang",
+        "Zifeng Zhuang",
+        "Wei Zhao",
+        "Siteng Huang",
+        "Jinkui Shi",
+        "Donglin Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-26T12:55:51+00:00",
+      "link": "https://arxiv.org/pdf/2603.25406v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Native discrete diffusion formulation for robot control",
+      "llm_evidence_cn": "用于机器人控制的原生离散扩散公式",
+      "llm_evidence": "用于机器人控制的原生离散扩散公式",
+      "canonical_evidence": "用于机器人控制的原生离散扩散公式",
+      "llm_tldr_en": "MMaDA-VLA unifies multi-modal understanding and generation using a native discrete diffusion formulation.",
+      "llm_tldr_cn": "MMaDA-VLA利用原生离散扩散公式统一了多模态理解与生成，用于机器人控制。",
+      "llm_tldr": "MMaDA-VLA利用原生离散扩散公式统一了多模态理解与生成，用于机器人控制。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2603.12635v1",
+      "title": "Adaptive Diffusion Posterior Sampling for Data and Model Fusion of Complex Nonlinear Dynamical Systems",
+      "abstract": "High-fidelity numerical simulations of chaotic, high dimensional nonlinear dynamical systems are computationally expensive, necessitating the development of efficient surrogate models. Most surrogate models for such systems are deterministic, for example when neural operators are involved. However, deterministic models often fail to capture the intrinsic distributional uncertainty of chaotic systems. This work presents a surrogate modeling formulation that leverages generative machine learning, where a deep learning diffusion model is used to probabilistically forecast turbulent flows over long horizons. We introduce a multi-step autoregressive diffusion objective that significantly enhances long-rollout stability compared to standard single-step training. To handle complex, unstructured geometries, we utilize a multi-scale graph transformer architecture incorporating diffusion preconditioning and voxel-grid pooling. More importantly, our modeling framework provides a unified platform that also predicts spatiotemporally important locations for sensor placement, either via uncertainty estimates or through an error-estimation module. Finally, the observations of the ground truth state at these dynamically varying sensor locations are assimilated using diffusion posterior sampling requiring no retraining of the surrogate model. We present our methodology on two-dimensional homogeneous and isotropic turbulence and for a flow over a backwards-facing step, demonstrating its utility in forecasting, adaptive sensor placement, and data assimilation for high dimensional chaotic systems.",
+      "authors": [
+        "Dibyajyoti Chakraborty",
+        "Hojin Kim",
+        "Romit Maulik"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "nlin.CD",
+        "physics.flu-dyn"
+      ],
+      "published": "2026-03-13T04:11:37+00:00",
+      "link": "https://arxiv.org/pdf/2603.12635v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Multi-step autoregressive diffusion objective for forecasting",
+      "llm_evidence_cn": "用于预测的多步自回归扩散目标",
+      "llm_evidence": "用于预测的多步自回归扩散目标",
+      "canonical_evidence": "用于预测的多步自回归扩散目标",
+      "llm_tldr_en": "Presents an adaptive diffusion posterior sampling method with an autoregressive objective for dynamical systems.",
+      "llm_tldr_cn": "提出一种自适应扩散后验采样方法，通过自回归目标增强动力系统预测的稳定性。",
+      "llm_tldr": "提出一种自适应扩散后验采样方法，通过自回归目标增强动力系统预测的稳定性。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.12635v1"
+    },
+    {
+      "id": "2603.19146v1",
+      "title": "D5P4: Partition Determinantal Point Process for Diversity in Parallel Discrete Diffusion Decoding",
+      "abstract": "Discrete diffusion models are promising alternatives to autoregressive approaches for text generation, yet their decoding methods remain under-studied. Standard decoding methods for autoregressive models, such as beam search, do not directly apply to iterative denoising, and existing diffusion decoding techniques provide limited control over in-batch diversity. To bridge this gap, we introduce a generalized beam-search framework for discrete diffusion that generates candidates in parallel and supports modular beam-selection objectives. As a diversity-focused instantiation, we propose D5P4, which formulates the selection step as MAP inference over a Determinantal Point Process. Leveraging a scalable greedy solver, D5P4 maintains multi-GPU compatibility and enables an explicit trade-off between model probability and target diversity with near-zero compute overhead. Experiments on free-form generation and question answering demonstrate that D5P4 improves diversity over strong baselines while maintaining competitive generation quality.",
+      "authors": [
+        "Jonathan Lys",
+        "Vincent Gripon",
+        "Bastien Pasdeloup",
+        "Axel Marmoret",
+        "Lukas Mauch",
+        "Fabien Cardinaux",
+        "Ghouthi Boukli Hacene"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-03-19T17:02:08+00:00",
+      "link": "https://arxiv.org/pdf/2603.19146v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Discrete diffusion models as alternatives to autoregressive approaches for text generation",
+      "llm_evidence_cn": "离散扩散模型作为文本生成中自回归方法的替代方案",
+      "llm_evidence": "离散扩散模型作为文本生成中自回归方法的替代方案",
+      "canonical_evidence": "离散扩散模型作为文本生成中自回归方法的替代方案",
+      "llm_tldr_en": "Introduces a generalized beam-search framework for discrete diffusion to improve decoding diversity in text generation.",
+      "llm_tldr_cn": "为离散扩散模型引入广义束搜索框架，提升文本生成中的解码多样性。",
+      "llm_tldr": "为离散扩散模型引入广义束搜索框架，提升文本生成中的解码多样性。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "carryover_cache",
+      "paper_id": "2603.19146v1"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2603.25406v2",
+      "title": "MMaDA-VLA: Large Diffusion Vision-Language-Action Model with Unified Multi-Modal Instruction and Generation",
+      "abstract": "Vision-Language-Action (VLA) models aim to control robots for manipulation from visual observations and natural-language instructions. However, existing hierarchical and autoregressive paradigms often introduce architectural overhead, suffer from temporal inconsistency and long-horizon error accumulation, and lack a mechanism to capture environment dynamics without extra modules. To this end, we present MMaDA-VLA, a fully native pre-trained large diffusion VLA model that unifies multi-modal understanding and generation in a single framework. Our key idea is a native discrete diffusion formulation that embeds language, images, and continuous robot controls into one discrete token space and trains a single backbone with masked token denoising to jointly generate a future goal observation and an action chunk in parallel. Iterative denoising enables global, order-free refinement, improving long-horizon consistency while grounding actions in predicted future visual outcomes without auxiliary world models. Experiments across simulation benchmarks and real-world tasks show state-of-the-art performance, achieving 98.0% average success on LIBERO and 4.78 average length on CALVIN.",
+      "authors": [
+        "Yang Liu",
+        "Pengxiang Ding",
+        "Tengyue Jiang",
+        "Xudong Wang",
+        "Wenxuan Song",
+        "Minghui Lin",
+        "Han Zhao",
+        "Hongyin Zhang",
+        "Zifeng Zhuang",
+        "Wei Zhao",
+        "Siteng Huang",
+        "Jinkui Shi",
+        "Donglin Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-26T12:55:51+00:00",
+      "link": "https://arxiv.org/pdf/2603.25406v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Native discrete diffusion formulation for robot control",
+      "llm_evidence_cn": "用于机器人控制的原生离散扩散公式",
+      "llm_evidence": "用于机器人控制的原生离散扩散公式",
+      "canonical_evidence": "用于机器人控制的原生离散扩散公式",
+      "llm_tldr_en": "MMaDA-VLA unifies multi-modal understanding and generation using a native discrete diffusion formulation.",
+      "llm_tldr_cn": "MMaDA-VLA利用原生离散扩散公式统一了多模态理解与生成，用于机器人控制。",
+      "llm_tldr": "MMaDA-VLA利用原生离散扩散公式统一了多模态理解与生成，用于机器人控制。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.26320v1",
+      "title": "DFM-VLA: Iterative Action Refinement for Robot Manipulation via Discrete Flow Matching",
+      "abstract": "Vision--Language--Action (VLA) models that encode actions using a discrete tokenization scheme are increasingly adopted for robotic manipulation, but existing decoding paradigms remain fundamentally limited. Whether actions are decoded sequentially by autoregressive VLAs or in parallel by discrete diffusion VLAs, once a token is generated, it is typically fixed and cannot be revised in subsequent iterations, so early token errors cannot be effectively corrected later. We propose DFM-VLA, a discrete flow matching VLA for iterative refinement of action tokens. DFM-VLA~models a token-level probability velocity field that dynamically updates the full action sequence across refinement iterations. We investigate two ways to construct the velocity field: an auxiliary velocity-head formulation and an action-embedding-guided formulation. Our framework further adopts a two-stage decoding strategy with an iterative refinement stage followed by deterministic validation for stable convergence. Extensive experiments on CALVIN, LIBERO, and real-world manipulation tasks show that DFM-VLA consistently outperforms strong autoregressive, discrete diffusion, and continuous diffusion baselines in manipulation performance while retaining high inference efficiency. In particular, DFM-VLA achieves an average success length of 4.44 on CALVIN and an average success rate of 95.7\\% on LIBERO, highlighting the value of action refinement via discrete flow matching for robotic manipulation. Our project is available \\url{https://chris1220313648.github.io/DFM-VLA/}",
+      "authors": [
+        "Jiayi Chen",
+        "Wenxuan Song",
+        "Shuai Chen",
+        "Jingbo Wang",
+        "Zhijun Li",
+        "Haoang Li"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-03-27T11:38:43+00:00",
+      "link": "https://arxiv.org/pdf/2603.26320v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Discrete diffusion and autoregressive VLAs for robot manipulation",
+      "llm_evidence_cn": "用于机器人操作的离散扩散和自回归 VLA",
+      "llm_evidence": "用于机器人操作的离散扩散和自回归 VLA",
+      "canonical_evidence": "用于机器人操作的离散扩散和自回归 VLA",
+      "llm_tldr_en": "DFM-VLA uses discrete flow matching for iterative action refinement in robotic manipulation.",
+      "llm_tldr_cn": "DFM-VLA 使用离散流匹配在机器人操作中进行迭代动作细化。",
+      "llm_tldr": "DFM-VLA 使用离散流匹配在机器人操作中进行迭代动作细化。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.23086v1",
+      "title": "Policy-based Tuning of Autoregressive Image Models with Instance- and Distribution-Level Rewards",
+      "abstract": "Autoregressive (AR) models are highly effective for image generation, yet their standard maximum-likelihood estimation training lacks direct optimization for sample quality and diversity. While reinforcement learning (RL) has been used to align diffusion models, these methods typically suffer from output diversity collapse. Similarly, concurrent RL methods for AR models rely strictly on instance-level rewards, often trading off distributional coverage for quality. To address these limitations, we propose a lightweight RL framework that casts token-based AR synthesis as a Markov Decision Process, optimized via Group Relative Policy Optimization (GRPO). Our core contribution is the introduction of a novel distribution-level Leave-One-Out FID (LOO-FID) reward; by leveraging an exponential moving average of feature moments, it explicitly encourages sample diversity and prevents mode collapse during policy updates. We integrate this with composite instance-level rewards (CLIP and HPSv2) for strict semantic and perceptual fidelity, and stabilize the multi-objective learning with an adaptive entropy regularization term. Extensive experiments on LlamaGen and VQGAN architectures demonstrate clear improvements across standard quality and diversity metrics within only a few hundred tuning iterations. The results also show that the model can be updated to produce competitive samples even without Classifier-Free Guidance, and bypass its 2x inference cost.",
+      "authors": [
+        "Orhun Buğra Baran",
+        "Melih Kandemir",
+        "Ramazan Gokberk Cinbis"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-03-24T11:28:36+00:00",
+      "link": "https://arxiv.org/pdf/2603.23086v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "alignment of autoregressive models using RL techniques similar to diffusion",
+      "llm_evidence_cn": "使用类似于扩散模型的强化学习技术对自回归模型进行对齐",
+      "llm_evidence": "使用类似于扩散模型的强化学习技术对自回归模型进行对齐",
+      "canonical_evidence": "使用类似于扩散模型的强化学习技术对自回归模型进行对齐",
+      "llm_tldr_en": "Introduces a policy-based tuning framework for autoregressive image models to improve quality and diversity.",
+      "llm_tldr_cn": "引入了一种基于策略的自回归图像模型微调框架，以提高生成质量和多样性。",
+      "llm_tldr": "引入了一种基于策略的自回归图像模型微调框架，以提高生成质量和多样性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.26211v1",
+      "title": "Towards GUI Agents: Vision-Language Diffusion Models for GUI Grounding",
+      "abstract": "Autoregressive (AR) vision-language models (VLMs) have long dominated multimodal understanding, reasoning, and graphical user interface (GUI) grounding. Recently, discrete diffusion vision-language models (DVLMs) have shown strong performance in multimodal reasoning, offering bidirectional attention, parallel token generation, and iterative refinement. However, their potential for GUI grounding remains unexplored. In this work, we evaluate whether discrete DVLMs can serve as a viable alternative to AR models for GUI grounding. We adapt LLaDA-V for single-turn action and bounding-box prediction, framing the task as text generation from multimodal input. To better capture the hierarchical structure of bounding-box geometry, we propose a hybrid masking schedule that combines linear and deterministic masking, improving grounding accuracy by up to 6.1 points in Step Success Rate (SSR) over the GUI-adapted LLaDA-V trained with linear masking. Evaluations on four datasets spanning web, desktop, and mobile interfaces show that the adapted diffusion model with hybrid masking consistently outperforms the linear-masked variant and performs competitively with autoregressive counterparts despite limited pretraining. Systematic ablations reveal that increasing diffusion steps, generation length, and block length improves accuracy but also increases latency, with accuracy plateauing beyond a certain number of diffusion steps. Expanding the training data with diverse GUI domains further reduces latency by about 1.3 seconds and improves grounding accuracy by an average of 20 points across benchmarks. These results demonstrate that discrete DVLMs are a promising modeling framework for GUI grounding and represent an important step toward diffusion-based GUI agents.",
+      "authors": [
+        "Shrinidhi Kumbhar",
+        "Haofu Liao",
+        "Srikar Appalaraju",
+        "Kunwar Yashraj Singh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-03-27T09:34:07+00:00",
+      "link": "https://arxiv.org/pdf/2603.26211v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "evaluates discrete diffusion as alternative to autoregressive models",
+      "llm_evidence_cn": "评估离散扩散模型作为自回归模型的替代方案",
+      "llm_evidence": "评估离散扩散模型作为自回归模型的替代方案",
+      "canonical_evidence": "评估离散扩散模型作为自回归模型的替代方案",
+      "llm_tldr_en": "Explores discrete diffusion vision-language models for GUI grounding as an alternative to autoregressive models.",
+      "llm_tldr_cn": "探索离散扩散视觉语言模型在GUI定位中作为自回归模型替代方案的潜力。",
+      "llm_tldr": "探索离散扩散视觉语言模型在GUI定位中作为自回归模型替代方案的潜力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.26320v2",
+      "title": "DFM-VLA: Iterative Action Refinement for Robot Manipulation via Discrete Flow Matching",
+      "abstract": "Vision--Language--Action (VLA) models that encode actions using a discrete tokenization scheme are increasingly adopted for robotic manipulation, but existing decoding paradigms remain fundamentally limited. Whether actions are decoded sequentially by autoregressive VLAs or in parallel by discrete diffusion VLAs, once a token is generated, it is typically fixed and cannot be revised in subsequent iterations, so early token errors cannot be effectively corrected later. We propose DFM-VLA, a discrete flow matching VLA for iterative refinement of action tokens. DFM-VLA~models a token-level probability velocity field that dynamically updates the full action sequence across refinement iterations. We investigate two ways to construct the velocity field: an auxiliary velocity-head formulation and an action-embedding-guided formulation. Our framework further adopts a two-stage decoding strategy with an iterative refinement stage followed by deterministic validation for stable convergence. Extensive experiments on CALVIN, LIBERO, and real-world manipulation tasks show that DFM-VLA consistently outperforms strong autoregressive, discrete diffusion, and continuous diffusion baselines in manipulation performance while retaining high inference efficiency. In particular, DFM-VLA achieves an average success length of 4.44 on CALVIN and an average success rate of 95.7\\% on LIBERO, highlighting the value of action refinement via discrete flow matching for robotic manipulation. Our project is available https://chris1220313648.github.io/DFM-VLA/",
+      "authors": [
+        "Jiayi Chen",
+        "Wenxuan Song",
+        "Shuai Chen",
+        "Jingbo Wang",
+        "Zhijun Li",
+        "Haoang Li"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-03-27T11:38:43+00:00",
+      "link": "https://arxiv.org/pdf/2603.26320v2",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Discrete diffusion and autoregressive VLAs for robot manipulation",
+      "llm_evidence_cn": "用于机器人操作的离散扩散和自回归 VLA",
+      "llm_evidence": "用于机器人操作的离散扩散和自回归 VLA",
+      "canonical_evidence": "用于机器人操作的离散扩散和自回归 VLA",
+      "llm_tldr_en": "DFM-VLA uses discrete flow matching for iterative action refinement in robotic manipulation.",
+      "llm_tldr_cn": "DFM-VLA 使用离散流匹配在机器人操作中进行迭代动作细化。",
+      "llm_tldr": "DFM-VLA 使用离散流匹配在机器人操作中进行迭代动作细化。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.28253v1",
+      "title": "MR-ImagenTime: Multi-Resolution Time Series Generation through Dual Image Representations",
+      "abstract": "Time series forecasting is vital across many domains, yet existing models struggle with fixed-length inputs and inadequate multi-scale modeling. We propose MR-CDM, a framework combining hierarchical multi-resolution trend decomposition, an adaptive embedding mechanism for variable-length inputs, and a multi-scale conditional diffusion process. Evaluations on four real-world datasets demonstrate that MR-CDM significantly outperforms state-of-the-art baselines (e.g., CSDI, Informer), reducing MAE and RMSE by approximately 6-10 to a certain degree.",
+      "authors": [
+        "Xianyong Xu",
+        "Yuanjun Zuo",
+        "Zhihong Huang",
+        "Yihan Qin",
+        "Haoxian Xu",
+        "Leilei Du",
+        "Haotian Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-03-30T10:25:35+00:00",
+      "link": "https://arxiv.org/pdf/2603.28253v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "multi-scale conditional diffusion for time series generation",
+      "llm_evidence_cn": "用于时间序列生成的多尺度条件扩散模型",
+      "llm_evidence": "用于时间序列生成的多尺度条件扩散模型",
+      "canonical_evidence": "用于时间序列生成的多尺度条件扩散模型",
+      "llm_tldr_en": "Develops a multi-resolution diffusion framework for accurate time series forecasting and generation.",
+      "llm_tldr_cn": "开发了一个多分辨率扩散框架，用于精确的时间序列预测和生成。",
+      "llm_tldr": "开发了一个多分辨率扩散框架，用于精确的时间序列预测和生成。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.26771v1",
+      "title": "LogicDiff: Logic-Guided Denoising Improves Reasoning in Masked Diffusion Language Models",
+      "abstract": "Masked diffusion language models (MDLMs) generate text by iteratively unmasking tokens from a fully masked sequence, offering parallel generation and bidirectional context. However, their standard confidence-based unmasking strategy systematically defers high-entropy logical connective tokens, the critical branching points in reasoning chains, leading to severely degraded reasoning performance. We introduce LogicDiff, an inference-time method that replaces confidence-based unmasking with logic-role-guided unmasking. A lightweight classification head (4.2M parameters, 0.05% of the base model) predicts the logical role of each masked position (premise, connective, derived step, conclusion, or filler) from the base model's hidden states with 98.4% accuracy. A dependency-ordered scheduler then unmasks tokens in logical dependency order: premises first, then connectives, then derived steps, then conclusions. Without modifying a single parameter of the base model and without any reinforcement learning or task-specific training, LogicDiff improves LLaDA-8B-Instruct accuracy from 22.0% to 60.7% on GSM8K (+38.7 percentage points) and from 23.6% to 29.2% on MATH-500 (+5.6 pp), with less than 6% speed overhead. Our results demonstrate that a substantial portion of the reasoning deficit in MDLMs is attributable to suboptimal token unmasking order, not to limitations of the model's learned representations.",
+      "authors": [
+        "Shaik Aman"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-03-24T13:08:10+00:00",
+      "link": "https://arxiv.org/pdf/2603.26771v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Improving reasoning in masked diffusion language models",
+      "llm_evidence_cn": "改进掩码扩散语言模型的推理能力",
+      "llm_evidence": "改进掩码扩散语言模型的推理能力",
+      "canonical_evidence": "改进掩码扩散语言模型的推理能力",
+      "llm_tldr_en": "LogicDiff improves reasoning in diffusion language models via logic-role-guided unmasking.",
+      "llm_tldr_cn": "LogicDiff 通过逻辑角色引导的去掩码改进了扩散语言模型的推理能力。",
+      "llm_tldr": "LogicDiff 通过逻辑角色引导的去掩码改进了扩散语言模型的推理能力。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.26661v1",
+      "title": "GaussianGPT: Towards Autoregressive 3D Gaussian Scene Generation",
+      "abstract": "Most recent advances in 3D generative modeling rely on diffusion or flow-matching formulations. We instead explore a fully autoregressive alternative and introduce GaussianGPT, a transformer-based model that directly generates 3D Gaussians via next-token prediction, thus facilitating full 3D scene generation. We first compress Gaussian primitives into a discrete latent grid using a sparse 3D convolutional autoencoder with vector quantization. The resulting tokens are serialized and modeled using a causal transformer with 3D rotary positional embedding, enabling sequential generation of spatial structure and appearance. Unlike diffusion-based methods that refine scenes holistically, our formulation constructs scenes step-by-step, naturally supporting completion, outpainting, controllable sampling via temperature, and flexible generation horizons. This formulation leverages the compositional inductive biases and scalability of autoregressive modeling while operating on explicit representations compatible with modern neural rendering pipelines, positioning autoregressive transformers as a complementary paradigm for controllable and context-aware 3D generation.",
+      "authors": [
+        "Nicolas von Lützow",
+        "Barbara Rössle",
+        "Katharina Schmid",
+        "Matthias Nießner"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-27T17:58:05+00:00",
+      "link": "https://arxiv.org/pdf/2603.26661v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "explores autoregressive alternative to diffusion for 3D scene generation",
+      "llm_evidence_cn": "探索 3D 场景生成中扩散模型的自回归替代方案",
+      "llm_evidence": "探索 3D 场景生成中扩散模型的自回归替代方案",
+      "canonical_evidence": "探索 3D 场景生成中扩散模型的自回归替代方案",
+      "llm_tldr_en": "GaussianGPT uses an autoregressive transformer for 3D Gaussian scene generation as an alternative to diffusion.",
+      "llm_tldr_cn": "GaussianGPT 使用自回归 Transformer 进行 3D 高斯场景生成，作为扩散模型的替代方案。",
+      "llm_tldr": "GaussianGPT 使用自回归 Transformer 进行 3D 高斯场景生成，作为扩散模型的替代方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2603.29339v1",
+      "title": "LongCat-AudioDiT: High-Fidelity Diffusion Text-to-Speech in the Waveform Latent Space",
+      "abstract": "We present LongCat-AudioDiT, a novel, non-autoregressive diffusion-based text-to-speech (TTS) model that achieves state-of-the-art (SOTA) performance. Unlike previous methods that rely on intermediate acoustic representations such as mel-spectrograms, the core innovation of LongCat-AudioDiT lies in operating directly within the waveform latent space. This approach effectively mitigates compounding errors and drastically simplifies the TTS pipeline, requiring only a waveform variational autoencoder (Wav-VAE) and a diffusion backbone. Furthermore, we introduce two critical improvements to the inference process: first, we identify and rectify a long-standing training-inference mismatch; second, we replace traditional classifier-free guidance with adaptive projection guidance to elevate generation quality. Experimental results demonstrate that, despite the absence of complex multi-stage training pipelines or high-quality human-annotated datasets, LongCat-AudioDiT achieves SOTA zero-shot voice cloning performance on the Seed benchmark while maintaining competitive intelligibility. Specifically, our largest variant, LongCat-AudioDiT-3.5B, outperforms the previous SOTA model (Seed-TTS), improving the speaker similarity (SIM) scores from 0.809 to 0.818 on Seed-ZH, and from 0.776 to 0.797 on Seed-Hard. Finally, through comprehensive ablation studies and systematic analysis, we validate the effectiveness of our proposed modules. Notably, we investigate the interplay between the Wav-VAE and the TTS backbone, revealing the counterintuitive finding that superior reconstruction fidelity in the Wav-VAE does not necessarily lead to better overall TTS performance. Code and model weights are released to foster further research within the speech community.",
+      "authors": [
+        "Detai Xin",
+        "Shujie Hu",
+        "Chengzuo Yang",
+        "Chen Huang",
+        "Guoqiao Yu",
+        "Guanglu Wan",
+        "Xunliang Cai"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "eess.AS"
+      ],
+      "published": "2026-03-31T07:07:52+00:00",
+      "link": "https://arxiv.org/pdf/2603.29339v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "non-autoregressive diffusion for sequence generation",
+      "llm_evidence_cn": "用于序列生成的非自回归扩散模型",
+      "llm_evidence": "用于序列生成的非自回归扩散模型",
+      "canonical_evidence": "用于序列生成的非自回归扩散模型",
+      "llm_tldr_en": "Proposes a non-autoregressive diffusion model for high-fidelity text-to-speech in waveform latent space.",
+      "llm_tldr_cn": "提出一种在波形潜空间中进行高保真文本转语音的非自回归扩散模型。",
+      "llm_tldr": "提出一种在波形潜空间中进行高保真文本转语音的非自回归扩散模型。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2603.27281v1",
+      "title": "HiFlow: Tokenization-Free Scale-Wise Autoregressive Policy Learning via Flow Matching",
+      "abstract": "Coarse-to-fine autoregressive modeling has recently shown strong promise for visuomotor policy learning, combining the inference efficiency of autoregressive methods with the global trajectory coherence of diffusion-based policies. However, existing approaches rely on discrete action tokenizers that map continuous action sequences to codebook indices, a design inherited from image generation where learned compression is necessary for high-dimensional pixel data. We observe that robot actions are inherently low-dimensional continuous vectors, for which such tokenization introduces unnecessary quantization error and a multi-stage training pipeline. In this work, we propose Hierarchical Flow Policy (HiFlow), a tokenization-free coarse-to-fine autoregressive policy that operates directly on raw continuous actions. HiFlow constructs multi-scale continuous action targets from each action chunk via simple temporal pooling. Specifically, it averages contiguous action windows to produce coarse summaries that are refined at finer temporal resolutions. The entire model is trained end-to-end in a single stage, eliminating the need for a separate tokenizer. Experiments on MimicGen, RoboTwin 2.0, and real-world environments demonstrate that HiFlow consistently outperforms existing methods including diffusion-based and tokenization-based autoregressive policies.",
+      "authors": [
+        "Daichi Yashima",
+        "Koki Seno",
+        "Shuhei Kurita",
+        "Yusuke Oda",
+        "Komei Sugiura"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-03-28T14:22:58+00:00",
+      "link": "https://arxiv.org/pdf/2603.27281v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "autoregressive policy learning with diffusion-based coherence",
+      "llm_evidence_cn": "结合扩散相干性的自回归策略学习",
+      "llm_evidence": "结合扩散相干性的自回归策略学习",
+      "canonical_evidence": "结合扩散相干性的自回归策略学习",
+      "llm_tldr_en": "Introduces a tokenization-free autoregressive policy using flow matching for robot visuomotor tasks.",
+      "llm_tldr_cn": "引入一种无标记化的自回归策略，利用流匹配进行机器人视觉运动任务。",
+      "llm_tldr": "引入一种无标记化的自回归策略，利用流匹配进行机器人视觉运动任务。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2603.28367v1",
+      "title": "Rethinking Structure Preservation in Text-Guided Image Editing with Visual Autoregressive Models",
+      "abstract": "Visual autoregressive (VAR) models have recently emerged as a promising family of generative models, enabling a wide range of downstream vision tasks such as text-guided image editing. By shifting the editing paradigm from noise manipulation in diffusion-based methods to token-level operations, VAR-based approaches achieve better background preservation and significantly faster inference. However, existing VAR-based editing methods still face two key challenges: accurately localizing editable tokens and maintaining structural consistency in the edited results. In this work, we propose a novel text-guided image editing framework rooted in an analysis of intermediate feature distributions within VAR models. First, we introduce a coarse-to-fine token localization strategy that can refine editable regions, balancing editing fidelity and background preservation. Second, we analyze the intermediate representations of VAR models and identify structure-related features, by which we design a simple yet effective feature injection mechanism to enhance structural consistency between the edited and source images. Third, we develop a reinforcement learning-based adaptive feature injection scheme that automatically learns scale- and layer-specific injection ratios to jointly optimize editing fidelity and structure preservation. Extensive experiments demonstrate that our method achieves superior structural consistency and editing quality compared with state-of-the-art approaches, across both local and global editing scenarios.",
+      "authors": [
+        "Tao Xia",
+        "Jiawei Liu",
+        "Yukun Zhang",
+        "Ting Liu",
+        "Wei Wang",
+        "Lei Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-03-30T12:35:33+00:00",
+      "link": "https://arxiv.org/pdf/2603.28367v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Visual autoregressive models for image editing compared to diffusion methods",
+      "llm_evidence_cn": "用于图像编辑的视觉自回归模型与扩散方法的对比",
+      "llm_evidence": "用于图像编辑的视觉自回归模型与扩散方法的对比",
+      "canonical_evidence": "用于图像编辑的视觉自回归模型与扩散方法的对比",
+      "llm_tldr_en": "Proposes a VAR-based image editing framework that improves structure preservation over diffusion methods.",
+      "llm_tldr_cn": "提出一种基于 VAR 的图像编辑框架，在结构保留方面优于扩散方法。",
+      "llm_tldr": "提出一种基于 VAR 的图像编辑框架，在结构保留方面优于扩散方法。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

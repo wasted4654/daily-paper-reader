@@ -6,97 +6,73 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-03 ~ 2026-04-01
-- 运行时间：2026-04-01 03:18:12 UTC
+- 最新运行日期：2026-04-01
+- 运行时间：2026-04-01 20:25:12 UTC
 - 运行状态：成功
-- 本次总论文数：25
-- 精读区：14
+- 本次总论文数：17
+- 精读区：6
 - 速读区：11
 
 ### 今日简报（AI）
-今日深挖 25 篇顶尖论文，见证连续扩散语言模型与实时长视频生成技术的跨代飞跃。
-满分力作 CoDAR 重新定义了扩散模型的文本处理上限，Helios 则率先攻克了长视频实时生成的难题。
-建议从图像生成技术史切入，系统理解生成式 AI 如何从静态像素迈向动态叙事。
-- 详情：[/20260303-20260401/README](/20260303-20260401/README)
+今日聚焦长视频生成与推理效率，深度解析了 PackForcing 等 17 篇多模态前沿进展。
+核心结论显示，PackForcing 证明短视频训练即可实现长上下文推理，而 DCARL 的分治框架显著优化了长轨迹视频生成。
+建议关注扩散模型在逻辑推理与 GUI 智能体领域的跨界融合，探索多模态指令生成的更多可能。
+- 详情：[/202604/01/README](/202604/01/README)
 
 ### 精读区论文标签
-1. [CoDAR: Continuous Diffusion Language Models are More Powerful Than You Think](/20260303-20260401/2603.02547v1-codar-continuous-diffusion-language-models-are-more-powerful-than-you-think)  
+1. [PackForcing: Short Video Training Suffices for Long Video Sampling and Long Context Inference](/202604/01/2603.25730v1-packforcing-short-video-training-suffices-for-long-video-sampling-and-long-context-inference)  
    标签：评分：10.0/10、query:ardm
-   evidence：带有上下文自回归解码器的连续扩散模型
-2. [Helios: Real Real-Time Long Video Generation Model](/20260303-20260401/2603.04379v1-helios-real-real-time-long-video-generation-model)  
-   标签：评分：10.0/10、query:ardm
-   evidence：用于视频生成的14B自回归扩散模型
-3. [HiAR: Efficient Autoregressive Long Video Generation via Hierarchical Denoising](/20260303-20260401/2603.08703v1-hiar-efficient-autoregressive-long-video-generation-via-hierarchical-denoising)  
-   标签：评分：10.0/10、query:ardm
-   evidence：用于长视频生成的自回归扩散
-4. [Autoregressive vs. Masked Diffusion Language Models: A Controlled Comparison](/20260303-20260401/2603.22075v1-autoregressive-vs-masked-diffusion-language-models-a-controlled-comparison)  
-   标签：评分：10.0/10、query:ardm
-   evidence：自回归与掩码扩散语言模型的受控对比研究
-5. [Drift-AR: Single-Step Visual Autoregressive Generation via Anti-Symmetric Drifting](/20260303-20260401/2603.28049v1-drift-ar-single-step-visual-autoregressive-generation-via-anti-symmetric-drifting)  
-   标签：评分：10.0/10、query:ardm
-   evidence：用于视觉生成的自回归-扩散混合范式
-6. [CubeComposer: Spatio-Temporal Autoregressive 4K 360° Video Generation from Perspective Video](/20260303-20260401/2603.04291v1-cubecomposer-spatio-temporal-autoregressive-4k-360-video-generation-from-perspective-video)  
+   evidence：自回归视频扩散模型与KV缓存管理
+2. [DCARL: A Divide-and-Conquer Framework for Autoregressive Long-Trajectory Video Generation](/202604/01/2603.24835v1-dcarl-a-divide-and-conquer-framework-for-autoregressive-long-trajectory-video-generation)  
    标签：评分：9.0/10、query:ardm
-   evidence：用于视频生成的时空自回归扩散模型
-7. [Skip to the Good Part: Representation Structure & Inference-Time Layer Skipping in Diffusion vs. Autoregressive LLMs](/20260303-20260401/2603.07475v1-skip-to-the-good-part-representation-structure--inference-time-layer-skipping-in-diffusion-vs-autoregressive-llms)  
-   标签：评分：9.0/10、query:ardm
-   evidence：扩散与自回归大语言模型内部表示的对比研究
-8. [ES-dLLM: Efficient Inference for Diffusion Large Language Models by Early-Skipping](/20260303-20260401/2603.10088v1-es-dllm-efficient-inference-for-diffusion-large-language-models-by-early-skipping)  
-   标签：评分：9.0/10、query:ardm
-   evidence：扩散大语言模型作为自回归模型的替代方案
-9. [OmniForcing: Unleashing Real-time Joint Audio-Visual Generation](/20260303-20260401/2603.11647v1-omniforcing-unleashing-real-time-joint-audio-visual-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：将双向扩散模型蒸馏为流式自回归生成器
-10. [MemRoPE: Training-Free Infinite Video Generation via Evolving Memory Tokens](/20260303-20260401/2603.12513v1-memrope-training-free-infinite-video-generation-via-evolving-memory-tokens)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于实时帧流生成的自回归扩散
-11. [Reinforcement Learning for Diffusion LLMs with Entropy-Guided Step Selection and Stepwise Advantages](/20260303-20260401/2603.12554v1-reinforcement-learning-for-diffusion-llms-with-entropy-guided-step-selection-and-stepwise-advantages)  
-   标签：评分：9.0/10、query:ardm
-   evidence：扩散语言模型 (DLM) 与序列生成的强化学习
-12. [Fractal Autoregressive Depth Estimation with Continuous Token Diffusion](/20260303-20260401/2603.14702v1-fractal-autoregressive-depth-estimation-with-continuous-token-diffusion)  
-   标签：评分：9.0/10、query:ardm
-   evidence：分形视觉自回归扩散框架
-13. [Infinite Gaze Generation for Videos with Autoregressive Diffusion](/20260303-20260401/2603.24938v1-infinite-gaze-generation-for-videos-with-autoregressive-diffusion)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于视线轨迹生成的自回归扩散模型
-14. [S2D2: Fast Decoding for Diffusion LLMs via Training-Free Self-Speculation](/20260303-20260401/2603.25702v1-s2d2-fast-decoding-for-diffusion-llms-via-training-free-self-speculation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：结合分块自回归解码与并行去噪
+   evidence：结合了分治方案的结构稳定性和视频扩散模型的高保真生成
+3. [Adaptive Diffusion Posterior Sampling for Data and Model Fusion of Complex Nonlinear Dynamical Systems](/202604/01/2603.12635v1-adaptive-diffusion-posterior-sampling-for-data-and-model-fusion-of-complex-nonlinear-dynamical-systems)  
+   标签：评分：8.0/10、query:ardm
+   evidence：用于预测的多步自回归扩散目标
+4. [D5P4: Partition Determinantal Point Process for Diversity in Parallel Discrete Diffusion Decoding](/202604/01/2603.19146v1-d5p4-partition-determinantal-point-process-for-diversity-in-parallel-discrete-diffusion-decoding)  
+   标签：评分：8.0/10、query:ardm
+   evidence：离散扩散模型作为文本生成中自回归方法的替代方案
+5. [MMaDA-VLA: Large Diffusion Vision-Language-Action Model with Unified Multi-Modal Instruction and Generation](/202604/01/2603.25406v1-mmada-vla-large-diffusion-vision-language-action-model-with-unified-multi-modal-instruction-and-generation)  
+   标签：评分：8.0/10、query:ardm
+   evidence：用于机器人控制的原生离散扩散公式
+6. [LLaDA-TTS: Unifying Speech Synthesis and Zero-Shot Editing via Masked Diffusion Modeling](/202604/01/2603.26364v1-llada-tts-unifying-speech-synthesis-and-zero-shot-editing-via-masked-diffusion-modeling)  
+   标签：评分：8.0/10、query:ardm
+   evidence：将预训练的自回归检查点转换为掩码扩散范式
 
 ### 速读区论文标签
-1. [Efficient Self-Evaluation for Diffusion Language Models via Sequence Regeneration](/20260303-20260401/2603.02760v1-efficient-self-evaluation-for-diffusion-language-models-via-sequence-regeneration)  
+1. [MMaDA-VLA: Large Diffusion Vision-Language-Action Model with Unified Multi-Modal Instruction and Generation](/202604/01/2603.25406v2-mmada-vla-large-diffusion-vision-language-action-model-with-unified-multi-modal-instruction-and-generation)  
    标签：评分：8.0/10、query:ardm
-   evidence：通过序列再生对扩散语言模型进行自评估
-2. [XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost](/20260303-20260401/2603.06904v1-xgenboost-synthesizing-small-and-large-tabular-datasets-with-xgboost)  
+   evidence：用于机器人控制的原生离散扩散公式
+2. [Towards GUI Agents: Vision-Language Diffusion Models for GUI Grounding](/202604/01/2603.26211v1-towards-gui-agents-vision-language-diffusion-models-for-gui-grounding)  
    标签：评分：8.0/10、query:ardm
-   evidence：用于表格数据的分层自回归和扩散模型
-3. [Image Generation Models: A Technical History](/20260303-20260401/2603.07455v1-image-generation-models-a-technical-history)  
+   evidence：评估离散扩散模型作为自回归模型的替代方案
+3. [LogicDiff: Logic-Guided Denoising Improves Reasoning in Masked Diffusion Language Models](/202604/01/2603.26771v1-logicdiff-logic-guided-denoising-improves-reasoning-in-masked-diffusion-language-models)  
    标签：评分：8.0/10、query:ardm
-   evidence：自回归和扩散模型的历史技术综述
-4. [OmniForcing: Unleashing Real-time Joint Audio-Visual Generation](/20260303-20260401/2603.11647v2-omniforcing-unleashing-real-time-joint-audio-visual-generation)  
-   标签：评分：8.0/10、query:ardm
-   evidence：将双向扩散模型蒸馏为流式自回归生成器
-5. [AdaGen: Learning Adaptive Policy for Image Synthesis](/20260303-20260401/2603.06993v1-adagen-learning-adaptive-policy-for-image-synthesis)  
+   evidence：改进掩码扩散语言模型的推理能力
+4. [HiFlow: Tokenization-Free Scale-Wise Autoregressive Policy Learning via Flow Matching](/202604/01/2603.27281v1-hiflow-tokenization-free-scale-wise-autoregressive-policy-learning-via-flow-matching)  
+   标签：评分：8.0/10、query:genad
+   evidence：结合扩散相干性的自回归策略学习
+5. [DFM-VLA: Iterative Action Refinement for Robot Manipulation via Discrete Flow Matching](/202604/01/2603.26320v1-dfm-vla-iterative-action-refinement-for-robot-manipulation-via-discrete-flow-matching)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：用于机器人操作的离散扩散和自回归 VLA
+6. [DFM-VLA: Iterative Action Refinement for Robot Manipulation via Discrete Flow Matching](/202604/01/2603.26320v2-dfm-vla-iterative-action-refinement-for-robot-manipulation-via-discrete-flow-matching)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：用于机器人操作的离散扩散和自回归 VLA
+7. [GaussianGPT: Towards Autoregressive 3D Gaussian Scene Generation](/202604/01/2603.26661v1-gaussiangpt-towards-autoregressive-3d-gaussian-scene-generation)  
    标签：评分：7.0/10、query:ardm
-   evidence：针对自回归和扩散模型的图像合成自适应策略
-6. [WorldCam: Interactive Autoregressive 3D Gaming Worlds with Camera Pose as a Unifying Geometric Representation](/20260303-20260401/2603.16871v1-worldcam-interactive-autoregressive-3d-gaming-worlds-with-camera-pose-as-a-unifying-geometric-representation)  
-   标签：评分：7.0/10、query:genad
-   evidence：基于相机位姿的交互式自回归3D游戏世界模型
-7. [Adaptive Guidance for Retrieval-Augmented Masked Diffusion Models](/20260303-20260401/2603.17677v1-adaptive-guidance-for-retrieval-augmented-masked-diffusion-models)  
+   evidence：探索 3D 场景生成中扩散模型的自回归替代方案
+8. [Rethinking Structure Preservation in Text-Guided Image Editing with Visual Autoregressive Models](/202604/01/2603.28367v1-rethinking-structure-preservation-in-text-guided-image-editing-with-visual-autoregressive-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：基于扩散模型的语言模型与检索冲突
-8. [Revisiting Autoregressive Models for Generative Image Classification](/20260303-20260401/2603.19122v1-revisiting-autoregressive-models-for-generative-image-classification)  
-   标签：评分：7.0/10、query:ardm
-   evidence：重新审视自回归模型并将其与扩散模型在分类任务中进行对比
-9. [Diffusion Controller: Framework, Algorithms and Parameterization](/20260303-20260401/2603.06981v1-diffusion-controller-framework-algorithms-and-parameterization)  
-   标签：评分：6.0/10、query:genad
-   evidence：将扩散采样视为可控生成的随机控制
-10. [Constraints Matrix Diffusion based Generative Neural Solver for Vehicle Routing Problems](/20260303-20260401/2603.07568v1-constraints-matrix-diffusion-based-generative-neural-solver-for-vehicle-routing-problems)  
+   evidence：用于图像编辑的视觉自回归模型与扩散方法的对比
+9. [Policy-based Tuning of Autoregressive Image Models with Instance- and Distribution-Level Rewards](/202604/01/2603.23086v1-policy-based-tuning-of-autoregressive-image-models-with-instance--and-distribution-level-rewards)  
+   标签：评分：6.0/10、query:ardm
+   evidence：使用类似于扩散模型的强化学习技术对自回归模型进行对齐
+10. [MR-ImagenTime: Multi-Resolution Time Series Generation through Dual Image Representations](/202604/01/2603.28253v1-mr-imagentime-multi-resolution-time-series-generation-through-dual-image-representations)  
    标签：评分：6.0/10、query:diffpl
-   evidence：用于车辆路径规划的自回归求解器
-11. [SiMPO: Measure Matching for Online Diffusion Reinforcement Learning](/20260303-20260401/2603.10250v1-simpo-measure-matching-for-online-diffusion-reinforcement-learning)  
-   标签：评分：6.0/10、query:genad
-   evidence：用于强化学习和控制的扩散策略
+   evidence：用于时间序列生成的多尺度条件扩散模型
+11. [LongCat-AudioDiT: High-Fidelity Diffusion Text-to-Speech in the Waveform Latent Space](/202604/01/2603.29339v1-longcat-audiodit-high-fidelity-diffusion-text-to-speech-in-the-waveform-latent-space)  
+   标签：评分：6.0/10、query:ardm
+   evidence：用于序列生成的非自回归扩散模型
 
 
 <div class="dpr-home-promo-card">
