@@ -1,0 +1,547 @@
+Title: Revisiting Autoregressive Models for Generative Image Classification
+
+URL Source: https://arxiv.org/pdf/2603.19122v1
+
+Published Time: Fri, 20 Mar 2026 01:29:48 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Revisiting Autoregressive Models for Generative Image Classification 
+
+Ilia Sudakov Artem Babenko Dmitry Baranchuk 
+
+Yandex Research 
+
+Abstract. Class-conditional generative models have emerged as accu-rate and robust classifiers, with diffusion models demonstrating clear ad-vantages over other visual generative paradigms, including autoregressive (AR) models. In this work, we revisit visual AR-based generative clas-sifiers and identify an important limitation of prior approaches: their reliance on a fixed token order, which imposes a restrictive inductive bias for image understanding. We observe that single-order predictions rely more on partial discriminative cues, while averaging over multiple token orders provides a more comprehensive signal. Based on this insight, we leverage recent any-order AR models to estimate order-marginalized predictions, unlocking the high classification potential of AR models. Our approach consistently outperforms diffusion-based classifiers across diverse image classification benchmarks, while being up to 25 × more ef-ficient. Compared to state-of-the-art self-supervised discriminative mod-els, our method delivers competitive classification performance – a no-table achievement for generative classifiers. The code and models are available at: https://github.com/yandex-research/ar-classifier .
+
+Keywords: Generative classification · Autoregressive models 
+
+## 1 Introduction 
+
+Generative models (GMs) have recently shown a remarkable ability to approxi-mate highly complex visual data distributions [3, 44, 45, 56]. This progress raises the question of whether they can also succeed in well-studied discriminative setups. GMs have already demonstrated strong representation learning capa-bilities [2, 6, 26, 66], achieving comparable performance to state-of-the-art self-supervised discriminative approaches [7,43] on multiple downstream benchmarks. Another line of research investigates whether GMs can be used directly as 
+
+generative classifiers (GCs). Likelihood-based GMs, such as diffusion models (DMs) and autoregressive (AR) models, can approximate class-conditional like-lihoods p(x|y) and then derive posterior predictions p(y|x) via Bayes’ rule. Inter-estingly, recent works [24, 34] reveal several intriguing properties of GCs. Unlike discriminative classifiers, which often rely on spurious correlations, GCs have been shown to avoid shortcut solutions [34]. Moreover, [24] found that GCs ex-hibit shape-biased predictions that align more closely with human perception, whereas standard discriminative models are typically texture-biased.             
+
+> arXiv:2603.19122v1 [cs.CV] 19 Mar 2026 2I. Sudakov et al. seacoast binoculars seacoast tripod rock crab seacoast
+> convertible convertible amphibian beach wagon convertible sport car
+> Fig. 1: Effect of different token orders on AR-based image classification. Each row presents an image and five different token orders used by the any-order AR model to predict its class. Token orders can largely affect the final classification outcome.
+
+Motivated by the strong image generation quality of DMs, prior work [24,33– 35] primarily focused on diffusion classifiers (DCs), leaving AR models relatively underexplored. However, recent advances in visual AR model design [36, 37, 40, 44, 55, 56, 64, 72] have dramatically improved their generative performance, now achieving results competitive with DMs. These developments motivate a timely re-examination of visual AR-based GCs. An important design choice affecting the performance of various iterative visual GMs is how they generate images . For example, classical next-token pre-diction AR models [55, 69] typically generate images using a raster-scan order .In contrast, DMs generate images in a coarse-to-fine manner, which can be inter-preted as a form of spectral autoregression [10, 49]. From this perspective, DMs behave as implicit AR models that follow a low-to-high frequency order, better reflecting the hierarchical structure of natural images. We therefore hypothesize that this design choice is also critical for generative classification. 
+
+Contributions. In our work, we highlight the role of token ordering in AR-based generative classification. In Figure 1, we provide an illustrative example by classifying several images using an AR model evaluated under different token orders. We observe that some images are correctly classified under certain orders but misclassified under others, indicating that token orders may affect how the model interprets the image. This observation is further analyzed in Section 5. To address this limitation, we investigate recent any-order AR models that support generation under arbitrary token orders. Although a single AR predic-tion for a fixed token order can be less accurate than that of DMs due to the weaker visual inductive bias, any-order AR models can improve classification accuracy by marginalizing over multiple token orders. Intuitively, averaging pre-dictions across different orders may capture contextual information from multiple image regions, leading to more discriminative predictions. A practical advantage of AR models is that they can evaluate order-conditional 
+
+log-likelihoods in a single forward pass, while DCs typically require 100 −250 
+
+model evaluations for a single likelihood estimate [33]. Therefore, even after Revisiting AR Models for Generative Image Classification 3
+
+marginalizing over multiple token orders, AR models remain an order of magni-tude more efficient than DMs. Building on this insight, we propose an order-marginalized AR-based gener-ative classifier that achieves both higher accuracy and improved efficiency com-pared to diffusion-based classifiers. The experiments show that our AR-based approach outperforms diffusion classifiers in both in-domain accuracy and ro-bustness to distribution shifts, while offering up to 25 × faster inference. Furthermore, we compare GCs with state-of-the-art self-supervised discrimi-native models such as DINOv2 [43]. We find that our AR-based approach offers competitive classification performance on both in-domain and out-of-distribution benchmarks. To our knowledge, this is the first work that compares GCs with state-of-the-art SSL approaches which are typically stronger baselines than stan-dard supervised classifiers. 
+
+## 2 Related work 
+
+Autoregressive models for image generation. Autoregressive (AR) models [12,37, 44, 55, 70, 71] were a promising paradigm for image generation prior to the wide adoption of diffusion models (DMs). They typically employ image tokenizers based on variants of VQ-VAE [3,12, 59,69,73] to map images into discrete token sequences. Then, early AR models [12,32,42,58] performed next-token prediction ,generating images token by token, typically in a fixed raster order (left-to-right, top-to-bottom), similarly to language models [47, 57, 67]. However, these models were later largely surpassed by DMs in generation quality, until more recent work introduced competitive next-token prediction [44, 55, 72, 75] and parallel decoding [35, 44, 48, 56, 64] variants of AR models. Importantly, most of these AR approaches fixate a specific token order. As we show later, this detail imposes an important limitation for generative classi-fication with AR models. Therefore, in our work, we focus on one of the recent next-token prediction models, RandAR [44], which, unlike most AR counter-parts, explicitly conditions on token positions and supports generation in arbi-trary token orders. We will discuss this model in more detail in Section 3. 
+
+Generative classifiers. Among diverse generative paradigms [12,13,22,29,31,31, 54], diffusion classifiers (DCs) [4,5,33,34] have recently received increased atten-tion. DCs achieve competitive in-domain performance with discriminative mod-els while offering improved robustness under distribution shifts [34]. However, an important limitation of DCs is their notoriously slow inference process that typically requires hundreds of model forward passes per image to achieve high accuracy. Joint Energy-based Models (JEMs) [14,15,68] address this problem by combining discriminative and generative objectives within a unified framework. Meanwhile, classical AR models have proven effective as GCs in text clas-sification tasks [25, 34], though they were outperformed by DCs in visual do-mains [24]. Recent work [8] explores the potential of modern visual AR models by introducing VAR-based GCs with contrastive alignment fine-tuning. In our 4 I. Sudakov et al. 
+
+work, we investigate GCs built upon state-of-the-art next-token prediction mod-els and focus on purely generative approaches, without any additional tuning. 
+
+## 3 Preliminaries 
+
+Generative Classifiers. In general, GCs rely on estimating class-conditional like-lihoods p(x|c) and apply Bayes’ rule to obtain posterior probabilities p(c|x) ∝
+
+p(x|c)p(c). Then, classification can be performed as: 
+
+ci = arg max 
+
+> ci∈C
+
+[log p(x|ci) + log p(ci)] , (1) where the log p(ci) term is often ignored in practice, assuming a uniform prior 
+
+p(c) over classes. Pretrained DMs ϵθ approximate log p(x|c) by estimating ELBO: 
+
+log p(x|c) ≥ ELBO (x, c ) ≈ X
+
+> t,ϵ
+
+λt∥ϵθ (xt, t, c ) − ϵ∥2, (2) where xt is obtained using the forward diffusion process q(xt|x) = N (xt|αtx, σ 2 
+
+> t
+
+I).Previous works [33, 34] observed that using an objective with uniform weight-ing λt = 1 yields better classification performance in practice. Note that, Equa-tion (2) requires 100 −250 model evaluations across different timesteps [33]. Since most state-of-the-art DMs are latent diffusion models [50], classification accuracy is computed in the continuous VAE latent space. In contrast, AR models first encode images into discrete token sequences 
+
+x = {x1, ..., xN } of length N , typically using a VQ-VAE. Then, they provide explicit log-likelihood estimates in the latent space using a single forward pass: 
+
+log p(x|c) ≈
+
+> N
+
+X
+
+> n=1
+
+log pθ (xn|x<n , c ) (3) In our work, we highlight that both DMs and AR models implicitly impose an inductive bias through the way images are modeled, and that this choice can directly affect classification performance. 
+
+Any-order Autoregressive Modeling. In our work, we aim to explore the role of different AR token orders on image classification and therefore consider Ran-dAR [44], a state-of-the-art AR model capable of generating images in arbitrary token orders. RandAR augments the image token sequence x = {x1, ..., xN } with a corresponding set of position instruction tokens P = {p1, ... pN }. Each posi-tion token pi is paired with its respective image token, forming an interleaved sequence [p1, x1, ..., pN , xN ].To enable any-order generation, RandAR applies a random permutation π
+
+over token indices, producing the reordered sequence [pπ(1) 1 , xπ(1) 1 , ..., pπ(N ) 
+
+> N
+
+, xπ(N ) 
+
+> N
+
+], Revisiting AR Models for Generative Image Classification 5Сn  
+
+> С1С1С1
+> Position tokens
+> 1
+> 2
+> 3
+> 4
+> 1
+> 2
+> 3
+> 4
+> Random
+> permutation
+> 3
+> 4
+> 1
+> 2
+> 4
+> 2
+> 3
+> 1
+> 3
+> 1
+> 2
+> 43
+> 4
+> 1
+> 2
+> 4
+> 2
+> 3
+> 1
+> 3
+> 1
+> 2
+> 4
+> СnСn
+> 3
+> 4
+> 1
+> 2
+> 4
+> 2
+> 3
+> 1
+> 3
+> 1
+> 2
+> 4
+> Add class tokens
+> RandAR
+> Transformer
+> RandAR
+> Transformer
+> VQ-VAE
+> Image tokens K
+
+Fig. 2: Order-marginalized generative classification framework. i) Input image is tokenized with the VQ-VAE into a sequence of discrete tokens. ii) Position-instruction tokens are concatenated with the image tokens, and K randomly permuted sequences are constructed. iii) Class condition tokens ci for each class are appended to every se-quence. iv) The RandAR model predicts log p(x|ci) using Equation 5. v) The predicted class c∗ is obtained as arg max ci log p(x|ci).
+
+where π(i) denotes the original position of the i-th token. Thus, RandAR explic-itly defines the order-conditional likelihood p(x|π, c ) as 
+
+p(x|π, c ) = 
+
+> N
+
+Y
+
+> n=1
+
+p(xπ(n) 
+
+> n
+
+|pπ(1) 1 , xπ(1) 1 , ..., xπ(n−1)  
+
+> n−1
+
+, pπ(n) 
+
+> n
+
+, c ) (4) Note that RandAR can be readily reduced to a raster-order AR model by fixing the permutation to the identity mapping π(i) = i.
+
+## 4 Order-marginalized generative classification 
+
+Since RandAR explicitly conditions on token positions and models multiple 
+
+p(x|π, c ), it allows estimating the order-unconditional likelihood p(x|c), by marginal-izing over all possible permutations as Eπ [p(x|π, c )] . Then, this expectation can be estimated with Monte Carlo sampling using K random order samples. How-ever, in practice, we find this estimate of p(x|c) significantly less effective than estimating the lower bound on the order-unconditional log-likelihood, derived using Jensen’s inequality: 
+
+log p(x|c) = log E 
+
+> π
+
+[p(x|π, c )] ≥ E 
+
+> π
+
+[log p(x|π, c )] ≈ 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+log p(x|πk, c ) (5) For classification, we then append class tokens C = {c1, ..., cM } to each per-muted sequence, producing [M, K ] input sequences of length 2N +1 . Importantly, the same sampled orders are shared across all classes to ensure consistency. For each class token ci, the model produces [log p(x|π1, ci), ..., log p(x|πK , ci)] ,which are then aggregated into log p(x|ci) using Equation 5. Finally, the class 6 I. Sudakov et al.              
+
+> Fig. 3: Per-token “discriminative” log-likelihoods, computed as clip [log p(x|ctrue )−
+> log p(x|cf alse ),0] , across different orders and Kvalues. ctrue denotes the correct class;
+> cf alse refers to a randomly selected incorrect one. Order-marginalized log-likelihood estimates ( K > 1) capture class-specific attributes more accurately.
+
+c∗ is predicted according to Equation 1. The overall scheme of our classification procedure is presented in Figure 2. 
+
+Discussion. We hypothesize that the lower bound largely outperforms the di-rect likelihood estimate because RandAR was trained directly on Equation 5, making it better aligned with image understanding. Notably, classification with DMs also gets worse when evaluated using the true ELBO estimate, and instead show significantly better classification results when evaluated with their training objective Equation 2 with λt = 1 [33]. Another question is whether we can similarly marginalize DM predictions. According to Equation (2), DMs allow marginalization over multiple noise sam-ples at each timestep. However, in Appendix C, we show that additional averag-ing over noise samples provides no noticeable improvements and only increases computational cost. We hypothesize that this is because noise averaging is al-ready included during timestep averaging. 
+
+## 5 Analysing order-marginalized AR classifiers 
+
+Setup. We pretrain two RandAR-L/16 variants under same training setups fol-lowing [44]: a model using a fixed raster-order and another operating with ran-dom orders. The models are trained on ImageNet1K [51] using 256 ×256 images. We use the LlamaGen tokenizer [55], producing sequences of N =256 tokens. 
+
+Per-token likelihoods. First, we estimate per-token “discriminative” log-likelihoods 
+
+clip [log p(x|ctrue ) − log p(x|cf alse ), 0] , where ctrue denotes the correct class and 
+
+cf alse a random incorrect one. These log-likelihoods indicate which tokens are more discriminative for a particular class prediction. Revisiting AR Models for Generative Image Classification 7Raster Random | K=1 Random | K=2 Random | K=5 Random | K=20 
+
+> 0.00 0.02 0.04 0.06 0.08 0.10 0.12 0.14
+
+Fig. 4: Per-token accuracy of the RandAR classifier across different orders and K
+
+values. Center image tokens appear more discriminative, likely due to the center-object bias present in ImageNet. Increasing K consistently improves accuracy for all tokens. 0 50 100 150 200 250 
+
+> Prefix length
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Per-token accuracy
+
+Fig. 5: Per-token accuracy of the RandAR classifier for K= 20 w.r.t. the prefix length. Token order IN-Val IN-R IN-S IN-A Raster 0.701 0.351 0.301 0.174                       
+
+> Random K=1 0.670 0.351 0.289 0.110
+> Random K=2 0.726 0.402 0.343 0.127
+> Random K=5 0.759 0.444 0.383 0.140
+> Random K=10 0.768 0.459 0.392 0.144
+> Random K=20 0.769 0 .469 0 .409 0 .146
+
+Table 1: Comparison of RandAR trained with random and raster orders in terms of top-1 classification accu-racy on ImageNet1K. 
+
+Figure 3 shows the results for several images, with more examples in Ap-pendix F. We observe that the raster-order model focuses more on specific class-object parts. Similarly, the random-order variant with K=1 , a single-sample Monte Carlo estimate of Equation 5, also focuses on localized object parts. In contrast, for K=20 , the object shapes appear more clearly, indicating that the model leverages broader class-level information for classification. 
+
+Per-token accuracy. Figure 4 presents per-token top-1 accuracy averaged over 
+
+1000 images, shown at their original token positions. The token accuracy consis-tently increases with K, resulting in more discriminative tokens. Central image tokens achieve higher accuracy, reflecting ImageNet’s center-object bias. Also, we explore how token accuracy varies with prefix length. Figure 5 re-ports per-token accuracy for K=20 , averaged over 30 , 000 images. Token accu-racy initially increases with prefix length, peaking ∼70 tokens, after which it declines. We hypothesize that the tokens with [50 − 80] prefix lengths are more discriminative because such prefixes capture only high-level image information, forcing the model to generate class-defining details. In contrast, later tokens may contribute less, as they can rely more heavily on nearby observable tokens. 
+
+Overall performance. In Table 1, we compare the models in terms of their overall classification performance on the ImageNet validation set and several out-of-distribution (OOD) benchmarks. 8 I. Sudakov et al. 
+
+We notice that the raster-order variant provides better results compared to the random-order one with K=1 . We attribute this to the limited model capability to fit arbitrary orders similarly well as a single one. This intuition is supported by slightly worse generative performance of random-order models compared to the raster-order counterpart [44]. However, for K> 1, the random-order model significantly outperforms the raster one across all validation sets. Note that the higher accuracy of the random-order model for K> 1 comes with additional computational cost, as each order requires an extra model for-ward pass. Nevertheless, as shown in Section 6.2, this overhead is fully justified compared to diffusion-based classifiers, which typically require hundreds of model forward passes [33, 34]. 
+
+## 6 Experiments 
+
+In this section, we compare order-marginalized AR classifiers with state-of-the-art discriminative and generative approaches. 
+
+6.1 Main results 
+
+Baselines. We evaluate several baseline families known for their strong classifi-cation performance: 
+
+– Discriminative approaches. We compare with supervised pretrained ViT [11] models and the state-of-the-art self-supervised learning (SSL) method DI-NOv2 [43] with linear probing. To our knowledge, prior works have not compared against leading discriminative SSL methods, despite their largely superior performance over standard supervised classifiers. 
+
+– Diffusion classifiers. For DM-based baselines, we consider DiT [45] and SiT [41]. Since SiT is based on flow matching [38], we observed that classifica-tion using the v-prediction led to suboptimal results. Therefore, we estimate ELBO for SiT using the ϵ-prediction objective, which consistently yields better performance. In Appendix D, we ablate various ELBO loss weighting schemes for both DiT and SiT to ensure a fair comparison. Also, we evaluate SiT equipped with representation alignment (REPA) [74], which leverages SSL representations to improve generative performance. 
+
+– Joint generative-discriminative models. We also compare to the most recent state-of-the-art joint energy-based model, DAT [68]. 
+
+– Autoregressive models. We compare our method with LlamaGen [55], VAR [56] and A-VARC [8]. For VAR, likelihoods are estimated across all spatial scales. A-VARC additionally employs likelihood smoothing for more accurate classification. Also, we pretrain RandAR with a fixed raster-order to take into account the model design differences with LlamaGen. All baselines are pretrained on ImageNet1K [51]. For methods lacking cor-responding publicly available checkpoints, we reproduced the pretraining our-selves, strictly following their official implementations. We provide more details in Appendix A. Revisiting AR Models for Generative Image Classification 9Model size Model type Method IN-Val IN-R IN-S IN-C Gauss IN-C JPEG IN-A L/16 Discriminative ViT [11] 0.803 0.409 0.291 0.620 0.694 0.166                                                                                                   
+
+> DINOv2 [43] 0.819 0.476 0.358 0.497 0.736 0.363
+> Joint model DAT [68] 0.764 0.379 0.364 0.569 0.709 0.034
+> Diffusion DiT [45] 0.771 0.393 0.361 0.467 0.642 0.133
+> Autoregressive LlamaGen [55] 0.640 0.298 0.232 0.358 0.452 0.143
+> VAR [56] 0.656 0.255 0.177 0.137 0.390 0.083
+> A-VARC [8] 0.683 0.233 0.157 0.155 0.377 0.082
+> RandAR raster [44] 0.701 0.351 0.301 0.476 0.588 0.174
+> RandAR [44] (Ours) 0.780 0.463 0.406 0.589 0.687 0.145
+> XL/16 Discriminative DINOv2 [43] 0.827 0.486 0.354 0.500 0.754 0.345
+> Diffusion SiT [41] 0.697 0.257 0.223 0.311 0.537 0.104
+> SiT + REPA [74] 0.733 0.296 0.262 0.416 0.554 0.169
+> DiT [45] 0.772 0.402 0.367 0.505 0.661 0.153
+> Autoregressive LlamaGen [55] 0.559 0.248 0.200 0.359 0.391 0.210
+> VAR [56] 0.630 0.222 0.153 0.146 0.336 0.090
+> A-VARC [8] 0.661 0.199 0.138 0.077 0.315 0.090
+> RandAR [44] (Ours) 0.813 0.530 0.459 0.652 0.751 0.233
+
+Table 2: Top-1 accuracy on various ImageNet benchmarks for different model types. 
+
+To ensure a fair comparison, all models share similar transformer-based ar-chitectures, comparable model sizes, same image resolution 256 ×256 and the number of tokens per image ( 256 ), thereby minimizing the factors unrelated to model types. The only exception is DAT, which uses a ConvNext-L backbone. 
+
+Datasets. For evaluation, we use the ImageNet-Val set and several OOD bench-marks such as ImageNet-R/S/A [18, 20, 62] and ImageNet-C [19] for Gaussian noise and JPEG corruptions applied with a strength 3 out of 5. For all valida-tion sets, we report top-1 accuracy. Since GCs require substantial compute for 
+
+1000 -class predictions, we follow the protocol of [33] and report results on 2K subsets of IN-Val, IN-S and IN-C. We verified that increasing the subset size yields only minor variations in accuracy. 200 -class benchmarks, IN-R and IN-A, are evaluated on the entire sets. 
+
+Evaluation setup. For diffusion-based classifiers and our RandAR-based ones, we provide the results using sufficiently large K for RandAR and the number of timesteps for DiT/SiT to ensure near-optimal performance. Specifically, we use 
+
+K=20 and 250 timesteps, following the setup in [33]. The RandAR models are trained with the LlamaGen tokenizer [55] with latent noise augmentation, which is discussed and ablated in Section 6.4. 
+
+Results. The results are presented in Table 2. First, RandAR demonstrates strong scaling potential, showing significant performance gains as model size increases from L to XL across all validation sets. Also, RandAR significantly surpasses fixed-order counterparts such as LlamaGen, VAR and the raster-order 10 I. Sudakov et al. 5 20 100 500      
+
+> Inference time (s)
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> Accuracy
+> DiT
+> RandAR LlamaGen VAR LXL
+> ImageNet-Val 520 100 500
+> Inference time (s)
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> Accuracy  DiT
+> RandAR LlamaGen VAR LXL
+> ImageNet-Sketch
+
+Fig. 6: Comparison of the generative classifiers in terms of top-1 classification accuracy and efficiency across different model sizes. Efficiency is reported in seconds per single-image classification. 
+
+RandAR variant. Moreover, RandAR outperforms recent A-VARC, which aver-ages predictions over multiple noise samples, resulting in comparable compute. Compared to diffusion-based classifiers, RandAR achieves significantly su-perior performance on each validation set, with more pronounced gains on the OOD benchmarks. Although it is beyond the scope of this work, we would like to note that SiT, while underperforming DiT, may benefit from future exploration of alternative weighting functions and timestep schedules. Comparing to DINOv2, RandAR shows lower in-domain accuracy by 1.4% 
+
+for the XL model. Nevertheless, RandAR-XL surpasses DINOv2 on 3 of 5 OOD sets (IN-R, IN-S, IN-C Gauss), matches performance on IN-C JPEG, and only trails on IN-A. Overall, RandAR establishes a new state-of-the-art among GCs and competes with DINOv2 — the result that has not been previously achieved with GCs. 
+
+6.2 Efficiency evaluation 
+
+Here, we evaluate various generative classifiers of different model sizes in terms of their classification accuracy with respect to the total runtime measured in seconds per a single image classification task. Both RandAR and DiT classifiers are each evaluated with different numbers of NFEs in order to approximate the respective objectives, namely p(x|c) for RandAR and the ELBO for DiT. We provide the corresponding experimental results for both IN-Val and IN-S datasets in Figure 6. All of the runtimes are measured on a single A100 GPU. We observe that RandAR consistently shows better classification accuracy than DiT across all the different operating points, while at the same time offering up to 25 × faster inference. 
+
+6.3 Error analysis 
+
+We analyze image examples where RandAR-XL fails while DINOv2-XL suc-ceeds, and vice versa. In Figure 7, we present representative examples illustrat-Revisiting AR Models for Generative Image Classification 11  
+
+> Fig. 7: Error analysis. The examples where RandAR-XL is incorrect while DINOv2-XL is correct (Top), and vice versa (Bottom). Each example is accompanied by dis-criminative log-likelihoods produced by RandAR for the correct and incorrect classes. Both models tend to fail on multi-object images or visually similar object categories.
+
+ing typical failure cases of both models, along with the corresponding RandAR discriminative log-likelihoods computed for the true and predicted class labels. We observe that both models exhibit similar error types, which are common among image classifiers and can be broadly grouped into two categories: 
+
+– Similar object classes – the models misclassify the objects that appear visually similar to another class, e.g., similar dog breeds. In such cases, the discriminative log-likelihoods are often less interpretable, as the model may assign high likelihoods to the same object. 
+
+– Multi-object images – the input images contain multiple distinct objects belonging to different classes, and the model simply selects one of them as the primary prediction. Notably, we observe that even when predicting an incorrect overall class, RandAR often still assigns high likelihood scores to the correct object when it is explicitly conditioned on the true class label. 12 I. Sudakov et al. VQ-VAE Vocab size Flipped tokens rFID MaskGIT 1024 0% 1.67         
+
+> 10% 1.71 20% 1.85 40% 2.49
+> LlamaGen 16384 0% 1.68
+> 18% 1.67
+> 27% 1.69
+> 42% 1.73
+
+Table 3: Reconstruction quality of the MaskGIT and LlamaGen VQ-VAE tok-enizers for varying levels of latent noise corruption, which alters a portion of to-kens in the original token sequences. Tokenizer IN-Val IN-R IN-S IN-A MaskGIT 0.780 0.448 0.379 0.101      
+
+> LlamaGen 0.769 0.469 0 .409 0 .146
+> LlamaGen + Noise aug. 0.780 0.463 0.406 0 .145
+
+Table 4: Comparison of the RandAR mod-els pretrained with different tokenizers and the proposed noise augmentation in terms of top-1 classification accuracy. 
+
+6.4 The effect of VQ-VAE tokenizers 
+
+In this experiment, we evaluate the RandAR-L models for two VQ-VAE tok-enizers, MaskGIT [3] and LlamaGen [55], widely used by the recent discrete generative models. These tokenizers have different codebook sizes of 1024 in MaskGIT and 16384 in LlamaGen. Prior work [61,75] has noticed that tokenizers producing significantly different token sequences for almost identical images may bring additional challenges for AR model training. Therefore, we first investigate the robustness of the MaskGIT and LlamaGen tokenizers to minor noise perturbations. We evaluate the tokenizers in terms of their reconstruction quality while cor-rupting the continuous image latents (prior to quantization) with flow match-ing [38] noising process: (1 − t)z + tϵ , where ϵ ∼ N (0 , I ). We apply noising across different t and track the ratio of “flipped” tokens in a discrete sequence and rFID [21] on IN-Val. Table 3 shows that the original tokenizers provide similar reconstruction quality and thus can be fairly compared to each other. Then, we observe that the larger codebook is resistant to ∼27% flipped tokens while the small one starts degrading with ∼10% .The results suggest applying the noise corruption technique as an augmenta-tion during RandAR training with the LlamaGen tokenizer to make the model invariant to slight perturbations, not leading to noticeable image differences. Meanwhile, this augmentation is not used for the MaskGIT tokenizer since only few tokens can be changed without compromising reconstruction quality. Finally, we compare RandAR models pretrained with different VQ-VAE to-kenizers, including the one using the noise augmentation. Table 4 shows that RandAR with MaskGIT provides higher in-domain accuracy while LlamaGen shows slightly better robustness across all OOD benchmarks. Noise augmenta-tion improves LlamaGen’s in-domain accuracy while maintaining comparable Revisiting AR Models for Generative Image Classification 13 Model size Method Camelyon17 CelebA FMoW ID OOD ID ID WG ID OOD WG B/16 ERM [60] 0.946 0.581 0.939 0.342 0.310 0.137                                                       
+
+> RWY [52] 0.945 0.578 0.923 0.426 0.291 0.139
+> σ−stitching [46] 0.938 0.667 0.926 0.461 −−
+> DiT [45] 0.992 0.586 0.899 0.601 0.571 0.281
+> RandAR [44] (Ours) 0.992 0 .783 0.908 0.600 0.563 0.276
+> L/16 ERM [60] 0.954 0.538 0.939 0.359 0.304 0.140
+> RWY [52] 0.952 0.543 0.914 0.453 0.279 0.130
+> σ−stitching [46] 0.942 0.677 0.922 0.419 −−
+> DiT [45] 0.995 0.525 0.904 0.596 0.584 0.274
+> RandAR [44] (Ours) 0.996 0 .763 0.920 0.639 0.567 0.273
+
+Table 6: Classification performance comparison on the datasets with subpopulation or distribution shifts. 
+
+OOD performance. Therefore, in all our experiments, we use the LlamaGen to-kenizer with the suggested noise augmentation. 
+
+6.5 Likelihood estimation strategy ablation          
+
+> Strategy K=1 K=2 K=5 K=10 K=20
+> Lower bound 0.712 0 .762 0 .795 0 .804 0.813
+> Log-likelihood 0.712 0 .724 0 .742 0 .747 0.760
+
+Table 5: Ablation of likelihood estimation strategies for order-marginalized AR GCs on IN-val. 
+
+Here, we ablate the order-marginalized likelihood estimation approach, discussed in Section 4. In Table 5, we compare direct log-likelihood estimation, log Eπ [p(x|π, c )] ,with its lower bound, Eπ [log p(x|π, c )] .We observe that the lower-bound estimate achieves significantly higher classification accuracy as K increases. 
+
+6.6 Real-world distribution shifts 
+
+Finally, we evaluate RandAR in terms of robustness to real-world distribution shifts. RandAR is pretrained on each dataset for B/16 and L/16 model settings using MaskGIT tokenizer. 
+
+Datasets. These experiments are conducted on the WILDS benchmark [30], which contains a collection of datasets for evaluating robustness to distribution shifts. Specifically, we consider the CelebA [39], FMoW [9], and Camelyon [1] datasets that represent a diverse range of shift types and visual domains. CelebA consists of natural face images and exhibits a subpopulation shift, and we there-fore report worst-group (WG) accuracy. FMoW includes satellite images and involves both subpopulation shifts and a domain shift, for which we report OOD worst-group accuracy. Camelyon contains tissue patches from different hospitals. 14 I. Sudakov et al. 
+
+Baselines. Among discriminative baselines, we consider ERM [60], RWY [23,52] and ERM with the σ−stitching loss [46]. As a backbone, we use ViT [11] and train the models from scratch following [34]. We train 3 models with different random seeds and average the results. As a generative classifier baseline, we consider DiT [45], training the B/16 and L/16 variants at an image resolution of 256 ×256 .
+
+Model selection. We follow the setup from [34]. Specifically, checkpoints are selected based on the class-balanced accuracy on in-domain validation set. 
+
+Results. Table 6 provides the results for both ID and OOD test sets. On Came-lyon17, RandAR outperforms the supervised baselines and matches DiT on the ID set, while substantially surpassing all baselines on the OOD set. On CelebA, ERM achieves higher in-domain accuracy but performs poorly on the OOD set. RandAR exceeds DiT on the ID set and outperforms all models in WG accuracy in most cases. On FMoW, generative classifiers largely outperform discrimina-tive methods on the ID set, although DiT shows slightly higher accuracy than RandAR. We attribute this to the relatively small training set of ∼77 K, where DiT may be more sample-efficient than RandAR due to stronger noise regular-ization. In terms of OOD WG accuracy, RandAR and DiT perform similarly and both largely surpass ERM and RWY. In total, RandAR demonstrates high in-domain accuracy and strong robust-ness to subpopulation and distribution shifts, integrally outperforming DiT. 
+
+## 7 Conclusion 
+
+In this work, we investigate recent visual AR models as GCs and introduce a framework that leverages AR models generating images in random token or-ders. We show that order-marginalized AR classifiers significantly outperform diffusion-based and prior AR counterparts, achieving state-of-the-art perfor-mance in generative image classification. These findings suggest that enabling AR models to represent images using different token orders opens new perspec-tives, and we look forward to further development and scaling of any-order AR models to better understand the limits of order-marginalized AR classifiers. A promising direction for future research is to leverage advances in self-supervised learning, which have already shown strong potential in raster-order AR models [75] and diffusion models [74]. Another interesting update would be to equip RandAR classifiers with image-adaptive token-order predictors, inspired by recent results in diffusion-based classifiers [63]. Moreover, since one of the key limitations of GCs is their significant com-putational cost, particularly for the problems with a large number of classes, it would be valuable to explore whether these classifiers can be effectively dis-tilled into discriminative models. Such an approach could potentially combine the best of both worlds: the high inference efficiency of discriminative models and the strong classification performance of generative classifiers. Revisiting AR Models for Generative Image Classification 15 
+
+## References 
+
+1. Bandi, P., Geessink, O., Manson, Q., Van Dijk, M., Balkenhol, M., Hermsen, M., Bejnordi, B.E., Lee, B., Paeng, K., Zhong, A., et al.: From detection of individual metastases to classification of lymph node status at the patient level: the came-lyon17 challenge. IEEE transactions on medical imaging 38 (2), 550–560 (2018) 2. Baranchuk, D., Rubachev, I., Voynov, A., Khrulkov, V., Babenko, A.: Label-efficient semantic segmentation with diffusion models. arXiv preprint arXiv:2112.03126 (2021) 3. Chang, H., Zhang, H., Jiang, L., Liu, C., Freeman, W.T.: Maskgit: Masked genera-tive image transformer. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 11315–11325 (2022) 4. Chen, H., Dong, Y., Shao, S., Zhongkai, H., Yang, X., Su, H., Zhu, J.: Diffusion models are certifiably robust classifiers. Advances in Neural Information Processing Systems 37 , 50062–50097 (2024) 5. Chen, H., Dong, Y., Wang, Z., Yang, X., Duan, C., Su, H., Zhu, J.: Robust classi-fication via a single diffusion model. arXiv preprint arXiv:2305.15241 (2023) 6. Chen, X., Liu, Z., Xie, S., He, K.: Deconstructing denoising diffusion models for self-supervised learning. arXiv preprint arXiv:2401.14404 (2024) 7. Chen, X., Xie, S., He, K.: An empirical study of training self-supervised vision transformers. In: Proceedings of the IEEE/CVF international conference on com-puter vision. pp. 9640–9649 (2021) 8. Chen, Y.C., Inouye, D.I., Gao, J.: Your var model is secretly an efficient and explainable generative classifier. arXiv preprint arXiv:2510.12060 (2025) 9. Christie, G., Fendley, N., Wilson, J., Mukherjee, R.: Functional map of the world. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recog-nition. pp. 6172–6180 (2018) 10. Dieleman, S.: Diffusion is spectral autoregression (2024), https://sander.ai/ 2024/09/02/spectral-autoregression.html 
+
+11. Dosovitskiy, A.: An image is worth 16x16 words: Transformers for image recogni-tion at scale. arXiv preprint arXiv:2010.11929 (2020) 12. Esser, P., Rombach, R., Ommer, B.: Taming transformers for high-resolution image synthesis. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 12873–12883 (2021) 13. Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., Bengio, Y.: Generative adversarial networks. Communications of the ACM 63 (11), 139–144 (2020) 14. Grathwohl, W., Wang, K.C., Jacobsen, J.H., Duvenaud, D., Norouzi, M., Swersky, K.: Your classifier is secretly an energy based model and you should treat it like one. arXiv preprint arXiv:1912.03263 (2019) 15. Guo, Q., Ma, C., Jiang, Y., Yuan, Z., Yu, Y., Luo, P.: Egc: Image generation and classification via a diffusion energy-based model. arXiv preprint arXiv:2304.02012 (2023) 16. Hang, T., Gu, S., Li, C., Bao, J., Chen, D., Hu, H., Geng, X., Guo, B.: Efficient diffusion training via min-snr weighting strategy. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 7441–7451 (October 2023) 17. He, K., Zhang, X., Ren, S., Sun, J.: Deep Residual Learning for Image Recogni-tion. In: Proceedings of 2016 IEEE Conference on Computer Vision and Pattern Recognition. pp. 770–778. CVPR ’16, IEEE (Jun 2016) 16 I. Sudakov et al. 18. Hendrycks, D., Basart, S., Mu, N., Kadavath, S., Wang, F., Dorundo, E., Desai, R., Zhu, T., Parajuli, S., Guo, M., et al.: The many faces of robustness: A critical analysis of out-of-distribution generalization. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 8340–8349 (2021) 19. Hendrycks, D., Dietterich, T.: Benchmarking neural network robustness to common corruptions and perturbations. arXiv preprint arXiv:1903.12261 (2019) 20. Hendrycks, D., Zhao, K., Basart, S., Steinhardt, J., Song, D.: Natural adversarial examples. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 15262–15271 (2021) 21. Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., Hochreiter, S.: Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances in neural information processing systems 30 (2017) 22. Ho, J., Jain, A., Abbeel, P.: Denoising diffusion probabilistic models. Advances in neural information processing systems 33 , 6840–6851 (2020) 23. Idrissi, B.Y., Arjovsky, M., Pezeshki, M., Lopez-Paz, D.: Simple data balancing achieves competitive worst-group-accuracy. In: Conference on Causal Learning and Reasoning. pp. 336–351. PMLR (2022) 24. Jaini, P., Clark, K., Geirhos, R.: Intriguing properties of generative classifiers. arXiv preprint arXiv:2309.16779 (2023) 25. Kasa, S.R., Gupta, K., Roychowdhury, S., Kumar, A., Biruduraju, Y., Kasa, S.K., Priyatam, P.N., Bhattacharya, A., Agarwal, S., Huddar, V.: Generative or discrim-inative? revisiting text classification in the era of transformers. In: Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing. pp. 9615–9637 (2025) 26. Kim, D., Thomas, X., Ghadiyaram, D.: Revelio: Interpreting and leveraging seman-tic information in diffusion models. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 4659–4669 (2025) 27. Kingma, D., Salimans, T., Poole, B., Ho, J.: Variational diffusion models. Advances in neural information processing systems 34 , 21696–21707 (2021) 28. Kingma, D.P., Gao, R.: Understanding diffusion objectives as the ELBO with simple data augmentation. In: Thirty-seventh Conference on Neural Information Processing Systems (2023), https://openreview.net/forum?id=NnMEadcdyD 
+
+29. Kingma, D.P., Welling, M.: Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114 (2013) 30. Koh, P.W., Sagawa, S., Marklund, H., Xie, S.M., Zhang, M., Balsubramani, A., Hu, W., Yasunaga, M., Phillips, R.L., Gao, I., et al.: Wilds: A benchmark of in-the-wild distribution shifts. In: International conference on machine learning. pp. 5637–5664. PMLR (2021) 31. Lai, C.H., Song, Y., Kim, D., Mitsufuji, Y., Ermon, S.: The principles of diffusion models. arXiv preprint arXiv:2510.21890 (2025) 32. Larochelle, H., Murray, I.: The neural autoregressive distribution estimator. In: Proceedings of the fourteenth international conference on artificial intelligence and statistics. pp. 29–37. JMLR Workshop and Conference Proceedings (2011) 33. Li, A.C., Prabhudesai, M., Duggal, S., Brown, E., Pathak, D.: Your diffusion model is secretly a zero-shot classifier. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 2206–2217 (2023) 34. Li, A.C., Kumar, A., Pathak, D.: Generative classifiers avoid shortcut solutions. In: The Thirteenth International Conference on Learning Representations (2024) 35. Li, H., Yang, J., Li, G., Wang, H.: Autoregressive image generation with random-ized parallel decoding. arXiv preprint arXiv:2503.10568 (2025) Revisiting AR Models for Generative Image Classification 17 36. Li, T., Sun, Q., Fan, L., He, K.: Fractal generative models. arXiv preprint arXiv:2502.17437 (2025) 37. Li, T., Tian, Y., Li, H., Deng, M., He, K.: Autoregressive image generation with-out vector quantization. Advances in Neural Information Processing Systems 37 ,56424–56445 (2024) 38. Lipman, Y., Chen, R.T., Ben-Hamu, H., Nickel, M., Le, M.: Flow matching for generative modeling. arXiv preprint arXiv:2210.02747 (2022) 39. Liu, Z., Luo, P., Wang, X., Tang, X.: Deep learning face attributes in the wild. In: Proceedings of the IEEE international conference on computer vision. pp. 3730– 3738 (2015) 40. Luo, Z., Shi, F., Ge, Y., Yang, Y., Wang, L., Shan, Y.: Open-magvit2: An open-source project toward democratizing auto-regressive visual generation. arXiv preprint arXiv:2409.04410 (2024) 41. Ma, N., Goldstein, M., Albergo, M.S., Boffi, N.M., Vanden-Eijnden, E., Xie, S.: Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers. In: European Conference on Computer Vision. pp. 23–40. Springer (2024) 42. Van den Oord, A., Kalchbrenner, N., Espeholt, L., Vinyals, O., Graves, A., et al.: Conditional image generation with pixelcnn decoders. Advances in neural informa-tion processing systems 29 (2016) 43. Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al.: Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193 (2023) 44. Pang, Z., Zhang, T., Luan, F., Man, Y., Tan, H., Zhang, K., Freeman, W.T., Wang, Y.X.: Randar: Decoder-only autoregressive visual generation in random orders. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 45– 55 (2025) 45. Peebles, W., Xie, S.: Scalable diffusion models with transformers. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 4195–4205 (2023) 46. Puli, A., Zhang, L., Wald, Y., Ranganath, R.: Don’t blame dataset shift! short-cut learning due to gradients and cross entropy. Advances in Neural Information Processing Systems 36 , 71874–71910 (2023) 47. Radford, A., Narasimhan, K., Salimans, T., Sutskever, I., et al.: Improving lan-guage understanding by generative pre-training (2018) 48. Ren, S., Yu, Q., He, J., Shen, X., Yuille, A., Chen, L.C.: Beyond next-token: Next-x prediction for autoregressive visual generation. arXiv preprint arXiv:2502.20388 (2025) 49. Rissanen, S., Heinonen, M., Solin, A.: Generative modelling with inverse heat dis-sipation. In: International Conference on Learning Representations (ICLR) (2023) 50. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B.: High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 10684– 10695 (June 2022) 51. Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z., Karpathy, A., Khosla, A., Bernstein, M., et al.: Imagenet large scale visual recog-nition challenge. International journal of computer vision 115 (3), 211–252 (2015) 52. Sagawa, S., Koh, P.W., Hashimoto, T.B., Liang, P.: Distributionally robust neu-ral networks for group shifts: On the importance of regularization for worst-case generalization. arXiv preprint arXiv:1911.08731 (2019) 18 I. Sudakov et al. 53. Singh, J., Leng, X., Wu, Z., Zheng, L., Zhang, R., Shechtman, E., Xie, S.: What matters for representation alignment: Global information or spatial structure? arXiv preprint arXiv:2512.10794 (2025) 54. Song, Y., Sohl-Dickstein, J., Kingma, D.P., Kumar, A., Ermon, S., Poole, B.: Score-based generative modeling through stochastic differential equations. arXiv preprint arXiv:2011.13456 (2020) 55. Sun, P., Jiang, Y., Chen, S., Zhang, S., Peng, B., Luo, P., Yuan, Z.: Autoregres-sive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525 (2024) 56. Tian, K., Jiang, Y., Yuan, Z., Peng, B., Wang, L.: Visual autoregressive modeling: Scalable image generation via next-scale prediction. Advances in neural information processing systems 37 , 84839–84865 (2024) 57. Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M.A., Lacroix, T., Rozière, B., Goyal, N., Hambro, E., Azhar, F., et al.: Llama: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971 (2023) 58. Van Den Oord, A., Kalchbrenner, N., Kavukcuoglu, K.: Pixel recurrent neural networks. In: International conference on machine learning. pp. 1747–1756. PMLR (2016) 59. Van Den Oord, A., Vinyals, O., et al.: Neural discrete representation learning. Advances in neural information processing systems 30 (2017) 60. Vapnik, V.: The nature of statistical learning theory. Springer science & business media (2013) 61. Voronov, A., Kuznedelev, D., Khoroshikh, M., Khrulkov, V., Baranchuk, D.: Switti: Designing scale-wise transformers for text-to-image synthesis. arXiv preprint arXiv:2412.01819 (2024) 62. Wang, H., Ge, S., Lipton, Z., Xing, E.P.: Learning robust global representations by penalizing local predictive power. Advances in neural information processing systems 32 (2019) 63. Wang, Y., Chen, L.: Noise matters: Optimizing matching noise for diffusion clas-sifiers. arXiv preprint arXiv:2508.11330 (2025) 64. Wang, Y., Ren, S., Lin, Z., Han, Y., Guo, H., Yang, Z., Zou, D., Feng, J., Liu, X.: Parallelized autoregressive visual generation. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 12955–12965 (2025) 65. Wu, G., Zhang, S., Shi, R., Gao, S., Chen, Z., Wang, L., Chen, Z., Gao, H., Tang, Y., Yang, J., et al.: Representation entanglement for generation: Training diffusion transformers is much easier than you think. arXiv preprint arXiv:2507.01467 (2025) 66. Yang, X., Wang, X.: Diffusion model as representation learner. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 18938–18949 (2023) 67. Yenduri, G., Srivastava, G., Maddikunta, P.K.R., Jhaveri, R.H., Wang, W., Vasi-lakos, A.V., Gadekallu, T.R., et al.: Generative pre-trained transformer: A com-prehensive review on enabling technologies, potential applications, emerging chal-lenges, and future directions. arXiv preprint arXiv:2305.10435 (2023) 68. Yin, X., Zhang, C., Steele, J., Shavit, N., Wang, T.T.: Joint discriminative-generative modeling via dual adversarial training. arXiv preprint arXiv:2510.13872 (2025) 69. Yu, J., Li, X., Koh, J.Y., Zhang, H., Pang, R., Qin, J., Ku, A., Xu, Y., Baldridge, J., Wu, Y.: Vector-quantized image modeling with improved vqgan. arXiv preprint arXiv:2110.04627 (2021) Revisiting AR Models for Generative Image Classification 19 70. Yu, J., Xu, Y., Koh, J.Y., Luong, T., Baid, G., Wang, Z., Vasudevan, V., Ku, A., Yang, Y., Ayan, B.K., Hutchinson, B., Han, W., Parekh, Z., Li, X., Zhang, H., Baldridge, J., Wu, Y.: Scaling autoregressive models for content-rich text-to-image generation (2022), https://arxiv.org/abs/2206.10789 
+
+71. Yu, L., Lezama, J., Gundavarapu, N.B., Versari, L., Sohn, K., Minnen, D., Cheng, Y., Gupta, A., Gu, X., Hauptmann, A.G., Gong, B., Yang, M.H., Essa, I., Ross, D.A., Jiang, L.: Language model beats diffusion - tokenizer is key to visual gen-eration. In: The Twelfth International Conference on Learning Representations (2024), https://openreview.net/forum?id=gzqrANCF4g 
+
+72. Yu, Q., He, J., Deng, X., Shen, X., Chen, L.C.: Randomized autoregressive vi-sual generation. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 18431–18441 (2025) 73. Yu, Q., Weber, M., Deng, X., Shen, X., Cremers, D., Chen, L.C.: An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems 37 , 128940–128966 (2024) 74. Yu, S., Kwak, S., Jang, H., Jeong, J., Huang, J., Shin, J., Xie, S.: Representation alignment for generation: Training diffusion transformers is easier than you think. arXiv preprint arXiv:2410.06940 (2024) 75. Yue, X., Wang, Z., Wang, Y., Zhang, W., Liu, X., Ouyang, W., Bai, L., Zhou, L.: Understand before you generate: Self-guided training for autoregressive image generation. arXiv preprint arXiv:2509.15185 (2025) Revisiting AR Models for Generative Image Classification 1
+
+## A Model settings 
+
+ImageNet 
+
+– RandAR : In our main experiments, we train RandAR from scratch using the LlamaGen tokenizer, following the setup of the official RandAR imple-mentation. We use an AdamW optimizer with a learning-rate schedule with 
+
+40 ,000 warm-up steps to a peak of 6×10 −4, followed by cosine decay over the next 460 ,000 iterations. Training is conducted with a batch size of 512 
+
+for RandAR-L and 256 for RandAR-XL, with all other hyperparameters re-tained from the default setup. We also apply random crop and latent noise augmentations during training. 
+
+– DiT : The models are trained from scratch following the setup in the DiT repository 1. Training is performed for 400 epochs using a AdamW optimizer, with a constant learning rate of 1×10 −4 and a batch size of 256 . Similar to RandAR, we apply random crop augmentation during training that notice-ably improves its classification performance. Note that our DiT-XL model shows slightly better classification performance than the released one. 
+
+– DINOv2 : Since the released models are pretrained on ImageNet-21K, we use the official code and configuration to train both L/16 and XL/16 models on ImageNet1K for images of 256 ×256 resolution. We train the models for 
+
+200 epochs using a batch size of 512 .
+
+– SiT: We evaluate the publicly available SiT-XL/2 model 2. We also evaluate the representation-aligned (REPA) SiT-XL/2 checkpoint 3 using the same evaluation protocol. 
+
+– ViT: We evaluate the public ImageNet pretrained ViT-L/16 model 4.
+
+– VAR: We use the publicly available VAR-L and VAR-XL checkpoints 5. For A-VARC [8], we follow the official code 6 for evaluation. 
+
+– DAT: We use the pretrained weights from the official DAT repository 7.
+
+WILDS 
+
+– RandAR : The model is trained using the LlamaGen tokenizer with noise augmentation, as discussed in Section 6.5. We also apply random crop aug-mentation to reduce overfitting. For training, we use a learning rate of 
+
+1×10 −4 for the CelebA and FMOW datasets, and 2×10 −4 for Camelyon17. The batch size is set to 256 for CelebA and Camelyon17, and 128 for FMOW. All models are trained for 150 ,000 iterations per dataset.        
+
+> 1https://github.com/facebookresearch/DiT
+> 2https://github.com/willisma/SiT
+> 3https://github.com/sihyun-yu/REPA
+> 4https://github.com/lucidrains/vit-pytorch
+> 5https://github.com/FoundationVision/VAR
+> 6https://github.com/Yi-Chung-Chen/A-VARC
+> 7https://github.com/xuwangyin/DAT
+
+2 I. Sudakov et al. 
+
+– DiT : The models are trained with a learning rate of 1×10 −4 for all datasets. Similarly, to reduce overfitting, we apply random crop augmentation to the input images. The batch size is 256 for CelebA and Camelyon17, and 128 
+
+for FMOW. Each model is trained for 300 ,000 iterations. 
+
+– ERM/RWY : We train ERM and RWY using the official WILDS codebase 8.Each model is trained until convergence, and the best checkpoint is selected based on validation balanced accuracy. 
+
+Model NFE T N IN-Val DiT-XL 
+
+100 50 2 0.748 200 50 4 0.749 100 100 1 0.765 200 100 2 0.761 200 200 1 0.768 
+
+RandAR-XL 4 - - 0.781 
+
+20 - - 0.815 
+
+Table 7: Comparison to diffu-sion classifiers with averaging over 
+
+N noise samples per timestep and 
+
+T timesteps. Noise averaging per timestep does not provide extra gains. Also, it is consistently better to use more timesteps for ELBO es-timation under the same budget. 0.68      
+
+> 0.70
+> 0.72
+> 0.74
+> 0.76
+> 0.78
+> Accuracy
+> RandAR LlamaGen
+> Discarding last token likelihoods Discarding first token likelihoods
+> 020 40 60 80 100
+> Number of discarded token likelihoods
+> 0.68
+> 0.70
+> 0.72
+> 0.74
+> 0.76
+> 0.78
+> Accuracy
+> RandAR MaskGIT
+> Discarding last token likelihoods Discarding first token likelihoods
+
+Fig. 8: Classification performance when the first and last predicted token likelihoods are dis-carded in the overall log-likelihood estimation. 
+
+## B Analysis of per-token likelihood importance 
+
+In this section, we extend the analysis in Figure 5 and investigate if all token log-likelihoods contribute to the overall performance. Figure 8 presents the clas-sification performance on 10 K images from IN-Val for K=20 when the first and last k predicted log-likelihoods are discarded for the overall log-likelihood estimation. We evaluate the RandAR-L models pretrained with the LlamaGen (Top) and MaskGIT (Bottom) tokenizers. The results indicate that removing log probabilities of tokens from the end of a sequence causes less accuracy degrada-tion than removing them from the beginning. Interestingly, with the MaskGIT tokenizer, optimal performance can be achieved by using the first ∼200 out of 
+
+256 token predictions. In contrast, achieving the best results with the LlamaGen tokenizer requires utilizing the log probabilities of all tokens in a sequence.  
+
+> 8
+
+https://github.com/p-lambda/wilds Revisiting AR Models for Generative Image Classification 3Model Constant ELBO SNR −1 Min-SNR-5 FM-OT DiT-XL 0.751 0.663 0.126 0.742 0.179 SiT-XL 0.685 0.632 0.373 0.682 0.576                                               
+
+> Table 8: Weighting strategy ablation for diffusion classifiers on IN-val. Method IN-Val IN-R IN-S IN-C Gauss IN-C JPEG IN-A ResNet-18 0.706 0.331 0.212 0.195 0.504 0.012
+> ResNet-34 0.731 0.361 0.243 0.301 0.554 0.019
+> ResNet-50 0.777 0.362 0.260 0.300 0.588 0.000
+> ResNet-101 0.777 0.393 0.278 0.391 0.618 0.047
+> ResNet-151 0.783 0.413 0.308 0.443 0.646 0.061
+> RandAR L/16 [44] (Ours) 0.780 0.463 0.406 0.589 0.687 0.145
+> RandAR XL/16 [44] (Ours) 0.813 0.530 0.459 0.652 0.751 0.233 Table 9: Comparison to the ResNet models in top-1 accuracy on the ImageNet bench-marks for different model sizes.
+
+## C Averaging predictions for Diffusion Classifiers 
+
+Diffusion classifiers allow averaging across timesteps and noise samples to es-timate ELBO (Equation 2). By default, we average across timesteps and use different noise samples at each timestep, as proposed in prior work [33]. Ad-ditionally, we may further average the DM predictions across multiple noise samples at each timestep. Table 7 shows the DM results for different numbers of timesteps ( T ) and noise samples per timestep ( N ). We observe that averaging over multiple noise samples at each timestep does not provide noticeable gains, while averaging across timesteps remains more effective under the same computational budget. 
+
+## D Loss weighting for Diffusion Classifiers 
+
+We ablate different loss weighting approaches for DiT and SiT to compare our AR approach with stronger baselines. We formulate the weighting schemes in the 
+
+ϵ-pred form, w(t) · ∥ ϵθ − ϵ∥. Note that the v- and x-pred forms are equivalent to 
+
+ϵ-pred up to the choice of w(t). We consider several popular weighting schemes: constant, ELBO [27], SNR −1, Min-SNR-5 [16] and FM-OT [38], summarized here [28]. We evaluate the officially released DiT-XL and SiT-XL checkpoints. Table 8 shows that the constant weighting, used in our main experiments, con-sistently outperforms alternatives for both DiT and SiT. 4 I. Sudakov et al. Method IN-Val IN-R IN-S IN-A SiT-XL 0.685 0.249 0.219 0.102               
+
+> SiT-XL + REG [65] 0.451 0.103 0.060 0.045
+> SiT-XL + REPA [74] 0.727 0.290 0.261 0.168
+> SiT-XL + iREPA [53] 0.708 0.325 0.293 0.131
+> RandAR-XL 0.813 0 .530 0 .459 0 .233
+> Table 10: Comparison of RandAR with SSL aligned DMs.
+
+## E Comparison to additional baselines 
+
+Comparison to ResNet classifiers. Following [8,33], we also include comparisons with convolutional-based classifiers [17] in Table 9. We observe that our RandAR models (both L and XL) consistently outperform ResNets. 
+
+Extended comparison to representation-aligned DMs. We also compare our ap-proach to different REPA variants [53, 65, 74] applied to DMs. The results in Table 10 show that the original REPA [74] achieves higher accuracy than the other REPA variants, but still underperforms our AR-based approach. 
+
+## F More examples of per-token log-likelihoods 
+
+In Figure 9, we provide more visual examples of discriminative per-token log-likelihoods obtained with RandAR for different K settings. Revisiting AR Models for Generative Image Classification 5
+
+Fig. 9: Per-token “discriminative” log-likelihoods, computed as clip [log p(x|ctrue ) −
+
+log p(x|cf alse ), 0] , across different orders and K values. ctrue denotes the correct class; 
+
+cf alse refers to a randomly selected incorrect one. Order-marginalized log-likelihood estimates ( K > 1) capture class-specific attributes more accurately.

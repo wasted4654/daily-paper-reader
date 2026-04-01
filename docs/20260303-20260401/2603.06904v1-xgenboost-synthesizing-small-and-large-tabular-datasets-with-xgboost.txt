@@ -1,0 +1,1570 @@
+Title: XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost
+
+URL Source: https://arxiv.org/pdf/2603.06904v1
+
+Published Time: Tue, 10 Mar 2026 00:15:51 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+## XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Jim Achterberg 1 2 Marcel Haas 1 Bram van Dijk 1 Marco Spruit 1 3 
+
+Abstract 
+
+Tree ensembles such as XGBoost are often pre-ferred for discriminative tasks in mixed-type tab-ular data, due to their inductive biases, minimal hyperparameter tuning, and training efficiency. We argue that these qualities, when leveraged cor-rectly, can make for better generative models as well. As such, we present XGenBoost, a pair of generative models based on XGBoost: i) a De-noising Diffusion Implicit Model (DDIM) with XGBoost as score-estimator suited for smaller datasets, and ii) a hierarchical autoregressive model whose conditionals are learned via XG-Boost classifiers, suited for large-scale tabular synthesis. The architectures follow from the nat-ural constraints imposed by tree-based learners, e.g., in the diffusion model, combining Gaussian and multinomial diffusion to leverage native cat-egorical splits and avoid one-hot encoding while accurately modelling mixed data types. In the au-toregressive model, we use a fixed-order factoriza-tion, a hierarchical classifier to impose ordinal in-ductive biases when modelling numerical features, and de-quantization based on empirical quantile functions to model the non-continuous nature of most real-world tabular datasets. Through two benchmarks, one containing smaller and the other larger datasets, we show that our proposed ar-chitectures outperform previous neural- and tree-based generative models for mixed-type tabular synthesis at lower training cost. 
+
+1. Introduction 
+
+Data synthesis for mixed-type tabular data has become a popular research topic for purposes such as data augmenta-tion, sharing sensitive research data, and federated learning 
+
+> 1
+
+Public Health & Primary Care, Leiden University Medi-cal Center, Leiden, The Netherlands 2Research and Develop-ment, Statistics Netherlands (CBS), The Hague, The Netherlands 
+
+> 3
+
+Leiden Institute of Advanced Computer Science, Leiden Univer-sity, Leiden, The Netherlands. Correspondence to: Jim Achterberg 
+
+<j.l.achterberg@lumc.nl >.
+
+Preprint. March 10, 2026. 
+
+(Jordon et al., 2022; Das et al., 2022; van Kesteren, 2024; Goetz & Tewari, 2020). Most current state-of-the-art meth-ods rely on deep neural networks, which require modern computing resources (GPUs) to ensure reasonable train-ing times. Access to these resources is, unfortunately, dis-tributed unfairly across the world (Lehdonvirta et al., 2024). At the same time, tree ensembles are often considered to be more suitable function approximators for mixed-type tabular data: having more suitable inductive biases, being more efficient to train, and requiring less extensive hyper-parameter tuning (Grinsztajn et al., 2022). This begs the question whether tree ensembles should replace neural net-works as function approximators in generative architectures for tabular data. 
+
+Design Constraints Effectively leveraging tree learners in generative architectures requires respecting the constraints they naturally impose. Firstly, most implementations are single-output only 1, such that we train feature-specific mod-els . Secondly, they do not use mini-batch training. Learning invariance against different permutations of the same sam-ples therefore requires extending the training data beyond its original size . This inherently limits scalability to large datasets in architectures which require learning such invari-ances, e.g., diffusion models and random-order autoregres-sive models. Lastly, they are one of the few methods which can natively handle categorical data by learning to split di-rectly on categories. However, this is only useful when we can omit one-hot encoding in the generative architecture. 
+
+Synthesizing Small Datasets For small tabular datasets, extending the training data beyond its original size can be permissible, such that we can leverage powerful methods such as diffusion models. We employ a Denoising Diffusion Probabilistic Model (DDPM) (Ho et al., 2020), combining Gaussian and multinomial diffusion to accurately model mixed-type tabular data. Using separate numerical and categorical diffusion processes allows us to apply a single XGBoost score-estimator per feature (regressor or classifier), instead of a purely numerical diffusion process in one-hot encoded space (Jolicoeur-Martineau et al., 2024). Another advantage, when compared to similar neural-based diffusion 
+
+> 1
+
+The XGBoost library has a vector-leaf implementation, but this is still in progress, and most features are missing. 
+
+1
+
+> arXiv:2603.06904v1 [cs.LG] 6 Mar 2026 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost
+
+models (Kotelnikov et al., 2023), is that per-feature score-estimators omit the need for loss-scale weighting of the two separate diffusion processes. Then, we further extend the DDPM to a Denoising Diffusion Implicit Model (DDIM) (Song et al., 2021a) to allow high quality samples at fewer diffusion steps. This is useful as we also train timestep-specific score-estimators, and therefore prefer fewer total diffusion steps. We name this method XGenB-DF. We show that XGenB-DF generates high-fidelity synthetic data in a previous benchmark of 27 small tabular datasets (Jolicoeur-Martineau et al., 2024). 
+
+Synthesizing Large Datasets To allow scaling to large tabular datasets, we cannot use a method which requires massively extending the training set. Note that here, we de-fine scaling in an absolute rather than relative sense. Deep generative models, for example, scale relatively well, but still require significant resources and training time for large datasets. We employ a fixed-order autoregressive model where conditionals are learned by XGBoost models. We use hierarchical XGBoost classifiers as probabilistic predic-tors for numerical features (McCarter, 2024). Categorical features are directly modelled by multi-class XGBoost clas-sifiers. The architecture is tailor-made for large-scale tabular synthesis in several ways, i) a fixed-order factorization to omit the need for extending the training set, ii) resampling quantized features based on interpolated empirical quantile functions to model skewed or non-continuous distributions, and iii) constraining categorical cardinality to limit training time and privacy risk. We name this method XGenB-AR. We show that XGenB-AR generates high-fidelity synthetic data at much lower training cost in a previous benchmark for tabular diffusion models (Mueller et al., 2025). As an example of the scalability, XGenB-AR trains in ≈ 3 min-utes on the acsincome 2 dataset using 16 CPU cores, 64GB RAM. XGenBoost is available through a simple scikit-learn style API 3.
+
+2. Related Work 
+
+The first methods for tabular synthesis mainly leveraged iterative imputation (Rubin, 1993). Other statistical methods such as copulas (Patki et al., 2016) and Bayesian networks (Zhang et al., 2017) were also introduced. As compute became cheaper and more powerful, deep generative models became more apt to tabular synthesis. GANs (Goodfellow et al., 2014) and VAEs (Kingma & Welling, 2013) showed great promise initially (Xu et al., 2019; Zhao et al., 2021). When diffusion models were adapted for tabular data, they 
+
+> 2https://fairlearn.org/main/user_guide/ datasets/acs_income.html
+> 3https://synthyverse.readthedocs.io/
+
+quickly became the leading approach for synthesizing high-fidelity tabular data (Lee et al., 2023; Kim et al., 2023; Kotelnikov et al., 2023; Zhang et al., 2024). Many of the current research efforts therefore focus on further improving neural tabular diffusion models (Mueller et al., 2025; Si et al., 2025; Shi et al., 2025). Various tree ensemble-based generative architectures have also been developed. Adversarial Random Forests (ARF) leverage Random Forests in alternating rounds of genera-tion and discrimination to estimate density and generate synthetic data (Watson et al., 2023). Unmasking Trees (UT) is a random-order hierarchical autoregressive model using XGBoost classifiers to model conditional distributions (McCarter, 2024). ForestDiffusion (FD) and its flow-based counterpart ForestFlow (FF) leverage XGBoost as score-estimator in a score-matching diffusion and conditional flow-matching model, respectively (Jolicoeur-Martineau et al., 2024). Unfortunately, none of these methods scale well to large tabular datasets. ARF is hampered by i) sequen-tial rounds of adversarial learning and ii) reliance on Ran-dom Forest classifiers (Watson et al., 2023). UT extends the training dataset K times ( K ≈ 50 ) to allow random-order synthesis, which massively increases computational demands for large datasets (McCarter, 2024). FD and FF similarly extend the training set K times ( K ≈ 50 − 100 )to accurately estimate the expectation in diffusion losses (Jolicoeur-Martineau et al., 2024). FD adopts Gaussian diffusion (or Gaussian probability paths, in FF) in a numerically encoded feature space, i.e., categor-ical variables are one-hot encoded. This results in non-smooth densities that deviate from Gaussian diffusion as-sumptions. Categorical features can be more appropriately modelled by multinomial diffusion processes (Hoogeboom et al., 2021). Additionally, one-hot encoding is not well-aligned with the choice of XGBoost as score-estimator (see Section 1). As XGBoost is typically single-output, the num-ber of required XGBoost regressors scales linearly with the total categorical cardinality. Also, training occurs in a sub-stantially higher-dimensional space, despite XGBoost being able to natively model categorical splits. UT is a random-order autoregressive model, which models numerical features through hierarchical classifiers consisting of meta-trees of binary XGBoost classifiers, and categorical features through multi-class XGBoost classifiers (McCarter, 2024). To enable random-order synthesis, they extend the training set K ≈ 50 times, which is the main culprit for high computational demand in large datasets. Note that also, for a dataset of D features there are D2D−1 conditionals to be learned in random-order synthesis, and as typically 
+
+K << D 2D−1, this is a lossy approximation. Furthermore, quantized numerical bins are resampled uniformly, which does not suit most skewed or non-continuous real-world 2XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+datasets. Tree ensembles such as Random Forests (Breiman, 2001), LightGBM (Ke et al., 2017), CatBoost (Prokhorenkova et al., 2018), and XGBoost (Chen, 2016) are among the strongest methods for discriminative tasks on tabular data, in terms of accuracy, robustness, and efficiency. Lately, neural tab-ular foundation models have been receiving more atten-tion, often performing very well without any fine-tuning through in-context learning (Hollmann et al., 2023). Cur-rently, however, these are often constrained to limited rows and columns. We mainly consider XGBoost, as it provides a good balance of accuracy and training efficiency, is apt at handling missing data, and has shown to be effective in similar previous works (Jolicoeur-Martineau et al., 2024; McCarter, 2024). Essentially, we use XGBoost as a rep-resentative instance of a broader set of methods (gradient-boosted decision trees, but perhaps in the future also tabular foundation models) which are particularly more suited than neural networks for mixed-type tabular data, and can be ef-fectively used in our generative architectures. Other similar methods (LightGBM, CatBoost) may be equally suitable. 
+
+3. Methods 
+
+Let D = {x(i)}ni=1 , x (i) ∈ X be a mixed-type tabular dataset of i.i.d. samples from an unknown joint distribution 
+
+p(·) over the product space X = Qdj=1 Xj . We can distin-guish {1, . . . , d } = M ˙∪ C where M and C denote the sets of numerical and categorical features, respectively. For each feature j ∈ { 1, . . . , d }, the feature domain is 
+
+Xj =
+
+(
+
+R, j ∈ M ,
+
+{1, . . . , K j }, j ∈ C , Kj ∈ N. (1) The goal of tabular data synthesis is to learn a parametric distribution pθ , although non-parametric alternatives exist (Neto, 2025), such that pθ (·) ≈ p(·).
+
+3.1. Synthesizing Small Datasets: Diffusion Models with XGBoost as Score-Estimator 
+
+We propose a diffusion model with XGBoost as score-estimator for small-scale tabular synthesis. Diffusion mod-els learn the likelihood of the data by learning to reverse a forward Markov process q(x1: T |x0) = QTt=1 q(xt|xt−1)
+
+(Ho et al., 2020). Here, q(xt|xt−1) is part of a fixed Markov chain that adds noise to the data. The reverse process defines a joint distribution over X :
+
+pθ (x0: T ) = p(xT )
+
+> T
+
+Y
+
+> t=1
+
+pθ (xt−1|xt). (2) Score-matching models with variance-preserving schedules, such as FD (Jolicoeur-Martineau et al., 2024), are very simi-lar to Denoising Diffusion Probabilistic Models (DDPMs) (Ho et al., 2020), up to the choice of sampling discretiza-tion, e.g., Euler-Maruyama versus ancestral sampling (Song et al., 2021b). We choose a DDPM specification as this can be reconciled with previous discrete diffusion paradigms (Hoogeboom et al., 2021). Score-matching explicitly tries to model the gradient of the density function, which is unde-fined for discrete data - although some solutions have been proposed (Meng et al., 2022). Most often, θ is learned by a neural network. However, it can also be learned by XGBoost models (Jolicoeur-Martineau et al., 2024). Specifically, each feature is de-noised by a separate XGBoost model. We also train separate models for each timestep and (categorical) target label, to condition on timesteps and the target feature, respectively. Finally, to adequately estimate the expectation in the diffusion loss, we need to marginalize over various noise levels per sample. As XGBoost does not use mini-batch training, we need to duplicate the dataset K times to ensure we compute the loss w.r.t. each sample for K different noise levels 4.
+
+Gaussian Diffusion Assuming a Gaussian latent variable such that p(xT ) = N (xT ; 0, I), the forward noising process is defined by 
+
+q(xt|xt−1) = N (xt; p1 − βtxt−1, β tI), (3) where βt define the stepwise variance, which in our case follows a variance-preserving schedule. The reverse process is modelled by Gaussian transitions such that 
+
+pθ (xt−1 | xt) = N (xt−1; μθ (xt, t ), ˜βtI),μθ (xt, t ) = 
+
+√¯αt−1βt
+
+1 − ¯αt
+
+xθ (xt, t )+ 
+
+√αt(1 − ¯αt−1)1 − ¯αt
+
+xt,
+
+(4) where αt = 1 − βt, ¯αt = Qts=1 αs, ˜βt = 1 − ¯αt−1
+
+1 − ¯αt
+
+βt, and 
+
+xθ (xt, t ) is the prediction of the original data x0 at timestep 
+
+t by a regression model parameterized by θ. Equivalently, we can reparameterize the model to predict the noise instead (Ho et al., 2020) 
+
+ϵθ (xt, t ) = 1
+
+√1 − ¯αt
+
+(xt − √¯αtxθ (xt, t )) , (5)   
+
+> 4Similar to a newer version of FD, we implemented XGBoost’s data iterator, iterating the dataset Ktimes instead of duplicating. However, this still trains many models on huge datasets, and only solves the memory demand, not the scaling issue.
+
+3XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+or a velocity-based objective, which is a linear combination of the data and the noise (Salimans & Ho, 2022) 
+
+vθ (xt, t ) = √¯αtϵθ (xt, t ) − √1 − ¯αtxθ (xt, t ). (6) We use the velocity-based reparametrization as it tends to yield smoother loss trajectories (Gao et al., 2024). Next, we note that we have to use a relatively low number of timesteps T , as we train a separate XGBoost model for each timestep. DDIMs are a generalization of DDPMs to non-Markovian diffusion processes, which yield determinis-tic generative processes capable of producing high quality samples much faster (Song et al., 2021a). DDIMs have the same training objective as DDPMs, and are thus an easily implementable solution to our low T restriction. The (now deterministic) reverse process can be defined as: 
+
+xt−1 = √¯αt−1xθ (xt, t ) + p1 − ¯αt−1ϵθ (xt, t ). (7) Whereas Jolicoeur-Martineau et al. (2024) propose a flow-matching model FF which outperforms FD, we stay within the diffusion paradigm. Flow-matching and diffusion are equivalent in many ways, especially when considering sim-ilar prediction objectives and samplers (Gao et al., 2024). In this respect, flow-matching and diffusion are especially similar when considering a velocity-prediction objective (Salimans & Ho, 2022) and a deterministic sampler, such as found in DDIMs (Song et al., 2021a). Following the success of FF, we find this to be effective for our method as well. 
+
+Multinomial Diffusion Multinomial diffusion can be more suitable for modelling categorical data. In this case we assume a uniform categorical latent variable p(xT ) = 
+
+Cat (xT ; 1 
+
+> K
+
+1), such that the forward noising process adds uniform noise over the K categories (Hoogeboom et al., 2021): 
+
+q(xt|xt−1) = Cat (xt; (1 − βt)xt−1 + βt/K ). (8) Correspondingly, the reverse process is modelled by cate-gorical transitions such that 
+
+pθ (xt−1|xt) = Cat xt−1; πθ (xt, t )
+
+PKk=1 πk,θ (xt, t )
+
+!
+
+πθ (xt, t ) = 
+
+
+
+αtxt + (1 − αt)
+
+K
+
+
+
+⊙
+
+
+
+¯αt−1xθ (xt, t ) + (1 − ¯αt−1)
+
+K
+
+
+
+(9) where xθ (xt, t ) is the prediction of the original data x0 at timestep t by a classifier parameterized by θ.Hoogeboom et al. (2021)’s original multinomial diffusion specification performs a single step to add uniform noise over binary-encoded categorical features, and sample from the noised distribution (Equation (8) ). This is equivalent to a two-step process where we first decide for which samples to retain xt, and for which to resample uniformly from K,allowing us to omit one-hot encoding. 
+
+Combining Gaussian and Multinomial Diffusion We model numerical features through Gaussian diffusion and categorical features through multinomial diffusion. TabD-DPM (Kotelnikov et al., 2023) is a previous neural-based diffusion model combining Gaussian and multinomial diffu-sion. In such methods, numerical and categorical likelihoods contribute to a shared loss, while individual terms may lie on a different scale, causing gradients to be dominated by high-variance or high-cardinality features. Some works go to great lengths to weight the different terms in the loss function (Mueller et al., 2025). Our method circumvents the need for loss-weighting as we train separate XGBoost models per feature. At each timestep t, we parameterize θjt by an XGBoost regressor if j ∈ M or by an XGBoost classifier if j ∈C, conditioning on all features of the previous timestep 
+
+xt+1 . Numerical features are gaussianized by a quantile transformation followed by a z-scale normalization such that xj ∼ N (0 , 1) , j ∈ M . To prevent OOD values we clip numerical features to the range of the training data after synthesis. Categorical features are integer-encoded, and we use XGBoost’s native functionality to split directly on categories. To prevent memorization, we apply a dropout procedure where we randomly mask numerical input features with probability p = 0 .1 by setting them to the mean μxj =0.0, j ∈ M at each timestep. We noticed that this reduces memorization without massively deteriorating fidelity. See Appendix B for more details and an ablation of various dropout levels. Increasing dropout forces the model to pro-duce more typical samples, which can be useful in terms of privacy risk. Generating realistic but atypical samples risks resampling rare identifiable samples at the edge of the distribution. The dropout rate provides a tunable parameter to increase privacy protection at the cost of sample diversity. 
+
+3.2. Synthesizing Large Datasets: Autoregressive Models with XGBoost as Conditional Learner 
+
+To yield a model scalable to larger datasets, we must avoid massively extending the training set. We suggest modelling the likelihood of the data through autoregressive factoriza-tion. Fix a permutation of the features π of {1, . . . , d }. The autoregressive factorization defines a joint distribution over 4XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+X via the chain rule: 
+
+pθ (x) = 
+
+> d
+
+Y
+
+> t=1
+
+pθ
+
+ xπ(t) | xπ(<t )
+
+ ,xπ(<t ) :=  xπ(1) , . . . , x π(t−1) 
+
+.
+
+(10) A (series of) predictor(s) can now parameterize θ. Sam-pling proceeds sequentially ˜xπ(t) ∼ pˆθ
+
+  · | ˜xπ(<t )
+
+ , for 
+
+t = 1 , . . . , d . Since we use teacher-forcing, this approach is only autoregressive at inference-time, and learning the conditionals can be parallelized. The permutation order π is fixed as the original order of the dataset. We tried various approaches, such as an ordering based on increasing/decreasing mutual information, but this did not yield a consistent improvement on all evaluation dimensions. As a starting point, for numerical features j ∈ M , we fit a linearly interpolated empirical quantile function F −1 
+
+> π(0)
+
+:[0 , 1] → R on the first feature ˜xπ(0) . Interpolated quantile functions can model non-continuous or skewed distributions efficiently. We then resample u ∼ Unif(0 , 1) , ˜xj =
+
+F −1
+
+> π(0)
+
+(u), j ∈ M . For categorical features j ∈ C we sample from the empirical marginal distribution of ˜xπ(0) .
+
+Learning conditionals To avoid mode collapse, it is vital to be able to sample from the posterior of pθ
+
+ xπ(t) | xπ(<t )
+
+.For categorical features this can be done naturally by sam-pling from (temperature-scaled) predicted probabilities of a classifier. For numerical features, standard mean-estimating regression does not provide posterior probabilities, thus we need to find an appropriate method for probabilistic prediction. Several approaches based on tree ensembles exist, such as quantile regression, conditional diffusion (Bel-tran Velez et al., 2024), and hierarchical classification (Mc-Carter, 2024). We opt for the latter as a natural extension to the multi-class classification approach. For numerical features j ∈ M let Qj : R → { 1, . . . , B j }
+
+denote a quantization map into Bj bins. For categorical fea-tures xj ∈ C we assume they are already integer-encoded, and thus Qj is simply the identity function. We define the autoregressive model over encoded target variables pθ (x) = 
+
+Qdt=1 pθ
+
+ Qπ(t)(xπ(t)) | xπ(<t )
+
+ , where the conditional dis-tributions are modelled by (hierarchical) classifiers. Sam-pling proceeds by drawing a bin ˜b ∼ pθ,τ (· | xπ(<t )).For j ∈ M , Q j is a rank-based binning approach. We implement this as a quantile-based binning where we add small amounts of rank-preserving noise 5 to ensure each bin contains the same number of samples. This yields balanced classification tasks in the hierarchical classifier, and prevents the risk of resampling sparse bins with potentially identifi-
+
+> 5Noise which does not alter the ordering of the data.
+
+able values, as is possible in uniform-binning or data-driven binning (e.g., k-means) approaches. De-quantization should respect the non-continuous na-ture of most real-world tabular datasets. For each bin 
+
+b, we fit a linearly interpolated empirical quantile func-tion F −1 
+
+> j,b
+
+: [0 , 1] → R using the training samples as-signed to that bin. Given a sampled bin ˜b, we resample 
+
+u ∼ Unif(0 , 1) , ˜xj = F −1 
+
+> j, ˜b
+
+(u), j ∈ M .
+
+Appendix E provides an ablation of several quantization and de-quantization strategies. We find our de-quantization strategy to be especially effective at improving fidelity when compared to more naive approaches such as uniformly sam-pling from bins. 
+
+Hierarchical Classification UT’s approach to probabilis-tic prediction recursively partitions numerical features into binary bins H times, thus quantizing into 2H bins (Mc-Carter, 2024). Or analogously, builds a height-H meta-tree of binary classifiers. Each node of the meta-tree trains a binary XGBoost classifier to learn the partitioning of the current datapoints, i.e., which were previously partitioned to said node. To obtain a bin prediction, we traverse the meta-tree by sampling split decisions from the binary classifiers. We can compare this approach to a more naive method, where we directly model quantized numerical features us-ing multi-class classifiers. The hierarchical approach has at least two advantages: i) it imposes an ordinal inductive bias, as early nodes route towards collections of bins which correspond to similar regions in the feature space, ii) and provides more model capacity per datapoint when the task is harder, i.e., bins are more fine-grained. Appendix D provides an ablation of the multi-class versus hierarchical classification approach, showing that the hierarchical classi-fication approach more accurately preserves the multivariate structure. 
+
+Limiting categorical cardinality High-cardinality cate-gorical features can explode training time in XGenB-AR, since multi-class XGBoost classifiers build a separate tree for each category per boosting round. We set a global con-straint on categorical cardinality Kmax . A naive method to enforce this constraint is to merge infrequent categories into a single category such that each feature j ∈ C has at most Kmax categories. We can record the empirical distri-bution of the original categories in the merged category and resample after synthesis. We opt for a more informed approach. We cluster mean-vector embeddings of samples with infrequent categories into Kc clusters, while retaining the Kmax − Kc most fre-quent categories as-is. Mean-vector embeddings are defined as the mean over numerical features scaled to [0 , 1] and cat-egorical features one-hot encoded ∈ { 0, 12 }. We use a KMe-5XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+diods clustering on L1 distances. The preprocessing scheme and clustering are chosen to resemble clustering based on Gower-like distances (Gower, 1971), see Appendix G.3 for more details on the rationale behind this choice. We record the empirical distributions of the original categories in each of the clustered categories, and resample after synthesis. Appendix C provides an ablation of the aforementioned naive approach versus the clustering approach for limiting categorical cardinality. Results indicate that the clustering approach more accurately preserves multivariate structure by conditioning on (a summary of) the joint feature structure associated with each category. An additional advantage of merging infrequent categories is that it helps prevent overfitting to rare, potentially identi-fiable, categories. Overall, it helps the model behave more predictably when applied out-of-the-box to datasets with potentially large cardinality. 
+
+4. Experiments 
+
+We separate the evaluation into two benchmarks, i.e., the benchmark from Jolicoeur-Martineau et al. (2024) and the benchmark from Mueller et al. (2025). Jolicoeur-Martineau et al. (2024)’s benchmark contains mostly smaller datasets and will be called the Small Benchmark, whereas Mueller et al. (2025)’s benchmark contains mostly larger datasets and will be called the Big Benchmark. We omit XGenB-DF from the Big Benchmark, as it is prohibitively expensive to train for some of the larger datasets. We do include XGenB-AR in the Small Bench-mark - whereas it was developed with large-scale tabular synthesis in mind, it can also be used for smaller datasets. 
+
+Baseline models. We compare XGenBoost against a vari-ety of methods for tabular synthesis. Both the Small Bench-mark and the Big Benchmark contain SMOTE, ARF, CT-GAN, TVAE, and TabDDPM as baseline models. SMOTE is an oversampling technique (not a model) which interpolates observations from the training set in data space (Chawla et al., 2002). ARF is an adversarial generative model based on Random Forests (Watson et al., 2023). CTGAN is a popular GAN-based (Goodfellow et al., 2014) method for tabular synthesis (Xu et al., 2019). TVAE is the VAE-based (Kingma & Welling, 2013) counterpart of CTGAN from the same article. TabDDPM is a diffusion model for mixed-type tabular data, combining Gaussian and multinomial diffusion (Kotelnikov et al., 2023). For the Small Benchmark, we also include FD, FF, and UT (Jolicoeur-Martineau et al., 2024; McCarter, 2024). Due to the scaling issues mentioned in Section 2, these are not included in the Big Benchmark. For the Big Benchmark, we also include TabSyn, which is a latent diffusion model for mixed-type tabular data (Zhang et al., 2024). We do not include this for the Small Benchmark, as TabSyn requires training two deep generative models sequentially (VAE and diffusion model), which we do not believe to be sensible for small datasets. Appendix F provides additional details regarding baseline models and hyperparameters, and Appendix H regarding hardware used for training. 
+
+Datasets. Both the Small Benchmark and the Big Bench-mark contain tabular datasets with a mix of categorical (in-cluding binary) and numerical (including integer) features, and a variety of prediction tasks (classification/regression). Appendix A provides more details on the datasets contained in both benchmarks. For both benchmarks, we drop rows with missing values in numerical features, and split the data in train, validation, and test sets in 3:1:1 proportion. Al-though XGenBoost can model missing data, other baselines cannot; their quality depends on the imputation method when synthesizing in a missing-data setting, which we be-lieve to be an unfair comparison. 
+
+Evaluation metrics. We evaluate generated synthetic data on its three archetypal dimensions, i.e., fidelity, utility, and privacy (Jordon et al., 2022). For fidelity, we investigate similarity in marginal densities (Shape) and bivariate cor-relations (Trend) (Zhang et al., 2024), distinguishability by a classifier (Detection, lower scores are better) (Zhang et al., 2024; Mueller et al., 2025), and distributional preci-sion ( α-Precision) and recall ( β-Recall) scores (Alaa et al., 2022). For utility, we evaluate Machine Learning Efficacy (MLE), i.e., the extent to which predictive models trained on synthetic data generalize to real data (Xu et al., 2019; Kotel-nikov et al., 2023; Zhang et al., 2024). This is sometimes also called the Train Synthetic Test Real (TSTR) approach (Esteban et al., 2017). For privacy, we compute the Distance to Closest Record (DCR) scores, to investigate whether gen-erated data is similarly close to the training data and an independent test set (Zhang et al., 2024). Low DCR scores indicate that synthetic data is often closer to the training set, which is a sign of overfitting, which in turn can be a sign of privacy leakage. We acknowledge, however, that DCR is a somewhat debatable measure for privacy risk. See Appendix G for more details on the considered evaluation metrics, including a discussion on the usage of DCR as a privacy measure. We generate synthetic datasets at the same size of the real training data. For the Detection score metric, we query an additional synthetic set at the size of the real test set to evaluate generalization of the classifier to the real and synthetic test sets. We cap the size of real and synthetic sets at 50 000 rows to limit evaluation time. We use 20 different seeds which affect the sampling process of the generator and 6XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+the subsampling process of the real dataset (if applicable). 
+
+4.1. Results 
+
+Table 1 and Table 2 provide the average ranks of each gen-erator across the datasets of the Small Benchmark and Big Benchmark, respectively, for the considered metrics. Ap-pendix I provides detailed results. For the MLE metric, ranks are based on ROCAUC for classification datasets and R2 for regression datasets. Other MLE metrics (F1 and RMSE) can be found in Appendix I. Generators which could not be run for a specific dataset receive the highest possible rank. This is the case for SMOTE in the covertype and acsincome dataset in the Big Benchmark (too costly, see also Mueller et al. (2025)), TabDDPM in the diabetes and acsincome dataset in the Big Benchmark (NaNs during training, see also Mueller et al. (2025)), and SMOTE in the ecoli dataset in the Small Benchmark ( < 2 samples in one of the target classes). 
+
+Small Benchmark. Table 1 shows that XGenBoost con-sistently outperforms other generators in terms of fidelity (Shape, Trend, Detection). Here, XGenB-AR is especially apt at preserving marginal distributions (Shape), whereas XGenB-DF is better at preserving correlations (Trend), and therefore also machine learning utility (MLE). XGenB-DF can model correlations at a higher level of granularity than XGenB-AR, as the latter quantizes numerical features. XGenB-DF’s DDPM specifications tend to yield more di-verse samples - due to its stochastic nature - resulting in higher β-Recall scores. Unfortunately, this can go hand in hand with more privacy risk, measured as worse DCR scores. High β-Recall indicates that realistic samples are being generated at the edge of the distribution. Analogously, this may seem like copying outliers from the training data, which increases reidentification risk. Furthermore, XGenB-DF’s velocity-prediction reparameterizations yield slightly worse fidelity, but also decreased privacy risk. It provides a smoother loss trajectory at low noise levels, and therefore less risk of overfitting (Gao et al., 2024). Overall, we find a DDIM sampler and a velocity-prediction reparametrization to yield the most balanced results. This specification of XGenB-DF outperforms all baseline models in terms of fidelity (Shape, Trend, Detection), and all base-lines except SMOTE in terms of utility (MLE). In terms of privacy (DCR), it outperforms other high-fidelity methods SMOTE, FF, and UT. Due to the inherent fidelity-privacy tradeoff in synthetic data (Achterberg et al., 2025), other methods may achieve better privacy scores if they produce samples with much worse fidelity (CTGAN, TVAE, etc.). 
+
+Big Benchmark. Table 2 shows that XGenB-AR outper-forms other generators in terms of fidelity, utility, and train-ing time. In terms of privacy risk, XGenB-AR outranks SMOTE and ARF, while scoring similar to deep generative models such as TabDDPM and TVAE. This indicates that XGenB-AR generates synthetic data with increased fidelity while maintaining privacy protection, at much lower training cost. 
+
+Scalability Figure 1 shows the training times in minutes of XGenBoost in the Small and Big Benchmark. For most datasets, XGenB-DF trains within a reasonable time - a few minutes - on our modest hardware (see Appendix H). Fac-tors which negatively influence runtime are i) large numbers of features, as seen in datasets libras, connectionist bench sonar, qsar biodegradation, and ionosphere, ii) large num-bers of rows, as seen in datasets california and bean, and iii) large numbers of categorical target labels, as seen in datasets libras and bean. XGenB-AR trains within a reasonable time on all datasets of the Big Benchmark - even for datasets with many rows (acsincome), or many rows and many features (covertype). On the other hand, XGenB-AR’s sequential inference over features invites scepticism regarding inference-scalability to datasets with many features. However, for the datasets in the Big Benchmark, we found that inference time is on-par with that of diffusion models such as TabDDPM and TabSyn (see Table 2). This holds even for datasets with many features (covertype, news), see Table 30. However, we recognize that inference time may become an issue when datasets have hundreds or thousands of features. 
+
+5. Limitations 
+
+None of XGenBoost’s models have currently been adapted for imputation. For the autoregressive model, we can relax the autoregressive factorization to a Besag pseudo-likelihood objective (Besag, 1975) and turn the model into a dependency network as described in Heckerman et al. (2000). This allows for any-order synthesis, and thus impu-tation, through Gibbs sampling. This approach may scale better to large datasets than the training set extension and random-order synthesis approach of UT (McCarter, 2024). The diffusion model can be used for imputation through an inpainting method, e.g., REPAINT (Lugmayr et al., 2022), similar to FD (Jolicoeur-Martineau et al., 2024). XGenBoost’s autoregressive and diffusion models can be prone to overfitting, which may increase privacy risk. In the diffusion model this may present as memorizing train-ing samples at early timesteps, and in the autoregressive model, as preserving the exact rank-order structure from the training data. We take several measures against this. For the diffusion model, we can increase the dropout rate to make the model more robust against memorizing sample coordinates. In the autoregressive model, we can reduce the 7XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 1. Small Benchmark: metric ranks (μ ± σ) across the 27 datasets of the Small Benchmark. Best results per metric are in bold ,second best underlined. 
+
+metric Shape Trend Detection α-Precision β-Recall MLE DCR Training Time Inference Time SMOTE 6.654 ±2.756 5.154 ±3.233 6.885 ±2.805 7.769 ±3.491 3.462 ±3.289 4.808 ±3.805 10 .923 ±2.637 - 2.769 ±1.177 
+
+ARF 7.852 ±2.641 9.704 ±1.938 9.222 ±2.044 5.333 ±3.063 10 .630 ±0.742 10 .037 ±2.457 3.278 ±1.734 2.074 ±1.072 3.926 ±0.829 
+
+UT 7.222 ±2.532 7.148 ±2.627 7.037 ±2.993 6.741 ±3.046 7.407 ±1.474 7.370 ±2.452 8.093 ±3.000 5.407 ±0.888 12 .481 ±1.221 
+
+FD 9.407 ±1.623 5.407 ±2.859 8.407 ±3.165 7.000 ±3.563 8.481 ±2.190 5.333 ±3.026 6.648 ±2.269 10 .630 ±1.573 7.185 ±0.483 
+
+FF 7.444 ±2.326 5.000 ±2.617 6.556 ±3.055 6.926 ±2.401 3.185 ±2.573 5.037 ±2.579 9.278 ±2.419 10 .074 ±0.958 5.593 ±0.636 
+
+CTGAN 12 .407 ±0.694 12 .296 ±0.609 12 .296 ±0.775 11 .815 ±1.962 12 .630 ±0.451 12 .667 ±0.555 2.685 ±2.284 3.741 ±0.594 1.630 ±0.629 
+
+TVAE 11 .593 ±0.694 11 .444 ±1.013 11 .481 ±0.849 9.963 ±2.835 11 .259 ±0.984 10 .704 ±2.233 2.537 ±2.406 2.852 ±0.602 2.074 ±0.917 
+
+TabDDPM 9.111 ±3.836 10 .148 ±3.890 8.519 ±3.877 8.556 ±4.484 8.074 ±4.164 7.185 ±4.707 7.352 ±4.090 7.741 ±3.108 11 .111 ±2.342 
+
+XGenB-AR 2.278 ±1.883 6.556 ±2.926 3.593 ±2.606 3.037 ±2.426 8.630 ±1.006 7.556 ±2.636 5.241 ±1.772 1.370 ±0.492 5.185 ±0.962 
+
+XGenB-DF (x-DDPM) 5.093 ±2.094 5.074 ±2.336 5.222 ±2.309 4.741 ±3.083 3.037 ±1.285 4.593 ±2.531 9.926 ±2.348 9.370 ±1.925 10 .444 ±1.281 
+
+XGenB-DF (v-DDPM) 4.259 ±1.873 4.741 ±2.068 4.074 ±2.448 7.148 ±3.072 3.815 ±1.469 4.926 ±2.055 8.796 ±2.435 9.148 ±1.134 10 .296 ±0.869 
+
+XGenB-DF (x-DDIM) 3.926 ±2.336 4.000 ±2.465 4.185 ±2.149 4.815 ±2.923 4.667 ±1.519 5.370 ±2.662 8.278 ±2.318 7.741 ±1.559 9.296 ±1.171 
+
+XGenB-DF (v-DDIM) 3.519 ±2.260 4.037 ±2.328 3.741 ±2.280 6.963 ±2.752 5.370 ±1.621 5.111 ±2.722 7.889 ±1.631 7.852 ±1.610 9.074 ±1.174 
+
+Table 2. Big Benchmark: metric ranks (μ ± σ) across the 11 datasets of the Big Benchmark. Best results per metric are in bold , second best underlined. 
+
+metric Shape Trend Detection α-Precision β-Recall MLE DCR Training Time Inference Time SMOTE 3.889 ±0.782 3.111 ±0.782 3.444 ±0.726 5.667 ±1.323 1.778 ±1.563 2.111 ±1.364 6.778 ±0.441 - 4.556 ±0.882 
+
+ARF 3.818 ±0.982 6.364 ±1.206 4.727 ±0.467 2.636 ±1.027 4.545 ±1.508 2.909 ±1.514 5.727 ±0.786 3.818 ±0.874 6.000 ±0.775 
+
+CTGAN 6.000 ±1.000 5.273 ±0.905 6.455 ±0.688 5.636 ±1.206 6.091 ±0.701 6.182 ±0.982 2.727 ±1.348 3.273 ±0.467 2.364 ±0.674 
+
+TVAE 6.000 ±0.775 4.909 ±0.539 6.364 ±0.505 5.273 ±1.104 5.364 ±1.433 5.455 ±1.036 3.000 ±1.414 2.091 ±0.302 1.364 ±0.674 
+
+TabDDPM 3.889 ±1.691 4.000 ±1.323 3.667 ±1.658 3.889 ±1.764 3.333 ±2.062 4.333 ±1.732 3.222 ±1.787 4.778 ±0.441 7.000 ±0.000 
+
+TabSyn 2.364 ±0.809 1.818 ±0.751 2.364 ±0.924 2.364 ±1.286 2.727 ±0.905 3.000 ±1.549 2.818 ±1.779 5.818 ±0.405 4.909 ±0.701 
+
+XGenB-AR 1.000 ±0.000 1.364 ±0.505 1.818 ±1.168 1.818 ±0.982 2.636 ±0.924 2.727 ±1.421 3.091 ±1.136 1.000 ±0.000 3.455 ±0.688 libras 
+
+> connectionist bench sonar
+> bean
+> qsar biodegradation
+> california
+> ionosphere
+> breast cancer diagnostic
+> yeast
+> connectionist bench vowel
+> wine quality white
+> parkinsons
+> car
+> climate model crashes
+> tictactoe
+> congress
+> glass
+> wine
+> ecoli
+> planning relax
+> wine quality red
+> concrete compression
+> airfoil self noise
+> seeds
+> yacht hydrodynamics
+> concrete slump
+> iris
+> blood transfusion
+> 220.1
+> 16.0
+> 11.1
+> 9.8
+> 8.3
+> 5.9
+> 4.8
+> 2.5
+> 2.4
+> 2.3
+> 2.3
+> 2.1
+> 1.7
+> 1.6
+> 1.6
+> 1.2
+> 1.1
+> 0.8
+> 0.7
+> 0.7
+> 0.6
+> 0.4
+> 0.3
+> 0.3
+> 0.2
+> 0.1
+> 0.1
+> Small Benchmark (XGenB-DF)
+> Training Time (minutes)
+> acsincome
+> covertype
+> diabetes
+> news
+> adult
+> bank
+> default
+> lending
+> beijing
+> churn
+> nmes
+> 2.9
+> 0.9
+> 0.3
+> 0.2
+> 0.1
+> 0.1
+> 0.1
+> 0.1
+> 0.0
+> 0.0
+> 0.0
+> Big Benchmark (XGenB-AR)
+
+Figure 1. Training times in minutes of XGenB-DF (v-DDIM specification) and XGenB-AR in the Small and Big Benchmark, respectively. 
+
+capacity of the boosters using standard hyperparameters to reduce the sharpness of learned conditionals, or decrease quantization granularity by reducing the meta-tree height. 
+
+6. Conclusion and Discussion 
+
+We presented XGenBoost, a pair of generative architectures for mixed-type tabular synthesis based on XGBoost. We present a Denoising Diffusion Implicit Model (DDIM) us-ing XGBoost as score-estimator, which is especially suited to smaller tabular datasets. We also present a hierarchical autoregressive model, using XGBoost as conditional learner, which scales well to larger datasets. We show that such ar-chitectures, when designed according to the constraints and strengths of tree learners, can yield models capable of out-performing deep generative models in terms of both quality and computational costs. We hereby challenge the current paradigm which often adapts effective architectures from other fields such as NLP and computer vision, and rather, design tabular synthesizers based on methods which are known to have suitable inductive biases for mixed-type tab-ular data. Additionally, since XGenBoost contains separate methods for small-scale and large-scale tabular synthesis, it is applicable to a broad set of use cases. This data-first ap-proach is aligned with real-world applications where users will choose an applicable model based on the characteristics of their dataset. There are various potential extensions to XGenBoost’s archi-tectures. For XGenB-DF we can consider diffusion-specific 8XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+extensions such as adaptive noise schedules, or different (especially discrete) diffusion kernels. For XGenB-AR we can consider, e.g., a more informed sequence order. Lastly, XGenB-DF and XGenB-AR can be combined into a hybrid approach, where XGenB-DF is used to first synthesize a set of low-risk or complex features with very high fidelity, and XGenB-AR subsequently synthesizes more private or simpler features at reduced privacy risk and lower training cost, conditioned on features synthesized by XGenB-DF. We leave these extensions for future research. 
+
+7. Impact Statement 
+
+This paper presents methods which generate synthetic obser-vations similar to those found in real-world datasets. Proper care should be taken when using synthetic data to draw any inferences, as there are no guarantees that inferences drawn from synthetic data generalize to the real-world. Results should always be compared to results from real-world data. Synthetic data can be a useful tool to share otherwise sensi-tive data, as observations do not pertain to real individuals. However, information from the real data may leak through to the synthetic data, potentially disclosing sensitive infor-mation. Malicious third parties can potentially combine synthetic data with quasi-identifiers available to them to draw inferences on real individuals. When using the meth-ods from this work to share sensitive data, always perform a rigorous privacy evaluation first, consisting of (at least) various attribute and membership disclosure attacks. Here it is vital to make realistic assumptions about the data and resources available to a potential attacker. One of the main goals of this work is democratizing access to strong methods for tabular synthesis. Previous perfor-mant methods often rely on modern computing resources, which are known to be unfairly distributed across the world (Lehdonvirta et al., 2024). Our presented methods run in reasonable times on modest CPU set-ups, even for datasets with millions of rows and dozens of features. We hereby ensure access to these methods, which can be beneficial for a large variety of use cases, for not only the privileged, but the entire world. Additionally, reducing computational re-quirements reduces energy demand, which can be beneficial from both a financial and sustainability perspective. Lastly, this work designs methods by taking a data-first ap-proach, designing generative architectures using learners which are already known to have suitable inductive priors for the type of data considered. This is in contrast to many other efforts which adapt strong methods from other fields and data types, e.g., NLP and computer vision, to the tab-ular data domain. We believe such data-first approaches have the potential to yield equally strong (or stronger) meth-ods at reduced computational load. As these approaches already encode suitable inductive priors, these no longer have to be learned by generalistic learners, thereby saving computation. 9XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+References 
+
+Congressional Voting Records. UCI Ma-chine Learning Repository, 1987. DOI: https://doi.org/10.24432/C5C01P. Achterberg, J., Haas, M., van Dijk, B., and Spruit, M. Fidelity-agnostic synthetic data generation improves util-ity while retaining privacy. Patterns , 2025. Aeberhard, S., Coomans, D., and De Vel, O. Comparative analysis of statistical pattern recognition methods in high dimensional settings. Pattern Recognition , 27(8):1065– 1077, 1994. Aha, D. Tic-Tac-Toe Endgame. UCI Machine Learning Repository, 1991. DOI: https://doi.org/10.24432/C5688J. Alaa, A., Van Breugel, B., Saveliev, E. S., and Van Der Schaar, M. How faithful is your synthetic data? sample-level metrics for evaluating and auditing gener-ative models. In International conference on machine learning , pp. 290–306. PMLR, 2022. Becker, B. and Kohavi, R. Adult, 1996. Beltran Velez, N., Grande, A. A., Nazaret, A., Kucukelbir, A., and Blei, D. Treeffuser: probabilistic prediction via conditional diffusions with gradient-boosted trees. Ad-vances in Neural Information Processing Systems , 37: 118296–118325, 2024. Besag, J. Statistical analysis of non-lattice data. Journal of the Royal Statistical Society Series D: The Statistician ,24(3):179–195, 1975. Bhatt, R. Planning Relax. UCI Machine Learning Reposi-tory, 2012. DOI: https://doi.org/10.24432/C5T023. Blackard, J. Covertype, 1998. Bohanec, M. and Rajkovic, V. Knowledge acquisition and explanation for multi-attribute decision making. In 8th intl workshop on expert systems and their applications ,pp. 59–78. Avignon France, 1988. Breiman, L. Random forests. Machine learning , 45(1): 5–32, 2001. Brooks, T., Pope, D., and Marcolini, M. Airfoil Self-Noise. UCI Machine Learning Repository, 2014. DOI: https://doi.org/10.24432/C5VW2C. Charytanowicz, M., Niewczas, J., Kulczycki, P., Kowalski, P. A., Łukasik, S., and ˙Zak, S. Complete gradient clus-tering algorithm for features analysis of x-ray images. In 
+
+Information Technologies in Biomedicine: Volume 2 , pp. 15–24. Springer, 2010. Chawla, N. V., Bowyer, K. W., Hall, L. O., and Kegelmeyer, W. P. Smote: synthetic minority over-sampling technique. 
+
+Journal of artificial intelligence research , 16:321–357, 2002. Chen, T. Xgboost: A scalable tree boosting system. Cornell University , 2016. Cortez, P., Cerdeira, A., Almeida, F., Matos, T., and Reis, J. Modeling wine preferences by data mining from physic-ochemical properties. Decision support systems , 47(4): 547–553, 2009. Das, H. P., Tran, R., Singh, J., Yue, X., Tison, G., Sangiovanni-Vincentelli, A., and Spanos, C. J. Condi-tional synthetic data generation for robust machine learn-ing applications with limited pandemic data. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 36, pp. 11792–11800, 2022. Deb, P. and Trivedi, P. K. Demand for medical care by the elderly: a finite mixture approach. Journal of applied Econometrics , 12(3):313–336, 1997. Deterding, D., Niranjan, M., and Robinson, T. Con-nectionist Bench (Vowel Recognition - Deterding Data). UCI Machine Learning Repository. DOI: https://doi.org/10.24432/C58P4S. Dias, D., Peres, S., and Bscaro, H. Libras Move-ment. UCI Machine Learning Repository, 2009. DOI: https://doi.org/10.24432/C5GC82. Ding, F., Hardt, M., Miller, J., and Schmidt, L. Re-tiring adult: New datasets for fair machine learning. In Ranzato, M., Beygelzimer, A., Dauphin, Y., Liang, P., and Vaughan, J. W. (eds.), Advances in Neural Information Processing Systems , vol-ume 34, pp. 6478–6490. Curran Associates, Inc., 2021. URL https://proceedings.neurips. cc/paper_files/paper/2021/file/ 32e54441e6382a7fbacbbbaf3c450059-Paper. pdf .Esteban, C., Hyland, S. L., and R ¨atsch, G. Real-valued (medical) time series generation with recurrent condi-tional gans. arXiv preprint arXiv:1706.02633 , 2017. Fernandes, K., Vinagre, P., and Cortez, P. A proactive intelli-gent decision support system for predicting the popularity of online news. In Portuguese conference on artificial intelligence , pp. 535–546. Springer, 2015. Friedman, J. On multivariate goodness-of-fit and two-sample testing. Technical report, SLAC National Ac-celerator Laboratory (SLAC), Menlo Park, CA (United States), 2004. 10 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Gao, R., Hoogeboom, E., Heek, J., De Bortoli, V., Mur-phy, K. P., and Salimans, T. Diffusion meets flow matching: Two sides of the same coin. 2024. https: //diffusionflow.github.io , 2024. Accessed: 2026-01-07. German, B. Glass Identification. UCI Ma-chine Learning Repository, 1987. DOI: https://doi.org/10.24432/C5WW2P. Gerritsma, J., Onnink, R., and Versluis, A. Yacht Hydrody-namics. UCI Machine Learning Repository, 2013. DOI: https://doi.org/10.24432/C5XG7R. Goetz, J. and Tewari, A. Federated learning via synthetic data. arXiv preprint arXiv:2008.04489 , 2020. Goodfellow, I. J., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., and Bengio, Y. Generative adversarial nets. In Ghahra-mani, Z., Welling, M., Cortes, C., Lawrence, N., and Weinberger, K. (eds.), Advances in Neural Information Processing Systems , volume 27. Curran Associates, Inc., 2014. URL https://proceedings.neurips. cc/paper_files/paper/2014/file/ f033ed80deb0234979a61f95710dbe25-Paper. pdf .Gower, J. C. A general coefficient of similarity and some of its properties. Biometrics , pp. 857–871, 1971. Grinsztajn, L., Oyallon, E., and Varoquaux, G. Why do tree-based models still outperform deep learning on typical tabular data? Advances in neural information processing systems , 35:507–520, 2022. Heckerman, D., Chickering, D. M., Meek, C., Rounthwaite, R., and Kadie, C. Dependency networks for inference, collaborative filtering, and data visualization. Journal of Machine Learning Research , 1(Oct):49–75, 2000. Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-bilistic models. Advances in neural information process-ing systems , 33:6840–6851, 2020. Hollmann, N., M ¨uller, S., Eggensperger, K., and Hutter, F. TabPFN: A transformer that solves small tabular classification problems in a second. In The Eleventh International Conference on Learning Representations ,2023. URL https://openreview.net/forum? id=cp5PvcI6w8_ .Hoogeboom, E., Nielsen, D., Jaini, P., Forr ´e, P., and Welling, M. Argmax flows and multinomial diffusion: Learning categorical distributions. Advances in neural information processing systems , 34:12454–12465, 2021. Horton, P. and Nakai, K. A probabilistic classification system for predicting the cellular localization sites of proteins. In Ismb , volume 4, pp. 109–115. St. Louis, Missouri, USA, 1996. Jolicoeur-Martineau, A., Fatras, K., and Kachman, T. Generating and imputing tabular data via diffusion and flow-based gradient-boosted trees. In Dasgupta, S., Mandt, S., and Li, Y. (eds.), Proceedings of The 27th International Conference on Artificial Intelligence and Statistics , volume 238 of Proceedings of Machine Learning Research , pp. 1288–1296. PMLR, 02–04 May 2024. URL https://proceedings.mlr.press/ v238/jolicoeur-martineau24a.html .Jordon, J., Szpruch, L., Houssiau, F., Bottarelli, M., Cheru-bin, G., Maple, C., Cohen, S. N., and Weller, A. Synthetic data–what, why and how? arXiv preprint arXiv:2205.03257 , 2022. Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., and Liu, T.-Y. Lightgbm: A highly efficient gradient boosting decision tree. Advances in neural infor-mation processing systems , 30, 2017. Keramati, A., Jafari-Marandi, R., Aliannejadi, M., Ah-madian, I., Mozaffari, M., and Abbasi, U. Im-proved churn prediction in telecommunication in-dustry using data mining techniques. Applied Soft Computing , 24:994–1012, 2014. ISSN 1568-4946. doi: https://doi.org/10.1016/j.asoc.2014.08. 041. URL https://www.sciencedirect.com/ science/article/pii/S1568494614004062 .Kim, J., Lee, C., and Park, N. STasy: Score-based tabular data synthesis. In The Eleventh International Conference on Learning Representations , 2023. URL https:// openreview.net/forum?id=1mNssCWt_v .Kingma, D. P. and Welling, M. Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114 , 2013. Koklu, M. and Ozkan, I. A. Multiclass classification of dry beans using computer vision and machine learning techniques. Computers and Electronics in Agriculture ,174:105507, 2020. Kotelnikov, A., Baranchuk, D., Rubachev, I., and Babenko, A. Tabddpm: Modelling tabular data with diffusion mod-els. In International conference on machine learning , pp. 17564–17579. PMLR, 2023. Lee, C., Kim, J., and Park, N. Codi: Co-evolving con-trastive diffusion models for mixed-type tabular synthesis. In International Conference on Machine Learning , pp. 18940–18956. PMLR, 2023. 11 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Lehdonvirta, V., W ´u, B., and Hawkins, Z. Compute north vs. compute south: the uneven possibilities of compute-based ai governance around the globe. In Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society ,volume 7, pp. 828–838, 2024. Lending Club. Loan data from Lending Club, 2015. Liang, X., Zou, T., Guo, B., Li, S., Zhang, H., Zhang, S., Huang, H., and Chen, S. X. Assessing beijing’s pm2. 5 pollution: severity, weather impact, apec and winter heat-ing. Proceedings of the Royal Society A: Mathematical, Physical and Engineering Sciences , 471(2182):20150257, 2015. Little, M., Mcsharry, P., Roberts, S., Costello, D., and Mo-roz, I. Exploiting nonlinear recurrence and fractal scaling properties for voice disorder detection. Nature Preced-ings , pp. 1–1, 2007. Lucas, D., Klein, R., Tannahill, J., Ivanova, D., Brandon, S., Domyancic, D., and Zhang, Y. Climate Model Simulation Crashes. UCI Machine Learning Repository, 2013. DOI: https://doi.org/10.24432/C5HG71. Lugmayr, A., Danelljan, M., Romero, A., Yu, F., Timofte, R., and Van Gool, L. Repaint: Inpainting using denoising diffusion probabilistic models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 11461–11471, 2022. Mansouri, K., Ringsted, T., Ballabio, D., Todes-chini, R., and Consonni, V. QSAR biodegrada-tion. UCI Machine Learning Repository, 2013. DOI: https://doi.org/10.24432/C5H60M. McCarter, C. Unmasking trees for tabular data. In NeurIPS 2024 Third Table Representation Learning Workshop ,2024. URL https://openreview.net/forum? id=LFCSTy6MYe .Meng, C., Choi, K., Song, J., and Ermon, S. Concrete score matching: Generalized score matching for discrete data. In Koyejo, S., Mohamed, S., Agar-wal, A., Belgrave, D., Cho, K., and Oh, A. (eds.), 
+
+Advances in Neural Information Processing Systems ,volume 35, pp. 34532–34545. Curran Associates, Inc., 2022. URL https://proceedings.neurips. cc/paper_files/paper/2022/file/ df04a35d907e894d59d4eab1f92bc87b-Paper-Conference. pdf .Moro, S., Cortez, P., and Rita, P. A data-driven approach to predict the success of bank telemarketing. Decision Support Systems , 62:22–31, 2014. Mueller, M., Gruber, K., and Fok, D. Continuous dif-fusion for mixed-type tabular data. In The Thirteenth International Conference on Learning Representations ,2025. URL https://openreview.net/forum? id=QPtoBPn4lZ .Muzellec, B., Josse, J., Boyer, C., and Cuturi, M. Miss-ing data imputation using optimal transport. In Interna-tional Conference on Machine Learning , pp. 7130–7140. PMLR, 2020. Nakai, K. Yeast. UCI Machine Learning Repository, 1996. DOI: https://doi.org/10.24432/C5KG68. Neto, E. C. TabSDS: a lightweight, fully non-parametric, and model free approach for generating synthetic tabular data. In Forty-second International Conference on Ma-chine Learning , 2025. URL https://openreview. net/forum?id=UtlFqRDJKl .Pace, R. K. and Barry, R. Sparse spatial autoregressions. 
+
+Statistics & Probability Letters , 33(3):291–297, 1997. Patki, N., Wedge, R., and Veeramachaneni, K. The synthetic data vault. In 2016 IEEE international conference on data science and advanced analytics (DSAA) , pp. 399–410. IEEE, 2016. Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., and Gulin, A. Catboost: unbiased boosting with categori-cal features. Advances in neural information processing systems , 31, 2018. Rubin, D. B. Statistical disclosure limitation. Journal of official Statistics , 9(2):461–468, 1993. Salimans, T. and Ho, J. Progressive distillation for fast sampling of diffusion models. In International Confer-ence on Learning Representations , 2022. URL https: //openreview.net/forum?id=TIdIXIpzhoI .Sejnowski, T. and Gorman, P. R. Connectionist Bench (Sonar, Mines vs. Rocks). UCI Machine Learning Repos-itory. DOI: https://doi.org/10.24432/C5T01Q. Shi, J., Xu, M., Hua, H., Zhang, H., Ermon, S., and Leskovec, J. Tabdiff: a mixed-type diffusion model for tabular data generation. In The Thirteenth In-ternational Conference on Learning Representations ,2025. URL https://openreview.net/forum? id=swvURjrt8z .Si, J., Ou, Z., Qu, M., Xiang, Z., and Li, Y. Tabrep: Training tabular diffusion models with a simple and effective con-tinuous representation. In 1st ICML Workshop on Foun-dation Models for Structured Data , 2025. URL https: //openreview.net/forum?id=QUkfpUyYhZ .12 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Sigillito, V. G., Wing, S. P., Hutton, L. V., and Baker, K. B. Ionosphere. UCI Machine Learning Repository, 1989. DOI: https://doi.org/10.24432/C5W01B. Song, J., Meng, C., and Ermon, S. Denoising diffu-sion implicit models. In International Conference on Learning Representations , 2021a. URL https:// openreview.net/forum?id=St1giarCHLP .Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., and Poole, B. Score-based generative mod-eling through stochastic differential equations. In In-ternational Conference on Learning Representations ,2021b. URL https://openreview.net/forum? id=PxTIG12RRHS .Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ven-tura, S., Cios, K. J., and Clore, J. N. Impact of hba1c measurement on hospital readmission rates: analysis of 70,000 clinical database patient records. BioMed research international , 2014(1):781670, 2014. Street, W. N., Wolberg, W. H., and Mangasarian, O. L. Nu-clear feature extraction for breast tumor diagnosis. In 
+
+Biomedical image processing and biomedical visualiza-tion , volume 1905, pp. 861–870. SPIE, 1993. Unwin, A. and Kleinman, K. The iris data set: In search of the source of virginica. Significance , 18(6):26–29, 2021. van Kesteren, E.-J. To democratize research with sensitive data, we should make synthetic data more accessible. 
+
+Patterns , 5(9), 2024. Watson, D. S., Blesch, K., Kapar, J., and Wright, M. N. Adversarial random forests for density estimation and generative modeling. In Ruiz, F., Dy, J., and van de Meent, J.-W. (eds.), Proceedings of The 26th Interna-tional Conference on Artificial Intelligence and Statis-tics , volume 206 of Proceedings of Machine Learn-ing Research , pp. 5357–5375. PMLR, 25–27 Apr 2023. URL https://proceedings.mlr.press/ v206/watson23a.html .Xu, L., Skoularidou, M., Cuesta-Infante, A., and Veera-machaneni, K. Modeling tabular data using conditional gan. Advances in neural information processing systems ,32, 2019. Yeh, I.-C. Modeling of strength of high-performance con-crete using artificial neural networks. Cement and Con-crete research , 28(12):1797–1808, 1998. Yeh, I.-C. Concrete Slump Test. UCI Ma-chine Learning Repository, 2009. DOI: https://doi.org/10.24432/C5FG7D. Yeh, I.-C. and Lien, C.-h. The comparisons of data min-ing techniques for the predictive accuracy of probability of default of credit card clients. Expert systems with applications , 36(2):2473–2480, 2009. Yeh, I.-C., Yang, K.-J., and Ting, T.-M. Knowledge dis-covery on rfm model using bernoulli sequence. Expert Systems with applications , 36(3):5866–5871, 2009. Zhang, H., Zhang, J., Shen, Z., Srinivasan, B., Qin, X., Faloutsos, C., Rangwala, H., and Karypis, G. Mixed-type tabular data synthesis with score-based diffusion in latent space. In The Twelfth International Conference on Learning Representations , 2024. Zhang, J., Cormode, G., Procopiuc, C. M., Srivastava, D., and Xiao, X. Privbayes: Private data release via bayesian networks. ACM Transactions on Database Sys-tems (TODS) , 42(4):1–41, 2017. Zhao, Z., Kunar, A., Birke, R., and Chen, L. Y. Ctab-gan: Effective table data synthesizing. In Asian conference on machine learning , pp. 97–112. PMLR, 2021. 13 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+A. Datasets 
+
+Table 3 and Table 4 list the datasets contained in the Small Benchmark and Big Benchmark, respectively. The Small Benchmark was originally presented by Jolicoeur-Martineau et al. (2024), which was in turn inspired by Muzellec et al. (2020). The Big Benchmark was originally presented by Mueller et al. (2025). All datasets are openly available. All datasets except iris and nmes are licensed under a Creative Commons license; the iris dataset is licensed under BSD 3-Clause License, and the nmes dataset has no known license.  
+
+> Table 3. Small Benchmark: overview of datasets.
+
+Dataset Task N No. of features No. of categories categorical numerical min max airfoil self noise (Brooks et al., 2014) Regression 1503 0 6 0 0bean (Koklu & Ozkan, 2020) Classification 13611 1 16 7 7blood transfusion (Yeh et al., 2009) Classification 748 1 4 2 2breast cancer diagnostic (Street et al., 1993) Classification 569 1 30 2 2california (Pace & Barry, 1997) Regression 20640 0 9 0 0car (Bohanec & Rajkovic, 1988) Classification 1728 7 0 3 4climate model crashes (Lucas et al., 2013) Classification 540 1 18 2 2concrete compression (Yeh, 1998) Regression 1030 0 9 0 0concrete slump (Yeh, 2009) Regression 103 0 8 0 0congress (dat, 1987) Classification 435 17 0 2 3connectionist bench sonar (Sejnowski & Gorman) Classification 208 1 60 2 2connectionist bench vowel (Deterding et al.) Classification 990 1 10 11 11 ecoli (Horton & Nakai, 1996) Classification 336 1 7 8 8glass (German, 1987) Classification 214 1 9 6 6ionosphere (Sigillito et al., 1989) Classification 351 2 32 2 2iris (Unwin & Kleinman, 2021) Classification 150 1 4 3 3libras (Dias et al., 2009) Classification 360 1 90 15 15 parkinsons (Little et al., 2007) Classification 195 1 22 2 2planning relax (Bhatt, 2012) Classification 182 1 12 2 2qsar biodegradation (Mansouri et al., 2013) Classification 1055 4 38 2 2seeds (Charytanowicz et al., 2010) Classification 210 1 7 3 3tictactoe (Aha, 1991) Classification 958 10 0 2 3wine (Aeberhard et al., 1994) Classification 178 1 13 3 3wine quality red (Cortez et al., 2009) Regression 1599 0 11 0 0wine quality white (Cortez et al., 2009) Regression 4898 0 12 0 0yacht hydrodynamics (Gerritsma et al., 2013) Regression 308 0 7 0 0yeast (Nakai, 1996) Classification 1484 1 8 10 10 
+
+B. Dropout: Preventing Memorization in Diffusion Models 
+
+At low noise levels, the input data to each XGBoost model essentially consists of N clusters of slightly noised points originating from the same sample, where each cluster contains K points - K being the number of times we extend the training dataset. This can lead to a risk of overfitting to these clusters locally, which in a broader sense, implies memorization of the originating sample. To mitigate memorization, we apply a dropout procedure to the numerical features, similar as may be used in neural networks. That is, we randomly mask the input features with probability p. As a masking token we use the mean μx = 0 .0. Other viable candidates are using a missing token, as XGBoost can natively handle missing data, or random replacement; we tried both approaches. However, as XGBoost essentially treats missing tokens as unique (OOD) values, it can learn spurious correlations, which deteriorates fidelity. Random replacement can also inject spurious correlations in an unpredictable manner. We noticed the best results when using the mean as masking token. This way, dropout does not necessarily deteriorate fidelity, but rather, controls the amount of high-fidelity samples which are generated at either the mode or the edges of the distribution. It allows a trade-off between sample diversity and privacy risk. 14 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 4. Big Benchmark: overview of datasets. 
+
+Dataset Task N No. of features No. of categories categorical numerical min max acsincome (Ding et al., 2021) Regression 1 664 500 8 3 2 529 adult (Becker & Kohavi, 1996) Classification 48 842 9 6 2 42 bank (Moro et al., 2014) Classification 41 188 11 10 2 12 beijing (Liang et al., 2015) Regression 41 757 1 11 4 4churn (Keramati et al., 2014) Classification 3 150 5 9 2 5covertype (Blackard, 1998) Regression 581 012 43 12 2 2default (Yeh & Lien, 2009) Classification 30 000 10 14 2 9diabetes (Strack et al., 2014) Classification 101 766 28 9 2 790 lending (Lending Club, 2015) Regression 9 182 10 34 2 4355 news (Fernandes et al., 2015) Regression 39 644 14 46 2 2nmes (Deb & Trivedi, 1997) Regression 4406 8 11 2 4Figure 2 shows distributions of metric scores for dropout levels ∈ [0 .0, 0.3] . The most notable changes are the increasing 
+
+α-Precision and decreasing β-Recall scores, clearly showing the trade-off between generating high fidelity samples at the mode or at the edge of the distribution. The DCR score also increases, as seen by an increase of the low-end of the distribution, and more probability mass at the top. The Detection score remains similar, showing that overall fidelity is retained. 0.850                           
+
+> 0.875
+> 0.900
+> 0.925
+> 0.950
+> 0.975
+> 1.000
+> value
+> metric = Shape
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> metric = Trend
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> metric = Detection
+> 0.0 0.05 0.1 0.15 0.2 0.25 0.3
+> dropout
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> metric = -Precision
+> 0.0 0.05 0.1 0.15 0.2 0.25 0.3
+> dropout
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> value
+> metric = -Recall
+> 0.0 0.05 0.1 0.15 0.2 0.25 0.3
+> dropout
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> metric = MLE
+> 0.0 0.05 0.1 0.15 0.2 0.25 0.3
+> dropout
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> metric = DCR
+
+Figure 2. Violinplot of metric scores for various levels of dropout in XGenB-DF, evaluated for 20 sampling seeds per dataset in the Small Benchmark. MLE uses ROCAUC and R2 for classification and regression, respectively. 
+
+Finally, note that this procedure is different from native XGBoost parameters which allow to subsample columns. Those subsampling procedures sample the same columns for all samples , either at each tree, level, or node, whereas we subsample 
+
+different columns per sample . Our goal is to make the model invariant to sample-specific correlations, not to globally regularize the model. 
+
+C. Merging High-Cardinality Categorical Features 
+
+Table 5 provides a comparison of the naive method for merging high-cardinality categorical features with the cluster-based method. The clustering approach outperforms the naive approach in terms of Detection score for 3/4 datasets. Especially for the acsincome dataset, the improvement is considerable. The fidelity gains can mostly be attributed to improved preservation of correlations (Trend) and more realistic diverse samples ( β-Recall). For some datasets, e.g., the adult dataset, the cluster-approach may not improve results compared to the naive approach. Whether the clustering approach improves results depends on whether the collection of infrequent categories can meaningfully be clustered into similar groups. If samples containing the different infrequent categories are similar - in terms of their 15 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+mean-vector embeddings - then clustering will not yield better results than a naive merging approach. 
+
+Table 5. Ablation: effect of merging infrequent categories in high-cardinality categorical features through a clustering approach versus a naive approach - clustering all infrequent categories into a single category. Metric scores (μ ± σ) over 20 sampling seeds for datasets containing high-cardinality categorical features (K > 32) . MLE uses ROCAUC and R2 for classification and regression, respectively. 
+
+dataset acsincome adult diabetes lending model Clustering Naive Clustering Naive Clustering Naive Clustering Naive metric Shape 0.987 ±0.001 0.987 ±0.001 0.994 ±0.001 0.994 ±0.001 0.995 ±0.000 0.995 ±0.000 0.984 ±0.001 0.984 ±0.001 
+
+Trend 0.946 ±0.002 0.942 ±0.002 0.980 ±0.003 0.980 ±0.003 0.978 ±0.002 0.977 ±0.002 0.952 ±0.002 0.952 ±0.002 
+
+Detection 0.689 ±0.003 0.764 ±0.003 0.614 ±0.004 0.614 ±0.004 0.774 ±0.002 0.781 ±0.003 0.652 ±0.015 0.660 ±0.012 
+
+α-Precision 0.992 ±0.003 0.993 ±0.002 0.997 ±0.001 0.996 ±0.001 0.996 ±0.001 0.996 ±0.001 0.972 ±0.007 0.977 ±0.007 
+
+β-Recall 0.436 ±0.002 0.413 ±0.002 0.478 ±0.002 0.478 ±0.003 0.389 ±0.003 0.389 ±0.003 0.479 ±0.010 0.474 ±0.007 
+
+MLE 0.577 ±0.218 0.575 ±0.225 0.811 ±0.112 0.810 ±0.113 0.630 ±0.057 0.634 ±0.060 0.528 ±0.471 0.527 ±0.472 
+
+DCR 0.998 ±0.002 0.998 ±0.003 0.984 ±0.007 0.981 ±0.005 0.991 ±0.005 0.987 ±0.005 0.950 ±0.015 0.948 ±0.010 
+
+D. Benefit of Hierarchical Classification 
+
+Table 6 provides a comparison between using multi-class XGBoost classifiers to model numerical features in XGenB-AR, or using a hierarchical classification approach similar to that of UT (McCarter, 2024). Results indicate that the hierarchical classifier outranks the multi-class approach in terms of preserving correlation structure (Trend), overall multivariate structure (Detection), and diversity ( β-Recall). The average improvement is especially considerable for β-Recall. This, and other fidelity gains, can mostly be attributed to the ordinal inductive bias imposed by the hierarchical classifier, which is absent in the multi-class classifier. Specifically, the hierarchical classifier localizes prediction errors to semantically similar bins, whereas the multi-class classifier may sample distant - and thus “worse” - bins. 
+
+Table 6. Ablation: comparison between hierarchical classification and a multi-class XGBoost classifier for numerical features. Shows wins and losses of the hierarchical approach versus the multi-class approach over the 11 datasets of the Big Benchmark. Also shows corresponding average improvement/reduction in metric scores. 
+
+metric Shape Trend Detection α-Precision β-Recall MLE DCR Training Time Inference Time Win 5 (0.08%) 9 (0.27%) 9 (6.07%) 4 (0.59%) 10 (11.93%) 6 (8.30%) 3 (0.10%) 3 (29.59%) 1 (6.67%) Loss 6 (0.07%) 2 (0.01%) 2 (1.00%) 7 (0.85%) 1 (1.68%) 5 (0.60%) 8 (0.46%) 8 (89.98%) 10 (80.72%) 
+
+E. Quantization and De-quantization strategies 
+
+Figure 3 shows the effect of varying quantization and de-quantization strategies in XGenB-AR. Specifically, we investigate a quantile-, uniform-, and KMeans-based quantization, and a uniform- and EQF-sampling (empirical quantile function) dequantization. Here, the quantile-based binning strategy corresponds to the rank-based binning: a quantile-binning with added rank-preserving noise to yield bins with similar amounts of samples. Results indicate that especially the dequantization strategy has a strong impact on all evaluation metrics, whereby EQF-sampling strongly improves fidelity and utility over uniform-sampling. The quantization strategy is less impactful, although the quantile-based binning tends to yield slightly lower/better Detection scores. An additional advantage is that this binning approach yields balanced classification tasks at each node of the hierarchical classifier, as each bin contains the same number of samples, such that the binary classifiers behave more predictably. It may also prevent resampling rare values from sparse bins, which can be better in terms of privacy risk, although the aggregated DCR scores do not show any meaningful improvement. 
+
+F. Implementation Details 
+
+Below we describe implementation details regarding XGenBoost and baseline models, e.g., package versions and hyper-parameters. For each method we round numerical features to the precision of the original dataset after synthesis. We use Python version 3.10 for all methods. 16 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 0.7           
+
+> 0.8
+> 0.9
+> 1.0
+> value
+> metric = Shape
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> metric = Trend
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> 1.1
+> metric = Detection
+> Quantile Uniform KMeans
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> 1.1
+> metric = -Precision
+> Quantile Uniform KMeans
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> value
+> metric = -Recall
+> Quantile Uniform KMeans
+> 8
+> 6
+> 4
+> 2
+> 0
+> 2
+> metric = MLE
+> Quantile Uniform KMeans
+> 0.85
+> 0.90
+> 0.95
+> 1.00
+> metric = DCR
+> EQF-sampling
+> Uniform-sampling
+
+Figure 3. Violinplot of metric scores for various quantization strategies (Quantile, Uniform, KMeans) and de-quantization strategies (Uniform-sampling, EQF-sampling) in XGenBoost’s autoregressive model, evaluated for 20 sampling seeds per dataset in the Big Benchmark. MLE shows ROCAUC and R2 for classification and regression datasets, respectively. 
+
+XGenBoost For XGenB-DF we use the same XGBoost hyperparameters as FD and FF (Jolicoeur-Martineau et al., 2024), corresponding to 100 boosting rounds, maximum tree depth of 7, and no L2 regularization term. We also use the same number of timesteps (T = 50) , noise levels per sample (K = 100) , and minimum/maximum noise rates (βmin = 0 .1, β max = 8 .0) .These were chosen to allow for a fair comparison, not because they were found to be most effective. Results can potentially be improved by tuning for a better overall or per-dataset set of hyperparameters. For XGenB-AR we use 30 boosting rounds and max depth of 3. In the hierarchical classifier we use a meta-tree height of 5. We use XGBoost version 2.1.4. 
+
+SMOTE We use the SMOTENC, SMOTEN, or regular SMOTE implementation from the imbalanced-learn Python package, dependent on whether datasets are mixed-type, purely categorical, or purely numerical, respectively. We use the default hyperparameters. The implementation is mainly inspired by Mueller et al. (2025), which was in turn inspired by Kotelnikov et al. (2023). 
+
+ARF We use the default hyperparameters as given in the original paper (Watson et al., 2023), and the implementation from the arfpy Python package. 
+
+Forest Diffusion and Forest Flow We use the default hyperparameters as given in the original paper (Jolicoeur-Martineau et al., 2024), and the implementation from the ForestDiffusion Python package. 
+
+Unmasking Trees We use the default hyperparameters as given in the original paper (McCarter, 2024), and the implemen-tation from the unmaskingtrees Python package. 
+
+CTGAN and TVAE We mostly use the default hyperparameters as given in the original paper (Xu et al., 2019), and the implementation from the ctgan Python package. Per default we train for 300 epochs, but we cap epochs such that CTGAN and TVAE train for at most 30 000 training steps on each dataset. This ensure reasonable training times on larger datasets. Some works choose to train for a fixed number of training steps on all datasets for this reason (Mueller et al., 2025). However, this leads to an unnecessarily large number of training epochs for smaller datasets. Some works also choose to further enlarge the generator/discriminator (encoder/decoder in TVAE) to match the parameter count of, e.g., diffusion models (Zhang et al., 2024; Mueller et al., 2025). Although this can be useful for comparison sake, we notice that this does not necessarily improve results. 
+
+TabDDPM We use the implementation of TabDDPM in the Synthcity Python package. We slightly modify the code to allow manual specification of categorical features. The original paper on TabDDPM does not provide a default set of hyperparameters, but rather tunes parameters per dataset (Kotelnikov et al., 2023). For the Big Benchmark, we utilize the optimal hyperparameters found on the adult dataset in 17 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+the original TabDDPM paper, as this is the closest to the datasets in the Big Benchmark in terms of size, and in terms of having reasonable numbers of both numerical and categorical features. This is a similar approach as followed in the Big Benchmark’s original paper, Mueller et al. (2025). For the Small Benchmark, we utilize the optimal hyperparameters found on the California dataset, similar as in the Small Benchmark’s original paper, Jolicoeur-Martineau et al. (2024). Lastly, as Synthcity does not allow variable size hidden layers in the denoising network, we modify the denoising architecture while approximately matching the number of trainable parameters. Similarly, Synthcity specifies epochs instead of training steps, such that we calculate the corresponding number of epochs from the given training steps, batch size, and training set size of the California dataset in the TabDDPM paper: epochs = batch size · steps N . Similar to CTGAN we cap epochs such that TabDDPM trains for at most 30 000 training steps on each dataset. 
+
+TabSyn We use the default hyperparameters as given in the original paper (Zhang et al., 2024), and the implementation from the the official code https://github.com/amazon-science/tabsyn/ . Similar to CTGAN we cap epochs such that TabSyn’s diffusion model trains for at most 30 000 training steps. 
+
+G. Evaluation metrics 
+
+G.1. Shape and Trend 
+
+We evaluate synthetic data fidelity using the Shape and Trend scores from SDMetrics 6. Shape provides a measure for fidelity of marginal distributions, Trend for bivariate correlations. Definitions are given below. 
+
+Shape. Take a tabular dataset X = {x1, . . . , x d} containing both numerical and categorical features. For each feature xj ,let Pr (xj ) and Ps(xj ) denote their empirical marginal distributions in the real and synthetic datasets, respectively. For numerical features, we compute the Kolmogorov–Smirnov Complement (KSC): 
+
+KSC( xj ) = 1 − DKS 
+
+ Pr (xj ), P s(xj ),DKS (Pr , P s) = sup 
+
+> x
+
+Fr (x) − Fs(x) , (11) where Fr , F s are the empirical cumulative distribution functions (CDFs) of Pr and Ps.For categorical features, we compute the Total Variation Complement (TVC): 
+
+TVC( xj ) = 1 − DT V 
+
+ Pr (xj ), P s(xj ),DT V (Pr , P s) = 12
+
+X
+
+> c∈C j
+
+Pr (c) − Ps(c) . (12) The overall Shape score is the average of KSC and TVC scores over all features: 
+
+Shape = 1
+
+d
+
+> d
+
+X
+
+> j=1
+
+s(xj ), s(xj ) = 
+
+(KSC( xj ), xj numerical ,
+
+TVC( xj ), xj categorical. (13) 
+
+Trend. The overall Trend score is the average of all bivariate feature correlations: 
+
+Trend = 2
+
+d(d − 1) 
+
+X
+
+> i<j
+
+t(xi, x j ), t(xi, x j ) = 
+
+
+
+1 − |ρr (xi, x j ) − ρs(xi, x j )|
+
+2 , xi, x j both numerical ,
+
+1 − DT V 
+
+ Pr (xi, x j ), P s(xi, x j ), xi or xj categorical. (14) Here, ρr and ρs are Pearson correlations in the real and synthetic data, and DT V is the Total Variation Distance defined in Equation (12) , but applied to joint distributions. For numerical–categorical pairs, the numerical feature is first discretized into 10 equal-width bins before applying the same contingency similarity. 
+
+> 6https://docs.sdv.dev/sdmetrics/
+
+18 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+G.2. Detection 
+
+Another fidelity metric, which directly compares the joint distribution of synthetic and real data, is computed by using a binary classifier to distinguish between synthetic and real data. The classifier essentially compresses Pr (X) and Ps(X) to a single dimension to estimate a multivariate two-sample test (Friedman, 2004). We use an XGBoost classifier for which we first tune hyperparameters based on the ROCAUC on an independent validation set. We search the hyperparameter space below for 32 trials using tree-structured Parzen estimators: • Number of estimators: nestimators ∈ [30 , 150] 
+
+• Maximum tree depth: max depth ∈ [3 , 10] 
+
+• Minimum child weight: min child weight ∼ LogUniform (1 .0, 20 .0) 
+
+• Gamma: γ ∈ [0 .0, 5.0] 
+
+After tuning hyperparameters, we train the classifier on the training set and evaluate ROCAUC on the test set. Lower scores indicate worse ability in discriminating Pr (X) and Ps(X) and thus better fidelity. 
+
+G.3. Distributional Precision and Recall 
+
+We use the α-Precision and β-Recall metric to further disentangle synthetic data quality (Alaa et al., 2022). Here, α-Precision indicates coverage of the synthetic by real distribution, and β-Recall indicates coverage of the real by synthetic distribution. Intuitively, α-Precision indicates fidelity or realism, whereas β-Recall indicates diversity or whether synthetic data captures the full range of the real distribution. Both metrics rely on estimating distances between synthetic and real points, which is not straightforward in mixed-type tabular datasets. We rely on Gower-type distances (Gower, 1971) for the computation of these metrics, using the trick described in Jolicoeur-Martineau et al. (2024). That is, we achieve Gower distances by min-max scaling numerical features to [0 , 1] , one-hot encoding categoricals in {0, 12 }, and relying on L1 distances. This is more suitable than L2 distances between naively one hot encoded features in {0, 1}, as this would overemphasize distances between categorical features. 
+
+G.4. Machine Learning Efficacy 
+
+To assess synthetic data utility, we evaluate its efficacy for training machine learning prediction models. That is, we adopt the Train Synthetic Test Real approach formalized in Esteban et al. (2017). We also report the performance of a model trained on the real training set (Train Real Test Real). We use XGBoost classifiers/regressors, for which we first tune hyperparameters based on performance when trained on real data and evaluated on an independent validation set. We use the same tuning set-up as described in Appendix G.2. 
+
+G.5. DCR 
+
+We use the DCR metric as a proxy for synthetic data privacy. DCR computes distances from the synthetic data to the real training set and the independent test set. Intuitively, when the synthetic data are closer to the training set more often than to the test set, this can be a sign of overfitting. We use the Gower distance here, see Appendix G.3 for a discussion on why. We can compute the DCR score as follows: 
+
+DCR = min  1, 2 · (1 − | Ds,tr |, (15) where |Ds,tr | indicates the proportion of synthetic points which are closer to the training set than to the test set. The aggregation of this score is inspired by SDMetrics’s DCR score 7. It ensures that higher scores indicate less privacy risk, and that we do not provide a false sense of privacy improvement. That is, anytime two synthetic sets achieve |Ds,tr | ≤ 0.5,we cannot necessarily say that one is more privacy-preserving than the other, as neither exhibit strong signs of overfitting. Rather, lower scores can be the result of worse fidelity. 
+
+> 7https://docs.sdv.dev/sdmetrics/data-metrics/privacy/dcroverfittingprotection
+
+19 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+We subsample the training set and synthetic set to the same size of the test set to avoid sampling bias in the DCR score. When the test set is smaller than the training set, we estimate the average score across multiple iterations to ensure the score is based on (a bootstrapped version of) the entire training set. 
+
+DCR as a privacy measure Note that DCR is merely a proxy for privacy-preservation in synthetic data. Rigorous evaluation of reidentification risks would involve (at least) attribute and membership disclosure attacks. However, these require elaborate assumptions on which quasi-identifiers and sensitive variables are available to attackers, their resources, and so on. For the public datasets considered here, we do not consider this a relevant endeavor. These attacks are also influenced to a large extent by the dataset itself, e.g., its size and variables included, instead of purely by whether the generative model is appropriate and trained well. Therefore, such evaluations on the datasets included in our benchmarks do not provide any guarantee on privacy risk when generating synthetic data in a different context. For these reasons, we choose to use DCR as a general measure for overfitting to the training data. Finally, using DCR as a proxy for privacy follows in the footsteps of other similar works (Zhang et al., 2024; Mueller et al., 2025; Shi et al., 2025). 
+
+H. Hardware 
+
+GPU-based baselines (CTGAN, TVAE, TabDDPM, TabSyn) were trained using a single NVIDIA TITAN Xp GPU (12GB RAM), and an additional 8 CPU cores (minimum 32GB RAM). CPU-based baselines (ARF, FD, FF, UT, SMOTE) and XGenBoost were trained using 16 CPU cores (minimum 64GB RAM). 
+
+I. Raw Results 
+
+Table 7 through Table 30 provide the raw results of the main experiments. Each table shows the results for a single metric for all datasets. Results show the average and standard deviation over 20 sampling seeds (μ ± σ) - except for training time, which is a single value. 
+
+I.1. Small Benchmark 
+
+Table 7. Small Benchmark: Shape metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.927 ±0.003 0.911 ±0.003 0.949 ±0.007 0.908 ±0.005 0.951 ±0.004 0.714 ±0.004 0.798 ±0.004 0.957 ±0.006 0.974 ±0.004 0.967 ±0.005 0.968 ±0.005 0.967 ±0.005 0.972 ±0.004 
+
+bean 0.980 ±0.001 0.984 ±0.002 0.979 ±0.001 0.975 ±0.001 0.986 ±0.002 0.864 ±0.002 0.923 ±0.002 0.989 ±0.002 0.987 ±0.002 0.987 ±0.002 0.988 ±0.002 0.969 ±0.002 0.969 ±0.002 
+
+blood transfusion 0.957 ±0.006 0.949 ±0.006 0.954 ±0.010 0.926 ±0.010 0.942 ±0.007 0.791 ±0.005 0.824 ±0.008 0.955 ±0.007 0.968 ±0.007 0.961 ±0.010 0.963 ±0.008 0.965 ±0.010 0.967 ±0.010 
+
+breast cancer diagnostic 0.936 ±0.004 0.937 ±0.005 0.928 ±0.010 0.923 ±0.009 0.935 ±0.007 0.740 ±0.003 0.853 ±0.006 0.343 ±0.007 0.950 ±0.007 0.945 ±0.007 0.947 ±0.007 0.945 ±0.006 0.943 ±0.005 
+
+california 0.955 ±0.001 0.962 ±0.001 0.981 ±0.001 0.877 ±0.001 0.950 ±0.001 0.925 ±0.001 0.927 ±0.001 0.977 ±0.001 0.991 ±0.001 0.981 ±0.001 0.982 ±0.001 0.985 ±0.002 0.988 ±0.001 
+
+car 0.979 ±0.002 0.982 ±0.003 0.979 ±0.005 0.981 ±0.003 0.979 ±0.005 0.895 ±0.004 0.906 ±0.007 0.980 ±0.004 0.983 ±0.003 0.981 ±0.004 0.981 ±0.003 0.981 ±0.004 0.981 ±0.003 
+
+climate model crashes 0.928 ±0.002 0.928 ±0.004 0.949 ±0.003 0.915 ±0.002 0.925 ±0.003 0.784 ±0.005 0.801 ±0.005 0.914 ±0.008 0.952 ±0.004 0.897 ±0.004 0.919 ±0.004 0.909 ±0.003 0.932 ±0.003 
+
+concrete compression 0.955 ±0.003 0.892 ±0.004 0.932 ±0.005 0.864 ±0.005 0.883 ±0.006 0.702 ±0.004 0.809 ±0.005 0.951 ±0.005 0.962 ±0.005 0.956 ±0.006 0.955 ±0.005 0.957 ±0.005 0.958 ±0.005 
+
+concrete slump 0.876 ±0.011 0.845 ±0.014 0.878 ±0.021 0.871 ±0.010 0.881 ±0.015 0.761 ±0.016 0.826 ±0.014 0.446 ±0.019 0.886 ±0.017 0.886 ±0.018 0.889 ±0.014 0.891 ±0.015 0.892 ±0.014 
+
+congress 0.947 ±0.004 0.972 ±0.007 0.973 ±0.006 0.872 ±0.004 0.871 ±0.008 0.878 ±0.008 0.865 ±0.014 0.937 ±0.013 0.971 ±0.007 0.960 ±0.014 0.959 ±0.012 0.959 ±0.013 0.957 ±0.013 
+
+connectionist bench sonar 0.905 ±0.003 0.883 ±0.005 0.865 ±0.011 0.878 ±0.007 0.878 ±0.004 0.689 ±0.003 0.836 ±0.004 0.412 ±0.005 0.918 ±0.007 0.893 ±0.006 0.880 ±0.005 0.898 ±0.005 0.891 ±0.004 
+
+connectionist bench vowel 0.961 ±0.002 0.955 ±0.003 0.951 ±0.004 0.952 ±0.004 0.955 ±0.003 0.799 ±0.003 0.889 ±0.006 0.958 ±0.003 0.962 ±0.003 0.960 ±0.004 0.956 ±0.005 0.961 ±0.003 0.956 ±0.004 
+
+ecoli - 0.932 ±0.009 0.949 ±0.010 0.925 ±0.008 0.954 ±0.007 0.770 ±0.009 0.877 ±0.010 0.950 ±0.007 0.953 ±0.008 0.953 ±0.008 0.957 ±0.009 0.955 ±0.006 0.955 ±0.006 
+
+glass 0.919 ±0.006 0.855 ±0.014 0.917 ±0.011 0.867 ±0.013 0.925 ±0.009 0.620 ±0.014 0.799 ±0.015 0.362 ±0.008 0.935 ±0.008 0.927 ±0.012 0.930 ±0.009 0.926 ±0.015 0.929 ±0.011 
+
+ionosphere 0.880 ±0.003 0.875 ±0.004 0.850 ±0.004 0.872 ±0.005 0.873 ±0.003 0.702 ±0.004 0.865 ±0.005 0.546 ±0.004 0.938 ±0.006 0.904 ±0.012 0.907 ±0.010 0.908 ±0.011 0.926 ±0.006 
+
+iris 0.933 ±0.010 0.916 ±0.016 0.921 ±0.020 0.923 ±0.019 0.928 ±0.021 0.797 ±0.022 0.848 ±0.022 0.922 ±0.019 0.928 ±0.017 0.926 ±0.023 0.927 ±0.021 0.934 ±0.014 0.935 ±0.012 
+
+libras 0.935 ±0.003 0.925 ±0.003 0.918 ±0.006 0.899 ±0.007 0.898 ±0.007 0.780 ±0.004 0.858 ±0.005 0.463 ±0.004 0.905 ±0.006 0.923 ±0.009 0.914 ±0.005 0.927 ±0.008 0.907 ±0.009 
+
+parkinsons 0.902 ±0.014 0.899 ±0.011 0.906 ±0.010 0.898 ±0.017 0.910 ±0.012 0.659 ±0.007 0.800 ±0.010 0.380 ±0.008 0.919 ±0.017 0.919 ±0.013 0.920 ±0.011 0.919 ±0.015 0.915 ±0.016 
+
+planning relax 0.903 ±0.006 0.902 ±0.008 0.908 ±0.009 0.905 ±0.008 0.914 ±0.007 0.622 ±0.012 0.863 ±0.006 0.455 ±0.011 0.916 ±0.010 0.916 ±0.011 0.911 ±0.011 0.919 ±0.008 0.918 ±0.009 
+
+qsar biodegradation 0.962 ±0.002 0.933 ±0.003 0.950 ±0.003 0.912 ±0.004 0.945 ±0.003 0.817 ±0.002 0.864 ±0.003 0.503 ±0.003 0.974 ±0.002 0.965 ±0.003 0.964 ±0.003 0.962 ±0.003 0.963 ±0.003 
+
+seeds 0.936 ±0.008 0.921 ±0.010 0.921 ±0.010 0.925 ±0.018 0.927 ±0.015 0.746 ±0.015 0.853 ±0.011 0.891 ±0.017 0.931 ±0.013 0.920 ±0.016 0.923 ±0.016 0.927 ±0.015 0.928 ±0.013 
+
+tictactoe 0.962 ±0.003 0.978 ±0.003 0.978 ±0.004 0.975 ±0.003 0.976 ±0.005 0.954 ±0.007 0.873 ±0.004 0.979 ±0.006 0.978 ±0.003 0.976 ±0.005 0.978 ±0.005 0.978 ±0.005 0.978 ±0.004 
+
+wine 0.913 ±0.007 0.897 ±0.006 0.906 ±0.012 0.913 ±0.007 0.916 ±0.013 0.761 ±0.015 0.857 ±0.013 0.381 ±0.016 0.918 ±0.011 0.914 ±0.014 0.916 ±0.013 0.920 ±0.011 0.922 ±0.010 
+
+wine quality red 0.942 ±0.001 0.938 ±0.004 0.943 ±0.004 0.938 ±0.005 0.942 ±0.003 0.814 ±0.004 0.852 ±0.004 0.948 ±0.003 0.973 ±0.002 0.958 ±0.003 0.962 ±0.003 0.960 ±0.003 0.968 ±0.003 
+
+wine quality white 0.956 ±0.001 0.959 ±0.002 0.962 ±0.002 0.957 ±0.002 0.959 ±0.001 0.784 ±0.002 0.871 ±0.003 0.937 ±0.004 0.983 ±0.002 0.970 ±0.002 0.974 ±0.002 0.973 ±0.002 0.979 ±0.001 
+
+yacht hydrodynamics 0.889 ±0.007 0.868 ±0.007 0.908 ±0.012 0.866 ±0.011 0.943 ±0.010 0.626 ±0.014 0.792 ±0.006 0.889 ±0.014 0.947 ±0.009 0.945 ±0.012 0.945 ±0.011 0.947 ±0.010 0.945 ±0.009 
+
+yeast 0.968 ±0.002 0.942 ±0.004 0.971 ±0.003 0.923 ±0.004 0.966 ±0.003 0.786 ±0.003 0.834 ±0.005 0.974 ±0.003 0.978 ±0.003 0.970 ±0.004 0.973 ±0.004 0.971 ±0.004 0.974 ±0.003 
+
+I.2. Big Benchmark 
+
+20 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 8. Small Benchmark: Trend metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.985 ±0.003 0.983 ±0.003 0.976 ±0.003 0.987 ±0.004 0.988 ±0.002 0.881 ±0.004 0.962 ±0.005 0.988 ±0.002 0.986 ±0.003 0.988 ±0.003 0.989 ±0.004 0.988 ±0.004 0.987 ±0.004 
+
+bean 0.982 ±0.002 0.924 ±0.005 0.983 ±0.002 0.986 ±0.002 0.990 ±0.002 0.917 ±0.001 0.917 ±0.002 0.983 ±0.002 0.984 ±0.002 0.989 ±0.002 0.989 ±0.002 0.981 ±0.002 0.981 ±0.002 
+
+blood transfusion 0.938 ±0.005 0.870 ±0.039 0.943 ±0.018 0.965 ±0.005 0.963 ±0.016 0.668 ±0.020 0.742 ±0.014 0.962 ±0.010 0.955 ±0.008 0.961 ±0.012 0.960 ±0.014 0.962 ±0.013 0.961 ±0.014 
+
+breast cancer diagnostic 0.964 ±0.004 0.910 ±0.004 0.956 ±0.004 0.956 ±0.006 0.960 ±0.006 0.787 ±0.002 0.891 ±0.005 0.759 ±0.002 0.964 ±0.003 0.954 ±0.006 0.955 ±0.006 0.969 ±0.004 0.971 ±0.004 
+
+california 0.993 ±0.001 0.988 ±0.001 0.988 ±0.004 0.987 ±0.001 0.994 ±0.001 0.941 ±0.001 0.962 ±0.001 0.984 ±0.003 0.982 ±0.003 0.988 ±0.006 0.989 ±0.005 0.988 ±0.005 0.993 ±0.001 
+
+car 0.950 ±0.002 0.960 ±0.003 0.959 ±0.005 0.959 ±0.004 0.958 ±0.005 0.842 ±0.006 0.823 ±0.006 0.938 ±0.004 0.962 ±0.003 0.960 ±0.004 0.960 ±0.004 0.961 ±0.004 0.961 ±0.003 
+
+climate model crashes 0.965 ±0.001 0.939 ±0.002 0.969 ±0.001 0.964 ±0.002 0.966 ±0.001 0.936 ±0.002 0.914 ±0.002 0.920 ±0.009 0.970 ±0.002 0.959 ±0.002 0.966 ±0.002 0.963 ±0.001 0.968 ±0.001 
+
+concrete compression 0.983 ±0.002 0.970 ±0.002 0.968 ±0.004 0.986 ±0.004 0.983 ±0.005 0.895 ±0.003 0.952 ±0.004 0.951 ±0.013 0.981 ±0.004 0.983 ±0.004 0.984 ±0.003 0.983 ±0.003 0.983 ±0.003 
+
+concrete slump 0.955 ±0.015 0.921 ±0.007 0.944 ±0.013 0.954 ±0.011 0.951 ±0.008 0.870 ±0.013 0.919 ±0.009 0.830 ±0.006 0.944 ±0.009 0.952 ±0.010 0.956 ±0.009 0.949 ±0.011 0.950 ±0.009 
+
+congress 0.911 ±0.004 0.936 ±0.009 0.950 ±0.007 0.772 ±0.005 0.771 ±0.009 0.730 ±0.005 0.785 ±0.015 0.905 ±0.013 0.947 ±0.007 0.932 ±0.014 0.929 ±0.011 0.930 ±0.012 0.927 ±0.013 
+
+connectionist bench sonar 0.954 ±0.004 0.904 ±0.003 0.949 ±0.003 0.950 ±0.005 0.954 ±0.002 0.872 ±0.001 0.919 ±0.003 0.857 ±0.001 0.950 ±0.003 0.950 ±0.003 0.952 ±0.003 0.955 ±0.002 0.953 ±0.002 
+
+connectionist bench vowel 0.950 ±0.002 0.919 ±0.004 0.948 ±0.005 0.953 ±0.004 0.954 ±0.002 0.847 ±0.002 0.907 ±0.004 0.957 ±0.003 0.949 ±0.003 0.956 ±0.004 0.955 ±0.004 0.957 ±0.003 0.957 ±0.004 
+
+ecoli - 0.855 ±0.009 0.927 ±0.010 0.930 ±0.007 0.929 ±0.008 0.777 ±0.010 0.780 ±0.012 0.912 ±0.011 0.920 ±0.008 0.932 ±0.009 0.931 ±0.012 0.933 ±0.006 0.933 ±0.007 
+
+glass 0.838 ±0.015 0.826 ±0.010 0.880 ±0.019 0.902 ±0.017 0.906 ±0.018 0.770 ±0.009 0.810 ±0.010 0.658 ±0.010 0.885 ±0.010 0.910 ±0.020 0.906 ±0.020 0.904 ±0.016 0.899 ±0.022 
+
+ionosphere 0.927 ±0.004 0.893 ±0.005 0.915 ±0.005 0.939 ±0.004 0.941 ±0.004 0.843 ±0.002 0.915 ±0.003 0.798 ±0.002 0.951 ±0.003 0.946 ±0.003 0.946 ±0.004 0.948 ±0.004 0.953 ±0.003 
+
+iris 0.918 ±0.011 0.837 ±0.029 0.904 ±0.011 0.910 ±0.014 0.910 ±0.018 0.648 ±0.018 0.781 ±0.019 0.893 ±0.017 0.891 ±0.015 0.911 ±0.017 0.907 ±0.017 0.908 ±0.025 0.907 ±0.019 
+
+libras 0.965 ±0.004 0.919 ±0.002 0.956 ±0.004 0.932 ±0.005 0.938 ±0.005 0.856 ±0.001 0.930 ±0.003 0.848 ±0.000 0.942 ±0.006 0.957 ±0.005 0.947 ±0.005 0.956 ±0.004 0.945 ±0.003 
+
+parkinsons 0.962 ±0.004 0.877 ±0.010 0.946 ±0.007 0.947 ±0.012 0.952 ±0.009 0.734 ±0.004 0.825 ±0.008 0.739 ±0.004 0.933 ±0.009 0.950 ±0.009 0.954 ±0.009 0.957 ±0.008 0.957 ±0.007 
+
+planning relax 0.937 ±0.008 0.900 ±0.007 0.927 ±0.006 0.935 ±0.006 0.937 ±0.007 0.845 ±0.005 0.876 ±0.006 0.788 ±0.004 0.932 ±0.006 0.940 ±0.007 0.938 ±0.008 0.938 ±0.005 0.936 ±0.005 
+
+qsar biodegradation 0.956 ±0.003 0.850 ±0.005 0.948 ±0.005 0.949 ±0.004 0.952 ±0.005 0.847 ±0.007 0.836 ±0.008 0.798 ±0.001 0.953 ±0.004 0.953 ±0.004 0.948 ±0.006 0.953 ±0.004 0.951 ±0.004 
+
+seeds 0.945 ±0.006 0.889 ±0.014 0.938 ±0.009 0.945 ±0.008 0.945 ±0.007 0.670 ±0.011 0.811 ±0.012 0.880 ±0.016 0.935 ±0.007 0.943 ±0.010 0.943 ±0.008 0.946 ±0.009 0.944 ±0.009 
+
+tictactoe 0.921 ±0.003 0.949 ±0.003 0.956 ±0.005 0.950 ±0.004 0.951 ±0.004 0.901 ±0.006 0.782 ±0.007 0.957 ±0.006 0.955 ±0.003 0.955 ±0.005 0.955 ±0.006 0.956 ±0.005 0.956 ±0.004 
+
+wine 0.937 ±0.004 0.892 ±0.009 0.933 ±0.007 0.934 ±0.009 0.932 ±0.007 0.805 ±0.006 0.894 ±0.006 0.681 ±0.005 0.931 ±0.006 0.933 ±0.008 0.935 ±0.010 0.937 ±0.008 0.939 ±0.007 
+
+wine quality red 0.984 ±0.002 0.970 ±0.002 0.983 ±0.002 0.985 ±0.003 0.985 ±0.002 0.905 ±0.002 0.958 ±0.002 0.890 ±0.005 0.981 ±0.002 0.982 ±0.002 0.984 ±0.002 0.984 ±0.002 0.986 ±0.001 
+
+wine quality white 0.990 ±0.001 0.981 ±0.001 0.990 ±0.001 0.992 ±0.001 0.991 ±0.001 0.915 ±0.001 0.942 ±0.002 0.855 ±0.005 0.990 ±0.001 0.984 ±0.001 0.987 ±0.001 0.989 ±0.001 0.991 ±0.002 
+
+yacht hydrodynamics 0.974 ±0.004 0.959 ±0.006 0.963 ±0.007 0.976 ±0.005 0.973 ±0.008 0.914 ±0.006 0.941 ±0.006 0.937 ±0.013 0.971 ±0.005 0.972 ±0.005 0.975 ±0.005 0.973 ±0.007 0.976 ±0.007 
+
+yeast 0.960 ±0.005 0.878 ±0.011 0.960 ±0.007 0.957 ±0.013 0.956 ±0.017 0.837 ±0.013 0.757 ±0.012 0.937 ±0.009 0.954 ±0.010 0.957 ±0.017 0.957 ±0.018 0.960 ±0.009 0.960 ±0.011 
+
+Table 9. Small Benchmark: Detection metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.985 ±0.004 0.996 ±0.003 0.951 ±0.012 0.991 ±0.004 0.982 ±0.006 1.000 ±0.000 0.998 ±0.002 0.929 ±0.010 0.712 ±0.022 0.652 ±0.027 0.582 ±0.024 0.638 ±0.022 0.578 ±0.034 
+
+bean 0.682 ±0.007 0.970 ±0.006 0.933 ±0.008 0.990 ±0.002 0.625 ±0.014 1.000 ±0.000 1.000 ±0.000 0.511 ±0.007 0.898 ±0.014 0.555 ±0.008 0.543 ±0.009 0.595 ±0.005 0.604 ±0.008 
+
+blood transfusion 0.651 ±0.030 0.877 ±0.014 0.768 ±0.022 0.964 ±0.009 0.953 ±0.013 0.996 ±0.002 0.996 ±0.002 0.901 ±0.014 0.525 ±0.043 0.530 ±0.033 0.546 ±0.034 0.519 ±0.041 0.521 ±0.038 
+
+breast cancer diagnostic 0.598 ±0.025 0.929 ±0.025 0.614 ±0.025 0.704 ±0.042 0.613 ±0.032 1.000 ±0.000 0.952 ±0.016 1.000 ±0.000 0.565 ±0.037 0.658 ±0.030 0.590 ±0.038 0.615 ±0.036 0.560 ±0.029 
+
+california 0.805 ±0.005 0.875 ±0.004 0.721 ±0.005 0.976 ±0.001 0.816 ±0.006 0.969 ±0.001 0.935 ±0.002 0.777 ±0.006 0.706 ±0.008 0.677 ±0.006 0.641 ±0.007 0.665 ±0.009 0.630 ±0.008 
+
+car 0.800 ±0.012 0.501 ±0.016 0.506 ±0.021 0.490 ±0.033 0.488 ±0.022 0.785 ±0.016 0.872 ±0.008 0.696 ±0.022 0.501 ±0.003 0.501 ±0.030 0.505 ±0.021 0.516 ±0.026 0.499 ±0.008 
+
+climate model crashes 0.752 ±0.023 0.833 ±0.033 0.493 ±0.038 0.845 ±0.027 0.866 ±0.011 0.979 ±0.008 0.945 ±0.008 0.715 ±0.047 0.500 ±0.023 0.832 ±0.030 0.780 ±0.024 0.780 ±0.021 0.709 ±0.032 
+
+concrete compression 0.859 ±0.025 0.980 ±0.006 0.936 ±0.009 0.966 ±0.011 0.937 ±0.015 1.000 ±0.000 0.999 ±0.001 0.907 ±0.012 0.799 ±0.031 0.786 ±0.022 0.742 ±0.024 0.798 ±0.020 0.752 ±0.025 
+
+concrete slump 0.727 ±0.057 0.821 ±0.067 0.651 ±0.069 0.635 ±0.112 0.592 ±0.098 0.893 ±0.049 0.825 ±0.076 0.935 ±0.029 0.521 ±0.056 0.507 ±0.041 0.537 ±0.083 0.538 ±0.084 0.532 ±0.091 
+
+congress 0.768 ±0.026 0.537 ±0.039 0.498 ±0.043 0.995 ±0.002 0.992 ±0.004 0.941 ±0.009 0.935 ±0.012 0.553 ±0.037 0.494 ±0.051 0.556 ±0.046 0.560 ±0.042 0.556 ±0.043 0.552 ±0.032 
+
+connectionist bench sonar 0.698 ±0.045 0.848 ±0.056 0.823 ±0.050 0.820 ±0.041 0.873 ±0.034 0.997 ±0.003 0.956 ±0.020 1.000 ±0.000 0.564 ±0.055 0.843 ±0.038 0.870 ±0.037 0.801 ±0.042 0.840 ±0.035 
+
+connectionist bench vowel 0.583 ±0.016 0.823 ±0.019 0.685 ±0.026 0.577 ±0.028 0.551 ±0.030 0.987 ±0.005 0.918 ±0.012 0.541 ±0.030 0.684 ±0.021 0.574 ±0.027 0.579 ±0.025 0.571 ±0.031 0.577 ±0.034 
+
+ecoli - 0.696 ±0.043 0.508 ±0.054 0.643 ±0.056 0.485 ±0.054 0.976 ±0.017 0.766 ±0.034 0.509 ±0.042 0.533 ±0.053 0.529 ±0.056 0.503 ±0.069 0.532 ±0.060 0.536 ±0.059 
+
+glass 0.687 ±0.039 0.928 ±0.017 0.592 ±0.059 0.754 ±0.043 0.507 ±0.058 0.989 ±0.008 0.965 ±0.014 0.995 ±0.007 0.521 ±0.069 0.565 ±0.067 0.506 ±0.053 0.553 ±0.056 0.500 ±0.042 
+
+ionosphere 0.696 ±0.029 0.949 ±0.018 0.914 ±0.027 0.755 ±0.028 0.802 ±0.027 0.998 ±0.002 0.975 ±0.011 0.998 ±0.002 0.559 ±0.044 0.676 ±0.045 0.632 ±0.040 0.607 ±0.043 0.611 ±0.055 
+
+iris 0.480 ±0.060 0.591 ±0.076 0.539 ±0.067 0.518 ±0.096 0.538 ±0.080 0.954 ±0.028 0.655 ±0.052 0.503 ±0.017 0.498 ±0.082 0.566 ±0.100 0.553 ±0.075 0.497 ±0.015 0.500 ±0.000 
+
+libras 0.568 ±0.030 0.978 ±0.012 0.769 ±0.036 0.787 ±0.029 0.760 ±0.050 1.000 ±0.001 0.986 ±0.008 1.000 ±0.000 0.820 ±0.022 0.708 ±0.050 0.722 ±0.034 0.667 ±0.049 0.803 ±0.039 
+
+parkinsons 0.577 ±0.065 0.820 ±0.047 0.544 ±0.054 0.646 ±0.054 0.558 ±0.059 0.997 ±0.007 0.951 ±0.022 1.000 ±0.000 0.508 ±0.065 0.618 ±0.055 0.554 ±0.066 0.551 ±0.067 0.561 ±0.074 
+
+planning relax 0.583 ±0.047 0.742 ±0.048 0.550 ±0.082 0.583 ±0.060 0.531 ±0.053 0.976 ±0.014 0.829 ±0.053 1.000 ±0.000 0.520 ±0.058 0.521 ±0.057 0.529 ±0.071 0.509 ±0.038 0.531 ±0.059 
+
+qsar biodegradation 0.797 ±0.021 0.981 ±0.006 0.890 ±0.015 0.988 ±0.003 0.952 ±0.010 1.000 ±0.000 0.999 ±0.001 1.000 ±0.000 0.720 ±0.022 0.767 ±0.021 0.749 ±0.028 0.791 ±0.021 0.766 ±0.020 
+
+seeds 0.592 ±0.050 0.621 ±0.057 0.622 ±0.060 0.461 ±0.060 0.546 ±0.074 0.962 ±0.017 0.822 ±0.049 0.585 ±0.060 0.492 ±0.058 0.534 ±0.054 0.552 ±0.060 0.518 ±0.058 0.540 ±0.053 
+
+tictactoe 0.852 ±0.019 0.583 ±0.031 0.502 ±0.026 0.521 ±0.036 0.504 ±0.025 0.829 ±0.020 0.921 ±0.010 0.510 ±0.024 0.494 ±0.046 0.506 ±0.034 0.484 ±0.028 0.500 ±0.005 0.502 ±0.036 
+
+wine 0.573 ±0.057 0.578 ±0.052 0.677 ±0.069 0.554 ±0.079 0.548 ±0.062 0.975 ±0.022 0.773 ±0.049 0.998 ±0.002 0.508 ±0.077 0.583 ±0.058 0.566 ±0.074 0.630 ±0.065 0.580 ±0.075 
+
+wine quality red 0.912 ±0.011 0.977 ±0.005 0.993 ±0.004 0.981 ±0.007 0.982 ±0.005 0.982 ±0.005 0.987 ±0.003 0.944 ±0.009 0.639 ±0.023 0.688 ±0.019 0.625 ±0.017 0.640 ±0.022 0.579 ±0.021 
+
+wine quality white 0.953 ±0.005 0.992 ±0.002 0.998 ±0.001 0.993 ±0.001 0.993 ±0.002 0.993 ±0.002 0.993 ±0.001 0.852 ±0.011 0.743 ±0.016 0.730 ±0.010 0.678 ±0.009 0.688 ±0.009 0.644 ±0.012 
+
+yacht hydrodynamics 0.933 ±0.024 0.972 ±0.014 0.748 ±0.048 0.950 ±0.021 0.515 ±0.056 0.998 ±0.005 0.997 ±0.002 0.799 ±0.036 0.660 ±0.062 0.507 ±0.062 0.513 ±0.046 0.522 ±0.049 0.541 ±0.043 
+
+yeast 0.659 ±0.020 0.782 ±0.013 0.560 ±0.023 0.789 ±0.018 0.586 ±0.022 0.972 ±0.006 0.915 ±0.006 0.571 ±0.027 0.515 ±0.024 0.595 ±0.024 0.559 ±0.024 0.575 ±0.029 0.533 ±0.021 
+
+Table 10. Small Benchmark: α-Precision metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.891 ±0.009 0.966 ±0.016 0.972 ±0.007 0.958 ±0.019 0.953 ±0.020 0.692 ±0.017 0.933 ±0.008 0.971 ±0.013 0.980 ±0.007 0.979 ±0.009 0.955 ±0.015 0.973 ±0.013 0.975 ±0.010 
+
+bean 0.965 ±0.003 0.983 ±0.004 0.948 ±0.004 0.988 ±0.004 0.987 ±0.006 0.746 ±0.006 0.928 ±0.005 0.992 ±0.003 0.982 ±0.005 0.983 ±0.005 0.981 ±0.005 0.900 ±0.004 0.899 ±0.004 
+
+blood transfusion 0.944 ±0.014 0.961 ±0.020 0.955 ±0.020 0.955 ±0.012 0.965 ±0.016 0.611 ±0.028 0.671 ±0.015 0.971 ±0.013 0.968 ±0.013 0.960 ±0.017 0.956 ±0.021 0.963 ±0.016 0.960 ±0.016 
+
+breast cancer diagnostic 0.891 ±0.017 0.884 ±0.022 0.818 ±0.031 0.898 ±0.040 0.886 ±0.034 0.369 ±0.010 0.734 ±0.017 0.000 ±0.000 0.949 ±0.025 0.965 ±0.011 0.939 ±0.018 0.876 ±0.029 0.850 ±0.031 
+
+california 0.868 ±0.003 0.978 ±0.005 0.973 ±0.004 0.915 ±0.005 0.945 ±0.005 0.933 ±0.005 0.944 ±0.005 0.959 ±0.005 0.984 ±0.004 0.943 ±0.004 0.928 ±0.004 0.970 ±0.007 0.960 ±0.007 
+
+car 0.966 ±0.009 0.982 ±0.007 0.976 ±0.010 0.982 ±0.005 0.977 ±0.009 0.951 ±0.008 0.865 ±0.016 0.949 ±0.015 0.981 ±0.007 0.980 ±0.006 0.982 ±0.007 0.981 ±0.009 0.982 ±0.007 
+
+climate model crashes 0.548 ±0.017 0.858 ±0.036 0.938 ±0.028 0.436 ±0.029 0.571 ±0.026 0.328 ±0.020 0.818 ±0.022 0.608 ±0.023 0.962 ±0.009 0.325 ±0.029 0.450 ±0.029 0.373 ±0.025 0.564 ±0.022 
+
+concrete compression 0.942 ±0.010 0.977 ±0.008 0.886 ±0.021 0.866 ±0.024 0.874 ±0.024 0.529 ±0.022 0.913 ±0.011 0.956 ±0.019 0.961 ±0.017 0.915 ±0.024 0.875 ±0.020 0.926 ±0.020 0.905 ±0.021 
+
+concrete slump 0.880 ±0.034 0.873 ±0.037 0.909 ±0.033 0.807 ±0.036 0.870 ±0.036 0.684 ±0.083 0.692 ±0.046 0.063 ±0.036 0.894 ±0.039 0.898 ±0.048 0.817 ±0.060 0.915 ±0.035 0.866 ±0.044 
+
+congress 0.779 ±0.016 0.936 ±0.022 0.959 ±0.016 0.524 ±0.024 0.539 ±0.026 0.601 ±0.027 0.461 ±0.037 0.889 ±0.033 0.958 ±0.017 0.906 ±0.031 0.912 ±0.034 0.908 ±0.034 0.900 ±0.040 
+
+connectionist bench sonar 0.696 ±0.027 0.869 ±0.035 0.728 ±0.040 0.393 ±0.041 0.454 ±0.047 0.228 ±0.010 0.555 ±0.029 0.000 ±0.000 0.937 ±0.025 0.607 ±0.052 0.387 ±0.042 0.604 ±0.041 0.450 ±0.032 
+
+connectionist bench vowel 0.937 ±0.008 0.963 ±0.011 0.847 ±0.019 0.865 ±0.027 0.892 ±0.023 0.375 ±0.012 0.921 ±0.012 0.956 ±0.022 0.962 ±0.008 0.961 ±0.016 0.875 ±0.020 0.937 ±0.025 0.857 ±0.026 
+
+ecoli - 0.945 ±0.020 0.945 ±0.030 0.940 ±0.030 0.952 ±0.020 0.635 ±0.046 0.698 ±0.031 0.940 ±0.027 0.960 ±0.015 0.960 ±0.019 0.954 ±0.012 0.939 ±0.028 0.912 ±0.039 
+
+glass 0.896 ±0.022 0.868 ±0.044 0.914 ±0.028 0.927 ±0.025 0.940 ±0.020 0.462 ±0.024 0.706 ±0.043 0.009 ±0.005 0.943 ±0.029 0.944 ±0.021 0.944 ±0.026 0.946 ±0.028 0.942 ±0.019 
+
+ionosphere 0.835 ±0.017 0.826 ±0.021 0.817 ±0.036 0.729 ±0.022 0.790 ±0.019 0.539 ±0.014 0.768 ±0.024 0.043 ±0.002 0.943 ±0.013 0.946 ±0.019 0.787 ±0.044 0.948 ±0.015 0.875 ±0.033 
+
+iris 0.952 ±0.018 0.929 ±0.026 0.925 ±0.023 0.938 ±0.028 0.934 ±0.024 0.687 ±0.037 0.771 ±0.033 0.920 ±0.027 0.929 ±0.026 0.938 ±0.033 0.944 ±0.023 0.948 ±0.021 0.939 ±0.026 
+
+libras 0.832 ±0.021 0.864 ±0.014 0.717 ±0.030 0.656 ±0.039 0.639 ±0.045 0.350 ±0.012 0.759 ±0.019 0.000 ±0.000 0.799 ±0.045 0.945 ±0.020 0.729 ±0.032 0.886 ±0.046 0.621 ±0.041 
+
+parkinsons 0.821 ±0.035 0.842 ±0.048 0.878 ±0.054 0.869 ±0.047 0.886 ±0.047 0.069 ±0.007 0.728 ±0.037 0.055 ±0.002 0.936 ±0.024 0.931 ±0.022 0.888 ±0.034 0.912 ±0.039 0.865 ±0.046 
+
+planning relax 0.759 ±0.026 0.877 ±0.030 0.850 ±0.035 0.767 ±0.037 0.833 ±0.057 0.171 ±0.020 0.610 ±0.026 0.000 ±0.000 0.921 ±0.027 0.855 ±0.047 0.773 ±0.050 0.895 ±0.036 0.856 ±0.049 
+
+qsar biodegradation 0.851 ±0.011 0.884 ±0.019 0.763 ±0.019 0.824 ±0.019 0.831 ±0.017 0.428 ±0.010 0.652 ±0.014 0.000 ±0.000 0.942 ±0.018 0.858 ±0.019 0.811 ±0.019 0.824 ±0.019 0.793 ±0.021 
+
+seeds 0.956 ±0.016 0.901 ±0.025 0.935 ±0.028 0.956 ±0.013 0.944 ±0.024 0.594 ±0.042 0.774 ±0.013 0.863 ±0.045 0.938 ±0.019 0.937 ±0.025 0.942 ±0.023 0.943 ±0.021 0.931 ±0.024 
+
+tictactoe 0.921 ±0.008 0.953 ±0.012 0.965 ±0.009 0.956 ±0.008 0.952 ±0.011 0.934 ±0.011 0.532 ±0.026 0.959 ±0.010 0.956 ±0.005 0.974 ±0.013 0.972 ±0.011 0.970 ±0.013 0.975 ±0.009 
+
+wine 0.794 ±0.032 0.940 ±0.023 0.876 ±0.054 0.848 ±0.057 0.844 ±0.059 0.316 ±0.037 0.753 ±0.052 0.000 ±0.000 0.926 ±0.027 0.934 ±0.037 0.833 ±0.051 0.944 ±0.025 0.850 ±0.047 
+
+wine quality red 0.806 ±0.008 0.897 ±0.013 0.899 ±0.016 0.920 ±0.021 0.877 ±0.020 0.584 ±0.015 0.869 ±0.010 0.934 ±0.018 0.976 ±0.009 0.865 ±0.022 0.842 ±0.020 0.907 ±0.018 0.900 ±0.018 
+
+wine quality white 0.853 ±0.005 0.951 ±0.010 0.922 ±0.009 0.932 ±0.010 0.872 ±0.011 0.603 ±0.006 0.962 ±0.010 0.934 ±0.007 0.976 ±0.010 0.859 ±0.008 0.857 ±0.010 0.904 ±0.008 0.907 ±0.008 
+
+yacht hydrodynamics 0.891 ±0.020 0.906 ±0.029 0.832 ±0.042 0.951 ±0.023 0.938 ±0.031 0.943 ±0.023 0.362 ±0.028 0.846 ±0.056 0.937 ±0.023 0.951 ±0.019 0.911 ±0.032 0.942 ±0.022 0.929 ±0.039 
+
+yeast 0.919 ±0.010 0.894 ±0.024 0.933 ±0.015 0.974 ±0.013 0.939 ±0.018 0.489 ±0.011 0.658 ±0.017 0.960 ±0.014 0.976 ±0.008 0.919 ±0.020 0.910 ±0.022 0.917 ±0.021 0.917 ±0.020 
+
+21 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 11. Small Benchmark: β-Recall metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.299 ±0.012 0.067 ±0.009 0.416 ±0.018 0.143 ±0.012 0.606 ±0.022 0.002 ±0.002 0.073 ±0.008 0.586 ±0.017 0.468 ±0.017 0.511 ±0.017 0.549 ±0.020 0.490 ±0.015 0.519 ±0.016 
+
+bean 0.668 ±0.003 0.134 ±0.003 0.200 ±0.004 0.062 ±0.002 0.565 ±0.008 0.000 ±0.000 0.003 ±0.000 0.498 ±0.008 0.271 ±0.006 0.573 ±0.005 0.562 ±0.005 0.564 ±0.006 0.547 ±0.007 
+
+blood transfusion 0.771 ±0.013 0.436 ±0.028 0.733 ±0.035 0.336 ±0.025 0.610 ±0.026 0.084 ±0.022 0.140 ±0.019 0.522 ±0.028 0.692 ±0.025 0.764 ±0.029 0.779 ±0.017 0.756 ±0.027 0.768 ±0.029 
+
+breast cancer diagnostic 0.821 ±0.013 0.051 ±0.011 0.577 ±0.029 0.542 ±0.024 0.828 ±0.022 0.000 ±0.000 0.023 ±0.008 0.000 ±0.000 0.583 ±0.021 0.835 ±0.022 0.809 ±0.017 0.826 ±0.018 0.771 ±0.027 
+
+california 0.548 ±0.004 0.252 ±0.005 0.420 ±0.004 0.103 ±0.003 0.509 ±0.004 0.164 ±0.003 0.273 ±0.003 0.395 ±0.005 0.380 ±0.004 0.434 ±0.005 0.445 ±0.006 0.415 ±0.005 0.425 ±0.005 
+
+car 0.987 ±0.003 0.995 ±0.002 0.995 ±0.001 0.995 ±0.001 0.995 ±0.001 0.959 ±0.005 0.927 ±0.008 0.980 ±0.004 0.995 ±0.001 0.995 ±0.001 0.995 ±0.001 0.995 ±0.001 0.995 ±0.001 
+
+climate model crashes 0.881 ±0.014 0.507 ±0.024 0.748 ±0.023 0.887 ±0.024 0.902 ±0.022 0.124 ±0.019 0.388 ±0.025 0.876 ±0.024 0.713 ±0.021 0.903 ±0.016 0.873 ±0.023 0.890 ±0.019 0.850 ±0.016 
+
+concrete compression 0.682 ±0.016 0.050 ±0.008 0.268 ±0.015 0.184 ±0.012 0.424 ±0.020 0.002 ±0.002 0.033 ±0.007 0.488 ±0.011 0.260 ±0.016 0.383 ±0.020 0.392 ±0.020 0.339 ±0.014 0.332 ±0.016 
+
+concrete slump 0.745 ±0.075 0.132 ±0.042 0.655 ±0.060 0.675 ±0.050 0.758 ±0.057 0.030 ±0.016 0.178 ±0.044 0.104 ±0.039 0.528 ±0.087 0.690 ±0.080 0.727 ±0.050 0.687 ±0.083 0.687 ±0.065 
+
+congress 0.922 ±0.011 0.774 ±0.028 0.931 ±0.019 0.266 ±0.025 0.269 ±0.015 0.163 ±0.027 0.600 ±0.021 0.894 ±0.026 0.874 ±0.028 0.943 ±0.022 0.945 ±0.015 0.949 ±0.027 0.935 ±0.023 
+
+connectionist bench sonar 0.912 ±0.026 0.055 ±0.018 0.533 ±0.040 0.663 ±0.042 0.700 ±0.047 0.000 ±0.000 0.245 ±0.034 0.000 ±0.000 0.411 ±0.038 0.769 ±0.038 0.689 ±0.046 0.679 ±0.044 0.599 ±0.037 
+
+connectionist bench vowel 0.751 ±0.016 0.032 ±0.007 0.136 ±0.018 0.352 ±0.019 0.630 ±0.024 0.002 ±0.002 0.018 ±0.006 0.789 ±0.019 0.096 ±0.010 0.688 ±0.026 0.621 ±0.032 0.627 ±0.020 0.553 ±0.021 
+
+ecoli - 0.393 ±0.035 0.760 ±0.038 0.690 ±0.028 0.829 ±0.028 0.087 ±0.020 0.338 ±0.031 0.752 ±0.037 0.690 ±0.026 0.799 ±0.030 0.823 ±0.031 0.803 ±0.021 0.804 ±0.024 
+
+glass 0.792 ±0.026 0.187 ±0.043 0.661 ±0.047 0.402 ±0.042 0.796 ±0.042 0.030 ±0.012 0.113 ±0.018 0.003 ±0.007 0.528 ±0.051 0.790 ±0.038 0.775 ±0.038 0.795 ±0.038 0.764 ±0.033 
+
+ionosphere 0.805 ±0.023 0.041 ±0.012 0.457 ±0.034 0.493 ±0.034 0.675 ±0.036 0.002 ±0.002 0.063 ±0.009 0.041 ±0.012 0.368 ±0.026 0.687 ±0.034 0.675 ±0.034 0.617 ±0.040 0.556 ±0.032 
+
+iris 0.806 ±0.040 0.477 ±0.062 0.771 ±0.057 0.703 ±0.047 0.867 ±0.037 0.051 ±0.029 0.323 ±0.062 0.788 ±0.039 0.649 ±0.067 0.857 ±0.049 0.852 ±0.048 0.846 ±0.061 0.841 ±0.058 
+
+libras 0.714 ±0.018 0.004 ±0.006 0.134 ±0.029 0.283 ±0.032 0.390 ±0.034 0.000 ±0.000 0.005 ±0.004 0.000 ±0.000 0.129 ±0.023 0.634 ±0.035 0.466 ±0.036 0.606 ±0.039 0.288 ±0.021 
+
+parkinsons 0.823 ±0.032 0.064 ±0.020 0.582 ±0.048 0.594 ±0.050 0.724 ±0.039 0.000 ±0.000 0.049 ±0.018 0.000 ±0.000 0.508 ±0.043 0.771 ±0.059 0.711 ±0.047 0.719 ±0.043 0.654 ±0.030 
+
+planning relax 0.871 ±0.034 0.260 ±0.036 0.682 ±0.036 0.780 ±0.042 0.803 ±0.043 0.020 ±0.015 0.255 ±0.035 0.002 ±0.004 0.636 ±0.045 0.786 ±0.041 0.783 ±0.041 0.746 ±0.040 0.741 ±0.044 
+
+qsar biodegradation 0.711 ±0.011 0.034 ±0.007 0.275 ±0.016 0.168 ±0.013 0.420 ±0.016 0.000 ±0.000 0.045 ±0.008 0.000 ±0.000 0.256 ±0.014 0.491 ±0.015 0.442 ±0.016 0.421 ±0.017 0.367 ±0.019 
+
+seeds 0.790 ±0.019 0.192 ±0.036 0.659 ±0.061 0.616 ±0.034 0.796 ±0.028 0.003 ±0.008 0.090 ±0.018 0.670 ±0.054 0.564 ±0.057 0.790 ±0.050 0.781 ±0.054 0.781 ±0.049 0.768 ±0.040 
+
+tictactoe 0.992 ±0.002 0.994 ±0.002 0.996 ±0.001 0.995 ±0.001 0.995 ±0.001 0.961 ±0.009 0.920 ±0.015 0.996 ±0.001 0.995 ±0.001 0.996 ±0.001 0.996 ±0.001 0.996 ±0.001 0.996 ±0.001 
+
+wine 0.829 ±0.028 0.256 ±0.042 0.784 ±0.051 0.856 ±0.031 0.897 ±0.038 0.013 ±0.013 0.313 ±0.053 0.002 ±0.008 0.651 ±0.050 0.882 ±0.039 0.879 ±0.038 0.872 ±0.048 0.862 ±0.044 
+
+wine quality red 0.686 ±0.020 0.230 ±0.014 0.454 ±0.011 0.395 ±0.013 0.516 ±0.011 0.037 ±0.007 0.221 ±0.007 0.562 ±0.009 0.394 ±0.017 0.494 ±0.015 0.488 ±0.013 0.472 ±0.012 0.454 ±0.013 
+
+wine quality white 0.672 ±0.008 0.211 ±0.009 0.335 ±0.007 0.279 ±0.007 0.383 ±0.006 0.044 ±0.003 0.168 ±0.006 0.405 ±0.007 0.286 ±0.008 0.379 ±0.007 0.362 ±0.005 0.353 ±0.009 0.339 ±0.010 
+
+yacht hydrodynamics 0.396 ±0.023 0.139 ±0.027 0.474 ±0.031 0.264 ±0.036 0.703 ±0.029 0.001 ±0.003 0.061 ±0.007 0.510 ±0.044 0.479 ±0.037 0.657 ±0.043 0.698 ±0.038 0.624 ±0.043 0.638 ±0.037 
+
+yeast 0.861 ±0.009 0.398 ±0.020 0.625 ±0.018 0.492 ±0.015 0.729 ±0.017 0.112 ±0.010 0.342 ±0.013 0.695 ±0.013 0.531 ±0.018 0.708 ±0.016 0.718 ±0.015 0.690 ±0.018 0.696 ±0.017 
+
+Table 12. Small Benchmark: MLE ( R2) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.922 ±0.000 0.837 ±0.018 0.634 ±0.041 0.736 ±0.032 0.741 ±0.024 0.845 ±0.023 −1.163 ±0.318 0.115 ±0.135 0.878 ±0.013 0.737 ±0.029 0.830 ±0.017 0.817 ±0.016 0.827 ±0.017 0.812 ±0.026 
+
+california 0.826 ±0.003 0.761 ±0.004 0.680 ±0.009 0.762 ±0.004 0.688 ±0.009 0.711 ±0.006 0.389 ±0.017 0.662 ±0.008 0.768 ±0.005 0.727 ±0.006 0.772 ±0.004 0.770 ±0.004 0.768 ±0.004 0.767 ±0.004 
+
+concrete compression 0.913 ±0.000 0.851 ±0.014 0.452 ±0.073 0.704 ±0.034 0.744 ±0.021 0.813 ±0.018 −0.776 ±0.255 0.435 ±0.109 0.835 ±0.016 0.749 ±0.025 0.818 ±0.018 0.810 ±0.019 0.806 ±0.025 0.790 ±0.028 
+
+concrete slump 0.837 ±0.000 0.774 ±0.041 0.034 ±0.300 0.515 ±0.114 0.742 ±0.075 0.723 ±0.092 −1.049 ±0.615 0.044 ±0.266 −0.768 ±0.935 0.595 ±0.112 0.667 ±0.120 0.627 ±0.095 0.616 ±0.144 0.627 ±0.122 
+
+wine quality red 0.446 ±0.000 0.387 ±0.025 0.260 ±0.043 0.301 ±0.043 0.324 ±0.035 0.326 ±0.034 −0.066 ±0.062 0.301 ±0.015 0.329 ±0.040 0.292 ±0.033 0.347 ±0.030 0.348 ±0.037 0.328 ±0.037 0.332 ±0.031 
+
+wine quality white 0.486 ±0.000 0.336 ±0.023 0.171 ±0.020 0.213 ±0.026 0.223 ±0.029 0.235 ±0.021 −0.316 ±0.060 0.223 ±0.023 0.254 ±0.017 0.189 ±0.028 0.253 ±0.025 0.250 ±0.019 0.243 ±0.029 0.234 ±0.032 
+
+yacht hydrodynamics 0.998 ±0.000 0.997 ±0.001 0.333 ±0.246 0.992 ±0.004 0.965 ±0.020 0.995 ±0.005 −0.592 ±0.604 0.188 ±0.213 0.919 ±0.027 0.932 ±0.038 0.971 ±0.025 0.990 ±0.007 0.963 ±0.035 0.982 ±0.024 
+
+Table 13. Small Benchmark: MLE (ROCAUC) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) bean 0.997 ±0.000 0.996 ±0.000 0.995 ±0.000 0.996 ±0.000 0.996 ±0.000 0.996 ±0.000 0.983 ±0.001 0.989 ±0.001 0.996 ±0.000 0.996 ±0.000 0.996 ±0.000 0.996 ±0.000 0.996 ±0.000 0.996 ±0.000 
+
+blood transfusion 0.783 ±0.010 0.780 ±0.010 0.766 ±0.033 0.746 ±0.020 0.775 ±0.019 0.761 ±0.023 0.561 ±0.090 0.500 ±0.000 0.728 ±0.025 0.727 ±0.030 0.743 ±0.025 0.741 ±0.030 0.731 ±0.029 0.728 ±0.026 
+
+breast cancer diagnostic 0.991 ±0.000 0.990 ±0.002 0.982 ±0.009 0.984 ±0.006 0.990 ±0.002 0.989 ±0.003 0.848 ±0.078 0.988 ±0.004 0.499 ±0.050 0.990 ±0.003 0.991 ±0.003 0.991 ±0.002 0.991 ±0.003 0.991 ±0.002 
+
+car 1.000 ±0.000 0.993 ±0.001 0.985 ±0.003 0.996 ±0.001 0.987 ±0.002 0.988 ±0.002 0.855 ±0.014 0.950 ±0.004 0.815 ±0.013 0.986 ±0.004 0.998 ±0.001 0.998 ±0.001 0.997 ±0.001 0.998 ±0.001 
+
+climate model crashes 0.919 ±0.005 0.865 ±0.021 0.720 ±0.093 0.863 ±0.049 0.894 ±0.029 0.885 ±0.026 0.570 ±0.069 0.500 ±0.000 0.881 ±0.032 0.889 ±0.028 0.839 ±0.026 0.868 ±0.031 0.862 ±0.031 0.868 ±0.053 
+
+congress 0.988 ±0.000 0.986 ±0.004 0.968 ±0.013 0.981 ±0.012 0.977 ±0.006 0.977 ±0.009 0.558 ±0.192 0.962 ±0.014 0.989 ±0.005 0.982 ±0.010 0.970 ±0.011 0.973 ±0.011 0.973 ±0.013 0.969 ±0.017 
+
+connectionist bench sonar 0.914 ±0.000 0.886 ±0.028 0.681 ±0.086 0.777 ±0.038 0.811 ±0.050 0.798 ±0.037 0.470 ±0.089 0.767 ±0.048 0.502 ±0.061 0.786 ±0.043 0.833 ±0.034 0.830 ±0.033 0.822 ±0.053 0.825 ±0.036 
+
+connectionist bench vowel 0.992 ±0.000 0.968 ±0.005 0.898 ±0.011 0.948 ±0.012 0.970 ±0.005 0.968 ±0.006 0.494 ±0.031 0.849 ±0.011 0.974 ±0.004 0.949 ±0.008 0.969 ±0.005 0.969 ±0.005 0.971 ±0.004 0.971 ±0.005 
+
+ecoli 0.987 ±0.001 - 0.977 ±0.006 0.981 ±0.005 0.986 ±0.004 0.984 ±0.004 0.850 ±0.040 0.899 ±0.014 0.982 ±0.004 0.982 ±0.005 0.982 ±0.004 0.982 ±0.004 0.982 ±0.004 0.983 ±0.004 
+
+glass 0.941 ±0.000 0.899 ±0.013 0.866 ±0.032 0.884 ±0.014 0.903 ±0.012 0.913 ±0.014 0.615 ±0.075 0.814 ±0.023 0.679 ±0.065 0.893 ±0.021 0.900 ±0.018 0.902 ±0.023 0.897 ±0.023 0.903 ±0.027 
+
+ionosphere 0.963 ±0.000 0.881 ±0.037 0.898 ±0.045 0.932 ±0.031 0.949 ±0.025 0.938 ±0.018 0.456 ±0.135 0.925 ±0.023 0.484 ±0.098 0.961 ±0.016 0.964 ±0.013 0.953 ±0.017 0.961 ±0.016 0.950 ±0.017 
+
+iris 0.958 ±0.000 0.958 ±0.032 0.979 ±0.016 0.962 ±0.019 0.970 ±0.022 0.968 ±0.022 0.887 ±0.077 0.943 ±0.030 0.969 ±0.023 0.971 ±0.022 0.960 ±0.029 0.959 ±0.032 0.960 ±0.016 0.960 ±0.025 
+
+libras 0.958 ±0.004 0.925 ±0.009 0.851 ±0.023 0.866 ±0.018 0.861 ±0.020 0.875 ±0.019 0.514 ±0.045 0.789 ±0.029 0.494 ±0.012 0.832 ±0.023 0.865 ±0.018 0.865 ±0.022 0.863 ±0.020 0.879 ±0.013 
+
+parkinsons 0.926 ±0.002 0.904 ±0.023 0.755 ±0.060 0.812 ±0.080 0.862 ±0.043 0.846 ±0.044 0.647 ±0.125 0.528 ±0.077 0.495 ±0.039 0.847 ±0.038 0.839 ±0.053 0.844 ±0.043 0.854 ±0.034 0.844 ±0.036 
+
+planning relax 0.465 ±0.010 0.544 ±0.078 0.474 ±0.068 0.497 ±0.087 0.491 ±0.068 0.494 ±0.067 0.442 ±0.058 0.500 ±0.000 0.497 ±0.029 0.478 ±0.074 0.506 ±0.073 0.531 ±0.094 0.465 ±0.083 0.466 ±0.087 
+
+qsar biodegradation 0.910 ±0.001 0.886 ±0.007 0.855 ±0.018 0.879 ±0.015 0.880 ±0.012 0.881 ±0.008 0.383 ±0.094 0.798 ±0.023 0.488 ±0.078 0.878 ±0.016 0.884 ±0.013 0.887 ±0.013 0.885 ±0.011 0.890 ±0.014 
+
+seeds 0.995 ±0.000 0.969 ±0.011 0.956 ±0.016 0.976 ±0.010 0.985 ±0.008 0.985 ±0.009 0.720 ±0.078 0.982 ±0.009 0.983 ±0.011 0.980 ±0.012 0.981 ±0.008 0.981 ±0.010 0.981 ±0.010 0.979 ±0.008 
+
+tictactoe 0.984 ±0.000 0.919 ±0.020 0.817 ±0.038 0.947 ±0.021 0.933 ±0.025 0.904 ±0.019 0.511 ±0.048 0.711 ±0.031 0.972 ±0.009 0.917 ±0.030 0.981 ±0.009 0.980 ±0.009 0.980 ±0.010 0.981 ±0.010 
+
+wine 0.998 ±0.001 0.985 ±0.004 0.987 ±0.013 0.994 ±0.005 0.993 ±0.006 0.995 ±0.004 0.596 ±0.126 0.971 ±0.026 0.542 ±0.023 0.990 ±0.006 0.988 ±0.012 0.989 ±0.013 0.993 ±0.007 0.993 ±0.005 
+
+yeast 0.935 ±0.000 0.919 ±0.002 0.916 ±0.004 0.921 ±0.004 0.926 ±0.004 0.921 ±0.004 0.593 ±0.045 0.852 ±0.006 0.923 ±0.003 0.922 ±0.003 0.923 ±0.003 0.922 ±0.004 0.926 ±0.003 0.923 ±0.004 
+
+Table 14. Small Benchmark: MLE (F1) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) bean 0.931 ±0.001 0.927 ±0.003 0.915 ±0.003 0.924 ±0.002 0.923 ±0.001 0.928 ±0.003 0.858 ±0.006 0.890 ±0.001 0.929 ±0.003 0.924 ±0.002 0.926 ±0.002 0.925 ±0.002 0.925 ±0.002 0.925 ±0.003 
+
+blood transfusion 0.432 ±0.044 0.475 ±0.046 0.344 ±0.138 0.421 ±0.059 0.371 ±0.111 0.413 ±0.137 0.285 ±0.115 0.000 ±0.000 0.438 ±0.081 0.372 ±0.116 0.432 ±0.080 0.412 ±0.083 0.366 ±0.124 0.370 ±0.119 
+
+breast cancer diagnostic 0.947 ±0.004 0.943 ±0.009 0.950 ±0.016 0.948 ±0.009 0.949 ±0.008 0.951 ±0.009 0.771 ±0.091 0.932 ±0.015 0.582 ±0.342 0.956 ±0.011 0.957 ±0.010 0.954 ±0.009 0.950 ±0.010 0.951 ±0.012 
+
+car 0.977 ±0.004 0.915 ±0.013 0.874 ±0.013 0.944 ±0.011 0.884 ±0.018 0.891 ±0.017 0.648 ±0.026 0.760 ±0.016 0.585 ±0.026 0.883 ±0.020 0.961 ±0.012 0.955 ±0.012 0.953 ±0.010 0.960 ±0.011 
+
+climate model crashes 0.975 ±0.005 0.975 ±0.006 0.956 ±0.003 0.957 ±0.001 0.972 ±0.007 0.972 ±0.006 0.892 ±0.046 0.957 ±0.000 0.973 ±0.006 0.963 ±0.007 0.966 ±0.009 0.969 ±0.007 0.967 ±0.008 0.970 ±0.007 
+
+congress 0.947 ±0.005 0.950 ±0.004 0.925 ±0.014 0.943 ±0.008 0.943 ±0.014 0.938 ±0.007 0.605 ±0.127 0.915 ±0.015 0.952 ±0.008 0.945 ±0.006 0.946 ±0.006 0.947 ±0.009 0.943 ±0.011 0.946 ±0.007 
+
+connectionist bench sonar 0.800 ±0.000 0.815 ±0.029 0.653 ±0.072 0.736 ±0.039 0.739 ±0.049 0.721 ±0.051 0.483 ±0.175 0.722 ±0.060 0.328 ±0.303 0.733 ±0.045 0.733 ±0.033 0.749 ±0.047 0.737 ±0.045 0.742 ±0.041 
+
+connectionist bench vowel 0.833 ±0.000 0.740 ±0.024 0.489 ±0.032 0.638 ±0.042 0.748 ±0.023 0.739 ±0.025 0.080 ±0.021 0.392 ±0.033 0.767 ±0.027 0.653 ±0.028 0.749 ±0.039 0.742 ±0.035 0.753 ±0.023 0.755 ±0.024 
+
+ecoli 0.803 ±0.007 - 0.780 ±0.038 0.809 ±0.033 0.818 ±0.025 0.809 ±0.030 0.421 ±0.175 0.684 ±0.043 0.797 ±0.033 0.796 ±0.046 0.788 ±0.026 0.788 ±0.028 0.795 ±0.031 0.788 ±0.034 
+
+glass 0.789 ±0.023 0.623 ±0.049 0.584 ±0.052 0.645 ±0.054 0.659 ±0.060 0.680 ±0.046 0.288 ±0.089 0.507 ±0.057 0.321 ±0.077 0.637 ±0.062 0.636 ±0.045 0.647 ±0.044 0.641 ±0.060 0.644 ±0.057 
+
+ionosphere 0.939 ±0.000 0.746 ±0.041 0.658 ±0.129 0.688 ±0.114 0.869 ±0.056 0.834 ±0.056 0.309 ±0.126 0.830 ±0.042 0.014 ±0.044 0.857 ±0.046 0.893 ±0.025 0.871 ±0.039 0.886 ±0.039 0.854 ±0.046 
+
+iris 0.933 ±0.000 0.890 ±0.042 0.908 ±0.054 0.927 ±0.034 0.908 ±0.049 0.920 ±0.041 0.750 ±0.083 0.827 ±0.061 0.927 ±0.028 0.912 ±0.045 0.907 ±0.048 0.905 ±0.047 0.918 ±0.031 0.918 ±0.044 
+
+libras 0.693 ±0.014 0.581 ±0.021 0.386 ±0.040 0.426 ±0.041 0.478 ±0.050 0.483 ±0.056 0.072 ±0.033 0.327 ±0.049 0.067 ±0.010 0.406 ±0.047 0.492 ±0.038 0.481 ±0.046 0.477 ±0.053 0.507 ±0.042 
+
+parkinsons 0.630 ±0.039 0.684 ±0.033 0.472 ±0.112 0.505 ±0.129 0.572 ±0.069 0.572 ±0.094 0.469 ±0.077 0.000 ±0.000 0.000 ±0.000 0.568 ±0.079 0.603 ±0.069 0.589 ±0.064 0.625 ±0.093 0.582 ±0.085 
+
+planning relax 0.062 ±0.067 0.239 ±0.124 0.109 ±0.111 0.029 ±0.061 0.230 ±0.150 0.239 ±0.138 0.178 ±0.116 0.000 ±0.000 0.000 ±0.000 0.154 ±0.083 0.229 ±0.112 0.230 ±0.124 0.221 ±0.120 0.197 ±0.144 
+
+qsar biodegradation 0.891 ±0.007 0.876 ±0.008 0.848 ±0.014 0.868 ±0.013 0.871 ±0.016 0.877 ±0.010 0.750 ±0.030 0.821 ±0.014 0.798 ±0.000 0.866 ±0.016 0.878 ±0.015 0.879 ±0.012 0.881 ±0.013 0.882 ±0.013 
+
+seeds 0.929 ±0.000 0.874 ±0.021 0.833 ±0.044 0.870 ±0.037 0.887 ±0.044 0.900 ±0.041 0.500 ±0.087 0.886 ±0.032 0.898 ±0.037 0.893 ±0.041 0.879 ±0.041 0.898 ±0.044 0.877 ±0.038 0.873 ±0.038 
+
+tictactoe 0.921 ±0.000 0.767 ±0.040 0.625 ±0.044 0.813 ±0.049 0.784 ±0.041 0.733 ±0.035 0.229 ±0.070 0.477 ±0.056 0.876 ±0.028 0.765 ±0.060 0.906 ±0.032 0.901 ±0.030 0.903 ±0.035 0.913 ±0.026 
+
+wine 0.972 ±0.000 0.893 ±0.035 0.924 ±0.041 0.936 ±0.037 0.936 ±0.038 0.940 ±0.034 0.394 ±0.142 0.897 ±0.042 0.362 ±0.031 0.928 ±0.032 0.906 ±0.064 0.925 ±0.051 0.935 ±0.054 0.940 ±0.043 
+
+yeast 0.614 ±0.008 0.560 ±0.015 0.517 ±0.029 0.550 ±0.020 0.572 ±0.014 0.564 ±0.019 0.180 ±0.040 0.418 ±0.018 0.575 ±0.016 0.570 ±0.019 0.564 ±0.027 0.570 ±0.026 0.574 ±0.019 0.566 ±0.020 
+
+Table 15. Small Benchmark: MLE (RMSE) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.291 ±0.000 0.421 ±0.023 0.629 ±0.035 0.535 ±0.033 0.530 ±0.025 0.410 ±0.030 1.528 ±0.110 0.977 ±0.073 0.363 ±0.019 0.533 ±0.029 0.429 ±0.021 0.446 ±0.019 0.433 ±0.021 0.451 ±0.031 
+
+california 0.415 ±0.004 0.486 ±0.004 0.562 ±0.008 0.485 ±0.004 0.555 ±0.008 0.534 ±0.006 0.778 ±0.011 0.578 ±0.007 0.480 ±0.005 0.519 ±0.006 0.475 ±0.004 0.477 ±0.004 0.479 ±0.004 0.481 ±0.004 
+
+concrete compression 0.285 ±0.000 0.371 ±0.017 0.712 ±0.047 0.524 ±0.030 0.488 ±0.020 0.417 ±0.020 1.282 ±0.093 0.722 ±0.067 0.391 ±0.018 0.482 ±0.024 0.411 ±0.021 0.420 ±0.021 0.424 ±0.028 0.441 ±0.030 
+
+concrete slump 0.376 ±0.000 0.442 ±0.040 0.907 ±0.142 0.646 ±0.077 0.469 ±0.071 0.485 ±0.077 1.321 ±0.204 0.904 ±0.129 1.206 ±0.302 0.589 ±0.079 0.530 ±0.098 0.566 ±0.073 0.569 ±0.109 0.563 ±0.091 
+
+wine quality red 0.744 ±0.000 0.783 ±0.016 0.860 ±0.025 0.836 ±0.026 0.822 ±0.022 0.821 ±0.021 1.032 ±0.030 0.836 ±0.009 0.819 ±0.024 0.841 ±0.020 0.808 ±0.018 0.807 ±0.023 0.820 ±0.022 0.817 ±0.019 
+
+wine quality white 0.706 ±0.000 0.802 ±0.014 0.897 ±0.011 0.874 ±0.014 0.868 ±0.016 0.861 ±0.012 1.129 ±0.026 0.868 ±0.013 0.851 ±0.010 0.887 ±0.015 0.851 ±0.014 0.853 ±0.011 0.857 ±0.016 0.862 ±0.018 
+
+yacht hydrodynamics 0.031 ±0.000 0.041 ±0.004 0.629 ±0.110 0.067 ±0.015 0.140 ±0.038 0.051 ±0.018 0.974 ±0.160 0.698 ±0.093 0.219 ±0.035 0.196 ±0.060 0.122 ±0.053 0.076 ±0.025 0.137 ±0.060 0.093 ±0.049 
+
+22 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 16. Small Benchmark: DCR metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.722 ±0.039 0.916 ±0.030 0.864 ±0.047 0.857 ±0.039 0.836 ±0.026 0.939 ±0.042 0.901 ±0.038 0.818 ±0.048 0.878 ±0.043 0.852 ±0.036 0.828 ±0.040 0.859 ±0.050 0.847 ±0.048 
+
+bean 0.817 ±0.010 0.915 ±0.014 0.934 ±0.015 0.962 ±0.014 0.905 ±0.015 0.987 ±0.011 0.967 ±0.010 0.976 ±0.011 0.943 ±0.013 0.901 ±0.015 0.907 ±0.013 0.917 ±0.015 0.922 ±0.015 
+
+blood transfusion 0.988 ±0.019 1.000 ±0.000 0.965 ±0.032 0.983 ±0.023 0.986 ±0.024 0.984 ±0.017 0.983 ±0.030 0.996 ±0.009 0.996 ±0.010 0.990 ±0.018 0.991 ±0.012 0.996 ±0.011 0.988 ±0.014 
+
+breast cancer diagnostic 0.667 ±0.055 0.892 ±0.054 0.718 ±0.069 0.741 ±0.068 0.690 ±0.076 0.947 ±0.048 0.847 ±0.070 0.723 ±0.083 0.718 ±0.071 0.644 ±0.066 0.661 ±0.068 0.692 ±0.057 0.704 ±0.058 
+
+california 0.842 ±0.012 0.968 ±0.011 0.939 ±0.010 0.964 ±0.007 0.941 ±0.011 0.974 ±0.011 0.986 ±0.010 0.938 ±0.012 0.962 ±0.010 0.964 ±0.010 0.961 ±0.013 0.966 ±0.008 0.962 ±0.010 
+
+car 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 
+
+climate model crashes 0.535 ±0.047 0.887 ±0.055 0.636 ±0.066 0.526 ±0.042 0.492 ±0.036 0.957 ±0.053 0.931 ±0.059 0.503 ±0.059 0.677 ±0.051 0.504 ±0.051 0.572 ±0.056 0.533 ±0.066 0.565 ±0.051 
+
+concrete compression 0.697 ±0.043 0.918 ±0.045 0.880 ±0.048 0.858 ±0.053 0.821 ±0.051 0.897 ±0.058 0.925 ±0.039 0.760 ±0.046 0.859 ±0.049 0.811 ±0.049 0.822 ±0.050 0.829 ±0.047 0.845 ±0.044 
+
+concrete slump 0.717 ±0.120 0.916 ±0.071 0.697 ±0.139 0.779 ±0.117 0.791 ±0.128 0.907 ±0.081 0.938 ±0.053 0.732 ±0.120 0.790 ±0.090 0.751 ±0.116 0.820 ±0.135 0.748 ±0.162 0.767 ±0.135 
+
+congress 0.992 ±0.016 1.000 ±0.000 0.996 ±0.011 0.999 ±0.003 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 0.999 ±0.006 1.000 ±0.000 0.984 ±0.022 0.996 ±0.007 0.984 ±0.025 0.988 ±0.018 
+
+connectionist bench sonar 0.541 ±0.076 0.713 ±0.098 0.556 ±0.074 0.587 ±0.127 0.553 ±0.099 0.693 ±0.114 0.769 ±0.128 0.883 ±0.095 0.694 ±0.066 0.601 ±0.086 0.613 ±0.087 0.610 ±0.106 0.610 ±0.102 
+
+connectionist bench vowel 0.646 ±0.033 0.912 ±0.036 0.806 ±0.043 0.748 ±0.051 0.697 ±0.042 0.983 ±0.021 0.974 ±0.038 0.669 ±0.060 0.838 ±0.040 0.653 ±0.052 0.667 ±0.067 0.671 ±0.048 0.679 ±0.045 
+
+ecoli - 0.878 ±0.075 0.695 ±0.067 0.773 ±0.055 0.745 ±0.087 0.813 ±0.087 0.961 ±0.044 0.708 ±0.101 0.770 ±0.072 0.699 ±0.080 0.687 ±0.067 0.731 ±0.071 0.697 ±0.073 
+
+glass 0.755 ±0.064 0.938 ±0.059 0.871 ±0.060 0.859 ±0.095 0.767 ±0.098 0.993 ±0.018 0.952 ±0.053 0.633 ±0.144 0.888 ±0.060 0.762 ±0.084 0.762 ±0.098 0.787 ±0.084 0.788 ±0.083 
+
+ionosphere 0.674 ±0.061 0.880 ±0.061 0.725 ±0.086 0.744 ±0.086 0.742 ±0.071 0.827 ±0.090 0.937 ±0.041 0.842 ±0.091 0.740 ±0.092 0.641 ±0.070 0.755 ±0.087 0.652 ±0.092 0.735 ±0.088 
+
+iris 0.616 ±0.139 0.783 ±0.094 0.638 ±0.090 0.697 ±0.106 0.613 ±0.144 0.882 ±0.083 0.912 ±0.080 0.644 ±0.126 0.748 ±0.118 0.573 ±0.097 0.574 ±0.105 0.622 ±0.105 0.619 ±0.108 
+
+libras 0.750 ±0.059 0.884 ±0.051 0.823 ±0.106 0.751 ±0.075 0.712 ±0.063 0.816 ±0.100 0.928 ±0.054 0.942 ±0.047 0.786 ±0.080 0.637 ±0.071 0.696 ±0.070 0.631 ±0.085 0.694 ±0.086 
+
+parkinsons 0.778 ±0.107 0.918 ±0.067 0.775 ±0.115 0.800 ±0.090 0.738 ±0.099 0.921 ±0.070 0.982 ±0.029 0.599 ±0.124 0.795 ±0.089 0.777 ±0.133 0.762 ±0.105 0.755 ±0.104 0.764 ±0.091 
+
+planning relax 0.646 ±0.109 0.848 ±0.097 0.740 ±0.070 0.663 ±0.100 0.695 ±0.073 0.835 ±0.084 0.901 ±0.054 0.758 ±0.069 0.762 ±0.110 0.671 ±0.088 0.706 ±0.097 0.705 ±0.086 0.723 ±0.081 
+
+qsar biodegradation 0.624 ±0.046 0.873 ±0.062 0.873 ±0.045 0.798 ±0.050 0.806 ±0.047 0.973 ±0.022 0.945 ±0.032 0.893 ±0.064 0.846 ±0.044 0.768 ±0.053 0.773 ±0.056 0.835 ±0.054 0.837 ±0.048 
+
+seeds 0.627 ±0.093 0.841 ±0.077 0.567 ±0.096 0.614 ±0.094 0.582 ±0.108 0.955 ±0.059 0.850 ±0.076 0.740 ±0.100 0.710 ±0.103 0.584 ±0.079 0.588 ±0.115 0.573 ±0.107 0.588 ±0.114 
+
+tictactoe 0.993 ±0.011 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 
+
+wine 0.525 ±0.072 0.787 ±0.092 0.495 ±0.068 0.500 ±0.098 0.434 ±0.118 0.898 ±0.057 0.811 ±0.073 0.682 ±0.137 0.596 ±0.100 0.474 ±0.075 0.482 ±0.086 0.503 ±0.087 0.498 ±0.100 
+
+wine quality red 0.712 ±0.033 0.928 ±0.035 0.821 ±0.034 0.873 ±0.040 0.790 ±0.038 0.995 ±0.012 0.992 ±0.015 0.713 ±0.041 0.864 ±0.047 0.827 ±0.041 0.812 ±0.030 0.845 ±0.036 0.835 ±0.037 
+
+wine quality white 0.770 ±0.020 0.969 ±0.018 0.921 ±0.024 0.962 ±0.017 0.928 ±0.013 1.000 ±0.001 0.977 ±0.016 0.846 ±0.033 0.959 ±0.020 0.924 ±0.025 0.932 ±0.022 0.944 ±0.024 0.951 ±0.018 
+
+yacht hydrodynamics 0.703 ±0.065 0.852 ±0.075 0.803 ±0.087 0.839 ±0.089 0.825 ±0.072 0.920 ±0.069 0.994 ±0.012 0.856 ±0.070 0.817 ±0.078 0.822 ±0.077 0.842 ±0.072 0.838 ±0.099 0.860 ±0.076 
+
+yeast 0.618 ±0.039 0.907 ±0.041 0.783 ±0.036 0.794 ±0.041 0.697 ±0.036 0.982 ±0.019 0.956 ±0.024 0.701 ±0.041 0.843 ±0.034 0.717 ±0.032 0.691 ±0.039 0.732 ±0.035 0.712 ±0.044 
+
+Table 17. Small Benchmark: training time in minutes for all datasets. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise - 0.050 0.205 0.346 0.371 0.067 0.081 1.158 0.018 0.339 0.326 0.419 0.298 
+
+bean - 4.083 9.696 16 .384 16 .676 1.940 1.208 9.132 0.069 18 .009 15 .328 13 .069 14 .507 
+
+blood transfusion - 0.031 0.120 0.143 0.137 0.080 0.038 0.729 0.011 0.134 0.140 0.130 0.134 
+
+breast cancer diagnostic - 0.178 2.439 6.791 6.375 0.211 0.151 0.674 0.102 6.213 6.016 5.511 5.755 
+
+california - 3.100 3.789 9.872 10 .087 1.695 1.264 14 .155 0.037 14 .022 10 .392 8.443 10 .041 
+
+car - 0.069 0.123 3.478 3.448 0.154 0.065 1.814 0.001 2.858 2.964 2.773 2.916 
+
+climate model crashes - 0.013 1.029 2.248 2.217 0.154 0.118 0.656 0.060 2.038 1.950 2.162 1.804 
+
+concrete compression - 0.046 0.434 0.527 0.540 0.084 0.136 0.871 0.028 0.556 0.492 0.458 0.448 
+
+concrete slump - 0.008 0.173 0.204 0.186 0.069 0.042 0.465 0.024 0.167 0.171 0.159 0.165 
+
+congress - 0.033 0.153 6.894 6.437 0.107 0.029 1.792 0.003 1.982 2.089 2.067 2.051 
+
+connectionist bench sonar - 0.059 4.553 21 .489 20 .400 0.328 0.246 0.617 0.220 19 .929 18 .293 18 .031 17 .882 
+
+connectionist bench vowel - 0.055 0.600 3.058 2.905 0.147 0.142 0.826 0.033 3.006 2.832 3.013 2.797 
+
+ecoli - 0.024 0.185 0.646 0.627 0.091 0.043 0.579 0.020 0.616 0.770 0.622 0.743 
+
+glass - 0.021 0.241 0.919 0.923 0.097 0.047 0.549 0.028 1.015 0.969 0.976 0.985 
+
+ionosphere - 0.089 2.073 7.347 6.894 0.211 0.147 1.058 0.111 6.168 6.010 5.906 5.931 
+
+iris - 0.016 0.104 0.161 0.155 0.096 0.046 0.587 0.011 0.129 0.135 0.132 0.129 
+
+libras - 0.298 17 .731 203 .331 237 .620 0.498 0.396 0.645 0.355 261 .324 204 .372 193 .673 255 .079 
+
+parkinsons - 0.027 0.792 2.836 2.639 0.155 0.097 0.541 0.073 2.355 2.434 2.354 2.229 
+
+planning relax - 0.021 0.381 0.868 0.816 0.116 0.064 0.513 0.038 0.918 0.724 0.693 0.692 
+
+qsar biodegradation - 0.730 4.112 14 .501 13 .275 0.266 0.310 1.566 0.137 11 .631 11 .541 10 .780 11 .150 
+
+seeds - 0.018 0.215 0.411 0.373 0.092 0.043 0.558 0.021 0.369 0.380 0.396 0.364 
+
+tictactoe - 0.052 0.117 2.753 2.654 0.088 0.049 1.653 0.002 2.260 2.358 2.234 2.309 
+
+wine - 0.022 0.410 1.332 1.248 0.121 0.067 0.612 0.042 1.263 1.202 1.184 1.120 
+
+wine quality red - 0.075 0.683 1.050 1.071 0.119 0.150 1.098 0.035 1.073 0.956 0.831 0.879 
+
+wine quality white - 0.453 1.677 3.549 3.674 0.443 0.383 3.160 0.041 4.243 3.194 2.592 3.263 
+
+yacht hydrodynamics - 0.029 0.118 0.194 0.191 0.064 0.040 0.583 0.021 0.170 0.177 0.173 0.165 
+
+yeast - 0.074 0.382 1.643 1.604 0.103 0.096 1.129 0.025 1.429 1.697 1.422 1.669 
+
+Table 18. Small Benchmark: inference time in seconds for all datasets. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF UT FD FF CTGAN TVAE TabDDPM XGenB-AR XGenB-DF (x-DDPM) XGenB-DF (v-DDPM) XGenB-DF (x-DDIM) XGenB-DF (v-DDIM) airfoil self noise 0.039 ±0.000 0.035 ±0.000 17 .895 ±1.361 0.322 ±0.005 0.153 ±0.001 0.023 ±0.000 0.023 ±0.000 1.356 ±0.010 0.153 ±0.000 0.723 ±0.003 0.709 ±0.003 0.692 ±0.005 0.709 ±0.010 
+
+bean 0.318 ±0.011 1.713 ±0.020 574 .660 ±4.101 5.602 ±0.096 2.596 ±0.047 0.142 ±0.001 0.095 ±0.000 15 .054 ±0.058 0.907 ±0.003 8.309 ±0.106 8.613 ±0.053 8.137 ±0.221 8.070 ±0.108 
+
+blood transfusion 0.040 ±0.000 0.086 ±0.001 6.601 ±0.070 0.300 ±0.005 0.154 ±0.002 0.019 ±0.000 0.027 ±0.000 2.556 ±0.014 0.092 ±0.000 1.376 ±0.008 1.363 ±0.006 1.372 ±0.006 1.358 ±0.005 
+
+breast cancer diagnostic 0.022 ±0.000 0.219 ±0.002 44 .544 ±0.877 1.493 ±0.080 0.733 ±0.020 0.081 ±0.014 0.137 ±0.001 4.102 ±0.011 0.806 ±0.004 1.792 ±0.037 2.592 ±0.024 2.093 ±0.135 2.577 ±0.017 
+
+california 0.081 ±0.006 0.342 ±0.008 483 .389 ±11 .395 3.181 ±0.028 1.389 ±0.015 0.119 ±0.001 0.076 ±0.001 22 .548 ±0.400 0.583 ±0.005 3.104 ±0.031 3.627 ±0.100 4.174 ±0.136 3.044 ±0.052 
+
+car 0.579 ±0.006 1.020 ±0.020 7.883 ±0.062 1.510 ±0.034 0.728 ±0.016 0.026 ±0.000 0.022 ±0.000 6.951 ±0.021 0.049 ±0.000 5.131 ±0.322 5.463 ±0.290 5.292 ±0.377 5.026 ±0.329 
+
+climate model crashes 0.045 ±0.005 0.136 ±0.002 25 .862 ±0.343 0.836 ±0.037 0.414 ±0.010 0.051 ±0.000 0.085 ±0.001 1.414 ±0.024 0.471 ±0.001 1.536 ±0.171 1.498 ±0.147 1.507 ±0.335 1.496 ±0.182 
+
+concrete compression 0.040 ±0.000 0.048 ±0.001 21 .772 ±0.188 0.306 ±0.007 0.145 ±0.004 0.028 ±0.000 0.059 ±0.004 1.284 ±0.016 0.234 ±0.001 0.742 ±0.004 0.752 ±0.051 0.707 ±0.002 0.722 ±0.005 
+
+concrete slump 0.039 ±0.000 0.030 ±0.000 1.959 ±0.017 0.220 ±0.002 0.122 ±0.001 0.023 ±0.000 0.027 ±0.000 7.164 ±0.656 0.180 ±0.001 0.706 ±0.002 0.697 ±0.009 0.702 ±0.002 0.694 ±0.001 
+
+congress 0.287 ±0.006 0.660 ±0.010 4.736 ±0.026 1.535 ±0.079 0.731 ±0.022 0.040 ±0.000 0.038 ±0.000 11 .621 ±0.027 0.062 ±0.000 2.663 ±0.026 2.625 ±0.039 2.723 ±0.056 2.607 ±0.042 
+
+connectionist bench sonar 0.033 ±0.000 0.300 ±0.002 33 .308 ±0.940 2.586 ±0.088 1.256 ±0.042 0.148 ±0.002 0.201 ±0.001 1.655 ±0.064 1.584 ±0.008 2.901 ±0.025 3.732 ±0.096 2.787 ±0.059 3.652 ±0.042 
+
+connectionist bench vowel 0.178 ±0.001 0.136 ±0.002 26 .553 ±0.719 2.873 ±0.078 1.476 ±0.034 0.034 ±0.000 0.065 ±0.003 1.307 ±0.008 0.269 ±0.001 7.757 ±0.016 7.701 ±0.031 7.689 ±0.045 7.655 ±0.024 
+
+ecoli - 0.063 ±0.001 4.659 ±0.255 1.001 ±0.043 0.525 ±0.024 0.024 ±0.000 0.032 ±0.000 2.648 ±0.016 0.153 ±0.002 5.348 ±0.343 5.260 ±0.330 5.089 ±0.460 5.105 ±0.459 
+
+glass 0.076 ±0.006 0.057 ±0.001 4.525 ±0.101 0.973 ±0.015 0.523 ±0.013 0.029 ±0.000 0.036 ±0.000 12 .733 ±0.806 0.217 ±0.001 4.268 ±0.005 4.204 ±0.008 4.128 ±0.004 4.145 ±0.007 
+
+ionosphere 0.089 ±0.002 0.213 ±0.002 28 .830 ±0.673 1.548 ±0.075 0.754 ±0.051 0.086 ±0.001 0.127 ±0.001 2.833 ±0.010 0.842 ±0.002 2.574 ±0.023 2.650 ±0.029 1.954 ±0.082 2.613 ±0.040 
+
+iris 0.054 ±0.000 0.036 ±0.001 1.428 ±0.020 0.386 ±0.021 0.194 ±0.007 0.017 ±0.000 0.020 ±0.000 2.494 ±0.401 0.088 ±0.001 2.089 ±0.008 2.058 ±0.016 2.022 ±0.007 2.047 ±0.006 
+
+libras 0.059 ±0.001 0.699 ±0.012 84 .474 ±2.128 15 .016 ±1.254 9.292 ±0.635 0.218 ±0.001 0.334 ±0.002 1.717 ±0.041 2.487 ±0.006 29 .444 ±0.126 33 .046 ±0.635 29 .166 ±0.408 38 .363 ±0.200 
+
+parkinsons 0.019 ±0.000 0.103 ±0.001 11 .297 ±1.005 0.938 ±0.054 0.467 ±0.022 0.060 ±0.000 0.078 ±0.001 2.733 ±0.435 0.552 ±0.003 1.494 ±0.003 1.460 ±0.004 1.441 ±0.007 1.453 ±0.009 
+
+planning relax 0.043 ±0.000 0.065 ±0.001 5.599 ±0.069 0.539 ±0.014 0.283 ±0.007 0.035 ±0.000 0.044 ±0.000 2.642 ±0.014 0.296 ±0.001 1.430 ±0.002 1.422 ±0.003 1.414 ±0.005 1.414 ±0.003 
+
+qsar biodegradation 0.118 ±0.001 0.695 ±0.006 67 .593 ±1.279 2.118 ±0.048 1.036 ±0.038 0.114 ±0.002 0.238 ±0.001 3.409 ±0.168 1.116 ±0.004 2.831 ±0.023 2.820 ±0.064 2.758 ±0.039 2.781 ±0.011 
+
+seeds 0.056 ±0.001 0.050 ±0.001 3.796 ±0.034 0.555 ±0.004 0.293 ±0.008 0.024 ±0.000 0.029 ±0.000 2.796 ±0.011 0.164 ±0.001 2.101 ±0.003 2.059 ±0.004 2.036 ±0.002 2.043 ±0.010 
+
+tictactoe 0.374 ±0.008 0.817 ±0.014 6.186 ±0.038 0.993 ±0.025 0.483 ±0.011 0.029 ±0.001 0.026 ±0.000 8.328 ±0.031 0.050 ±0.000 2.674 ±0.092 3.027 ±0.098 3.175 ±0.064 2.579 ±0.047 
+
+wine 0.058 ±0.000 0.067 ±0.001 5.976 ±0.034 0.841 ±0.031 0.428 ±0.025 0.039 ±0.000 0.049 ±0.001 10 .684 ±0.622 0.318 ±0.002 2.155 ±0.005 2.119 ±0.004 2.092 ±0.015 2.100 ±0.005 
+
+wine quality red 0.041 ±0.000 0.071 ±0.001 43 .026 ±1.178 0.513 ±0.004 0.251 ±0.002 0.036 ±0.000 0.036 ±0.000 2.457 ±0.015 0.304 ±0.001 0.757 ±0.006 0.778 ±0.067 1.086 ±0.049 0.728 ±0.015 
+
+wine quality white 0.052 ±0.006 0.160 ±0.001 145 .033 ±0.946 1.066 ±0.011 0.488 ±0.010 0.056 ±0.000 0.048 ±0.000 4.855 ±0.032 0.418 ±0.002 1.402 ±0.014 1.409 ±0.079 1.612 ±0.051 1.292 ±0.021 
+
+yacht hydrodynamics 0.039 ±0.000 0.030 ±0.000 3.850 ±0.188 0.227 ±0.006 0.108 ±0.005 0.021 ±0.000 0.029 ±0.000 2.622 ±0.081 0.161 ±0.001 0.718 ±0.002 0.699 ±0.002 0.691 ±0.001 0.703 ±0.002 
+
+yeast 0.151 ±0.004 0.172 ±0.002 24 .122 ±0.558 1.856 ±0.078 0.937 ±0.022 0.033 ±0.000 0.031 ±0.000 2.704 ±0.080 0.220 ±0.001 6.996 ±0.153 6.879 ±0.148 6.818 ±0.011 6.870 ±0.025 
+
+23 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 19. Big Benchmark: Shape metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.977 ±0.001 0.856 ±0.001 0.855 ±0.001 - 0.978 ±0.001 0.987 ±0.001 
+
+adult 0.925 ±0.000 0.956 ±0.001 0.842 ±0.001 0.913 ±0.001 0.987 ±0.001 0.990 ±0.000 0.994 ±0.001 
+
+bank 0.961 ±0.000 0.972 ±0.001 0.895 ±0.000 0.887 ±0.001 0.980 ±0.001 0.990 ±0.000 0.992 ±0.001 
+
+beijing 0.978 ±0.000 0.974 ±0.001 0.917 ±0.001 0.889 ±0.001 0.985 ±0.001 0.992 ±0.001 0.993 ±0.001 
+
+churn 0.972 ±0.001 0.966 ±0.002 0.836 ±0.003 0.938 ±0.002 0.922 ±0.003 0.975 ±0.003 0.982 ±0.002 
+
+covertype - 0.995 ±0.000 0.955 ±0.000 0.980 ±0.000 0.996 ±0.000 0.990 ±0.000 0.997 ±0.000 
+
+default 0.955 ±0.001 0.953 ±0.001 0.854 ±0.001 0.901 ±0.001 0.983 ±0.001 0.986 ±0.001 0.991 ±0.001 
+
+diabetes 0.955 ±0.000 0.980 ±0.000 0.923 ±0.000 0.898 ±0.000 - 0.942 ±0.000 0.995 ±0.000 
+
+lending 0.939 ±0.001 0.944 ±0.001 0.876 ±0.001 0.854 ±0.001 0.469 ±0.001 0.959 ±0.001 0.984 ±0.001 
+
+news 0.915 ±0.000 0.899 ±0.000 0.837 ±0.000 0.866 ±0.000 0.952 ±0.001 0.977 ±0.000 0.991 ±0.000 
+
+nmes 0.967 ±0.001 0.956 ±0.001 0.890 ±0.002 0.854 ±0.002 0.939 ±0.002 0.980 ±0.001 0.990 ±0.001 
+
+Table 20. Big Benchmark: Trend metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.712 ±0.018 0.710 ±0.003 0.661 ±0.010 - 0.941 ±0.002 0.946 ±0.002 
+
+adult 0.859 ±0.004 0.636 ±0.011 0.782 ±0.005 0.838 ±0.025 0.963 ±0.001 0.977 ±0.001 0.980 ±0.003 
+
+bank 0.931 ±0.003 0.572 ±0.010 0.759 ±0.006 0.810 ±0.003 0.956 ±0.001 0.980 ±0.001 0.978 ±0.002 
+
+beijing 0.989 ±0.001 0.892 ±0.003 0.901 ±0.001 0.912 ±0.003 0.985 ±0.001 0.994 ±0.001 0.990 ±0.001 
+
+churn 0.961 ±0.002 0.735 ±0.018 0.775 ±0.007 0.901 ±0.004 0.885 ±0.004 0.961 ±0.002 0.965 ±0.004 
+
+covertype - 0.819 ±0.013 0.900 ±0.004 0.920 ±0.008 0.973 ±0.003 0.979 ±0.003 0.988 ±0.004 
+
+default 0.883 ±0.009 0.599 ±0.015 0.740 ±0.003 0.832 ±0.012 0.909 ±0.002 0.960 ±0.009 0.920 ±0.019 
+
+diabetes 0.917 ±0.001 0.725 ±0.006 0.813 ±0.004 0.802 ±0.003 - 0.893 ±0.001 0.978 ±0.002 
+
+lending 0.915 ±0.005 0.699 ±0.005 0.840 ±0.002 0.762 ±0.004 0.653 ±0.000 0.936 ±0.002 0.952 ±0.002 
+
+news 0.936 ±0.006 0.704 ±0.004 0.845 ±0.002 0.837 ±0.004 0.910 ±0.001 0.978 ±0.001 0.973 ±0.007 
+
+nmes 0.945 ±0.004 0.586 ±0.018 0.733 ±0.014 0.807 ±0.009 0.901 ±0.002 0.968 ±0.005 0.971 ±0.005 
+
+Table 21. Big Benchmark: Detection metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.842 ±0.003 0.964 ±0.001 0.974 ±0.000 - 0.611 ±0.003 0.689 ±0.003 
+
+adult 0.956 ±0.001 0.956 ±0.002 0.998 ±0.000 0.978 ±0.001 0.619 ±0.004 0.668 ±0.004 0.614 ±0.004 
+
+bank 0.917 ±0.003 0.927 ±0.002 1.000 ±0.000 0.998 ±0.000 0.881 ±0.004 0.866 ±0.003 0.817 ±0.003 
+
+beijing 0.938 ±0.004 0.985 ±0.002 0.997 ±0.000 0.998 ±0.000 0.876 ±0.003 0.768 ±0.007 0.813 ±0.005 
+
+churn 0.778 ±0.011 0.900 ±0.011 0.999 ±0.001 0.977 ±0.003 0.932 ±0.007 0.866 ±0.011 0.739 ±0.016 
+
+covertype - 0.975 ±0.001 1.000 ±0.000 0.998 ±0.000 0.800 ±0.005 0.844 ±0.003 0.873 ±0.003 
+
+default 0.927 ±0.002 0.996 ±0.000 1.000 ±0.000 0.999 ±0.000 0.915 ±0.004 0.865 ±0.004 0.881 ±0.005 
+
+diabetes 0.896 ±0.001 0.981 ±0.001 0.985 ±0.000 0.998 ±0.000 - 0.955 ±0.001 0.774 ±0.002 
+
+lending 0.981 ±0.003 0.999 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 0.933 ±0.006 0.652 ±0.015 
+
+news 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 1.000 ±0.000 0.995 ±0.000 0.987 ±0.001 0.923 ±0.004 
+
+nmes 0.652 ±0.008 0.845 ±0.009 0.927 ±0.004 0.987 ±0.001 0.848 ±0.005 0.633 ±0.008 0.511 ±0.012 
+
+24 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 22. Big Benchmark: α-Precision metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.991 ±0.003 0.846 ±0.004 0.859 ±0.004 - 0.984 ±0.003 0.992 ±0.003 
+
+adult 0.617 ±0.001 0.974 ±0.003 0.696 ±0.003 0.847 ±0.003 0.945 ±0.003 0.991 ±0.002 0.997 ±0.001 
+
+bank 0.810 ±0.002 0.995 ±0.001 0.708 ±0.002 0.892 ±0.004 0.959 ±0.004 0.993 ±0.003 0.984 ±0.004 
+
+beijing 0.916 ±0.002 0.957 ±0.003 0.928 ±0.003 0.980 ±0.001 0.953 ±0.004 0.988 ±0.002 0.988 ±0.002 
+
+churn 0.957 ±0.007 0.975 ±0.005 0.715 ±0.007 0.895 ±0.012 0.938 ±0.005 0.951 ±0.010 0.958 ±0.017 
+
+covertype - 0.940 ±0.002 0.753 ±0.002 0.787 ±0.004 0.957 ±0.004 0.971 ±0.004 0.918 ±0.002 
+
+default 0.944 ±0.002 0.965 ±0.002 0.729 ±0.002 0.859 ±0.004 0.983 ±0.003 0.985 ±0.004 0.989 ±0.002 
+
+diabetes 0.489 ±0.001 0.982 ±0.002 0.790 ±0.003 0.448 ±0.002 - 0.949 ±0.002 0.996 ±0.001 
+
+lending 0.651 ±0.004 0.930 ±0.006 0.757 ±0.005 0.663 ±0.007 0.000 ±0.000 0.973 ±0.006 0.972 ±0.007 
+
+news 0.399 ±0.002 0.934 ±0.002 0.892 ±0.002 0.571 ±0.004 0.962 ±0.003 0.884 ±0.004 0.955 ±0.004 
+
+nmes 0.811 ±0.005 0.934 ±0.010 0.778 ±0.008 0.606 ±0.012 0.868 ±0.014 0.975 ±0.007 0.983 ±0.006 
+
+Table 23. Big Benchmark: β-Recall metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.460 ±0.003 0.233 ±0.002 0.323 ±0.003 - 0.449 ±0.002 0.436 ±0.002 
+
+adult 0.300 ±0.001 0.297 ±0.003 0.246 ±0.002 0.386 ±0.003 0.509 ±0.003 0.467 ±0.003 0.478 ±0.002 
+
+bank 0.461 ±0.002 0.354 ±0.003 0.217 ±0.002 0.169 ±0.002 0.440 ±0.004 0.417 ±0.003 0.393 ±0.003 
+
+beijing 0.613 ±0.002 0.101 ±0.002 0.053 ±0.001 0.051 ±0.001 0.098 ±0.001 0.134 ±0.002 0.113 ±0.002 
+
+churn 0.570 ±0.008 0.146 ±0.010 0.003 ±0.001 0.062 ±0.004 0.094 ±0.008 0.179 ±0.010 0.257 ±0.012 
+
+covertype - 0.105 ±0.001 0.002 ±0.000 0.042 ±0.001 0.156 ±0.004 0.146 ±0.003 0.109 ±0.002 
+
+default 0.683 ±0.003 0.299 ±0.004 0.160 ±0.002 0.228 ±0.002 0.449 ±0.004 0.455 ±0.004 0.426 ±0.003 
+
+diabetes 0.552 ±0.002 0.299 ±0.002 0.143 ±0.002 0.340 ±0.002 - 0.208 ±0.002 0.389 ±0.003 
+
+lending 0.630 ±0.003 0.212 ±0.006 0.049 ±0.003 0.231 ±0.004 0.000 ±0.000 0.399 ±0.009 0.479 ±0.010 
+
+news 0.288 ±0.002 0.006 ±0.001 0.023 ±0.001 0.009 ±0.001 0.331 ±0.004 0.296 ±0.003 0.371 ±0.003 
+
+nmes 0.691 ±0.011 0.389 ±0.007 0.284 ±0.008 0.240 ±0.007 0.461 ±0.009 0.516 ±0.012 0.501 ±0.012 
+
+Table 24. Big Benchmark: MLE ( R2) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome 0.390 ±0.007 - 0.376 ±0.008 0.212 ±0.005 0.285 ±0.009 - 0.362 ±0.007 0.334 ±0.007 
+
+beijing 0.803 ±0.000 0.671 ±0.005 0.470 ±0.010 0.041 ±0.019 0.084 ±0.034 0.447 ±0.015 0.572 ±0.009 0.407 ±0.011 
+
+lending 0.999 ±0.000 0.997 ±0.000 0.885 ±0.010 −0.094 ±0.061 0.940 ±0.006 −1.623 ±1.042 0.984 ±0.002 0.992 ±0.001 
+
+news 0.022 ±0.004 0.009 ±0.025 0.012 ±0.009 0.006 ±0.003 −0.035 ±0.001 −0.573 ±0.077 −0.000 ±0.020 0.010 ±0.016 
+
+nmes 0.177 ±0.000 0.103 ±0.035 0.143 ±0.016 −0.071 ±0.023 0.069 ±0.010 0.109 ±0.033 0.149 ±0.015 0.148 ±0.019 
+
+Table 25. Big Benchmark: MLE (ROCAUC) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR adult 0.929 ±0.000 0.912 ±0.001 0.908 ±0.001 0.891 ±0.002 0.880 ±0.002 0.911 ±0.001 0.913 ±0.001 0.914 ±0.002 
+
+bank 0.951 ±0.002 0.945 ±0.001 0.939 ±0.001 0.878 ±0.007 0.931 ±0.003 0.941 ±0.002 0.938 ±0.002 0.947 ±0.001 
+
+churn 0.988 ±0.001 0.980 ±0.002 0.949 ±0.012 0.843 ±0.019 0.868 ±0.014 0.877 ±0.025 0.948 ±0.015 0.950 ±0.011 
+
+covertype 0.964 ±0.001 - 0.898 ±0.002 0.597 ±0.010 0.824 ±0.002 0.874 ±0.001 0.852 ±0.001 0.834 ±0.003 
+
+default 0.774 ±0.002 0.760 ±0.003 0.758 ±0.003 0.701 ±0.005 0.723 ±0.004 0.759 ±0.003 0.761 ±0.002 0.757 ±0.003 
+
+diabetes 0.699 ±0.002 0.688 ±0.002 0.678 ±0.003 0.573 ±0.003 0.659 ±0.001 - 0.646 ±0.004 0.675 ±0.002 
+
+25 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 26. Big Benchmark: MLE (F1) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR adult 0.716 ±0.002 0.687 ±0.003 0.649 ±0.008 0.646 ±0.008 0.620 ±0.006 0.678 ±0.005 0.675 ±0.004 0.682 ±0.004 
+
+bank 0.605 ±0.001 0.574 ±0.010 0.456 ±0.016 0.515 ±0.012 0.540 ±0.014 0.534 ±0.010 0.542 ±0.012 0.565 ±0.008 
+
+churn 0.877 ±0.001 0.840 ±0.021 0.698 ±0.045 0.535 ±0.037 0.582 ±0.042 0.340 ±0.094 0.705 ±0.031 0.713 ±0.042 
+
+covertype 0.898 ±0.003 - 0.814 ±0.002 0.347 ±0.024 0.737 ±0.003 0.789 ±0.002 0.766 ±0.003 0.764 ±0.003 
+
+default 0.448 ±0.004 0.451 ±0.007 0.368 ±0.014 0.247 ±0.019 0.338 ±0.009 0.439 ±0.008 0.416 ±0.011 0.413 ±0.013 
+
+diabetes 0.588 ±0.003 0.574 ±0.004 0.508 ±0.007 0.085 ±0.011 0.586 ±0.004 - 0.435 ±0.009 0.560 ±0.004 
+
+Table 27. Big Benchmark: MLE (RMSE) metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. Real indicates MLE results when training on real data. 
+
+model Real SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome 0.774 ±0.014 - 0.783 ±0.016 0.880 ±0.017 0.838 ±0.017 - 0.792 ±0.015 0.809 ±0.015 
+
+beijing 0.441 ±0.000 0.571 ±0.005 0.724 ±0.007 0.974 ±0.010 0.952 ±0.017 0.740 ±0.010 0.651 ±0.007 0.766 ±0.007 
+
+lending 0.030 ±0.000 0.056 ±0.003 0.338 ±0.015 1.043 ±0.029 0.245 ±0.013 1.588 ±0.311 0.126 ±0.006 0.090 ±0.006 
+
+news 0.998 ±0.002 1.004 ±0.013 1.003 ±0.005 1.006 ±0.002 1.026 ±0.000 1.265 ±0.031 1.009 ±0.010 1.004 ±0.008 
+
+nmes 0.985 ±0.000 1.028 ±0.020 1.005 ±0.010 1.123 ±0.012 1.048 ±0.006 1.024 ±0.019 1.001 ±0.009 1.002 ±0.011 
+
+Table 28. Big Benchmark: DCR metric scores for all datasets. Average and standard devation (μ ± σ) over 20 sampling seeds. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 0.980 ±0.006 0.998 ±0.002 0.994 ±0.006 - 0.999 ±0.002 0.998 ±0.002 
+
+adult 0.948 ±0.006 0.914 ±0.007 0.994 ±0.005 0.996 ±0.004 0.970 ±0.007 0.980 ±0.008 0.984 ±0.007 
+
+bank 0.882 ±0.006 0.915 ±0.007 0.982 ±0.007 0.984 ±0.010 0.978 ±0.008 0.993 ±0.006 0.989 ±0.006 
+
+beijing 0.734 ±0.005 0.940 ±0.008 0.981 ±0.007 0.978 ±0.011 0.987 ±0.007 0.974 ±0.009 0.975 ±0.006 
+
+churn 0.834 ±0.032 0.933 ±0.031 0.982 ±0.015 0.965 ±0.025 0.982 ±0.018 0.983 ±0.016 0.943 ±0.024 
+
+covertype - 0.969 ±0.004 0.993 ±0.010 0.993 ±0.005 0.997 ±0.003 0.995 ±0.004 0.994 ±0.005 
+
+default 0.751 ±0.009 0.970 ±0.010 0.979 ±0.008 0.974 ±0.009 0.979 ±0.009 0.985 ±0.008 0.984 ±0.007 
+
+diabetes 0.807 ±0.004 0.912 ±0.005 0.998 ±0.002 0.990 ±0.008 - 0.973 ±0.006 0.991 ±0.005 
+
+lending 0.852 ±0.017 0.898 ±0.016 0.964 ±0.012 1.000 ±0.001 0.965 ±0.020 0.974 ±0.014 0.950 ±0.015 
+
+news 0.824 ±0.007 0.966 ±0.007 0.987 ±0.007 0.983 ±0.005 0.986 ±0.007 0.981 ±0.009 0.986 ±0.006 
+
+nmes 0.816 ±0.026 0.955 ±0.022 0.986 ±0.013 0.991 ±0.013 0.950 ±0.022 0.953 ±0.024 0.961 ±0.020 
+
+Table 29. Big Benchmark: training time in minutes for all datasets. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 89 .414 16 .844 8.263 - 684 .166 2.877 
+
+adult - 4.784 6.400 2.722 25 .883 70 .789 0.077 
+
+bank - 10 .545 6.309 2.969 26 .113 89 .043 0.057 
+
+beijing - 5.931 5.177 2.917 22 .569 73 .557 0.044 
+
+churn - 0.341 0.416 0.295 1.874 45 .802 0.022 
+
+covertype - 143 .582 26 .471 12 .510 40 .873 950 .345 0.948 
+
+default - 8.761 5.138 2.721 17 .875 68 .006 0.066 
+
+diabetes - 57 .591 30 .213 6.804 - 173 .673 0.294 
+
+lending - 7.834 5.856 1.795 16 .474 55 .721 0.144 
+
+news - 30 .179 13 .072 8.499 24 .721 126 .172 0.234 
+
+nmes - 0.353 0.710 0.443 2.636 46 .095 0.029 
+
+26 XGenBoost: Synthesizing Small and Large Tabular Datasets with XGBoost 
+
+Table 30. Big Benchmark: inference time in seconds for all datasets. Best results per dataset are in bold , second best underlined. 
+
+model SMOTE ARF CTGAN TVAE TabDDPM TabSyn XGenB-AR acsincome - 101 .964 ±3.579 2.003 ±0.038 1.454 ±0.053 - 37 .829 ±0.245 8.898 ±0.276 
+
+adult 12 .889 ±0.179 38 .817 ±0.605 0.449 ±0.006 0.264 ±0.007 141 .720 ±1.729 14 .286 ±0.091 2.481 ±0.073 
+
+bank 12 .391 ±0.339 39 .714 ±0.669 0.453 ±0.005 0.261 ±0.005 136 .956 ±0.468 11 .998 ±0.085 1.645 ±0.048 
+
+beijing 6.272 ±0.050 4.916 ±0.154 0.294 ±0.007 0.166 ±0.004 70 .876 ±0.665 9.149 ±0.012 1.020 ±0.008 
+
+churn 0.203 ±0.003 1.520 ±0.047 0.059 ±0.001 0.051 ±0.001 10 .963 ±0.074 0.611 ±0.003 0.218 ±0.004 
+
+covertype - 519 .985 ±9.916 3.092 ±0.049 1.689 ±0.035 1295 .988 ±182 .294 39 .751 ±0.205 9.042 ±0.350 
+
+default 6.011 ±0.178 27 .181 ±0.223 0.385 ±0.008 0.230 ±0.005 91 .342 ±1.070 8.278 ±0.006 1.751 ±0.042 
+
+diabetes 71 .852 ±0.931 231 .081 ±4.525 3.795 ±0.066 3.508 ±0.534 - 25 .129 ±0.108 11 .303 ±0.233 
+
+lending 3.082 ±0.045 11 .232 ±1.543 0.647 ±0.025 0.555 ±0.075 98 .118 ±3.302 2.462 ±0.007 1.702 ±0.076 
+
+news 11 .031 ±0.354 60 .550 ±1.296 1.044 ±0.014 0.591 ±0.007 155 .496 ±0.811 8.380 ±0.024 5.550 ±0.176 
+
+nmes 0.380 ±0.013 3.368 ±0.041 0.086 ±0.001 0.086 ±0.069 14 .274 ±0.103 0.856 ±0.004 0.334 ±0.009 
+
+27

@@ -1,0 +1,2379 @@
+Title: Skip to the Good Part: Representation Structure & Inference-Time Layer Skipping in Diffusion vs. Autoregressive LLMs
+
+URL Source: https://arxiv.org/pdf/2603.07475v1
+
+Published Time: Tue, 10 Mar 2026 01:10:51 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+## Skip to the Good Part: Representation Structure & Inference-Time Layer Skipping in Diffusion vs. Autoregressive LLMs 
+
+Raghavv Goel * 1 Risheek Garrepalli * 1 Sudhanshu Agrawal 1 Chris Lott 1 Mingu Lee γ 1 Fatih Porikli γ 1
+
+Abstract 
+
+Autoregressive (AR) language models form rep-resentations incrementally through left -to -right prediction, whereas diffusion language models (dLLMs) are trained via full - sequence denois-ing. Although recent dLLMs match AR per-formance, it remains unclear whether diffusion objectives fundamentally reshape internal repre-sentations across depth. We perform the first layer - and token - wise representational analysis comparing native dLLMs (LLaDA), native AR models (Qwen2.5), and AR - initialized dLLMs (Dream - 7B). We find that diffusion objectives re-sult in different, more hierarchical abstraction with substantial early - layer redundancy and re-duced recency bias, while AR objectives produce tightly coupled, depth -dependent representations. Critically, AR -initialized dLLMs retain AR - like representational dynamics despite diffusion train-ing, revealing persistent initialization bias. Lever-aging this observed representational redundancy, we introduce a static, task - agnostic inference -time layer - skipping method requiring no architectural changes or KV - cache sharing. Native dLLMs achieve up to 18.75% FLOPs reduction while preserving over 90% performance on reasoning and code generation benchmarks, whereas AR models degrade sharply under comparable skip-ping. These results link training objectives to representational structure and enable practical, cache-orthogonal efficiency gains. 
+
+1. Introduction 
+
+Transition from Next -Token Prediction (NTP) to Diffusion: Autoregressive (AR) LLMs trained with NTP build predic-
+
+> 1
+
+Qualcomm AI Research. Correspondence to: Raghavv Goel <rgahgoel@qti.qualcomm.com >, Risheek Garrepalli <rgar-repalli@qti.qualcomm.com >.
+
+Preprint. March 10, 2026. 
+
+Qualcomm AI Research is an initiative of Qualcomm Technologies Inc. 0 5 10 15 20 25 30 35 
+
+> FLOPs Reduction (%)
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Performance Retention (%)
+> 0 layers
+> (100.0%)
+> 6 layers
+> (88.2%)
+> 10 layers
+> (25.5%)
+> 0 layers
+> (100.0%)
+> 6 layers
+> (14.7%)
+> 0 layers
+> (100.0%)
+> 6 layers
+> (0.0%)
+> Computational Savings vs Performance Retention
+> (Top-Right is Best)
+> LLaDA
+> Qwen2.5-7B
+> Dream7B
+
+Figure 1. Representational redundancy enables efficient inference-time layer skipping. We evaluate zero-shot layer prun-ing across three architectures: LLaDA (diffusion LLM), Dream7B (dLLM initialized from Qwen2.5), and Qwen2.5-7B (AR-LLM). The diffusion-based LLaDA exhibits remarkable robustness, re-taining 88.24% performance at 18.75% FLOPs reduction (6 layers skipped), demonstrating significant representational redundancy. Conversely, autoregressive models show brittle behavior with only 64.71% retention at 7.14% FLOPs reduction (2 layers), revealing concentrated, non-redundant representations. Top-right region in-dicates optimal performance-efficiency trade-off. 
+
+tions left - to - right, while diffusion LLMs (dLLMs) learn by iteratively denoising full - sequence states. In text, this shift is often instantiated through discrete diffusion formulations that replace the AR factorization with stepwise refinement over the entire sequence. The knowledge gap: although recent dLLMs (e.g., LLaDA (Nie et al., 2025), DiffuCoder (Gong et al., 2025)) now match AR performance, we do not yet understand how their representations differ. Does look-ing at the full sequence during training actually change how features are abstracted and consolidated across depth/steps? While the dominant focus, motivation in dLLM research has been on inference-time efficiency—parallel decoding, KV-caching, and architectural optimizations—the internal representational properties of these models remain largely unexplored. Recent work (Gong et al., 2025) has begun ex-amining local versus global representations in dLLMs and demonstrated their potential for diverse exploration in RL-based fine-tuning contexts. However, a systematic analysis of how diffusion objectives shape representational abstrac-
+
+1
+
+> arXiv:2603.07475v1 [cs.CL] 8 Mar 2026 Representational Analysis & Inference Time Layer-Skipping in dLLMs
+
+tion across layers, and how this compares to AR models, is still missing . Understanding these representational dynam-ics is crucial, as they may reveal fundamental differences in how models organize information—analogous to how resid-ual connections in ResNets enable different optimization landscapes compared to standard feedforward networks. We hypothesize that training objective and curriculum materially shape an LLM’s internal geometry, leading diffusion - trained models to organize information differently from AR models. In particular, the full - sequence feedback in diffusion may encourage earlier or more global abstrac-tion, with practical consequences for inference - time redun-dancy. While architectural approaches like YOCO reduce memory/latency via cache - once designs and early - exit dur-ing prefill, our goal is orthogonal: can objective - induced redundancy alone support inference -only layer skip-ping—without any KV-cache sharing or parameter tying? To isolate the role of objective and initialization, we com-pare three families: a native dLLM (LLaDA), a native AR model (Qwen2.5), and an AR - adopted dLLM (Dream - 7B) that initializes from Qwen2.5, providing a strong test of initialization bias. Our representational analysis across lay-ers and tokens/denoising steps shows that Dream -7B aligns more closely with Qwen2.5 than with LLaDA, indicating that AR initialization imprints persistent structure even after diffusion training. Motivated by this, we assess whether the observed redundancy can be directly leveraged via static, task -agnostic layer skipping at inference time—without KV sharing—to yield measurable speedups with minimal perfor-mance loss, thereby complementing cache -centric methods like YOCO. Below we summarize our contributions in this work: • Representational analysis revealing objective-induced redundancy: We present the first systematic layer-wise and token-wise similarity analysis comparing native dLLMs, AR models, and AR-initialized dLLMs. We demonstrate that diffusion objectives induce stronger hierarchical abstraction with concentrated early-layer redundancy and minimal recency bias, while AR objec-tives maintain incremental token-by-token refinement throughout depth with strong recency bias. We further reveal strong initialization bias: AR-initialized dLLMs (Dream-7B) retain AR-like representational patterns despite diffusion training. • Inference - time layer skipping: Leveraging objective - induced representational redundancy, we introduce a static, task - agnostic layer -skip policy that requires no KV -cache sharing and no architectural modifications. Native dLLMs achieve up to 18.75% FLOPs reduction with minimal accuracy loss ( < 10% 
+
+degradation on average), while AR models show brittleness. • Cross - domain benchmarking We evaluate across rea-soning (GSM8K, MATH-500) and code synthesis (Hu-manEval, MBPP) tasks, demonstrating consistent pat-terns: native dLLMs tolerate aggressive layer skip-ping (6+ layers with > 90% retention), AR-initialized dLLMs show intermediate robustness (2-4 layers), and native AR models are brittle (substantial degradation at 2 layers). 
+
+2. Layer-wise and Token-wise Similarity Analysis 
+
+Motivation: To understand how training objectives shape internal representations and induce redundancy patterns, we examine layer-to-layer similarity across dLLMs and AR models. Unlike AR models that build representations in-crementally through left-to-right token prediction, dLLMs receive full-sequence gradient feedback during training, po-tentially leading to different abstraction pathways and re-dundancy structures across depth. We hypothesize that this objective-level difference mani-fests as measurable representational redundancy that can be exploited for inference-time efficiency gains without architectural modifications or KV-cache sharing. Given that ‘coarse-to-fine’ generation is a common motivation and hypothesis for diffusion models, we take a first step in an-alyzing the rate of change of representations (within the shared embedding space) across both layers and tokens as illustrated in Fig. 5 and Fig. 6 for cosine similarity across tokens. 
+
+Methodology: We track the cosine similarity between con-secutive layer representations hℓ and hℓ+1 across all tokens in a sequence. For dLLMs, we compute this similarity at multiple denoising steps t ∈ { 1, . . . , T }; for AR models, we compute it during standard forward passes. We aggre-gate statistics across diverse prompts from our evaluation benchmarks. 
+
+1) Coarse-to-fine abstraction in native dLLMs: For LLaDA, from Fig. 5 the layer-wise similarity pattern re-mains largely consistent across denoising steps, suggesting a pronounced representational abstraction hierarchy. Early layers establish coarse representations with high inter-layer similarity (plateau regions with cosine similarity > 0.95 ), while later layers and denoising steps perform iterative re-finement rather than restructuring the representation at each step. This hierarchical organization indicates potential re-dundancy in early layers that can be exploited at inference time. 
+
+2) Recency bias and Global vs. Local representations: 
+
+Token-wise analysis reveals striking differences in represen-tational dynamics. LLaDA exhibits minimal recency bias 2Representational Analysis & Inference Time Layer-Skipping in dLLMs Prompt tokens block 1 block 2 
+
+> Prefix caching + Layer-skip
+> t=0
+> t=1 Denoising Steps
+> Skipped Layers across Tokens, Denoising Iterations
+> Previously Unmasked Token's activations
+> Current Block Unmasking across Denoising Iterations
+> Prefix caching
+> Prompt
+
+Figure 2. Layer-skip mechanism for dLLMs. At each denoising step, high-similarity layers (shaded) are bypassed, with hidden states passed directly to the next active layer. This reduces per-step FLOPs while preserving the coarse-to-fine abstraction hierarchy. 
+
+with smooth, high-similarity transitions across all tokens and layers, indicating global representational abstraction. In contrast, both Dream-7B and Qwen2.5 demonstrate sig-nificant recency bias—representations change substantially for each new token across all layers. Notably, in LLaDA, recency bias emerges primarily in later layers (which begin to act more like decoder layers), whereas in Dream-7B and Qwen2.5, recency bias is prominent across all layers and tokens. This suggests that AR-style models maintain con-sistent token-by-token representational updates throughout depth, indicating less hierarchical abstraction compared to native dLLMs. Our representational similarity analysis complements the behavioral analysis in (Gong et al., 2025), which mea-sures AR-ness through generation patterns (local consecu-tive next-token prediction and global earliest-mask selec-tion). While their metrics capture output-level generation strategies—whether models follow left-to-right filling pat-terns—our layer-wise and token-wise cosine similarity anal-ysis reveals internal representational dynamics : how hidden states evolve across depth and tokens. Critically, we find that Dream-7B exhibits AR-like recency bias in its representations (mirroring Qwen2.5’s token-by-token updates) despite being trained with diffusion objec-tives, providing mechanistic evidence for initialization bias that persists beyond surface-level generation behavior. This representational perspective explains why certain models exhibit AR-like generation patterns and reveals that initial-ization effects run deeper than decoding strategies alone. 
+
+Recency Bias & Representational Abstraction 
+
+Diffusion objectives reduce recency bias and pro-mote hierarchical abstraction: LLaDA shows min-imal recency bias with global representations across tokens, while AR models (Qwen2.5, Dream-7B) ex-hibit strong recency bias at all layers. This suggests diffusion training encourages coarse-to-fine abstrac-tion, whereas AR training maintains incremental, token-by-token updates throughout network depth. 
+
+3) Strong initialization bias in AR-adopted dLLMs: De-spite being trained with a diffusion objective, Dream-7B’s similarity profile—both layer-wise and token-wise—closely mirrors that of its AR initialization (Qwen2.5), with high-similarity regions and recency patterns appearing in nearly identical layer ranges. As shown in Figure 3, Dream-7B’s average token-wise co-sine similarity across layers follows Qwen2.5’s pattern re-markably closely throughout the network depth, despite undergoing diffusion training. In contrast, LLaDA exhibits a distinctly different profile: it begins with very high simi-larity ( > 0.95 ) in early layers, indicating redundant repre-sentations with smooth transitions, then transitions to lower similarity in later layers where refinement occurs. This hi-erarchical pattern—high redundancy in early layers, active refinement in later layers—is characteristic of native dif-fusion training and absent in AR-initialized models. This highlights the strong regularization effect of initialization on resulting representations and abstractions, persisting even after significant fine-tuning with diffusion-based objectives. 3Representational Analysis & Inference Time Layer-Skipping in dLLMs    
+
+> Figure 3. Average token-wise cosine similarity across layers and denoising steps. LLaDA (native dLLM) exhibits high simi-larity ( >0.9) in early layers with smooth transitions, followed by lower similarity in later layers where refinement occurs. Dream-7B closely follows Qwen2.5’s pattern despite diffusion training, re-vealing persistent initialization bias. Shaded regions show standard deviation across denoising steps for LLaDA and Dream-7B.
+
+Initialization Effect 
+
+AR initialization creates persistent representa-tional structure: Dream-7B, despite diffusion train-ing, retains Qwen2.5’s similarity patterns and re-cency bias, demonstrating that pre-trained AR repre-sentations strongly regularize subsequent diffusion fine-tuning. Native dLLMs (LLaDA) develop fun-damentally different abstraction hierarchies. 
+
+Magnitude Evolution One potential limitation of cosine similarity is its invariance to magnitude. To ensure our redundancy findings are not artifacts of magnitude collapse, we analyze the ℓ2 norm of hidden states across layers as observed in Fig. 7.We observed that the magnitude evolution is small for initial 60-70% layers and then rises steeply. There is also presence of sink tokens – super high magnitude than the rest of the tokens, as discussed in (Rulli et al., 2025). Together, these analyses validate cosine similarity as a mean-ingful proxy which demonstrate potential redundancy in rep-resentations and motivate our inference-time layer-skipping strategy. 
+
+3. Layer-skip at Inference 
+
+The observed high-similarity plateaus suggest that certain layers contribute minimally to representational transforma-tion. We hypothesize that skipping these layers at inference time can reduce computational cost with minimal impact on task performance. We demonstrate with and without layer-skipping and prefix caching in Fig. 2 Crucially, our approach is:1) Static and task-agnostic: We identify skip-eligible layers based on training-time similar-ity analysis, without per-task tuning or dynamic routing.2) 
+
+Architecture-agnostic: Unlike YOCO-style methods that re-quire cache-once designs or parameter sharing, our method applies to any pretrained model without modification.3) 
+
+Complementary to KV-caching: Layer skipping reduces FLOPs and depth; KV-caching reduces memory and redun-dant computation across tokens. Both can be combined for compounded benefits. 
+
+Skip policy. Based on Figure 5, we define a skip set S ⊂ {1, . . . , L } containing layers with consecutive similarity 
+
+> θ (we use θ = 0 .95 by default). During inference, for each layer ℓ ∈ S , we bypass the transformer block and directly pass hℓ−1 to layer ℓ + 1 . Residual connections ensure gradient flow and representational continuity. Our algorithm is shown in Section 3. 
+
+Quality vs. Efficiency Hypothesis: Minimal degradation for dLLMs, High similarity indicates redundancy; skipping should preserve task performance. Larger degradation for AR models as AR models may rely more on incremental refinement, making layer skipping more disruptive. 
+
+Algorithm 1 Layer Skipping Algorithm  
+
+> 1:
+
+S ← [] , Lskip ← ∅, τ ← threshold , n max ←
+
+max layers to skip ▷ S: similarity list, H: hidden states, p: prompt length  
+
+> 2:
+
+for i ← 1 to |H| − 1 do  
+
+> 3:
+
+hprev ← Hi−1[: , : p] 
+
+> 4:
+
+hcurr ← Hi[: , : p] 
+
+> 5:
+
+s ← cosine similarity (hprev , hcurr ).mean ()  
+
+> 6:
+
+S.append (s) 
+
+> 7:
+
+end for ▷ Sort by similarity (descending)  
+
+> 8:
+
+, idx ← sort (S, descending = True ) ▷ idx : sorted indices ▷ Apply rules to select which layers to skip  
+
+> 9:
+
+for i ← 0 to |idx | − 1 do  
+
+> 10:
+
+l ← idx [i] ▷ Check if current layer is not adjacent to any already skipped layer  
+
+> 11:
+
+if l / ∈ L skip and l − 1 /∈ L skip and l + 1 /∈ L skip and 
+
+S[l] ≥ τ then  
+
+> 12:
+
+Lskip .add (l) ▷ Limit the maximum number of layers to skip  
+
+> 13:
+
+if |L skip | ≥ nmax then  
+
+> 14:
+
+break  
+
+> 15:
+
+end if  
+
+> 16:
+
+end if  
+
+> 17:
+
+end for ▷ Prepare final list of layers to skip  
+
+> 18:
+
+Lskip ← sorted (Lskip ) ▷ Add 1 to indices as we always skip the later layer in each pair  
+
+> 19:
+
+Lskip ← [l + 1 for l in Lskip ] 
+
+> 20:
+
+return Lskip 
+
+4Representational Analysis & Inference Time Layer-Skipping in dLLMs     
+
+> Figure 4. Layer-wise cosine similarity across models 32 tokens decoded. Each row shows similarity between consecutive layers for (top) LLaDA, (middle) Qwen2.5, and (bottom) Dream-7B. High-similarity regions (yellow) indicate representational redundancy. Dream-7B’s pattern closely resembles Qwen2.5 despite diffusion training, revealing strong initialization bias.
+> Figure 5. Layer-wise cosine similarity across models all tokens decoded. Each row shows similarity between consecutive layers for (top) LLaDA, (middle) Qwen2.5, and (bottom) Dream-7B. High-similarity regions (yellow) indicate representational redundancy. Dream-7B’s pattern closely resembles Qwen2.5 despite diffusion training, revealing strong initialization bias.
+
+4. Experimental Setup 
+
+Models. We evaluate three families to disentangle train-ing objective and initialization: (i) a native diffusion LLM, 
+
+LLaDA (we use the 8B Base / Instruct checkpoints) (Nie et al., 2025); (ii) a native autoregressive (AR) model, 
+
+Qwen2.5 (7B Base / Instruct) (Yang et al., 2024); and (iii) an AR-initialized diffusion LLM, Dream-7B (Instruct) (Ye et al., 2025). Unless stated otherwise, all models are evalu-ated with their public inference code and default tokenizers. 
+
+Benchmarks. We measure reasoning and code synthe-sis across standard suites: GSM8K (grade-school math; exact-match accuracy) (Cobbe et al., 2021); HumanEval 
+
+(function-level Python synthesis; pass@k using the official harness) (Chen et al., 2021); MATH-500 (the 500-problem test subset of the MATH benchmark; exact-match accuracy) (Hendrycks et al., 2021). 
+
+Prompting and answer extraction. For GSM8K , we use a few-shot rationale prompt with an explicit Final Answer: line; we strip formatting and compare normal-ized numbers. For HumanEval and MBPP , we request a single Python function and evaluate with the official test suites; we report pass@1 and pass@k. The same prompts are used across models to ensure comparability.We follow exact inference setting of (Chen & Liu, 2026) 
+
+Decoding & sampling. For AR decoding (Qwen2.5), we use greedy or nucleus sampling (default top p =0.95, 
+
+temperature ∈ {0.2, 0.7, 0.8} depending on task), 
+
+max new tokens =2048, and early stopping on task-specific end markers. For diffusion decoding (LLaDA, Dream-7B), we follow each repository’s default sam-pler/schedule and report quality–latency tradeoffs across denoising budgets T ∈ { 16 , 32 }; other settings (e.g., tem-perature annealing or remasking) follow the public imple-mentations (Nie et al., 2025; Ye et al., 2025). To compare fairly to AR decoding, we standardize context limits (2,048 tokens total) and stop rules. 
+
+Layer-skipping evaluation (ours). To isolate objective-induced redundancy, we introduce a static, task-agnostic 
+
+top-k layer skip policy applied only at inference time, with-5Representational Analysis & Inference Time Layer-Skipping in dLLMs                
+
+> Figure 6. Token-wise cosine similarity across layers and models. Rows correspond to layers ( 1,8,16 ,24 ); columns show (left) LLaDA, (middle) Dream-7B, and (right) Qwen. Left: decoding limited to 32 tokens highlights early representational stabilization in native diffusion models. Right: full-sequence decoding emphasizes global context integration and architectural differences across objectives.
+> Figure 7. Hidden-state magnitude across depth. Layer-wise evo-lution of the ℓ2norm of token hidden states for LL ADA, Dream, and Qwen. Norms remain relatively stable through the first ∼60– 70% of layers and increase sharply near the top of the network. The maximum norm is dominated by rare sink tokens (spikes; often
+> ≥10 3), so max values should be interpreted as outliers rather than typical token magnitudes.
+
+out KV sharing or architectural changes. We evaluate 
+
+k ∈ { 0, 2, 4, 6} on 7–8B models. Metrics include: task score (GSM8K accuracy; HumanEval/MBPP pass@1 and pass@k; MATH-500), equivalence rate (fraction of gener-ations identical to full-depth outputs), token-level KL di-vergence (w.r.t. the full-depth distribution; optional), and end-to-end latency/throughput (prefill +decode or diffusion steps). 
+
+Note: Due to varying inference optimizations across model implementations ( different kernel implementations), ab-solute throughput (tokens/sec) is not directly comparable between models. We therefore report: (1) the number of layers skipped for each model, and (2) the resulting task per-formance relative to full-depth baselines. This isolates the effect of our layer-skip strategy from architecture-specific optimizations. 
+
+5. Results 
+
+Native dLLMs Enable Aggressive Layer Skipping. Table 1 and Figure 1 show that native diffusion LLMs are markedly more robust to layer skipping than autoregressive models. For LLaDA, skipping 6 layers (18.75% FLOPs reduction) preserves 88.2–102.1% of baseline performance across all evaluated tasks. Even at an 8-layer skip (25% FLOPs re-duction), performance retention remains high (62.7–91.8%), placing LLaDA firmly in the favorable efficiency–quality regime (top right of Figure 1). In contrast, autoregressive models degrade rapidly un-der similar interventions. Qwen2.5 experiences severe performance collapse: skipping only 2 layers (7.14% FLOPs reduction) reduces retention to 34.9–75.3%, in-dicating that AR representations are tightly coupled and lack depth-wise redundancy. Notably, Dream -7B—despite diffusion fine - tuning—exhibits similar brittleness. At a 2-layer skip, Dream -7B achieves only 60.5–81.4% retention, 6Representational Analysis & Inference Time Layer-Skipping in dLLMs           
+
+> Figure 8. Which layers are skipped? Empirical distribution over
+> layer indices selected for skipping by Algorithm 1on LL ADA, aggregated across evaluation prompts on GSM8k.The plotted value at layer iis the fraction (probability) of runs/examples in which layer iis chosen to be skipped. Left: consecutive (adjacent) layers may be skipped, allowing contiguous skip blocks. Right:
+> consecutive skipping is disallowed, restricting selections to non-adjacent layers.
+
+closely tracking Qwen2.5 and substantially underperform-ing LLaDA (100–123.1%). This provides strong evidence that autoregressive pre-training induces a persistent repre-sentational structure that diffusion objectives alone do not override, preventing the emergence of the coarse -to - fine hierarchy observed in native dLLMs. 
+
+Computational savings: Native dLLMs achieve 2.6 ×
+
+greater FLOPs reduction with 1.4 × higher quality re-tention . Importantly, these savings are orthogonal to KV - caching: layer skipping reduces depth - wise computa-tion, while KV - caching eliminates token - wise redundancy, enabling multiplicative gains when combined. 
+
+5.1. Layer Distribution and Skip Sensitivity 
+
+Tables 2 and 3 reveal that consecutive layer skipping is catastrophic . For LLaDA at 6-layer skip, allowing con-secutive removal drops GSM8K retention from 91.8% to 75.3% and HumanEval from 88.2% to 64.7%. Dream-7B shows extreme sensitivity: 2-layer consecutive skip col-lapses GSM8K retention from 76.8% to 14.1%. Our algorithm avoids this by maintaining representational continuity. Analysis and Fig.8 shows skipped layers concen-trate in early network depth (first 40–60%), aligning with our observation that early layers establish coarse represen-tations with high redundancy, while later layers perform critical fine-grained refinement. 
+
+6. Related Work 
+
+Diffusion Language Models and Representations. Dif-fusion language models (dLLMs) replace autoregressive decoding with bidirectional denoising objectives, enabling parallel decoding and global context modeling. Founda-tional work on discrete diffusion (Austin et al., 2021) led to recent dLLMs such as SEDD (Lou et al., 2023), and LLaDA (Nie et al., 2025; Bie et al., 2025), which achieve competi-tive language modeling performance. Dream - 7B (Ye et al., 2025) adapts pretrained AR models to diffusion training, while MDLM (Sahoo et al., 2024) simplifies diffusion ob-jectives. Despite this progress, how diffusion objectives shape internal representations—especially relative to AR and AR - initialized models—remains insufficiently under-stood. Additionally, efforts have been made to integrate KV caching mechanisms to reduce redundant computation (Ma et al., 2025; Liu et al., 2025). An alternate line of work focuses on step distillation of dLLMs (Deschenaux & Gul-cehre, 2025; Qian et al., 2026) towards acceleraing dLLM inference. 
+
+Representational Structure and Initialization Effects. 
+
+Prior work shows that language models organize representa-tions hierarchically across depth, with earlier layers captur-ing coarse features and deeper layers refining task -specific abstractions (Jawahar et al., 2019). While representational dynamics in AR models have been studied, systematic anal-yses comparing AR and diffusion models are rare. Our work provides direct, layer - and token -level evidence of this initialization bias in AR -adapted dLLMs and contrasts it with the representational redundancy that emerges in native diffusion models. 
+
+7. Summary and Future Work 
+
+We investigated how training objectives shape internal repre-sentations in language models by comparing native diffusion LLMs (LLaDA), autoregressive models (Qwen2.5), and AR-adapted diffusion models (Dream-7B). Our analysis reveals that: (1) AR-adapted dLLMs retain AR-like representations despite diffusion training, demonstrating strong initializa-tion bias; (2) diffusion objectives reduce recency bias and promote global representations. (3) native dLLMs exhibit coarse-to-fine hierarchies with early-layer redundancy. Leveraging these insights, we introduced a static layer-skipping strategy that achieves substantial FLOPs reduction with minimal performance loss on native dLLMs, while AR models prove more brittle—validating that objective-induced redundancy enables efficient inference. 
+
+Future Work: Several directions are worth exploring. First, dynamic or input - adaptive skip policies may offer further gains by allocating computation based on difficulty. Second, combining layer skipping with complementary efficiency techniques such as KV caching could yield compounded speedups. Third, lightweight fine - tuning with adapters may 7Representational Analysis & Inference Time Layer-Skipping in dLLMs 
+
+Table 1. Performance comparison across models and layer skipping configurations. Values represent retention percentages relative to baseline (0 layers skipped), with absolute accuracy shown in parentheses for baseline rows. Missing entries ( −) indicate performance below retention threshold. Higher values ( ↑) indicate better retention. 
+
+Benchmark Layers Skipped Llada-Instruct Dream-Base Dream-Instruct Qwen2.5 GSM8K 
+
+0 (baseline) 100.0 (0.83) 100.0 (0.77) 100.0 (0.81) 100.0 (0.49) 
+
+2 101.3 76.8 84.6 34.9 3 96.7 62.6 71.2 15.9 4 102.5 44.5 25.0 20.6 5 97.7 − − −
+
+6 91.8 − − −
+
+8 91.8 − − −
+
+MATH500 
+
+0 (baseline) 100.0 (0.37) 100.0 (0.34) 100.0 (0.43) 100.0 (0.18) 
+
+2 108.5 81.4 78.2 −
+
+3 89.4 60.5 54.6 −
+
+4 89.4 58.8 32.7 −
+
+5 93.6 − − −
+
+6 102.1 − − −
+
+8 70.2 − − −
+
+HumanEval 
+
+0 (baseline) 100.0 (0.51) 100.0 (0.65) 100.0 (0.64) 100.0 (0.68) 
+
+2 100.0 66.2 70.3 64.7 3 100.0 63.1 59.4 48.5 4 92.2 43.1 26.6 41.2 5 82.3 − − −
+
+6 88.2 − − −
+
+8 62.7 − − −
+
+MBPP 
+
+0 (baseline) 100.0 (0.52) 100.0 (0.43) 100.0 (0.71) 100.0 (0.81) 
+
+2 123.1 60.5 70.3 75.3 3 115.4 74.4 54.1 55.6 4 115.4 53.5 37.8 35.8 5 111.5 − − −
+
+6 94.2 − − −
+
+8 71.1 − − −
+
+Table 2. Performance retention for LLada model with layer-skip when allowed and not allowed to skip consecutive layers. Higher (↑) the better                  
+
+> Layers Skipped GSM8k HumanEval
+> Not Allowed Allowed Not Allowed Allowed 4102.5 95.1 92.2 88.2 691.8 75.3 88.2 64.7 891.8 45.8 62.7 23.5
+
+Table 3. Performance retention for Dream model with layer-skip when allowed and not allowed to skip consecutive layers. Higher (↑) the better                  
+
+> Layers Skipped GSM8k HumanEval
+> Not Allowed Allowed Not Allowed Allowed 276.8 14.1 78.2 67.7 362.6 18.2 54.6 53.8 444.5 16.2 32.7 23.1
+
+enable more aggressive skipping or pruning while preserv-ing quality. Finally, extending our representational analysis and skipping strategies to multimodal diffusion architectures remains an exciting avenue for future research. 8Representational Analysis & Inference Time Layer-Skipping in dLLMs 
+
+8. Impact Statement 
+
+This work proposes inference-time layer skipping for diffu-sion language models to improve computational efficiency. By reducing inference-time FLOPs, our approach can lower hardware and energy costs, helping broaden access to large language models and supporting more environmentally sus-tainable deployment. Our representational analyses also contribute tools for better understanding model internals, which may aid future work on interpretability and robust-ness. Our finding that AR-adapted diffusion models (Dream-7B) retain strong representational signatures from their AR ini-tialization—despite substantial diffusion training—has im-portant implications for model adaptation practices. This persistent initialization bias suggests that safety properties, biases, or failure modes from pre-trained models may trans-fer to fine-tuned variants in non-obvious ways. Practitioners adapting models to new objectives should carefully validate behavioral properties rather than assuming the new training objective fully overrides initialization effects. As with any efficiency optimization, skipped computations could affect behaviors not covered by standard benchmarks, particularly in safety-critical or out-of-distribution settings. We recommend domain-specific validation when deploying the method in high-stakes applications. Overall, we view this work as a technical contribution intended to improve the practicality and accessibility of modern language models. 9Representational Analysis & Inference Time Layer-Skipping in dLLMs 
+
+References 
+
+Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and Van Den Berg, R. Structured denoising diffusion models in discrete state-spaces. Advances in neural information processing systems , 34:17981–17993, 2021. Bie, T., Cao, M., Chen, K., Du, L., Gong, M., Gong, Z., Gu, Y., Hu, J., Huang, Z., Lan, Z., et al. Llada2. 0: Scaling up diffusion language models to 100b. arXiv preprint arXiv:2512.15745 , 2025. Chen, J. and Liu, Z. Dflash: Block diffusion for flash speculative decoding. arXiv preprint , 2026. URL [https://github.com/z-lab/dflash] (https://github.com/z-lab/dflash) . Paper coming soon. Chen, M., Tworek, J., Jun, H., Yuan, Q., de Oliveira Pinto, H. P., Kaplan, J., Edwards, H., Burda, Y., Joseph, N., Brockman, G., Ray, A., Puri, R., Krueger, G., Petrov, M., Khlaaf, H., Sastry, G., Mishkin, P., Chan, B., Gray, S., Ryder, N., Pavlov, M., Power, A., Kaiser, L., Bavar-ian, M., Winter, C., Tillet, P., Such, F. P., Cummings, D., Plappert, M., Chantzis, F., Barnes, E., Herbert-Voss, A., Guss, W. H., Nichol, A., Paino, A., Tezak, N., Tang, J., Babuschkin, I., Balaji, S., Jain, S., Saun-ders, W., Hesse, C., Carr, A. N., Leike, J., Achiam, J., Misra, V., Morikawa, E., Radford, A., Knight, M., Brundage, M., Murati, M., Mayer, K., Welinder, P., Mc-Grew, B., Amodei, D., McCandlish, S., Sutskever, I., and Zaremba, W. Evaluating large language models trained on code, 2021. URL https://arxiv.org/abs/ 2107.03374 . Introduces HumanEval and Codex. Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., and Schulman, J. Training verifiers to solve math word problems, 2021. URL 
+
+https://arxiv.org/abs/2110.14168 . Intro-duces the GSM8K benchmark. Deschenaux, J. and Gulcehre, C. Beyond autoregression: Fast LLMs via self-distillation through time. In The Thir-teenth International Conference on Learning Represen-tations , 2025. URL https://openreview.net/ forum?id=uZ5K4HeNwd .Gong, S., Ruixiang Zhang, H. Z., Gu, J., Jaitly, N., Kong, L., and Zhang, Y. Diffucoder: Understanding and improving masked diffusion models for code generation. 2025. URL 
+
+https://arxiv.org/abs/2506.20639 .Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E., Song, D., and Steinhardt, J. Measuring mathematical problem solving with the MATH dataset. 
+
+NeurIPS Datasets and Benchmarks , 2021. URL https: //arxiv.org/abs/2103.03874 . We use the 500-problem test subset commonly referred to as “MATH-500”. Jawahar, G., Sagot, B., and Seddah, D. What does bert learn about the structure of language? In ACL 2019-57th Annual Meeting of the Association for Computational Linguistics , 2019. Liu, Z., Yang, Y., Zhang, Y., Chen, J., Zou, C., Wei, Q., Wang, S., and Zhang, L. dllm-cache: Accelerating diffu-sion large language models with adaptive caching. arXiv preprint arXiv:2506.06295 , 2025. Lou, A., Meng, C., and Ermon, S. Discrete diffusion model-ing by estimating the ratios of the data distribution. arXiv preprint arXiv:2310.16834 , 2023. Ma, X., Yu, R., Fang, G., and Wang, X. dkv-cache: The cache for diffusion language models. arXiv preprint arXiv:2505.15781 , 2025. Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen, J.-R., and Li, C. Large language dif-fusion models, 2025. URL https://arxiv.org/ abs/2502.09992 .Qian, Y.-Y., Su, J., Hu, L., Zhang, P., Deng, Z., Zhao, P., and Zhang, H. d3llm: Ultra-fast diffusion llm using pseudo-trajectory distillation. arXiv preprint arXiv:2601.07568 ,2026. Rulli, M. E., Petruzzi, S., Michielon, E., Silvestri, F., Scarda-pane, S., and Devoto, A. Attention sinks in diffusion lan-guage models. arXiv preprint arXiv:2510.15731 , 2025. Sahoo, S., Arriola, M., Schiff, Y., Gokaslan, A., Marroquin, E., Chiu, J., Rush, A., and Kuleshov, V. Simple and effective masked diffusion language models. Advances in Neural Information Processing Systems , 37:130136– 130184, 2024. Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Li, C., Liu, D., Huang, F., Wei, H., Lin, H., Yang, J., Tu, J., Zhang, J., Yang, J., Yang, J., Zhou, J., Lin, J., Dang, K., Lu, K., Bao, K., Yang, K., Yu, L., Li, M., Xue, M., Zhang, P., Zhu, Q., Men, R., Lin, R., Li, T., Tang, T., Xia, T., Ren, X., Ren, X., Fan, Y., Su, Y., Zhang, Y., Wan, Y., Liu, Y., Cui, Z., Zhang, Z., and Qiu, Z. Qwen2.5 technical report, 2024. URL https://arxiv.org/ abs/2412.15115 .Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li, Z., and Kong, L. Dream 7b: Diffusion large language mod-els, 2025. URL https://arxiv.org/abs/2508. 15487 .10 Representational Analysis & Inference Time Layer-Skipping in dLLMs 
+
+9. Appendix 10. Additional Analysis and Visualizations 
+
+10.1. Detailed Token-wise Similarity Analysis 
+
+We provide comprehensive token-wise similarity visualiza-tions to complement the layer-wise analysis presented ear-lier. These reveal how hidden state representations evolve across tokens within individual layers, providing deeper insight into the recency bias and global vs. local representa-tion patterns discussed in the main text. Figure 13 shows token-wise cosine similarity across all 32 layers of LLaDA. Early layers (0–15) exhibit consistently high similarity ( > 0.9) between consecutive tokens, indi-cating smooth representational transitions with minimal re-cency bias. This validates our hypothesis that native dLLMs establish stable global context in early layers. Later layers (16–31) show increased variability and lower similarity, re-flecting task-specific refinement and decoder-like behavior where representations are actively updated for generation. In stark contrast, from Fig. 14reveals that Dream-7B maintains significant recency bias across all layers. Con-secutive token representations show substantial changes throughout network depth, mirroring the incremental token-by-token refinement characteristic of autoregressive mod-els. This pattern persists despite diffusion training, pro-viding mechanistic evidence that AR initialization creates persistent representational structure. The lack of hierar-chical abstraction—with similar update patterns across all depths—explains Dream-7B’s brittleness under layer skip-ping (Table 1), where it behaves more like Qwen2.5 than LLaDA. 
+
+10.2. Layer-wise Token Similarity by Depth 
+
+Figures below show token-wise similarity patterns grouped by network depth, revealing the transition from global to local representations: 0 50 100 150 200 250 300 350 400 450 500 
+
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 0
+
+LLADA           
+
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+
+DREAM           
+
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+
+QWEN2.5                                                                                                                                                                                               
+
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 1
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 2
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 3
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 4
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 5
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 6
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 050 100 150 200 250 300 350 400 450 500
+
+Token Position           
+
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> 500
+> Layer 7
+> 049 98 147 196 245 294 343 392 441 490
+
+Token Position           
+
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> 049 98 147 196 245 294 343 392 441 490
+
+Token Position 
+
+> 0
+> 49
+> 98
+> 147
+> 196
+> 245
+> 294
+> 343
+> 392
+> 441
+> 490
+> -1.0
+> 0
+> 1.0
+
+Figure 9. Token-wise similarity in early layers (0–7). LLaDA shows uniformly high similarity across all tokens, indicating stable global representations. Dream-7B and Qwen2.5 exhibit lower similarity with visible recency effects, demonstrating incremental AR-style processing even in early layers. 
+
+11 Representational Analysis & Inference Time Layer-Skipping in dLLMs 0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 8
+
+LLADA 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+DREAM 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+QWEN2.5 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 9
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 10
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 11
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 12
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 13
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 14
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+Token Position 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 15
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+Token Position 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+Token Position 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+-1.0 
+
+0
+
+1.0 
+
+Figure 10. Token-wise similarity in early-middle layers (8–15). 
+
+LLaDA maintains high similarity, while Dream-7B and Qwen2.5 continue showing strong recency bias. The divergence between na-tive dLLM and AR-initialized models becomes more pronounced. 0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 16
+
+LLADA 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+DREAM 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+QWEN2.5 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 17
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 18
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 19
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 20
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 21
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 22
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+Token Position 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 23
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+Token Position 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+Token Position 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+-1.0 
+
+0
+
+1.0 
+
+Figure 11. Token-wise similarity in late-middle layers (16–23). 
+
+LLaDA begins transitioning to lower similarity, indicating the on-set of task-specific refinement. Dream-7B and Qwen2.5 maintain consistent recency patterns throughout depth. 
+
+12 Representational Analysis & Inference Time Layer-Skipping in dLLMs 0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 24
+
+LLADA 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+DREAM 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+QWEN2.5 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 25
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 26
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 27
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 28
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 49 98 147 196 245 294 343 392 441 490 
+
+0
+
+49 
+
+98 
+
+147 
+
+196 
+
+245 
+
+294 
+
+343 
+
+392 
+
+441 
+
+490 
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 29
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 30
+
+0 50 100 150 200 250 300 350 400 450 500 
+
+Token Position 
+
+0
+
+50 
+
+100 
+
+150 
+
+200 
+
+250 
+
+300 
+
+350 
+
+400 
+
+450 
+
+500 
+
+> Layer 31
+
+-1.0 
+
+0
+
+1.0 
+
+Figure 12. Token-wise similarity in late layers (24–31). LLaDA shows increased variability and lower similarity, reflecting active decoder-like refinement for generation. Dream-7B and Qwen2.5 continue incremental updates, strong recency bias lacking the global transition observed in native dLLMs. 
+
+13 Representational Analysis & Inference Time Layer-Skipping in dLLMs 58 Confidential – Qualcomm Technologies, Inc. and/or its affiliated companies – May Contain Trade Secrets 
+
+Figure 13. Token-wise cosine similarity across all layers for LLaDA. Each subplot shows the cosine similarity between consecutive token representations ( hℓ,i and hℓ,i +1 ) within a specific layer ℓ. High similarity indicates smooth representational transitions, while low similarity indicates significant representational changes between tokens. LLaDA exhibits consistently high token-wise similarity across early layers, demonstrating minimal recency bias and global representational abstraction. Later layers show increased variability, indicating task-specific refinement and decoder-like behavior. This pattern validates our hypothesis that native dLLMs develop coarse-to-fine abstraction hierarchies, with early layers establishing stable global context and later layers performing iterative refinement. 55 Confidential – Qualcomm Technologies, Inc. and/or its affiliated companies – May Contain Trade Secrets 
+
+Figure 14. Token-wise cosine similarity across all layers for Dream-7B. Each subplot shows the cosine similarity between consecutive token representations within a specific layer. In stark contrast to LLaDA (Figure 13), Dream-7B exhibits significant recency bias across all layers, with substantial representational changes for each new token often. The lack of hierarchical abstraction—with similar token-by-token update patterns across all depths—confirms that Dream-7B retains AR-like incremental refinement and retain different representational abstraction compared to native dLLMs. This provides mechanistic evidence for the initialization bias observed in our layer-skip experiments (Table 1), where Dream-7B’s brittleness mirrors Qwen2.5 despite diffusion training. 
+
+14
