@@ -1,0 +1,93 @@
+{
+  "label": "2026-04-02",
+  "date": "2026-04-02",
+  "generated_at": "2026-04-02T20:30:03",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202604/02/2604.00375v1-locally-confident-globally-stuck-the-quality-exploration-dilemma-in-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Locally Confident, Globally Stuck: The Quality-Exploration Dilemma in Diffusion Language Models",
+      "authors": "Liancheng Fang, Aiwei Liu, Henry Peng Zou, Yankai Chen, Enze Ma, Leyi Pan, Chunyu Miao, Wei-Chieh Huang, Xue Liu, Philip S. Yu",
+      "date": "2026-04-01",
+      "pdf": "https://arxiv.org/pdf/2604.00375v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型与自回归大模型的对比",
+      "tldr": "本研究探讨了扩散语言模型（dLLM）中的“质量-探索困境”：虽然低置信度重掩码技术能提升单次采样质量，但会抑制生成多样性，限制多次采样（Pass@k）的增益。作者通过理论分析揭示了该现象源于对熵的过度约束，并提出了一种平衡质量与探索的最优分布。通过引入独立大都会-哈斯廷斯（IMH）采样器，该方法在数学推理和代码生成任务中显著优于传统解码策略，实现了更好的权衡。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) theoretically permit token decoding in arbitrary order, a flexibility that could enable richer exploration of reasoning paths than autoregressive (AR) LLMs. In practice, however, random-order decoding often hurts generation quality. To mitigate this, low-confidence remasking improves single-sample quality (e.g., Pass@$1$) by prioritizing confident tokens, but it also suppresses exploration and limits multi-sample gains (e.g., Pass@$k$), creating a fundamental quality--exploration dilemma. In this paper, we provide a unified explanation of this dilemma. We show that low-confidence remasking improves a myopic proxy for quality while provably constraining the entropy of the induced sequence distribution. To overcome this limitation, we characterize the optimal distribution that explicitly balances quality and exploration, and develop a simple Independent Metropolis--Hastings sampler that approximately targets this distribution during decoding. Experiments across a range of reasoning benchmarks including MATH500, AIME24/25, HumanEval, and MBPP show that our approach yields better exploration-quality tradeoff than both random and low-confidence remasking.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/02/2603.29068v1-arcs-autoregressive-circuit-synthesis-with-topology-aware-graph-attention-and-spec-conditioning",
+      "section": "quick",
+      "title_en": "ARCS: Autoregressive Circuit Synthesis with Topology-Aware Graph Attention and Spec Conditioning",
+      "authors": "Tushar Dhananjay Pathak",
+      "date": "2026-03-30",
+      "pdf": "https://arxiv.org/pdf/2603.29068v1",
+      "score": "7.0",
+      "evidence": "结合流匹配的自回归电路综合",
+      "tldr": "ARCS是一个用于模拟电路生成的自动回归系统，旨在解决传统搜索方法耗时过长的问题。它结合了图VAE、流匹配模型和拓扑感知图Transformer，通过语法约束解码确保结构有效性。核心贡献是引入GRPO算法解决了跨拓扑奖励失配问题。ARCS在保持极高生成速度（毫秒级）的同时，实现了99.9%的仿真有效性，显著减少了SPICE评估次数，为电路设计空间探索和快速原型开发提供了高效方案。",
+      "tags": "query:ardm",
+      "abstract_en": "I present ARCS, a system for amortized analog circuit generation that produces complete, SPICE-simulatable designs (topology and component values) in milliseconds rather than the minutes required by search-based methods. A hybrid pipeline combining two learned generators (a graph VAE and a flow-matching model) with SPICE-based ranking achieves 99.9% simulation validity (reward 6.43/8.0) across 32 topologies using only 8 SPICE evaluations, 40x fewer than genetic algorithms. For single-model inference, a topology-aware Graph Transformer with Best-of-3 candidate selection reaches 85% simulation validity in 97ms, over 600x faster than random search. The key technical contribution is Group Relative Policy Optimization (GRPO): I identify a critical failure mode of REINFORCE (cross-topology reward distribution mismatch) and resolve it with per-topology advantage normalization, improving simulation validity by +9.6pp over REINFORCE in only 500 RL steps (10x fewer). Grammar-constrained decoding additionally guarantees 100% structural validity by construction via topology-aware token masking. ARCS does not yet match the per-design quality of search-based optimization (5.48 vs. 7.48 reward), but its >1000x speed advantage enables rapid prototyping, design-space exploration, and warm-starting search methods (recovering 96.6% of GA quality with 49% fewer simulations).",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/02/2603.29068v2-arcs-autoregressive-circuit-synthesis-with-topology-aware-graph-attention-and-spec-conditioning",
+      "section": "quick",
+      "title_en": "ARCS: Autoregressive Circuit Synthesis with Topology-Aware Graph Attention and Spec Conditioning",
+      "authors": "Tushar Dhananjay Pathak",
+      "date": "2026-03-30",
+      "pdf": "https://arxiv.org/pdf/2603.29068v2",
+      "score": "7.0",
+      "evidence": "结合流匹配的自回归电路综合",
+      "tldr": "ARCS是一个自动回归模拟电路合成系统，旨在解决传统搜索方法耗时久的问题。它结合了图VAE、流匹配模型和SPICE评估，通过拓扑感知图注意力机制和语法约束解码，实现了毫秒级的电路生成。该研究引入了GRPO算法优化多拓扑强化学习，显著提升了仿真有效性，在保证100%结构正确性的同时，大幅降低了计算开销。",
+      "tags": "query:ardm",
+      "abstract_en": "This paper presents ARCS (Autoregressive Circuit Synthesis), a system for amortized analog circuit generation that produces complete, SPICE-simulatable designs (topology and component values) in milliseconds rather than the minutes required by search-based methods. A hybrid pipeline combining two learned generators (a graph VAE and a flow-matching model) with SPICE-based ranking achieves 99.9% simulation validity (reward 6.43/8.0) across 32 topologies using only 8 SPICE evaluations, 40x fewer than genetic algorithms. For single-model inference, a topology-aware Graph Transformer with Best-of-3 candidate selection reaches 85% simulation validity in 97ms, over 600x faster than random search. The key technical contribution adapts Group Relative Policy Optimization (GRPO) to multi-topology circuit reinforcement learning, resolving a critical failure mode of REINFORCE (cross-topology reward distribution mismatch) through per-topology advantage normalization. This improves simulation validity by +9.6 percentage points over REINFORCE in only 500 RL steps (10x fewer). Grammar-constrained decoding additionally guarantees 100% structural validity by construction via topology-aware token masking.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/02/2604.00688v1-omnivoice-towards-omnilingual-zero-shot-text-to-speech-with-diffusion-language-models",
+      "section": "quick",
+      "title_en": "OmniVoice: Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models",
+      "authors": "Han Zhu, Lingxuan Ye, Wei Kang, Zengwei Yao, Liyong Guo, Fangjun Kuang, Zhifeng Han, Weiji Zhuang, Long Lin, Daniel Povey",
+      "date": "2026-04-01",
+      "pdf": "https://arxiv.org/pdf/2604.00688v1",
+      "score": "7.0",
+      "evidence": "用于序列生成的扩散语言模型架构",
+      "tldr": "OmniVoice是一个支持超过600种语言的大规模多语言零样本语音合成模型。它采用创新的扩散语言模型风格的离散非自回归架构，通过将文本直接映射到多码本声学标记，简化了传统的两阶段流程。利用581k小时开源数据训练，并结合LLM初始化和全码本随机掩码策略，该模型在多语言性能和可理解性上达到了SOTA水平。",
+      "tags": "query:ardm",
+      "abstract_en": "We present OmniVoice, a massive multilingual zero-shot text-to-speech (TTS) model that scales to over 600 languages. At its core is a novel diffusion language model-style discrete non-autoregressive (NAR) architecture. Unlike conventional discrete NAR models that suffer from performance bottlenecks in complex two-stage (text-to-semantic-to-acoustic) pipelines, OmniVoice directly maps text to multi-codebook acoustic tokens. This simplified approach is facilitated by two key technical innovations: (1) a full-codebook random masking strategy for efficient training, and (2) initialization from a pre-trained LLM to ensure superior intelligibility. By leveraging a 581k-hour multilingual dataset curated entirely from open-source data, OmniVoice achieves the broadest language coverage to date and delivers state-of-the-art performance across Chinese, English, and diverse multilingual benchmarks. Our code and pre-trained models are publicly available at https://github.com/k2-fsa/OmniVoice.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/02/2603.27862v1-imagenworld-stress-testing-image-generation-models-with-explainable-human-evaluation-on-open-ended-real-world-tasks",
+      "section": "quick",
+      "title_en": "ImagenWorld: Stress-Testing Image Generation Models with Explainable Human Evaluation on Open-ended Real-World Tasks",
+      "authors": "Samin Mahdizadeh Sani, Max Ku, Nima Jamali, Matina Mahdizadeh Sani, Paria Khoshtab, Wei-Chieh Sun, Parnian Fazel, Zhi Rui Tam, Thomas Chong, Edisy Kin Wai Chan, Donald Wai Tong Tsang, Chiao-Wei Hsu, Ting Wai Lam, Ho Yin Sam Ng, Chiafeng Chu, Chak-Wing Mak, Keming Wu, Hiu Tung Wong, Yik Chun Ho, Chi Ruan, Zhuofeng Li, I-Sheng Fang, Shih-Ying Yeh, Ho Kei Cheng, Ping Nie, Wenhu Chen",
+      "date": "2026-03-29",
+      "pdf": "https://arxiv.org/pdf/2603.27862v1",
+      "score": "6.0",
+      "evidence": "扩散、自回归及混合模型的基准测试",
+      "tldr": "针对现有图像生成基准任务单一且缺乏解释性的问题，本文提出 ImagenWorld。该基准包含 3.6K 个条件集，涵盖 6 类任务与 6 个真实领域，并辅以 2 万条细粒度人工标注。通过引入可解释的评估模式，该研究对 14 种模型进行了大规模评测，不仅实现了性能排名，还能精准定位物体级错误，为提升模型鲁棒性提供了重要的诊断工具。",
+      "tags": "query:ardm",
+      "abstract_en": "Advances in diffusion, autoregressive, and hybrid models have enabled high-quality image synthesis for tasks such as text-to-image, editing, and reference-guided composition. Yet, existing benchmarks remain limited, either focus on isolated tasks, cover only narrow domains, or provide opaque scores without explaining failure modes. We introduce \\textbf{ImagenWorld}, a benchmark of 3.6K condition sets spanning six core tasks (generation and editing, with single or multiple references) and six topical domains (artworks, photorealistic images, information graphics, textual graphics, computer graphics, and screenshots). The benchmark is supported by 20K fine-grained human annotations and an explainable evaluation schema that tags localized object-level and segment-level errors, complementing automated VLM-based metrics. Our large-scale evaluation of 14 models yields several insights: (1) models typically struggle more in editing tasks than in generation tasks, especially in local edits. (2) models excel in artistic and photorealistic settings but struggle with symbolic and text-heavy domains such as screenshots and information graphics. (3) closed-source systems lead overall, while targeted data curation (e.g., Qwen-Image) narrows the gap in text-heavy cases. (4) modern VLM-based metrics achieve Kendall accuracies up to 0.79, approximating human ranking, but fall short of fine-grained, explainable error attribution. ImagenWorld provides both a rigorous benchmark and a diagnostic tool to advance robust image generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/02/2604.00327v1-predictor-driven-diffusion-for-spatiotemporal-generation",
+      "section": "quick",
+      "title_en": "Predictor-Driven Diffusion for Spatiotemporal Generation",
+      "authors": "Yuki Yasuda, Tobias Bischoff",
+      "date": "2026-03-31",
+      "pdf": "https://arxiv.org/pdf/2604.00327v1",
+      "score": "6.0",
+      "evidence": "用于时空动力学和时间预测的扩散框架",
+      "tldr": "针对多尺度时空预测中细微空间波动影响宏观演化的难题，本文提出“预测器驱动扩散”框架。该方法结合重整化群空间粗粒化与路径积分动力学，通过尺度相关的拉普拉斯阻尼构建前向过程。训练得到的预测器能捕捉小尺度对大尺度的统计影响，实现了模拟、无条件生成和超分辨率的统一，并在湍流系统实验中验证了其有效性。",
+      "tags": "query:diffpl",
+      "abstract_en": "Multiscale spatial structure complicates temporal prediction because small-scale spatial fluctuations influence large-scale evolution, yet resolving all scales is often intractable. Standard diffusion models do not address this problem effectively since they apply uniform decay across all Fourier modes. We propose Predictor-Driven Diffusion, a framework that combines renormalization-group-based spatial coarse-graining with a path-integral formulation of temporal dynamics. The forward process applies scale-dependent Laplacian damping together with additive noise, producing a hierarchy of coarse-grained fields indexed by diffusion scale $λ$. Training minimizes the Kullback-Leibler divergence between data-induced and predictor-induced path densities, leading to a simple regression loss on temporal derivatives. The resulting predictor captures how eliminated small-scale components statistically influence large-scale evolution. A key insight is that the same predictor provides a path score for reverse-$λ$ sampling, unifying simulation, unconditional generation, and super-resolution in a single framework. Our unified approach is validated through experiments on two multiscale turbulent systems.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
