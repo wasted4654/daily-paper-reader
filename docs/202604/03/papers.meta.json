@@ -1,0 +1,79 @@
+{
+  "label": "2026-04-03",
+  "date": "2026-04-03",
+  "generated_at": "2026-04-03T19:53:48",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202604/03/2604.01545v1-rae-ar-taming-autoregressive-models-with-representation-autoencoders",
+      "section": "deep",
+      "title_en": "RAE-AR: Taming Autoregressive Models with Representation Autoencoders",
+      "authors": "Hu Yu, Hang Xu, Jie Huang, Zeyue Xue, Haoyang Huang, Nan Duan, Feng Zhao",
+      "date": "2026-04-02",
+      "pdf": "https://arxiv.org/pdf/2604.01545v1",
+      "score": "8.0",
+      "evidence": "将表示自编码器集成到连续自回归模型中",
+      "tldr": "本研究探讨了将表示自编码器（RAE）应用于连续自回归（AR）模型的挑战。针对高维表示带来的分布建模复杂和训练-推理偏差（曝光偏差）问题，提出了分布归一化简化令牌建模，并引入高斯噪声注入增强鲁棒性。实验证明，RAE-AR 在生成性能上可媲美传统的 VAE，为视觉理解与生成任务的架构统一奠定了基础。",
+      "tags": "query:ardm",
+      "abstract_en": "The latent space of generative modeling is long dominated by the VAE encoder. The latents from the pretrained representation encoders (e.g., DINO, SigLIP, MAE) are previously considered inappropriate for generative modeling. Recently, RAE method lights the hope and reveals that the representation autoencoder can also achieve competitive performance as the VAE encoder. However, the integration of representation autoencoder into continuous autoregressive (AR) models, remains largely unexplored. In this work, we investigate the challenges of employing high-dimensional representation autoencoders within the AR paradigm, denoted as \\textit{RAE-AR}. We focus on the unique properties of AR models and identify two primary hurdles: complex token-wise distribution modeling and the high-dimensionality amplified training-inference gap (exposure bias). To address these, we introduce token simplification via distribution normalization to ease modeling difficulty and improve convergence. Furthermore, we enhance prediction robustness by incorporating Gaussian noise injection during training to mitigate exposure bias. Our empirical results demonstrate that these modifications substantially bridge the performance gap, enabling representation autoencoder to achieve results comparable to traditional VAEs on AR models. This work paves the way for a more unified architecture across visual understanding and generative modeling.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/03/2604.01622v1-expert-choice-routing-enables-adaptive-computation-in-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Expert-Choice Routing Enables Adaptive Computation in Diffusion Language Models",
+      "authors": "Shuibai Zhang, Caspian Zhuang, Chihan Cui, Zhihan Yang, Fred Zhangzhi Peng, Yanxin Zhang, Haoyue Bai, Zack Jia, Yang Zhou, Guanhua Chen, Ming Liu",
+      "date": "2026-04-02",
+      "pdf": "https://arxiv.org/pdf/2604.01622v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型 (DLM) 中的专家选择路由",
+      "tldr": "针对扩散语言模型（DLM）中MoE架构负载不均的问题，本研究提出专家选择（EC）路由。EC路由不仅能实现确定性负载均衡，还支持随去噪时间步动态调整专家容量。实验表明，将更多计算资源分配给低掩码率步骤可显著提升学习效率和模型性能。此外，现有模型可轻松转换为EC架构，在多项任务中实现更快的收敛和更高的精度。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) enable parallel, non-autoregressive text generation, yet existing DLM mixture-of-experts (MoE) models inherit token-choice (TC) routing from autoregressive systems, leading to load imbalance and rigid computation allocation. We show that expert-choice (EC) routing is a better fit for DLMs: it provides deterministic load balancing by design, yielding higher throughput and faster convergence than TC. Building on the property that EC capacity is externally controllable, we introduce timestep-dependent expert capacity, which varies expert allocation according to the denoising step. We find that allocating more capacity to low-mask-ratio steps consistently achieves the best performance under matched FLOPs, and provide a mechanistic explanation: tokens in low-mask-ratio contexts exhibit an order-of-magnitude higher learning efficiency, so concentrating compute on these steps yields the largest marginal return. Finally, we show that existing pretrained TC DLMs can be retrofitted to EC by replacing only the router, achieving faster convergence and improved accuracy across diverse downstream tasks. Together, these results establish EC routing as a superior paradigm for DLM MoE models and demonstrate that computation in DLMs can be treated as an adaptive policy rather than a fixed architectural constant. Code is available at https://github.com/zhangshuibai/EC-DLM.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/03/2604.00688v2-omnivoice-towards-omnilingual-zero-shot-text-to-speech-with-diffusion-language-models",
+      "section": "quick",
+      "title_en": "OmniVoice: Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models",
+      "authors": "Han Zhu, Lingxuan Ye, Wei Kang, Zengwei Yao, Liyong Guo, Fangjun Kuang, Zhifeng Han, Weiji Zhuang, Long Lin, Daniel Povey",
+      "date": "2026-04-01",
+      "pdf": "https://arxiv.org/pdf/2604.00688v2",
+      "score": "7.0",
+      "evidence": "扩散语言模型风格的离散非自回归架构",
+      "tldr": "OmniVoice是一个支持超过600种语言的大规模多语言零样本TTS模型。它采用创新的离散非自回归扩散语言模型架构，通过全码本随机掩码策略和预训练LLM初始化，实现了从文本到多码本声学标记的直接映射。该模型利用58.1万小时开源数据训练，在多语言基准测试中达到了SOTA水平，显著提升了跨语言语音合成的覆盖范围和质量。",
+      "tags": "query:ardm",
+      "abstract_en": "We present OmniVoice, a massive multilingual zero-shot text-to-speech (TTS) model that scales to over 600 languages. At its core is a novel diffusion language model-style discrete non-autoregressive (NAR) architecture. Unlike conventional discrete NAR models that suffer from performance bottlenecks in complex two-stage (text-to-semantic-to-acoustic) pipelines, OmniVoice directly maps text to multi-codebook acoustic tokens. This simplified approach is facilitated by two key technical innovations: (1) a full-codebook random masking strategy for efficient training, and (2) initialization from a pre-trained LLM to ensure superior intelligibility. By leveraging a 581k-hour multilingual dataset curated entirely from open-source data, OmniVoice achieves the broadest language coverage to date and delivers state-of-the-art performance across Chinese, English, and diverse multilingual benchmarks. Our code and pre-trained models are publicly available at https://github.com/k2-fsa/OmniVoice.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/03/2603.24800v1-calibri-enhancing-diffusion-transformers-via-parameter-efficient-calibration",
+      "section": "quick",
+      "title_en": "Calibri: Enhancing Diffusion Transformers via Parameter-Efficient Calibration",
+      "authors": "Danil Tokhchukov, Aysel Mirzoeva, Andrey Kuznetsov, Konstantin Sobolev",
+      "date": "2026-03-25",
+      "pdf": "https://arxiv.org/pdf/2603.24800v1",
+      "score": "6.0",
+      "evidence": "通过参数高效校准增强扩散 Transformer",
+      "tldr": "本文提出 Calibri，一种针对扩散 Transformer (DiT) 的参数高效校准方法。研究发现，仅通过在 DiT 模块中引入极少量的可学习缩放参数即可显著提升生成性能。Calibri 将校准过程建模为黑盒奖励优化问题，并利用进化算法仅调整约 100 个参数，在提升多种文生图模型生成质量的同时，还有效减少了推理所需的步数。",
+      "tags": "query:ardm",
+      "abstract_en": "In this paper, we uncover the hidden potential of Diffusion Transformers (DiTs) to significantly enhance generative tasks. Through an in-depth analysis of the denoising process, we demonstrate that introducing a single learned scaling parameter can significantly improve the performance of DiT blocks. Building on this insight, we propose Calibri, a parameter-efficient approach that optimally calibrates DiT components to elevate generative quality. Calibri frames DiT calibration as a black-box reward optimization problem, which is efficiently solved using an evolutionary algorithm and modifies just ~100 parameters. Experimental results reveal that despite its lightweight design, Calibri consistently improves performance across various text-to-image models. Notably, Calibri also reduces the inference steps required for image generation, all while maintaining high-quality outputs.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/03/2603.28091v1-sharp-short-window-streaming-for-accurate-and-robust-prediction-in-motion-forecasting",
+      "section": "quick",
+      "title_en": "SHARP: Short-Window Streaming for Accurate and Robust Prediction in Motion Forecasting",
+      "authors": "Alexander Prutsch, Christian Fruhwirth-Reisinger, David Schinagl, Horst Possegger",
+      "date": "2026-03-30",
+      "pdf": "https://arxiv.org/pdf/2603.28091v1",
+      "score": "6.0",
+      "evidence": "交通环境中演化场景的流式运动预测",
+      "tldr": "针对动态交通环境中的运动预测，本文提出SHARP框架，旨在解决流式预测在不同观测长度下性能下降的问题。该方法通过增量处理短窗口观测，并利用实例感知上下文流技术持续更新智能体表征。结合双重训练目标，SHARP在Argoverse等多个数据集上实现了高精度、低延迟的流式推理，显著提升了模型在演化场景中的鲁棒性，非常适合实际部署。",
+      "tags": "query:genad",
+      "abstract_en": "In dynamic traffic environments, motion forecasting models must be able to accurately estimate future trajectories continuously. Streaming-based methods are a promising solution, but despite recent advances, their performance often degrades when exposed to heterogeneous observation lengths. To address this, we propose a novel streaming-based motion forecasting framework that explicitly focuses on evolving scenes. Our method incrementally processes incoming observation windows and leverages an instance-aware context streaming to maintain and update latent agent representations across inference steps. A dual training objective further enables consistent forecasting accuracy across diverse observation horizons. Extensive experiments on Argoverse 2, nuScenes, and Argoverse 1 demonstrate the robustness of our approach under evolving scene conditions and also on the single-agent benchmarks. Our model achieves state-of-the-art performance in streaming inference on the Argoverse 2 multi-agent benchmark, while maintaining minimal latency, highlighting its suitability for real-world deployment.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -6,40 +6,36 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-02
-- 运行时间：2026-04-02 20:29:53 UTC
+- 最新运行日期：2026-04-03
+- 运行时间：2026-04-03 19:53:36 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：1
-- 速读区：5
+- 本次总论文数：5
+- 精读区：2
+- 速读区：3
 
 ### 今日简报（AI）
-今日深度剖析扩散语言模型的生成瓶颈，并同步追踪电路合成与全语种语音生成的跨界进展。
-核心研究揭示了扩散模型在局部置信度与全局探索间的质量困境，同时展示了自回归电路合成与零样本多语种语音的新突破。
-建议关注扩散机制在非连续文本生成中的底层逻辑，以及 AI 在自动化硬件设计中的落地潜力。
-- 详情：[/202604/02/README](/202604/02/README)
+今日聚焦自回归与扩散模型的架构革新，深度解析表征自编码器与自适应计算等前沿优化方案。
+重点
+- 详情：[/202604/03/README](/202604/03/README)
 
 ### 精读区论文标签
-1. [Locally Confident, Globally Stuck: The Quality-Exploration Dilemma in Diffusion Language Models](/202604/02/2604.00375v1-locally-confident-globally-stuck-the-quality-exploration-dilemma-in-diffusion-language-models)  
+1. [RAE-AR: Taming Autoregressive Models with Representation Autoencoders](/202604/03/2604.01545v1-rae-ar-taming-autoregressive-models-with-representation-autoencoders)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型与自回归大模型的对比
+   evidence：将表示自编码器集成到连续自回归模型中
+2. [Expert-Choice Routing Enables Adaptive Computation in Diffusion Language Models](/202604/03/2604.01622v1-expert-choice-routing-enables-adaptive-computation-in-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型 (DLM) 中的专家选择路由
 
 ### 速读区论文标签
-1. [ARCS: Autoregressive Circuit Synthesis with Topology-Aware Graph Attention and Spec Conditioning](/202604/02/2603.29068v1-arcs-autoregressive-circuit-synthesis-with-topology-aware-graph-attention-and-spec-conditioning)  
+1. [OmniVoice: Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models](/202604/03/2604.00688v2-omnivoice-towards-omnilingual-zero-shot-text-to-speech-with-diffusion-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：结合流匹配的自回归电路综合
-2. [ARCS: Autoregressive Circuit Synthesis with Topology-Aware Graph Attention and Spec Conditioning](/202604/02/2603.29068v2-arcs-autoregressive-circuit-synthesis-with-topology-aware-graph-attention-and-spec-conditioning)  
-   标签：评分：7.0/10、query:ardm
-   evidence：结合流匹配的自回归电路综合
-3. [OmniVoice: Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models](/202604/02/2604.00688v1-omnivoice-towards-omnilingual-zero-shot-text-to-speech-with-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于序列生成的扩散语言模型架构
-4. [ImagenWorld: Stress-Testing Image Generation Models with Explainable Human Evaluation on Open-ended Real-World Tasks](/202604/02/2603.27862v1-imagenworld-stress-testing-image-generation-models-with-explainable-human-evaluation-on-open-ended-real-world-tasks)  
+   evidence：扩散语言模型风格的离散非自回归架构
+2. [Calibri: Enhancing Diffusion Transformers via Parameter-Efficient Calibration](/202604/03/2603.24800v1-calibri-enhancing-diffusion-transformers-via-parameter-efficient-calibration)  
    标签：评分：6.0/10、query:ardm
-   evidence：扩散、自回归及混合模型的基准测试
-5. [Predictor-Driven Diffusion for Spatiotemporal Generation](/202604/02/2604.00327v1-predictor-driven-diffusion-for-spatiotemporal-generation)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：用于时空动力学和时间预测的扩散框架
+   evidence：通过参数高效校准增强扩散 Transformer
+3. [SHARP: Short-Window Streaming for Accurate and Robust Prediction in Motion Forecasting](/202604/03/2603.28091v1-sharp-short-window-streaming-for-accurate-and-robust-prediction-in-motion-forecasting)  
+   标签：评分：6.0/10、query:genad
+   evidence：交通环境中演化场景的流式运动预测
 
 
 <div class="dpr-home-promo-card">
