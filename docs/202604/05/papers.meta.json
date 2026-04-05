@@ -1,0 +1,51 @@
+{
+  "label": "2026-04-05",
+  "date": "2026-04-05",
+  "generated_at": "2026-04-05T19:13:14",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202604/05/2604.01843v1-investigating-permutation-invariant-discrete-representation-learning-for-spatially-aligned-images",
+      "section": "quick",
+      "title_en": "Investigating Permutation-Invariant Discrete Representation Learning for Spatially Aligned Images",
+      "authors": "Jamie S. J. Stirling, Noura Al-Moubayed, Hubert P. H. Shum",
+      "date": "2026-04-02",
+      "pdf": "https://arxiv.org/pdf/2604.01843v1",
+      "score": "7.0",
+      "evidence": "用于离散神经表示的自回归或扩散先验",
+      "tldr": "针对传统VQ-VAE中离散表示具有位置依赖性且需复杂先验建模的问题，本文提出了置换不变向量量化自编码器（PI-VQ）。该方法通过约束潜在代码不携带位置信息，促使其捕捉全局语义特征，并引入基于最优二分匹配的匹配量化算法提升瓶颈容量。PI-VQ支持无需先验的直接插值采样，在CelebA和FFHQ等数据集上实现了高质量的图像合成，为位置无关的离散表示学习提供了新视角。",
+      "tags": "query:ardm",
+      "abstract_en": "Vector quantization approaches (VQ-VAE, VQ-GAN) learn discrete neural representations of images, but these representations are inherently position-dependent: codes are spatially arranged and contextually entangled, requiring autoregressive or diffusion-based priors to model their dependencies at sample time. In this work, we ask whether positional information is necessary for discrete representations of spatially aligned data. We propose the permutation-invariant vector-quantized autoencoder (PI-VQ), in which latent codes are constrained to carry no positional information. We find that this constraint encourages codes to capture global, semantic features, and enables direct interpolation between images without a learned prior. To address the reduced information capacity of permutation-invariant representations, we introduce matching quantization, a vector quantization algorithm based on optimal bipartite matching that increases effective bottleneck capacity by $3.5\\times$ relative to naive nearest-neighbour quantization. The compositional structure of the learned codes further enables interpolation-based sampling, allowing synthesis of novel images in a single forward pass. We evaluate PI-VQ on CelebA, CelebA-HQ and FFHQ, obtaining competitive precision, density and coverage metrics for images synthesised with our approach. We discuss the trade-offs inherent to position-free representations, including separability and interpretability of the latent codes, pointing to numerous directions for future work.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/05/2604.00236v1-hierarchical-discrete-flow-matching-for-graph-generation",
+      "section": "quick",
+      "title_en": "Hierarchical Discrete Flow Matching for Graph Generation",
+      "authors": "Yoann Boget, Pablo Strasser, Alexandros Kalousis",
+      "date": "2026-03-31",
+      "pdf": "https://arxiv.org/pdf/2604.00236v1",
+      "score": "6.0",
+      "evidence": "用于图生成的层次化离散流匹配生成框架",
+      "tldr": "针对图生成模型中计算复杂度随节点数平方增长以及生成迭代次数过多的问题，本文提出了一种分层离散流匹配框架。该方法通过分层结构减少了需要评估的节点对数量，并结合离散流匹配技术显著降低了去噪迭代次数。实验证明，该方法在更有效地捕捉图分布的同时，大幅缩短了生成时间，实现了效率与质量的双重提升。",
+      "tags": "query:diffpl",
+      "abstract_en": "Denoising-based models, including diffusion and flow matching, have led to substantial advances in graph generation. Despite this progress, such models remain constrained by two fundamental limitations: a computational cost that scales quadratically with the number of nodes and a large number of function evaluations required during generation. In this work, we introduce a novel hierarchical generative framework that reduces the number of node pairs that must be evaluated and adopts discrete flow matching to significantly decrease the number of denoising iterations. We empirically demonstrate that our approach more effectively captures graph distributions while substantially reducing generation time.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/05/2604.02330v1-actionparty-multi-subject-action-binding-in-generative-video-games",
+      "section": "quick",
+      "title_en": "ActionParty: Multi-Subject Action Binding in Generative Video Games",
+      "authors": "Alexander Pondaven, Ziyi Wu, Igor Gilitschenski, Philip Torr, Sergey Tulyakov, Fabio Pizzati, Aliaksandr Siarohin",
+      "date": "2026-04-02",
+      "pdf": "https://arxiv.org/pdf/2604.02330v1",
+      "score": "6.0",
+      "evidence": "用于交互式环境和动作控制的视频扩散世界模型",
+      "tldr": "针对现有视频扩散模型在生成式游戏中难以同时控制多个角色（动作绑定问题）的局限，本文提出 ActionParty。该模型通过引入“主体状态标记”和空间偏置机制，将全局画面渲染与个体动作更新解耦，实现了对场景中多个主体的精准动作绑定。在 Melting Pot 基准测试中，ActionParty 展现了对多达 7 个角色的同步控制能力，显著提升了动作遵循准确性和身份一致性，为多玩家交互式世界模型提供了新方案。",
+      "tags": "query:genad",
+      "abstract_en": "Recent advances in video diffusion have enabled the development of \"world models\" capable of simulating interactive environments. However, these models are largely restricted to single-agent settings, failing to control multiple agents simultaneously in a scene. In this work, we tackle a fundamental issue of action binding in existing video diffusion models, which struggle to associate specific actions with their corresponding subjects. For this purpose, we propose ActionParty, an action controllable multi-subject world model for generative video games. It introduces subject state tokens, i.e. latent variables that persistently capture the state of each subject in the scene. By jointly modeling state tokens and video latents with a spatial biasing mechanism, we disentangle global video frame rendering from individual action-controlled subject updates. We evaluate ActionParty on the Melting Pot benchmark, demonstrating the first video world model capable of controlling up to seven players simultaneously across 46 diverse environments. Our results show significant improvements in action-following accuracy and identity consistency, while enabling robust autoregressive tracking of subjects through complex interactions.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
