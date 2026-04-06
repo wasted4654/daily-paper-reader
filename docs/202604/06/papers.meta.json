@@ -1,0 +1,37 @@
+{
+  "label": "2026-04-06",
+  "date": "2026-04-06",
+  "generated_at": "2026-04-06T20:16:25",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202604/06/2604.02979v1-not-all-frames-deserve-full-computation-accelerating-autoregressive-video-generation-via-selective-computation-and-predictive-extrapolation",
+      "section": "deep",
+      "title_en": "Not All Frames Deserve Full Computation: Accelerating Autoregressive Video Generation via Selective Computation and Predictive Extrapolation",
+      "authors": "Hanshuai Cui, Zhiqing Tang, Zhi Yao, Fanshuai Meng, Weijia Jia, Wei Zhao",
+      "date": "2026-04-03",
+      "pdf": "https://arxiv.org/pdf/2604.02979v1",
+      "score": "10.0",
+      "evidence": "通过选择性计算加速自回归视频扩散模型",
+      "tldr": "针对自回归视频扩散模型生成成本高的问题，本文提出SCOPE框架。该框架打破了传统的缓存或重计算二元决策，引入基于泰勒外推的预测模式来填补两者间的空白，并结合选择性计算优化异步噪声水平下的帧处理。SCOPE无需训练即可在保持视频质量的同时，实现高达4.73倍的推理加速，显著提升了长视频生成的效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) video diffusion models enable long-form video generation but remain expensive due to repeated multi-step denoising. Existing training-free acceleration methods rely on binary cache-or-recompute decisions, overlooking intermediate cases where direct reuse is too coarse yet full recomputation is unnecessary. Moreover, asynchronous AR schedules assign different noise levels to co-generated frames, yet existing methods process the entire valid interval uniformly. To address these AR-specific inefficiencies, we present SCOPE, a training-free framework for efficient AR video diffusion. SCOPE introduces a tri-modal scheduler over cache, predict, and recompute, where prediction via noise-level Taylor extrapolation fills the gap between reuse and recomputation with explicit stability controls backed by error propagation analysis. It further introduces selective computation that restricts execution to the active frame interval. On MAGI-1 and SkyReels-V2, SCOPE achieves up to 4.73x speedup while maintaining quality comparable to the original output, outperforming all training-free baselines.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/06/2604.02718v1-generative-frontiers-why-evaluation-matters-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Generative Frontiers: Why Evaluation Matters for Diffusion Language Models",
+      "authors": "Patrick Pynadath, Jiaxin Shi, Ruqi Zhang",
+      "date": "2026-04-03",
+      "pdf": "https://arxiv.org/pdf/2604.02718v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型相对于自回归模型的最新进展与评估",
+      "tldr": "扩散语言模型（DLM）在生成灵活性上展现出巨大潜力，但其评估方法仍存在显著局限。本文深入探讨了现有评估基准（如OpenWebText与LM1B）的差异，指出仅依赖生成困惑度作为指标可能导致误导性结果。通过将KL散度分解为生成困惑度和熵，研究者提出了“生成前沿”这一更具原则性的评估框架，为衡量DLM的生成质量提供了可靠的比较标准。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models have seen exciting recent progress, offering far more flexibility in generative trajectories than autoregressive models. This flexibility has motivated a growing body of research into new approaches to diffusion language modeling, which typically begins at the scale of GPT-2 small (150 million parameters). However, these advances introduce new issues with evaluation methodology. In this technical note, we discuss the limitations of current methodology and propose principled augmentations to ensure reliable comparisons. We first discuss why OpenWebText has become the standard benchmark, and why alternatives such as LM1B are inherently less meaningful. We then discuss the limitations of likelihood evaluations for diffusion models, and explain why relying on generative perplexity alone as a metric can lead to uninformative results. To address this, we show that generative perplexity and entropy are two components of the KL divergence to a reference distribution. This decomposition explains generative perplexity's sensitivity to entropy, and naturally suggests generative frontiers as a principled method for evaluating model generative quality. We conclude with empirical observations on model quality at this scale. We include a blog post with interactive content to illustrate the argument at https://patrickpynadath1.github.io/blog/eval_methodology/.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -6,32 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-05
-- 运行时间：2026-04-05 19:13:06 UTC
+- 最新运行日期：2026-04-06
+- 运行时间：2026-04-06 20:16:13 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：0
-- 速读区：3
+- 本次总论文数：2
+- 精读区：2
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦离散表示学习与生成式技术，涵盖空间对齐图像、图结构生成及多主体动作绑定。
-重点关注置换不变性在图像表示中的应用，以及分层离散流匹配在复杂图生成中的突破。
-建议关注离散化建模如何提升生成式视频游戏中的多主体交互精度。
-- 详情：[/202604/05/README](/202604/05/README)
+今日聚焦生成式模型效率与评估，涵盖视频生成加速及扩散语言模型的前沿探索。
+重点推荐通过选择性计算实现视频生成大幅提速，并深入探讨了评估体系对扩散语言模型发展的核心价值。
+建议关注如何在保证生成质量的同时降低推理成本，并同步更新对非自回归架构的评测认知。
+- 详情：[/202604/06/README](/202604/06/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Not All Frames Deserve Full Computation: Accelerating Autoregressive Video Generation via Selective Computation and Predictive Extrapolation](/202604/06/2604.02979v1-not-all-frames-deserve-full-computation-accelerating-autoregressive-video-generation-via-selective-computation-and-predictive-extrapolation)  
+   标签：评分：10.0/10、query:ardm
+   evidence：通过选择性计算加速自回归视频扩散模型
+2. [Generative Frontiers: Why Evaluation Matters for Diffusion Language Models](/202604/06/2604.02718v1-generative-frontiers-why-evaluation-matters-for-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型相对于自回归模型的最新进展与评估
 
 ### 速读区论文标签
-1. [Investigating Permutation-Invariant Discrete Representation Learning for Spatially Aligned Images](/202604/05/2604.01843v1-investigating-permutation-invariant-discrete-representation-learning-for-spatially-aligned-images)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于离散神经表示的自回归或扩散先验
-2. [Hierarchical Discrete Flow Matching for Graph Generation](/202604/05/2604.00236v1-hierarchical-discrete-flow-matching-for-graph-generation)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：用于图生成的层次化离散流匹配生成框架
-3. [ActionParty: Multi-Subject Action Binding in Generative Video Games](/202604/05/2604.02330v1-actionparty-multi-subject-action-binding-in-generative-video-games)  
-   标签：评分：6.0/10、query:genad
-   evidence：用于交互式环境和动作控制的视频扩散世界模型
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
