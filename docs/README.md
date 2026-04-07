@@ -6,29 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-06
-- 运行时间：2026-04-06 20:16:13 UTC
+- 最新运行日期：2026-04-07
+- 运行时间：2026-04-07 19:56:00 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：3
 - 精读区：2
-- 速读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦生成式模型效率与评估，涵盖视频生成加速及扩散语言模型的前沿探索。
-重点推荐通过选择性计算实现视频生成大幅提速，并深入探讨了评估体系对扩散语言模型发展的核心价值。
-建议关注如何在保证生成质量的同时降低推理成本，并同步更新对非自回归架构的评测认知。
-- 详情：[/202604/06/README](/202604/06/README)
+今日深度解析 Diffusion LLM 对齐新范式与大规模文本转动作生成技术。
+重点关注 DARE 框架如何通过强化学习实现扩散模型的高效对齐，以及 Next-Scale 在动作生成领域的规模化突破。
+建议优先研读 DARE 的对齐逻辑，并关注 DiffSparse 提供的 DiT 推理加速新思路。
+- 详情：[/202604/07/README](/202604/07/README)
 
 ### 精读区论文标签
-1. [Not All Frames Deserve Full Computation: Accelerating Autoregressive Video Generation via Selective Computation and Predictive Extrapolation](/202604/06/2604.02979v1-not-all-frames-deserve-full-computation-accelerating-autoregressive-video-generation-via-selective-computation-and-predictive-extrapolation)  
-   标签：评分：10.0/10、query:ardm
-   evidence：通过选择性计算加速自回归视频扩散模型
-2. [Generative Frontiers: Why Evaluation Matters for Diffusion Language Models](/202604/06/2604.02718v1-generative-frontiers-why-evaluation-matters-for-diffusion-language-models)  
+1. [DARE: Diffusion Large Language Models Alignment and Reinforcement Executor](/202604/07/2604.04215v1-dare-diffusion-large-language-models-alignment-and-reinforcement-executor)  
+   标签：评分：9.0/10、query:ardm
+   evidence：扩散大语言模型作为自回归模型的替代方案
+2. [Next-Scale Autoregressive Models for Text-to-Motion Generation](/202604/07/2604.03799v1-next-scale-autoregressive-models-for-text-to-motion-generation)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型相对于自回归模型的最新进展与评估
+   evidence：用于动作生成的下一尺度自回归框架
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [DiffSparse: Accelerating Diffusion Transformers with Learned Token Sparsity](/202604/07/2604.03674v1-diffsparse-accelerating-diffusion-transformers-with-learned-token-sparsity)  
+   标签：评分：6.0/10、query:ardm
+   evidence：通过令牌稀疏化加速扩散Transformer架构
 
 
 <div class="dpr-home-promo-card">

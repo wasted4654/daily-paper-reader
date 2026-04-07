@@ -1,0 +1,51 @@
+{
+  "label": "2026-04-07",
+  "date": "2026-04-07",
+  "generated_at": "2026-04-07T19:56:10",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202604/07/2604.04215v1-dare-diffusion-large-language-models-alignment-and-reinforcement-executor",
+      "section": "deep",
+      "title_en": "DARE: Diffusion Large Language Models Alignment and Reinforcement Executor",
+      "authors": "Jingyi Yang, Yuxian Jiang, Xuhao Hu, Shuang Cheng, Biqing Qi, Jing Shao",
+      "date": "2026-04-05",
+      "pdf": "https://arxiv.org/pdf/2604.04215v1",
+      "score": "9.0",
+      "evidence": "扩散大语言模型作为自回归模型的替代方案",
+      "tldr": "扩散大语言模型（dLLM）作为自回归模型的替代方案正迅速兴起，但其后训练生态系统（如强化学习、评估脚本等）高度碎片化，阻碍了研究迭代。本文提出DARE，一个统一的dLLM对齐与强化执行框架。它集成了监督微调、偏好优化及特定强化学习算法，支持多种扩散模型家族，为dLLM的开发、对比和部署提供了可复用的研究基石。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) are emerging as a compelling alternative to dominant autoregressive models, replacing strictly sequential token generation with iterative denoising and parallel generation dynamics. However, their open-source ecosystem remains fragmented across model families and, in particular, across post-training pipelines, where reinforcement learning objectives, rollout implementations and evaluation scripts are often released as paper-specific codebases. This fragmentation slows research iteration, raises the engineering burden of reproduction, and makes fair comparison across algorithms difficult. We present \\textbf{DARE} (\\textbf{d}LLMs \\textbf{A}lignment and \\textbf{R}einforcement \\textbf{E}xecutor), an open framework for post-training and evaluating dLLMs. Built on top of verl~\\cite{sheng2024hybridflow} and OpenCompass~\\cite{2023opencompass}, DARE unifies supervised fine-tuning, parameter-efficient fine-tuning, preference optimization, and dLLM-specific reinforcement learning under a shared execution stack for both masked and block diffusion language models. Across representative model families including LLaDA, Dream, SDAR, and LLaDA2.x, DARE provides broad algorithmic coverage, reproducible benchmark evaluation, and practical acceleration. Extensive empirical results position that DARE serves as a reusable research substrate for developing, comparing, and deploying post-training methods for current and emerging dLLMs.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/07/2604.03799v1-next-scale-autoregressive-models-for-text-to-motion-generation",
+      "section": "deep",
+      "title_en": "Next-Scale Autoregressive Models for Text-to-Motion Generation",
+      "authors": "Zhiwei Zheng, Shibo Jin, Lingjie Liu, Mingmin Zhao",
+      "date": "2026-04-04",
+      "pdf": "https://arxiv.org/pdf/2604.03799v1",
+      "score": "8.0",
+      "evidence": "用于动作生成的下一尺度自回归框架",
+      "tldr": "本研究针对文本生成动作任务，指出传统自回归模型在处理时间结构上的局限性，提出了MoScale框架。MoScale采用“下一尺度”预测机制，通过从粗到细的时间分辨率层级化生成动作，并引入跨尺度细化与尺度内双向重预测来增强鲁棒性。该方法在保持高训练效率的同时，实现了SOTA性能，并展现出卓越的扩展能力和零样本泛化能力，适用于多种动作生成与编辑任务。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) models offer stable and efficient training, but standard next-token prediction is not well aligned with the temporal structure required for text-conditioned motion generation. We introduce MoScale, a next-scale AR framework that generates motion hierarchically from coarse to fine temporal resolutions. By providing global semantics at the coarsest scale and refining them progressively, MoScale establishes a causal hierarchy better suited for long-range motion structure. To improve robustness under limited text-motion data, we further incorporate cross-scale hierarchical refinement for improving per-scale initial predictions and in-scale temporal refinement for selective bidirectional re-prediction. MoScale achieves SOTA text-to-motion performance with high training efficiency, scales effectively with model size, and generalizes zero-shot to diverse motion generation and editing tasks.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/07/2604.03674v1-diffsparse-accelerating-diffusion-transformers-with-learned-token-sparsity",
+      "section": "quick",
+      "title_en": "DiffSparse: Accelerating Diffusion Transformers with Learned Token Sparsity",
+      "authors": "Haowei Zhu, Ji Liu, Ziqiong Liu, Dong Li, Junhai Yong, Bin Wang, Emad Barsoum",
+      "date": "2026-04-04",
+      "pdf": "https://arxiv.org/pdf/2604.03674v1",
+      "score": "6.0",
+      "evidence": "通过令牌稀疏化加速扩散Transformer架构",
+      "tldr": "针对扩散Transformer（DiT）推理计算开销巨大的挑战，本文提出DiffSparse框架。该框架通过可学习的网络结合动态规划算法，实现了端到端的层级Token稀疏度自动优化，并引入两阶段训练策略以消除传统方法中冗余的全量计算步骤。在DiT-XL/2、FLUX及Wan2.1等模型上的实验证明，该方法在显著降低计算成本的同时，能保持甚至提升图像生成质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion models demonstrate outstanding performance in image generation, but their multi-step inference mechanism requires immense computational cost. Previous works accelerate inference by leveraging layer or token cache techniques to reduce computational cost. However, these methods fail to achieve superior acceleration performance in few-step diffusion transformer models due to inefficient feature caching strategies, manually designed sparsity allocation, and the practice of retaining complete forward computations in several steps in these token cache methods. To tackle these challenges, we propose a differentiable layer-wise sparsity optimization framework for diffusion transformer models, leveraging token caching to reduce token computation costs and enhance acceleration. Our method optimizes layer-wise sparsity allocation in an end-to-end manner through a learnable network combined with a dynamic programming solver. Additionally, our proposed two-stage training strategy eliminates the need for full-step processing in existing methods, further improving efficiency. We conducted extensive experiments on a range of diffusion-transformer models, including DiT-XL/2, PixArt-$α$, FLUX, and Wan2.1. Across these architectures, our method consistently improves efficiency without degrading sample quality. For example, on PixArt-$α$ with 20 sampling steps, we reduce computational cost by $54\\%$ while achieving generation metrics that surpass those of the original model, substantially outperforming prior approaches. These results demonstrate that our method delivers large efficiency gains while often improving generation quality.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
