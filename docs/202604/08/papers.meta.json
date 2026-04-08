@@ -1,0 +1,79 @@
+{
+  "label": "2026-04-08",
+  "date": "2026-04-08",
+  "generated_at": "2026-04-08T19:58:38",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202604/08/2604.05250v1-dualdiffusion-a-speculative-decoding-strategy-for-masked-diffusion-models",
+      "section": "deep",
+      "title_en": "DualDiffusion: A Speculative Decoding Strategy for Masked Diffusion Models",
+      "authors": "Satyam Goyal, Kushal Patel, Tanush Mittal, Arjun Laxman",
+      "date": "2026-04-06",
+      "pdf": "https://arxiv.org/pdf/2604.05250v1",
+      "score": "8.0",
+      "evidence": "针对掩码扩散模型的投机解码，作为自回归模型的替代方案",
+      "tldr": "掩码扩散模型（MDM）虽支持并行生成，但受限于双向注意力机制带来的高计算复杂度和KV缓存缺失，推理速度较慢。本文提出DualDiffusion，一种针对MDM的投机解码框架。该方法结合了高效的轻量级草稿模型与高精度的验证模型，通过多步草稿预测配合单步验证，在保持生成质量的同时显著减少了推理步数。实验表明，DualDiffusion在MMLU和GSM8K任务上优于现有加速方案，有效优化了MDM的质量与效率权衡。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked Diffusion Models (MDMs) offer a promising alternative to autoregressive language models by enabling parallel token generation and bidirectional context modeling. However, their inference speed is significantly limited by the inability to cache key-value pairs due to bidirectional attention, requiring $O(N^2)$ computations at each generation step. While recent methods like FastDLLM and DkvCache improve inference speed through attention approximations and caching strategies, they achieve speedups at the cost of generation quality. We propose DualDiffusion, a speculative decoding framework for MDMs that combines fast drafter models (using efficient approximations) with slower, more accurate verifier models. By running multiple steps of a lightweight drafter followed by a single verification step, DualDiffusion achieves a superior Pareto frontier between generation steps and accuracy compared to existing approaches. We evaluate our method on MMLU and GSM8K, demonstrating that DualDiffusion maintains high accuracy while reducing the number of generation steps required, effectively pushing the quality-efficiency trade-off curve for masked diffusion language models.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/08/2604.05497v1-thinking-diffusion-penalize-and-guide-visual-grounded-reasoning-in-diffusion-multimodal-language-models",
+      "section": "deep",
+      "title_en": "Thinking Diffusion: Penalize and Guide Visual-Grounded Reasoning in Diffusion Multimodal Language Models",
+      "authors": "Keuntae Kim, Mingyu Kang, Yong Suk Choi",
+      "date": "2026-04-07",
+      "pdf": "https://arxiv.org/pdf/2604.05497v1",
+      "score": "8.0",
+      "evidence": "扩散多模态语言模型作为自回归模型的替代方案",
+      "tldr": "本研究针对扩散多模态大模型（dMLLM）在思维链推理中存在的过早生成答案及视觉信息利用不足的问题，提出了Thinking Diffusion框架。该框架通过位置与步骤惩罚（PSP）延迟答案生成，并利用视觉推理引导（VRG）强化视觉对齐。实验证明，该方法在显著提升推理准确性的同时，比增加采样步数的方法实现了3倍以上的加速，有效优化了扩散模型的视觉推理性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) are emerging as promising alternatives to autoregressive (AR) LLMs. Recently, this paradigm has been extended to multimodal tasks, leading to the development of diffusion multimodal large language models (dMLLMs). These models are expected to retain the reasoning capabilities of LLMs while enabling faster inference through parallel generation. However, when combined with Chain-of-Thought (CoT) reasoning, dMLLMs exhibit two critical issues. First, we observe that dMLLMs often generate the final answer token at a very early timestep. This trend indicates that the model determines the answer before sufficient reasoning, leading to degraded reasoning performance. Second, during the initial timesteps, dMLLMs show minimal dependency on visual prompts, exhibiting a fundamentally different pattern of visual information utilization compared to AR vision-language models. In summary, these findings indicate that dMLLMs tend to generate premature final answers without sufficiently grounding on visual inputs. To address these limitations, we propose Position and Step Penalty (PSP) and Visual Reasoning Guidance (VRG). PSP penalizes tokens in later positions during early timesteps, delaying premature answer generation and encouraging progressive reasoning across timesteps. VRG, inspired by classifier-free guidance, amplifies visual grounding signals to enhance the model's alignment with visual evidence. Extensive experiments across various dMLLMs demonstrate that our method achieves up to 7.5% higher accuracy while delivering more than 3x speedup compared to reasoning with four times more diffusion steps.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/08/2604.05551v1-fastdiss-few-step-match-many-step-diffusion-language-model-on-sequence-to-sequence-generation--full-version",
+      "section": "quick",
+      "title_en": "FastDiSS: Few-step Match Many-step Diffusion Language Model on Sequence-to-Sequence Generation--Full Version",
+      "authors": "Dat Nguyen-Cong, Tung Kieu, Hoang Thanh-Tung",
+      "date": "2026-04-07",
+      "pdf": "https://arxiv.org/pdf/2604.05551v1",
+      "score": "7.0",
+      "evidence": "用于序列到序列生成的扩散语言模型",
+      "tldr": "本研究针对连续扩散语言模型在少步采样（快速推理）时自调节失效的问题，提出了FastDiSS框架。该框架通过在训练中引入扰动自调节信号来模拟推理噪声，增强模型对误差的鲁棒性，并结合Token级噪声感知机制优化训练。实验证明，FastDiSS在保持生成质量的同时，推理速度提升了400倍，在条件生成任务上表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Self-conditioning has been central to the success of continuous diffusion language models, as it allows models to correct previous errors. Yet its ability degrades precisely in the regime where diffusion is most attractive for deployment: few-step sampling for fast inference. In this study, we show that when models only have a few denoising steps, inaccurate self-conditioning induces a substantial approximation gap; this mistake compounds across denoising steps and ultimately dominate the sample quality. To address this, we propose a novel training framework that handles these errors during learning by perturbing the self-conditioning signal to match inference noise, improving robustness to prior estimation errors. In addition, we introduce a token-level noise-awareness mechanism that prevents training from saturation, hence improving optimization. Extensive experiments across conditional generation benchmarks demonstrate that our framework surpasses standard continuous diffusion models while providing up to 400x faster inference speed, and remains competitive against other one-step diffusion frameworks.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/08/2604.04953v1-generative-ai-for-video-trailer-synthesis-from-extractive-heuristics-to-autoregressive-creativity",
+      "section": "quick",
+      "title_en": "Generative AI for Video Trailer Synthesis: From Extractive Heuristics to Autoregressive Creativity",
+      "authors": "Abhishek Dharmaratnakar, Srivaths Ranganathan, Debanshu Das, Anushree Sinha",
+      "date": "2026-04-03",
+      "pdf": "https://arxiv.org/pdf/2604.04953v1",
+      "score": "6.0",
+      "evidence": "结合自回归Transformer与基于扩散的视频合成",
+      "tldr": "本综述探讨了自动视频预告片生成从启发式提取到深度生成合成的范式转变。文章回顾了从早期基于规则的方法到利用大语言模型（LLM）和扩散模型（如Sora）的演进过程，分析了从图卷积网络到预告片生成变换器（TGT）的技术进步，并提出了大模型时代下AI驱动预告片生成的新分类法，强调了未来将向可控生成编辑和语义重构发展的趋势。",
+      "tags": "query:ardm",
+      "abstract_en": "The domain of automatic video trailer generation is currently undergoing a profound paradigm shift, transitioning from heuristic-based extraction methods to deep generative synthesis. While early methodologies relied heavily on low-level feature engineering, visual saliency, and rule-based heuristics to select representative shots, recent advancements in Large Language Models (LLMs), Multimodal Large Language Models (MLLMs), and diffusion-based video synthesis have enabled systems that not only identify key moments but also construct coherent, emotionally resonant narratives. This survey provides a comprehensive technical review of this evolution, with a specific focus on generative techniques including autoregressive Transformers, LLM-orchestrated pipelines, and text-to-video foundation models like OpenAI's Sora and Google's Veo. We analyze the architectural progression from Graph Convolutional Networks (GCNs) to Trailer Generation Transformers (TGT), evaluate the economic implications of automated content velocity on User-Generated Content (UGC) platforms, and discuss the ethical challenges posed by high-fidelity neural synthesis. By synthesizing insights from recent literature, this report establishes a new taxonomy for AI-driven trailer generation in the era of foundation models, suggesting that future promotional video systems will move beyond extractive selection toward controllable generative editing and semantic reconstruction of trailers.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/08/2604.05257v1-extending-tabular-denoising-diffusion-probabilistic-models-for-time-series-data-generation",
+      "section": "quick",
+      "title_en": "Extending Tabular Denoising Diffusion Probabilistic Models for Time-Series Data Generation",
+      "authors": "Umang Dobhal, Christina Garcia, Sozo Inoue",
+      "date": "2026-04-06",
+      "pdf": "https://arxiv.org/pdf/2604.05257v1",
+      "score": "6.0",
+      "evidence": "用于时间序列和序列感知的扩散模型",
+      "tldr": "本研究针对 TabDDPM 无法处理时间依赖性的局限，提出了一种用于时间序列生成的扩展扩散模型。通过引入轻量级时间适配器和上下文感知嵌入模块，该方法将传感器数据重构为窗口序列，并显式建模时间上下文。实验表明，该模型在 WISDM 数据集上生成的合成序列具有高度的时间相干性和真实感，能有效提升少数类别的表示并保持统计一致性，为隐私保护的数据增强提供了新方案。",
+      "tags": "query:diffpl",
+      "abstract_en": "Diffusion models are increasingly being utilised to create synthetic tabular and time series data for privacy-preserving augmentation. Tabular Denoising Diffusion Probabilistic Models (TabDDPM) generate high-quality synthetic data from heterogeneous tabular datasets but assume independence between samples, limiting their applicability to time-series domains where temporal dependencies are critical. To address this, we propose a temporal extension of TabDDPM, introducing sequence awareness through the use of lightweight temporal adapters and context-aware embedding modules. By reformulating sensor data into windowed sequences and explicitly modeling temporal context via timestep embeddings, conditional activity labels, and observed/missing masks, our approach enables the generation of temporally coherent synthetic sequences. Compared to baseline and interpolation techniques, validation using bigram transition matrices and autocorrelation analysis shows enhanced temporal realism, diversity, and coherence. On the WISDM accelerometer dataset, the suggested system produces synthetic time-series that closely resemble real world sensor patterns and achieves comparable classification performance (macro F1-score 0.64, accuracy 0.71). This is especially advantageous for minority class representation and preserving statistical alignment with real distributions. These developments demonstrate that diffusion based models provide effective and adaptable solutions for sequential data synthesis when they are equipped for temporal reasoning. Future work will explore scaling to longer sequences and integrating stronger temporal architectures.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
