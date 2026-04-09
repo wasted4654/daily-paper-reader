@@ -6,37 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-08
-- 运行时间：2026-04-08 19:58:29 UTC
+- 最新运行日期：2026-04-09
+- 运行时间：2026-04-09 20:29:29 UTC
 - 运行状态：成功
 - 本次总论文数：5
-- 精读区：2
-- 速读区：3
+- 精读区：3
+- 速读区：2
 
 ### 今日简报（AI）
-今日聚焦扩散模型在推理增强与高效解码领域的 5 项前沿进展。
-重点推荐 DualDiffusion 的投机解码策略及 Thinking Diffusion 对视觉多模态推理的精准引导。
-建议读者关注扩散模型如何跨越生成边界，向逻辑推理与高效序列合成深度演进。
-- 详情：[/202604/08/README](/202604/08/README)
+今日深度探索 AR 与 Diffusion 混合架构的进化，重点攻克图像生成稳定性与多模态模型转换效率。
+满分论文 MAR-GRPO 揭示了稳定强化学习在混合生成中的威力，而 Fast-dVLM 则实现了自回归模型向块扩散的高效跨越。
+建议优先关注混合架构的性能突破，这可能是未来兼顾高效率与高质量视觉生成的关键路径。
+- 详情：[/202604/09/README](/202604/09/README)
 
 ### 精读区论文标签
-1. [DualDiffusion: A Speculative Decoding Strategy for Masked Diffusion Models](/202604/08/2604.05250v1-dualdiffusion-a-speculative-decoding-strategy-for-masked-diffusion-models)  
+1. [MAR-GRPO: Stabilized GRPO for AR-diffusion Hybrid Image Generation](/202604/09/2604.06966v1-mar-grpo-stabilized-grpo-for-ar-diffusion-hybrid-image-generation)  
+   标签：评分：10.0/10、query:ardm
+   evidence：混合自回归扩散框架与掩码自回归模型
+2. [Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM](/202604/09/2604.06832v1-fast-dvlm-efficient-block-diffusion-vlm-via-direct-conversion-from-autoregressive-vlm)  
+   标签：评分：9.0/10、query:ardm
+   evidence：从自回归VLM直接转换为块扩散VLM
+3. [$S^3$: Stratified Scaling Search for Test-Time in Diffusion Language Models](/202604/09/2604.06260v1-s3-stratified-scaling-search-for-test-time-in-diffusion-language-models)  
    标签：评分：8.0/10、query:ardm
-   evidence：针对掩码扩散模型的投机解码，作为自回归模型的替代方案
-2. [Thinking Diffusion: Penalize and Guide Visual-Grounded Reasoning in Diffusion Multimodal Language Models](/202604/08/2604.05497v1-thinking-diffusion-penalize-and-guide-visual-grounded-reasoning-in-diffusion-multimodal-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散多模态语言模型作为自回归模型的替代方案
+   evidence：扩散语言模型的测试时缩放
 
 ### 速读区论文标签
-1. [FastDiSS: Few-step Match Many-step Diffusion Language Model on Sequence-to-Sequence Generation--Full Version](/202604/08/2604.05551v1-fastdiss-few-step-match-many-step-diffusion-language-model-on-sequence-to-sequence-generation--full-version)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于序列到序列生成的扩散语言模型
-2. [Generative AI for Video Trailer Synthesis: From Extractive Heuristics to Autoregressive Creativity](/202604/08/2604.04953v1-generative-ai-for-video-trailer-synthesis-from-extractive-heuristics-to-autoregressive-creativity)  
+1. [Why Gaussian Diffusion Models Fail on Discrete Data?](/202604/09/2604.02028v1-why-gaussian-diffusion-models-fail-on-discrete-data)  
    标签：评分：6.0/10、query:ardm
-   evidence：结合自回归Transformer与基于扩散的视频合成
-3. [Extending Tabular Denoising Diffusion Probabilistic Models for Time-Series Data Generation](/202604/08/2604.05257v1-extending-tabular-denoising-diffusion-probabilistic-models-for-time-series-data-generation)  
+   evidence：研究离散数据分布上的扩散模型
+2. [FVD: Inference-Time Alignment of Diffusion Models via Fleming-Viot Resampling](/202604/09/2604.06779v1-fvd-inference-time-alignment-of-diffusion-models-via-fleming-viot-resampling)  
    标签：评分：6.0/10、query:diffpl
-   evidence：用于时间序列和序列感知的扩散模型
+   evidence：扩散模型的推理时对齐
 
 
 <div class="dpr-home-promo-card">

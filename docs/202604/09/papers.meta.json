@@ -1,0 +1,79 @@
+{
+  "label": "2026-04-09",
+  "date": "2026-04-09",
+  "generated_at": "2026-04-09T20:29:40",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202604/09/2604.06966v1-mar-grpo-stabilized-grpo-for-ar-diffusion-hybrid-image-generation",
+      "section": "deep",
+      "title_en": "MAR-GRPO: Stabilized GRPO for AR-diffusion Hybrid Image Generation",
+      "authors": "Xiaoxiao Ma, Jiachen Lei, Tianfei Ren, Jie Huang, Siming Fu, Aiming Hao, Jiahong Wu, Xiangxiang Chu, Feng Zhao",
+      "date": "2026-04-08",
+      "pdf": "https://arxiv.org/pdf/2604.06966v1",
+      "score": "10.0",
+      "evidence": "混合自回归扩散框架与掩码自回归模型",
+      "tldr": "针对混合自回归-扩散模型（MAR）在强化学习中因扩散头引入噪声导致训练不稳的问题，本文提出MAR-GRPO框架。该框架通过多轨迹期望（MTE）降低梯度噪声，并结合基于不确定性的Token选择和一致性感知策略，有效解决了训练波动和性能饱和问题，显著提升了图像生成的视觉质量与空间结构理解能力。",
+      "tags": "query:ardm",
+      "abstract_en": "Reinforcement learning (RL) has been successfully applied to autoregressive (AR) and diffusion models. However, extending RL to hybrid AR-diffusion frameworks remains challenging due to interleaved inference and noisy log-probability estimation. In this work, we study masked autoregressive models (MAR) and show that the diffusion head plays a critical role in training dynamics, often introducing noisy gradients that lead to instability and early performance saturation. To address this issue, we propose a stabilized RL framework for MAR. We introduce multi-trajectory expectation (MTE), which estimates the optimization direction by averaging over multiple diffusion trajectories, thereby reducing diffusion-induced gradient noise. To avoid over-smoothing, we further estimate token-wise uncertainty from multiple trajectories and apply multi-trajectory optimization only to the top-k% uncertain tokens. In addition, we introduce a consistency-aware token selection strategy that filters out AR tokens that are less aligned with the final generated content. Extensive experiments across multiple benchmarks demonstrate that our method consistently improves visual quality, training stability, and spatial structure understanding over baseline GRPO and pre-RL models. Code is available at: https://github.com/AMAP-ML/mar-grpo.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/09/2604.06832v1-fast-dvlm-efficient-block-diffusion-vlm-via-direct-conversion-from-autoregressive-vlm",
+      "section": "deep",
+      "title_en": "Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM",
+      "authors": "Chengyue Wu, Shiyi Lan, Yonggan Fu, Sensen Gao, Jin Wang, Jincheng Yu, Jose M. Alvarez, Pavlo Molchanov, Ping Luo, Song Han, Ligeng Zhu, Enze Xie",
+      "date": "2026-04-08",
+      "pdf": "https://arxiv.org/pdf/2604.06832v1",
+      "score": "9.0",
+      "evidence": "从自回归VLM直接转换为块扩散VLM",
+      "tldr": "针对自回归视觉语言模型（VLM）推理速度受限的问题，本文提出 Fast-dVLM。该模型通过将预训练的自回归 VLM 直接转换为块扩散（Block-Diffusion）模型，实现了 KV 缓存兼容的并行解码。通过引入块大小退火和因果上下文注意力等优化技术，Fast-dVLM 在保持与自回归模型相当的生成质量的同时，实现了超过 6 倍的推理加速，显著提升了边缘设备上的推理效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Vision-language models (VLMs) predominantly rely on autoregressive decoding, which generates tokens one at a time and fundamentally limits inference throughput. This limitation is especially acute in physical AI scenarios such as robotics and autonomous driving, where VLMs are deployed on edge devices at batch size one, making AR decoding memory-bandwidth-bound and leaving hardware parallelism underutilized. While block-wise discrete diffusion has shown promise for parallel text generation, extending it to VLMs remains challenging due to the need to jointly handle continuous visual representations and discrete text tokens while preserving pretrained multimodal capabilities. We present Fast-dVLM, a block-diffusion-based VLM that enables KV-cache-compatible parallel decoding and speculative block decoding for inference acceleration. We systematically compare two AR-to-diffusion conversion strategies: a two-stage approach that first adapts the LLM backbone with text-only diffusion fine-tuning before multimodal training, and a direct approach that converts the full AR VLM in one stage. Under comparable training budgets, direct conversion proves substantially more efficient by leveraging the already multimodally aligned VLM; we therefore adopt it as our recommended recipe. We introduce a suite of multimodal diffusion adaptations, block size annealing, causal context attention, auto-truncation masking, and vision efficient concatenation, that collectively enable effective block diffusion in the VLM setting. Extensive experiments across 11 multimodal benchmarks show Fast-dVLM matches its autoregressive counterpart in generation quality. With SGLang integration and FP8 quantization, Fast-dVLM achieves over 6x end-to-end inference speedup over the AR baseline.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/09/2604.06260v1-s3-stratified-scaling-search-for-test-time-in-diffusion-language-models",
+      "section": "deep",
+      "title_en": "$S^3$: Stratified Scaling Search for Test-Time in Diffusion Language Models",
+      "authors": "Ahsan Bilal, Muhammad Ahmed Mohsin, Muhammad Umer, Asad Aali, Muhammad Usman Khanzada, Muhammad Usman Rafique, Zihao He, Emily Fox, Dean F. Hougen",
+      "date": "2026-04-07",
+      "pdf": "https://arxiv.org/pdf/2604.06260v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型的测试时缩放",
+      "tldr": "本研究针对扩散语言模型（DLM）的推理侧扩展展开探索，指出传统的Best-of-K采样受限于基础分布的偏差。为此，作者提出了分层缩放搜索（S³），这是一种验证器引导的搜索方法。通过在去噪过程中动态分配计算资源，对候选轨迹进行扩展、评估和重采样，从而在保持多样性的同时逼近高质量输出分布。实验证明，S³在数学推理等任务上显著提升了模型性能，为DLM的推理侧扩展提供了有效路径。",
+      "tags": "query:ardm",
+      "abstract_en": "Test-time scaling investigates whether a fixed diffusion language model (DLM) can generate better outputs when given more inference compute, without additional training. However, naive best-of-$K$ sampling is fundamentally limited because it repeatedly draws from the same base diffusion distribution, whose high-probability regions are often misaligned with high-quality outputs. We propose $S^3$ (Stratified Scaling Search), a classical verifier-guided search method that improves generation by reallocating compute during the denoising process rather than only at the final output stage. At each denoising step, $S^3$ expands multiple candidate trajectories, evaluates them with a lightweight reference-free verifier, and selectively resamples promising candidates while preserving diversity within the search frontier. This procedure effectively approximates a reward-tilted sampling distribution that favors higher-quality outputs while remaining anchored to the model prior. Experiments with LLaDA-8B-Instruct on MATH-500, GSM8K, ARC-Challenge, and TruthfulQA demonstrate that $S^3$ consistently improves performance across benchmarks, achieving the largest gains on mathematical reasoning tasks while leaving the underlying model and decoding schedule unchanged. These results show that classical search over denoising trajectories provides a practical mechanism for test-time scaling in DLMs.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/09/2604.02028v1-why-gaussian-diffusion-models-fail-on-discrete-data",
+      "section": "quick",
+      "title_en": "Why Gaussian Diffusion Models Fail on Discrete Data?",
+      "authors": "Alexander Shabalin, Simon Elistratov, Viacheslav Meshchaninov, Ildus Sadrtdinov, Dmitry Vetrov",
+      "date": "2026-04-02",
+      "pdf": "https://arxiv.org/pdf/2604.02028v1",
+      "score": "6.0",
+      "evidence": "研究离散数据分布上的扩散模型",
+      "tldr": "本研究探讨了高斯扩散模型在处理离散数据时表现不佳的原因。通过随机层次模型，研究者发现在采样过程中存在一个关键区间，此时加噪数据的密度呈现多峰分布，导致DDPM求解器易进入低密度区域产生离群值。为此，本文提出结合自调节技术与q-sampling求解器，在关键区间内优化采样路径。实验证明，该方法在文本、代码和蛋白质生成等任务中显著提升了样本质量，为离散领域的扩散模型应用提供了理论支持和实践方案。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion models have become a standard approach for generative modeling in continuous domains, yet their application to discrete data remains challenging. We investigate why Gaussian diffusion models with the DDPM solver struggle to sample from discrete distributions that are represented as a mixture of delta-distributions in the continuous space. Using a toy Random Hierarchy Model, we identify a critical sampling interval in which the density of noisified data becomes multimodal. In this regime, DDPM occasionally enters low-density regions between modes producing out-of-distribution inputs for the model and degrading sample quality. We show that existing heuristics, including self-conditioning and a solver we term q-sampling, help alleviate this issue. Furthermore, we demonstrate that combining self-conditioning with switching from DDPM to q-sampling within the critical interval improves generation quality on real data. We validate these findings across conditional and unconditional tasks in multiple domains, including text, programming code, and proteins.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/09/2604.06779v1-fvd-inference-time-alignment-of-diffusion-models-via-fleming-viot-resampling",
+      "section": "quick",
+      "title_en": "FVD: Inference-Time Alignment of Diffusion Models via Fleming-Viot Resampling",
+      "authors": "Shivanshu Shekhar, Sagnik Mukherjee, Jia Yi Zhang, Tong Zhang",
+      "date": "2026-04-08",
+      "pdf": "https://arxiv.org/pdf/2604.06779v1",
+      "score": "6.0",
+      "evidence": "扩散模型的推理时对齐",
+      "tldr": "针对扩散模型在推理阶段对齐时常见的样本多样性崩溃问题，本文提出了 Fleming-Viot 扩散（FVD）方法。该方法受 Fleming-Viot 群体动力学启发，通过引入专门的生灭机制替代传统的重采样方案，并结合随机重生噪声，在无需价值函数近似的情况下实现了高效的奖励引导采样。FVD 具有高度可并行性，在显著提升生成质量和多样性的同时，推理速度比传统方法快达 66 倍。",
+      "tags": "query:diffpl",
+      "abstract_en": "We introduce Fleming-Viot Diffusion (FVD), an inference-time alignment method that resolves the diversity collapse commonly observed in Sequential Monte Carlo (SMC) based diffusion samplers. Existing SMC-based diffusion samplers often rely on multinomial resampling or closely related resampling schemes, which can still reduce diversity and lead to lineage collapse under strong selection pressure. Inspired by Fleming-Viot population dynamics, FVD replaces multinomial resampling with a specialized birth-death mechanism designed for diffusion alignment. To handle cases where rewards are only approximately available and naive rebirth would collapse deterministic trajectories, FVD integrates independent reward-based survival decisions with stochastic rebirth noise. This yields flexible population dynamics that preserve broader trajectory support while effectively exploring reward-tilted distributions, all without requiring value function approximation or costly rollouts. FVD is fully parallelizable and scales efficiently with inference compute. Empirically, it achieves substantial gains across settings: on DrawBench it outperforms prior methods by 7% in ImageReward, while on class-conditional tasks it improves FID by roughly 14-20% over strong baselines and is up to 66 times faster than value-based approaches.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
