@@ -1,0 +1,51 @@
+{
+  "label": "2026-04-10",
+  "date": "2026-04-10",
+  "generated_at": "2026-04-10T20:21:41",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202604/10/2604.08357v1-bias-constrained-diffusion-schedules-for-pde-emulations-reconstruction-error-minimization-and-efficient-unrolled-training",
+      "section": "deep",
+      "title_en": "Bias-Constrained Diffusion Schedules for PDE Emulations: Reconstruction Error Minimization and Efficient Unrolled Training",
+      "authors": "Constantin Le Cleï, Nils Thürey, Xiaoxiang Zhu",
+      "date": "2026-04-09",
+      "pdf": "https://arxiv.org/pdf/2604.08357v1",
+      "score": "9.0",
+      "evidence": "解决自回归PDE扩散模型的局限性和曝光偏差",
+      "tldr": "本研究针对条件扩散模型在偏微分方程（PDE）模拟中精度不足及自回归训练成本高的问题，提出了一种偏差约束的扩散调度方案。通过揭示噪声调度、重构误差与曝光偏差之间的内在联系，设计了自适应噪声调度框架以最小化推理误差。同时，引入代理展开训练方法，在无需完整马尔可夫链采样的情况下显著提升了长期模拟的稳定性。实验证明该方法在纳维-斯托克斯等多个复杂流体基准测试中优于现有扩散和确定性模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Conditional Diffusion Models are powerful surrogates for emulating complex spatiotemporal dynamics, yet they often fail to match the accuracy of deterministic neural emulators for high-precision tasks. In this work, we address two critical limitations of autoregressive PDE diffusion models: their sub-optimal single-step accuracy and the prohibitive computational cost of unrolled training. First, we characterize the relationship between the noise schedule, the reconstruction error reduction rate and the diffusion exposure bias, demonstrating that standard schedules lead to suboptimal reconstruction error. Leveraging this insight, we propose an \\textit{Adaptive Noise Schedule} framework that minimizes inference reconstruction error by dynamically constraining the model's exposure bias. We further show that this optimized schedule enables a fast \\textit{Proxy Unrolled Training} method to stabilize long-term rollouts without the cost of full Markov Chain sampling. Both proposed methods enable significant improvements in short-term accuracy and long-term stability over diffusion and deterministic baselines on diverse benchmarks, including forced Navier-Stokes, Kuramoto-Sivashinsky and Transonic Flow.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/10/2604.08088v1-coordinate-based-dual-constrained-autoregressive-motion-generation",
+      "section": "deep",
+      "title_en": "Coordinate-Based Dual-Constrained Autoregressive Motion Generation",
+      "authors": "Kang Ding, Hongsong Wang, Jie Gui, Liang Wang",
+      "date": "2026-04-09",
+      "pdf": "https://arxiv.org/pdf/2604.08088v1",
+      "score": "8.0",
+      "evidence": "将自回归范式与运动生成相结合，作为扩散模型的替代方案",
+      "tldr": "本文针对文本生成动作任务中扩散模型的误差放大和自回归模型的模式崩溃问题，提出了CDAMD框架。该框架直接采用运动坐标作为输入，结合自回归范式与扩散启发的MLP来提升动作保真度。通过引入双约束因果掩码，将运动标记作为先验与文本编码结合以引导生成。此外，研究还建立了坐标驱动的动作合成与编辑新基准。实验证明，CDAMD在保真度和语义一致性上均达到了领先水平。",
+      "tags": "query:ardm",
+      "abstract_en": "Text-to-motion generation has attracted increasing attention in the research community recently, with potential applications in animation, virtual reality, robotics, and human-computer interaction. Diffusion and autoregressive models are two popular and parallel research directions for text-to-motion generation. However, diffusion models often suffer from error amplification during noise prediction, while autoregressive models exhibit mode collapse due to motion discretization. To address these limitations, we propose a flexible, high-fidelity, and semantically faithful text-to-motion framework, named Coordinate-based Dual-constrained Autoregressive Motion Generation (CDAMD). With motion coordinates as input, CDAMD follows the autoregressive paradigm and leverages diffusion-inspired multi-layer perceptrons to enhance the fidelity of predicted motions. Furthermore, a Dual-Constrained Causal Mask is introduced to guide autoregressive generation, where motion tokens act as priors and are concatenated with textual encodings. Since there is limited work on coordinate-based motion synthesis, we establish new benchmarks for both text-to-motion generation and motion editing. Experimental results demonstrate that our approach achieves state-of-the-art performance in terms of both fidelity and semantic consistency on these benchmarks.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/10/2604.08084v1-diffvc-a-non-autoregressive-framework-based-on-diffusion-model-for-video-captioning",
+      "section": "quick",
+      "title_en": "DiffVC: A Non-autoregressive Framework Based on Diffusion Model for Video Captioning",
+      "authors": "Junbo Wang, Liangyu Fu, Yuke Li, Yining Zhu, Ya Jing, Xuecheng Wu, Jiangbin Zheng",
+      "date": "2026-04-09",
+      "pdf": "https://arxiv.org/pdf/2604.08084v1",
+      "score": "7.0",
+      "evidence": "非自回归扩散框架与自回归方法的对比",
+      "tldr": "针对视频描述生成中自回归模型速度慢、累积误差大以及现有非自回归模型质量不佳的问题，本文提出DiffVC框架。该框架利用扩散模型实现并行解码，通过判别式条件扩散模型增强多模态交互，在保持生成速度优势的同时，显著提升了描述质量，在多个主流数据集上达到了与自回归方法相当的性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Current video captioning methods usually use an encoder-decoder structure to generate text autoregressively. However, autoregressive methods have inherent limitations such as slow generation speed and large cumulative error. Furthermore, the few non-autoregressive counterparts suffer from deficiencies in generation quality due to the lack of sufficient multimodal interaction modeling. Therefore, we propose a non-autoregressive framework based on Diffusion model for Video Captioning (DiffVC) to address these issues. Its parallel decoding can effectively solve the problems of generation speed and cumulative error. At the same time, our proposed discriminative conditional Diffusion Model can generate higher-quality textual descriptions. Specifically, we first encode the video into a visual representation. During training, Gaussian noise is added to the textual representation of the ground-truth caption. Then, a new textual representation is generated via the discriminative denoiser with the visual representation as a conditional constraint. Finally, we input the new textual representation into a non-autoregressive language model to generate captions. During inference, we directly sample noise from the Gaussian distribution for generation. Experiments on MSVD, MSR-VTT, and VATEX show that our method can outperform previous non-autoregressive methods and achieve comparable performance to autoregressive methods, e.g., it achieved a maximum improvement of 9.9 on the CIDEr and improvement of 2.6 on the B@4, while having faster generation speed. The source code will be available soon.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -6,37 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-09
-- 运行时间：2026-04-09 20:29:29 UTC
+- 最新运行日期：2026-04-10
+- 运行时间：2026-04-10 20:21:29 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：3
-- 速读区：2
+- 本次总论文数：3
+- 精读区：2
+- 速读区：1
 
 ### 今日简报（AI）
-今日深度探索 AR 与 Diffusion 混合架构的进化，重点攻克图像生成稳定性与多模态模型转换效率。
-满分论文 MAR-GRPO 揭示了稳定强化学习在混合生成中的威力，而 Fast-dVLM 则实现了自回归模型向块扩散的高效跨越。
-建议优先关注混合架构的性能突破，这可能是未来兼顾高效率与高质量视觉生成的关键路径。
-- 详情：[/202604/09/README](/202604/09/README)
+今日聚焦扩散模型在物理仿真与多模态生成中的前沿应用，深度解析了 PDE 模拟与动作生成的新突破。
+重点关注通过偏差约束优化 PDE 扩散调度以降低重构误差，以及利用双约束自回归框架提升人体动作生成的精确度。
+建议优先研读高分论文中关于扩散模型与物理约束结合的创新思路，探索其在复杂仿真场景下的落地潜力。
+- 详情：[/202604/10/README](/202604/10/README)
 
 ### 精读区论文标签
-1. [MAR-GRPO: Stabilized GRPO for AR-diffusion Hybrid Image Generation](/202604/09/2604.06966v1-mar-grpo-stabilized-grpo-for-ar-diffusion-hybrid-image-generation)  
-   标签：评分：10.0/10、query:ardm
-   evidence：混合自回归扩散框架与掩码自回归模型
-2. [Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM](/202604/09/2604.06832v1-fast-dvlm-efficient-block-diffusion-vlm-via-direct-conversion-from-autoregressive-vlm)  
+1. [Bias-Constrained Diffusion Schedules for PDE Emulations: Reconstruction Error Minimization and Efficient Unrolled Training](/202604/10/2604.08357v1-bias-constrained-diffusion-schedules-for-pde-emulations-reconstruction-error-minimization-and-efficient-unrolled-training)  
    标签：评分：9.0/10、query:ardm
-   evidence：从自回归VLM直接转换为块扩散VLM
-3. [$S^3$: Stratified Scaling Search for Test-Time in Diffusion Language Models](/202604/09/2604.06260v1-s3-stratified-scaling-search-for-test-time-in-diffusion-language-models)  
+   evidence：解决自回归PDE扩散模型的局限性和曝光偏差
+2. [Coordinate-Based Dual-Constrained Autoregressive Motion Generation](/202604/10/2604.08088v1-coordinate-based-dual-constrained-autoregressive-motion-generation)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型的测试时缩放
+   evidence：将自回归范式与运动生成相结合，作为扩散模型的替代方案
 
 ### 速读区论文标签
-1. [Why Gaussian Diffusion Models Fail on Discrete Data?](/202604/09/2604.02028v1-why-gaussian-diffusion-models-fail-on-discrete-data)  
-   标签：评分：6.0/10、query:ardm
-   evidence：研究离散数据分布上的扩散模型
-2. [FVD: Inference-Time Alignment of Diffusion Models via Fleming-Viot Resampling](/202604/09/2604.06779v1-fvd-inference-time-alignment-of-diffusion-models-via-fleming-viot-resampling)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：扩散模型的推理时对齐
+1. [DiffVC: A Non-autoregressive Framework Based on Diffusion Model for Video Captioning](/202604/10/2604.08084v1-diffvc-a-non-autoregressive-framework-based-on-diffusion-model-for-video-captioning)  
+   标签：评分：7.0/10、query:ardm
+   evidence：非自回归扩散框架与自回归方法的对比
 
 
 <div class="dpr-home-promo-card">
