@@ -6,31 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-10
-- 运行时间：2026-04-10 20:21:29 UTC
+- 最新运行日期：2026-04-11
+- 运行时间：2026-04-11 19:27:01 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：2
-- 速读区：1
+- 本次总论文数：1
+- 精读区：1
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦扩散模型在物理仿真与多模态生成中的前沿应用，深度解析了 PDE 模拟与动作生成的新突破。
-重点关注通过偏差约束优化 PDE 扩散调度以降低重构误差，以及利用双约束自回归框架提升人体动作生成的精确度。
-建议优先研读高分论文中关于扩散模型与物理约束结合的创新思路，探索其在复杂仿真场景下的落地潜力。
-- 详情：[/202604/10/README](/202604/10/README)
+今日聚焦自回归视频生成加速，通过局部优化技术实现训练效率的显著飞跃。
+研究证明利用表征连续性进行局部优化，能在保持生成质量的同时大幅降低计算开销。
+建议关注视频大模型效率的开发者参考此方案，以优化长视频生成的训练管线。
+- 详情：[/202604/11/README](/202604/11/README)
 
 ### 精读区论文标签
-1. [Bias-Constrained Diffusion Schedules for PDE Emulations: Reconstruction Error Minimization and Efficient Unrolled Training](/202604/10/2604.08357v1-bias-constrained-diffusion-schedules-for-pde-emulations-reconstruction-error-minimization-and-efficient-unrolled-training)  
-   标签：评分：9.0/10、query:ardm
-   evidence：解决自回归PDE扩散模型的局限性和曝光偏差
-2. [Coordinate-Based Dual-Constrained Autoregressive Motion Generation](/202604/10/2604.08088v1-coordinate-based-dual-constrained-autoregressive-motion-generation)  
+1. [Accelerating Training of Autoregressive Video Generation Models via Local Optimization with Representation Continuity](/202604/11/2604.07402v1-accelerating-training-of-autoregressive-video-generation-models-via-local-optimization-with-representation-continuity)  
    标签：评分：8.0/10、query:ardm
-   evidence：将自回归范式与运动生成相结合，作为扩散模型的替代方案
+   evidence：加速自回归视频生成模型的训练
 
 ### 速读区论文标签
-1. [DiffVC: A Non-autoregressive Framework Based on Diffusion Model for Video Captioning](/202604/10/2604.08084v1-diffvc-a-non-autoregressive-framework-based-on-diffusion-model-for-video-captioning)  
-   标签：评分：7.0/10、query:ardm
-   evidence：非自回归扩散框架与自回归方法的对比
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
