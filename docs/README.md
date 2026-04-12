@@ -6,26 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-11
-- 运行时间：2026-04-11 19:27:01 UTC
+- 最新运行日期：2026-04-12
+- 运行时间：2026-04-12 19:49:18 UTC
 - 运行状态：成功
 - 本次总论文数：1
-- 精读区：1
-- 速读区：0
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦自回归视频生成加速，通过局部优化技术实现训练效率的显著飞跃。
-研究证明利用表征连续性进行局部优化，能在保持生成质量的同时大幅降低计算开销。
-建议关注视频大模型效率的开发者参考此方案，以优化长视频生成的训练管线。
-- 详情：[/202604/11/README](/202604/11/README)
+今日探索扩散模型新前沿，聚焦自然数域的计数数据生成与补全。
+CountsDiff 创新性地在自然数空间建模，为离散计数数据的生成和缺失值修复提供了高效方案。
+推荐处理库存、人口等计数类数据的开发者关注这一针对性强的扩散模型新思路。
+- 详情：[/202604/12/README](/202604/12/README)
 
 ### 精读区论文标签
-1. [Accelerating Training of Autoregressive Video Generation Models via Local Optimization with Representation Continuity](/202604/11/2604.07402v1-accelerating-training-of-autoregressive-video-generation-models-via-local-optimization-with-representation-continuity)  
-   标签：评分：8.0/10、query:ardm
-   evidence：加速自回归视频生成模型的训练
+- 本次无精读推荐。
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [CountsDiff: A Diffusion Model on the Natural Numbers for Generation and Imputation of Count-Based Data](/202604/12/2604.03779v1-countsdiff-a-diffusion-model-on-the-natural-numbers-for-generation-and-imputation-of-count-based-data)  
+   标签：评分：6.0/10、query:ardm
+   evidence：针对离散序数和Token类数据的扩散模型
 
 
 <div class="dpr-home-promo-card">
