@@ -1,0 +1,93 @@
+{
+  "label": "2026-04-13",
+  "date": "2026-04-13",
+  "generated_at": "2026-04-13T19:53:24",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202604/13/2604.06832v2-fast-dvlm-efficient-block-diffusion-vlm-via-direct-conversion-from-autoregressive-vlm",
+      "section": "deep",
+      "title_en": "Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM",
+      "authors": "Chengyue Wu, Shiyi Lan, Yonggan Fu, Sensen Gao, Jin Wang, Jincheng Yu, Jose M. Alvarez, Pavlo Molchanov, Ping Luo, Song Han, Ligeng Zhu, Enze Xie",
+      "date": "2026-04-08",
+      "pdf": "https://arxiv.org/pdf/2604.06832v2",
+      "score": "9.0",
+      "evidence": "从自回归VLM直接转换为块扩散VLM",
+      "tldr": "针对自回归视觉语言模型（VLM）推理速度慢的问题，本文提出 Fast-dVLM。该模型通过将预训练的自回归 VLM 直接转换为块扩散（Block-Diffusion）模型，实现了并行解码。通过引入块大小退火、因果上下文注意力和视觉高效拼接等技术，Fast-dVLM 在保持生成质量的同时，结合 SGLang 和 FP8 量化，实现了比自回归基准快 6 倍以上的推理速度，显著提升了边缘设备的部署效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Vision-language models (VLMs) predominantly rely on autoregressive decoding, which generates tokens one at a time and fundamentally limits inference throughput. This limitation is especially acute in physical AI scenarios such as robotics and autonomous driving, where VLMs are deployed on edge devices at batch size one, making AR decoding memory-bandwidth-bound and leaving hardware parallelism underutilized. While block-wise discrete diffusion has shown promise for parallel text generation, extending it to VLMs remains challenging due to the need to jointly handle continuous visual representations and discrete text tokens while preserving pretrained multimodal capabilities. We present Fast-dVLM, a block-diffusion-based VLM that enables KV-cache-compatible parallel decoding and speculative block decoding for inference acceleration. We systematically compare two AR-to-diffusion conversion strategies: a two-stage approach that first adapts the LLM backbone with text-only diffusion fine-tuning before multimodal training, and a direct approach that converts the full AR VLM in one stage. Under comparable training budgets, direct conversion proves substantially more efficient by leveraging the already multimodally aligned VLM; we therefore adopt it as our recommended recipe. We introduce a suite of multimodal diffusion adaptations, block size annealing, causal context attention, auto-truncation masking, and vision efficient concatenation, that collectively enable effective block diffusion in the VLM setting. Extensive experiments across 11 multimodal benchmarks show Fast-dVLM matches its autoregressive counterpart in generation quality. With SGLang integration and FP8 quantization, Fast-dVLM achieves over 6x end-to-end inference speedup over the AR baseline.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/13/2604.08357v2-bias-constrained-diffusion-schedules-for-pde-emulations-reconstruction-error-minimization-and-efficient-unrolled-training",
+      "section": "deep",
+      "title_en": "Bias-Constrained Diffusion Schedules for PDE Emulations: Reconstruction Error Minimization and Efficient Unrolled Training",
+      "authors": "Constantin Le Cleï, Nils Thuerey, Xiaoxiang Zhu",
+      "date": "2026-04-09",
+      "pdf": "https://arxiv.org/pdf/2604.08357v2",
+      "score": "9.0",
+      "evidence": "解决自回归PDE扩散模型的局限性及曝光偏差问题",
+      "tldr": "本研究针对条件扩散模型在偏微分方程（PDE）模拟中精度不足及自回归训练成本高的问题，提出了一种偏差约束的扩散调度方案。通过揭示噪声调度、重构误差与曝光偏差之间的内在联系，设计了自适应噪声调度框架以最小化推理误差。同时，引入代理展开训练方法，在不增加采样负担的前提下显著提升了长期模拟的稳定性。实验证明该方法在纳维-斯托克斯等多个复杂流体基准测试中优于现有扩散和确定性模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Conditional Diffusion Models are powerful surrogates for emulating complex spatiotemporal dynamics, yet they often fail to match the accuracy of deterministic neural emulators for high-precision tasks. In this work, we address two critical limitations of autoregressive PDE diffusion models: their sub-optimal single-step accuracy and the prohibitive computational cost of unrolled training. First, we characterize the relationship between the noise schedule, the reconstruction error reduction rate and the diffusion exposure bias, demonstrating that standard schedules lead to suboptimal reconstruction error. Leveraging this insight, we propose an \\textit{Adaptive Noise Schedule} framework that minimizes inference reconstruction error by dynamically constraining the model's exposure bias. We further show that this optimized schedule enables a fast \\textit{Proxy Unrolled Training} method to stabilize long-term rollouts without the cost of full Markov Chain sampling. Both proposed methods enable significant improvements in short-term accuracy and long-term stability over diffusion and deterministic baselines on diverse benchmarks, including forced Navier-Stokes, Kuramoto-Sivashinsky and Transonic Flow.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/13/2604.08964v1-breaking-block-boundaries-anchor-based-history-stable-decoding-for-diffusion-large-language-models",
+      "section": "deep",
+      "title_en": "Breaking Block Boundaries: Anchor-based History-stable Decoding for Diffusion Large Language Models",
+      "authors": "Shun Zou, Yong Wang, Zehui Chen, Lin Chen, Chongyang Tao, Feng Zhao, Xiangxiang Chu",
+      "date": "2026-04-10",
+      "pdf": "https://arxiv.org/pdf/2604.08964v1",
+      "score": "9.0",
+      "evidence": "扩散大语言模型的半自回归解码研究",
+      "tldr": "针对扩散大语言模型（dLLM）在半自回归解码中受限于块边界、导致稳定标记解码延迟的问题，本文提出了锚点历史稳定解码（AHD）。AHD 是一种无需训练、即插即用的动态策略，通过动态锚点实时监测标记稳定性，并在标记稳定后提前开启跨块解码。实验证明，AHD 在显著提升推理效率的同时增强了模型在多模态任务上的性能，有效解决了现有加速策略带来的性能退化问题。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Large Language Models (dLLMs) have recently become a promising alternative to autoregressive large language models (ARMs). Semi-autoregressive (Semi-AR) decoding is widely employed in base dLLMs and advanced decoding strategies due to its superior performance. However, our observations reveal that Semi-AR decoding suffers from inherent block constraints, which cause the decoding of many cross-block stable tokens to be unnecessarily delayed. To address this challenge, we systematically investigate the identification of stable tokens and present three key findings: (1) naive lookahead decoding is unreliable, (2) token stability closely correlates with convergence trend, and (3) historical information is isolated. Building on these insights, we propose Anchor-based History-stable Decoding (AHD), a training-free, plug-and-play dynamic decoding strategy. Specifically, AHD monitors the stability trend of tokens in real time through dynamic anchors. Once a token reaches stability, it initiates early cross-block decoding to enhance efficiency and performance. Extensive experiments across language, vision-language, and audio-language domains demonstrate that AHD simultaneously improves both performance and inference efficiency. Notably, AHD effectively reverses the performance degradation typically observed in existing advanced decoding acceleration strategies. For instance, on the BBH benchmark, our approach reduces decoding steps by 80% while improving performance by 3.67%.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/13/2604.09527v1-envisioning-the-future-one-step-at-a-time",
+      "section": "deep",
+      "title_en": "Envisioning the Future, One Step at a Time",
+      "authors": "Stefan Andreas Baumann, Jannik Wiese, Tommaso Martorella, Mahdi M. Kalayeh, Björn Ommer",
+      "date": "2026-04-10",
+      "pdf": "https://arxiv.org/pdf/2604.09527v1",
+      "score": "8.0",
+      "evidence": "用于场景动力学稀疏点轨迹的自回归扩散模型",
+      "tldr": "针对复杂场景演化预测中计算开销大、难以处理多模态长程运动的问题，本文提出一种基于稀疏点轨迹的自回归扩散模型。该方法通过逐步推理局部可预测的转换来模拟不确定性，能从单张图像快速生成数千种物理合理且长程一致的未来轨迹。此外，研究者推出了OWM基准测试集。实验表明，该方法在保持高精度的同时，采样速度比密集模拟器快几个数量级，显著提升了开放场景预测的可扩展性。",
+      "tags": "query:genad",
+      "abstract_en": "Accurately anticipating how complex, diverse scenes will evolve requires models that represent uncertainty, simulate along extended interaction chains, and efficiently explore many plausible futures. Yet most existing approaches rely on dense video or latent-space prediction, expending substantial capacity on dense appearance rather than on the underlying sparse trajectories of points in the scene. This makes large-scale exploration of future hypotheses costly and limits performance when long-horizon, multi-modal motion is essential. We address this by formulating the prediction of open-set future scene dynamics as step-wise inference over sparse point trajectories. Our autoregressive diffusion model advances these trajectories through short, locally predictable transitions, explicitly modeling the growth of uncertainty over time. This dynamics-centric representation enables fast rollout of thousands of diverse futures from a single image, optionally guided by initial constraints on motion, while maintaining physical plausibility and long-range coherence. We further introduce OWM, a benchmark for open-set motion prediction based on diverse in-the-wild videos, to evaluate accuracy and variability of predicted trajectory distributions under real-world uncertainty. Our method matches or surpasses dense simulators in predictive accuracy while achieving orders-of-magnitude higher sampling speed, making open-set future prediction both scalable and practical. Project page: http://compvis.github.io/myriad.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/13/2604.09035v1-advantage-guided-diffusion-for-model-based-reinforcement-learning",
+      "section": "quick",
+      "title_en": "Advantage-Guided Diffusion for Model-Based Reinforcement Learning",
+      "authors": "Daniele Foffano, Arvid Eriksson, David Broman, Karl H. Johansson, Alexandre Proutiere",
+      "date": "2026-04-10",
+      "pdf": "https://arxiv.org/pdf/2604.09035v1",
+      "score": "7.0",
+      "evidence": "强化学习中用于轨迹生成的扩散世界模型",
+      "tldr": "针对基于扩散模型的强化学习（MBRL）中奖励引导存在的短视问题，本文提出优势引导扩散（AGD-MBRL）。该方法利用优势函数估计来引导逆向扩散过程，使生成的轨迹向高长期回报区域集中。通过引入Sigmoid和指数优势引导机制，AGD在不改变训练目标的情况下，显著提升了MuJoCo任务中的样本效率和最终回报，有效解决了短视决策问题。",
+      "tags": "query:diffpl",
+      "abstract_en": "Model-based reinforcement learning (MBRL) with autoregressive world models suffers from compounding errors, whereas diffusion world models mitigate this by generating trajectory segments jointly. However, existing diffusion guides are either policy-only, discarding value information, or reward-based, which becomes myopic when the diffusion horizon is short. We introduce Advantage-Guided Diffusion for MBRL (AGD-MBRL), which steers the reverse diffusion process using the agent's advantage estimates so that sampling concentrates on trajectories expected to yield higher long-term return beyond the generated window. We develop two guides: (i) Sigmoid Advantage Guidance (SAG) and (ii) Exponential Advantage Guidance (EAG). We prove that a diffusion model guided through SAG or EAG allows us to perform reweighted sampling of trajectories with weights increasing in state-action advantage-implying policy improvement under standard assumptions. Additionally, we show that the trajectories generated from AGD-MBRL follow an improved policy (that is, with higher value) compared to an unguided diffusion model. AGD integrates seamlessly with PolyGRAD-style architectures by guiding the state components while leaving action generation policy-conditioned, and requires no change to the diffusion training objective. On MuJoCo control tasks (HalfCheetah, Hopper, Walker2D and Reacher), AGD-MBRL improves sample efficiency and final return over PolyGRAD, an online Diffuser-style reward guide, and model-free baselines (PPO/TRPO), in some cases by a margin of 2x. These results show that advantage-aware guidance is a simple, effective remedy for short-horizon myopia in diffusion-model MBRL.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/13/2604.05343v1-anchored-cyclic-generation-a-novel-paradigm-for-long-sequence-symbolic-music-generation",
+      "section": "quick",
+      "title_en": "Anchored Cyclic Generation: A Novel Paradigm for Long-Sequence Symbolic Music Generation",
+      "authors": "Boyu Cao, Lekai Qian, Dehan Li, Haoyu Gu, Mingda Xu, Qi Liu",
+      "date": "2026-04-07",
+      "pdf": "https://arxiv.org/pdf/2604.05343v1",
+      "score": "6.0",
+      "evidence": "减轻自回归序列生成中的误差累积",
+      "tldr": "针对自回归模型在长序列符号音乐生成中存在的误差累积和结构一致性差的问题，本文提出锚点循环生成（ACG）范式。该范式利用已知音乐的锚点特征引导后续生成过程，并进一步构建了采用全局到局部策略的层次化框架Hi-ACG。实验表明，该方法显著降低了特征预测误差，在长序列生成和音乐补全任务中均优于主流模型，有效提升了音乐的质量与结构完整性。",
+      "tags": "query:ardm",
+      "abstract_en": "Generating long sequences with structural coherence remains a fundamental challenge for autoregressive models across sequential generation tasks. In symbolic music generation, this challenge is particularly pronounced, as existing methods are constrained by the inherent severe error accumulation problem of autoregressive models, leading to poor performance in music quality and structural integrity. In this paper, we propose the Anchored Cyclic Generation (ACG) paradigm, which relies on anchor features from already identified music to guide subsequent generation during the autoregressive process, effectively mitigating error accumulation in autoregressive methods. Based on the ACG paradigm, we further propose the Hierarchical Anchored Cyclic Generation (Hi-ACG) framework, which employs a systematic global-to-local generation strategy and is highly compatible with our specifically designed piano token, an efficient musical representation. The experimental results demonstrate that compared to traditional autoregressive models, the ACG paradigm achieves reduces cosine distance by an average of 34.7% between predicted feature vectors and ground-truth semantic vectors. In long-sequence symbolic music generation tasks, the Hi-ACG framework significantly outperforms existing mainstream methods in both subjective and objective evaluations. Furthermore, the framework exhibits excellent task generalization capabilities, achieving superior performance in related tasks such as music completion.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

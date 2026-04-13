@@ -1,0 +1,483 @@
+Title: Anchored Cyclic Generation: A Novel Paradigm for Long-Sequence Symbolic Music Generation
+
+URL Source: https://arxiv.org/pdf/2604.05343v1
+
+Published Time: Wed, 08 Apr 2026 00:23:58 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Anchored Cyclic Generation: A Novel Paradigm for Long-Sequence Symbolic Music Generation 
+
+Boyu Cao 1* Lekai Qian 1* Dehan Li 1 Haoyu Gu 1 Mingda Xu 1 Qi Liu 1†
+
+> 1
+
+South China University of Technology, School of Future Technology 
+
+drliuqi@scut.edu.cn 
+
+Abstract 
+
+Generating long sequences with structural co-herence remains a fundamental challenge for autoregressive models across sequential gen-eration tasks. In symbolic music generation, this challenge is particularly pronounced, as ex-isting methods are constrained by the inherent severe error accumulation problem of autore-gressive models, leading to poor performance in music quality and structural integrity. In this paper, we propose the Anchored Cyclic Gener-ation (ACG) paradigm, which relies on anchor features from already identified music to guide subsequent generation during the autoregres-sive process, effectively mitigating error ac-cumulation in autoregressive methods. Based on the ACG paradigm, we further propose the Hierarchical Anchored Cyclic Generation (Hi-ACG) framework, which employs a systematic global-to-local generation strategy and is highly compatible with our specifically designed pi-ano token, an efficient musical representation. The experimental results demonstrate that com-pared to traditional autoregressive models, the ACG paradigm achieves reduces cosine dis-tance by an average of 34.7% between pre-dicted feature vectors and ground-truth seman-tic vectors. In long-sequence symbolic mu-sic generation tasks, the Hi-ACG framework significantly outperforms existing mainstream methods in both subjective and objective evalu-ations. Furthermore, the framework exhibits ex-cellent task generalization capabilities, achiev-ing superior performance in related tasks such as music completion. 
+
+1 Introduction 
+
+Autoregressive sequence modeling has achieved remarkable success across various domains, from natural language processing to structured content 
+
+> *Equal contribution.
+> †Corresponding author.
+
+generation. However, maintaining long-term coher-ence and structural integrity in extended sequences remains a persistent challenge due to error accu-mulation during iterative generation. Symbolic music generation exemplifies this challenge: as a core branch of music generation, it produces dis-crete musical representations with structured, in-terpretable characteristics (Briot et al., 2017), yet modeling long-sequence symbolic music has be-come a primary challenge with the rapid develop-ment of deep learning technologies. Long-sequence symbolic music generation re-quires maintaining both local coherence and global structural integrity. Autoregressive models, the mainstream approach, predict subsequent segments based on historical content but face significant limitations. Early RNN/LSTM approaches ex-hibit degraded quality and stylistic drift in longer sequences, making it difficult to maintain long-term consistency. Attention-based methods like Transformers, combined with MIDI event encoding (Oore et al., 2020) or ABC notation, perform well on short sequences but face exponentially grow-ing computational complexity (Child et al., 2019) and severe error accumulation as length increases. Diffusion models (Mittal et al., 2021) offer an al-ternative but struggle to generate complete long-sequence music efficiently. Addressing these challenges, we propose the An-chored Cyclic Generation (ACG) paradigm, which introduces determined musical content as anchors in each generation cycle to recalibrate the genera-tion process, effectively mitigating error accumu-lation and achieving smooth transitions between musical segments. ACG ensures local musical quality while maintaining structural integrity of long-sequence music, with significant advantages in time complexity. Based on ACG, we further pro-pose a Hierarchical Anchored Cyclic Generation 
+
+> arXiv:2604.05343v1 [cs.SD] 7 Apr 2026
+
+(Hi-ACG) framework with a novel piano token rep-resentation. The framework adopts a hierarchical strategy: a sketch loop captures high-level semantic features such as modality, harmonic progression, and overall structure, providing global guidance for subsequent processes; a refinement loop then gen-erates detailed note-level content to ensure local co-herence and expressiveness. Experiments demon-strate that Hi-ACG maintains long-term structural and stylistic consistency while achieving precise duration control. Overall, our contributions are as follows: • We present the ACG paradigm, which signif-icantly mitigates error accumulation in long-sequence generation tasks such as symbolic music modeling. Our method demonstrates improved time complexity and lower compu-tational costs compared to conventional au-toregressive approaches. • We present Hi-ACG, a hierarchical framework that generates music from global to local lev-els. It solves structural integrity problems in long sequences, provides precise duration con-trol, and offers high interpretability. • We propose a Piano Token musical representation—an efficient tokeniza-tion method that converts piano roll data into musical tokens. This approach is highly com-patible with our Hi-ACG framework while remaining adaptable to other autoregressive symbolic music generation models. • Based on mathematical analysis and ex-perimental validation, our proposed ACG paradigm and Hi-ACG framework effectively mitigate error accumulation, enhance the gen-eration quality and structural integrity of long-sequence symbolic music, and demonstrate superior performance over existing models in both objective and subjective evaluations. 
+
+2 Related Work 
+
+2.1 Symbolic Music Generation 
+
+Symbolic music generation aims to automatically generate discrete musical representations with mu-sicality and interpretability. Early approaches based on rules (Ebcioglu, 1988) and statistical mod-eling (Conklin and Witten, 1995) laid the foun-dation for data-driven methods. With deep learn-ing, RNNs (Eck and Schmidhuber, 2002; Sturm et al., 2016), VAE-based models like MusicVAE (Roberts et al., 2018), and adversarial approaches like MuseGAN (Dong et al., 2017) became main-stream, though they struggled with long sequences. Recently, Transformers (Vaswani et al., 2017) and diffusion models (Ho et al., 2020) have ad-vanced the field. RIPO Transformer (Guo et al., 2023) enhanced melody modeling with novel atten-tion mechanisms. TunesFormer (Wu et al., 2023) enabled bar-level controlled generation. ChatMusi-cian (Yuan et al., 2024) demonstrated how language models can understand and generate music through unified text-music pretraining. 
+
+2.2 Long-Sequence Symbolic Music Modeling 
+
+Long-sequence symbolic music modeling is a key challenge in music generation. Traditional autore-gressive methods have several problems like error accumulation, high computational complexity, and vanishing gradients. The challenge of modeling long sequences is shared across domains. In natural language pro-cessing, methods such as Longformer (Beltagy et al., 2020) and hierarchical text generation ap-proaches have addressed similar issues of compu-tational complexity and long-range coherence. Our work draws inspiration from these cross-domain advances while addressing the unique structural requirements of symbolic music. 
+
+2.2.1 Transformer-based Methods 
+
+Transformers are widely used in long-sequence symbolic music generation due to their ability to model long-range dependencies. Music Trans-former (Huang et al., 2018) first applied Trans-former architecture to symbolic music generation using relative positional encoding. Longformer (Beltagy et al., 2020) introduced sparse attention to reduce computational cost. Museformer (Yu et al., 2022) proposed structure-aware FC-Attention us-ing bar-level summary tokens and multi-scale atten-tion. Compound Word Transformer (Hsiao et al., 2021a) introduced compound token representation. BPE-Music (Fradet et al., 2023) employed subword modeling to compress token sequences. MuPT (Qu et al., 2024) introduced a scalable pretraining model using ABC notation and multi-track Trans-former design. While powerful, Transformers still face challenges in extremely long-sequence gener-ation due to error accumulation and quality degra-dation. 2.2.2 Diffusion-based Methods 
+
+Diffusion models offer a non-autoregressive gen-eration approach with strong fidelity. Discrete dif-fusion models (Plasser et al., 2023) have been ap-plied to symbolic music generation, demonstrating state-of-the-art sample quality and flexible note-level infilling capabilities. Diff-Music (Nistal et al., 2024) first applied discrete diffusion to MIDI gener-ation. Cascaded-Diff (Wang et al., 2024) employed a multi-step diffusion sampling process to gener-ate music progressively from high-level structure to detailed melody. However, diffusion models are computationally expensive for long sequences due to multi-step sampling, and often struggle with maintaining coherence and duration control. 
+
+2.3 Hierarchical Music Generation 
+
+Hierarchical music generation addresses long-sequence challenges by decomposing generation into multiple levels (e.g., sections, phrases, notes). Early models like Hierarchical RNN (Zhao et al., 2019) used multi-layer recurrent structures. Sym-phonyNet (Liu et al., 2022) modeled movements, phrases, and notes for symphonic music. Cascaded-Diff (Wang et al., 2024) integrated structural lan-guage modeling with diffusion techniques. Despite progress, current methods still face issues in inter-level information flow and precise duration control. In summary, current symbolic music generation methods face challenges such as error accumula-tion, low efficiency, and structural inconsistency in long-sequence modeling. We propose an an-chored cyclic generation paradigm and hierarchical framework that address these issues through novel generation mechanisms and architectural designs, thereby providing new solutions for long-sequence symbolic music generation. 
+
+3 Method 
+
+In this section, we introduce the Piano Token repre-sentation, the anchored cyclic generation paradigm, and the hierarchical anchored cyclic generation framework designed based on this paradigm for generating high-quality long-sequence symbolic music. 
+
+3.1 Piano Token Representation 
+
+Common symbolic music representations primar-ily use MIDI event-based representations, such as REMI (Huang and Yang, 2020) or Compound Word representations (Hsiao et al., 2021b), or ABC      
+
+> Figure 1: Converting musical scores to piano tokens. (a) Example musical score. (b) Piano roll with Ttime steps and Dpitch dimensions. The red-boxed section demonstrates split details. (c) Piano token represen-tation, where each sub-unit of the split piano roll is tokenized into a piano token. Piano tokens in the same column collectively form a block.
+
+notation representations. The sequence length of these representation forms exhibits a non-linear re-lationship with music duration. When music com-plexity is high and note changes are frequent, ex-tremely long representation sequences are often required. This typically causes severe error ac-cumulation and missing important tokens during music sequence generation. To address this issue, we design the piano token representation based on piano roll, which is a more efficient music representation method shown in Figure 1. The piano token representation explicitly encodes temporal sequences, where the sequence length L is positively correlated with music dura-tion T , expressed as L ∝ T . This representation method maps continuous music representations to sparse discrete representations through tokeniza-tion while preserving the original spatiotemporal structure. Specifically, we first split the piano roll representation into N patches, where each patch contains d × t elements from the piano roll, with d
+
+representing the number of pitch dimensions cov-ered by a single patch and t denoting the number of time steps covered by a single patch. We then tokenize each patch using a single token to encode its complete content, achieving data compression. Since the piano roll representation is a binary ma-trix of shape D × T , where D represents the pitch dimension and T denotes the number of time steps. Each element xp,t ∈ { 0, 1} indicates whether pitch 
+
+p is activated at timestep t. The partitioned patches retain this characteristic, so the vocabulary size cor-responding to the piano token representation is 2d∗t.By adjusting the values of d and t, we can flexi-bly control the patch size, thereby regulating the vocabulary scale and encoded sequence length to accommodate different application scenarios. After tokenization, the original matrix of size D × T is converted into a piano token matrix of shape Dd × Tt .The piano token matrix representation serves as the core representational for music and participates in subsequent music generation processes. We define each column of the piano token matrix as a block B, which contains musical information from t consecutive time steps in the original piano roll representation. Each block contains complete musical fragments within short time intervals, and this block structure also plays a crucial role in sub-sequent music generation workflows. 
+
+3.2 Anchored Cyclic Generation Paradigm 
+
+Error accumulation is a common problem in au-toregressive models, where discrepancies exist be-tween the model’s generation and optimal predic-tion value in each iteration round, and these er-rors accumulate throughout the iterative process, ultimately leading to severe degradation of the overall generation quality. Error accumulation can be regarded as the primary factor contributing to the degradation of generation quality in long-sequence music generation. To mitigate this issue, we propose the ACG, a novel generation paradigm that can significantly reduce error accumulation during long sequence generation. We draw in-spiration from teacher forcing training methodol-ogy: when generating symbolic music sequences, at each iteration, the model predicts features for the next time step t based on determined histor-ical information, which we call anchor features 
+
+At−1 = {a1, a 2, a 3, ..., a t−1}, thereby minimizing the error between the current prediction and the optimal value. As illustrated in Figure 2, an ACG structure com-prises three key components: a semantic prediction model, a semantic reconstruction model, and a spe-cialized re-embedding layer. The semantic pre-diction model and semantic reconstruction model consist of two cascaded transformer decoder mod-els. The semantic prediction model is responsible for predicting the semantic features z′ 
+
+> t
+
+of the cur-rent time step t based on input conditions C and anchor features At−1. It predicts the content of a whole block, which contains token combinations’ information. The expression is as follows: 
+
+z′ 
+
+> t
+
+= fsem (At−1, C, t ; θsem )
+
+The semantic reconstruction model decodes the se-mantic feature z′ 
+
+> t
+
+and projects it into Piano Token sequence St 
+
+> token
+
+= {st
+
+> 1
+
+, s t
+
+> 2
+
+, s t
+
+> 3
+
+, ..., s tn} via an addi-tional linear layer, where n denotes the sequence length. The semantic reconstruction process can be expressed as follows: 
+
+St 
+
+> token
+
+= fproj (frec (z′
+
+> t
+
+; θrec ); Wproj , b proj )
+
+The re-embedding layer is a neural network com-posed of multiple fully connected layers, which is responsible for remapping the reconstructed to-ken sequence St 
+
+> token
+
+back to anchor features at for generation in the next iteration. 
+
+at = freemb (Bt; θreemb )
+
+In our design, the three components of the ACG paradigm are jointly trained in an end-to-end man-ner. It should be noted that in the ACG paradigm, the semantic prediction model does not indepen-dently generate all latent vectors A of semantic information before the semantic restoration model sequentially restores them to token representations. In our method, the semantic prediction model first predicts the semantic latent feature z′ 
+
+> t
+
+for the cur-rent time step t and transmits it to the semantic restoration model and additional projection layer, which then autoregressively decodes a sequence 
+
+St 
+
+> token
+
+containing all tokens in the block based on feature z′
+
+> t
+
+. Each element in sequence St 
+
+> token
+
+is stacked and rearranged to form the final output block Bt for the current time step. Additionally, we treat the block Bt obtained in each iteration as con-firmed historical information and input Bt into a re-embedding layer to transform it back into an an-chor semantic feature at. The anchor feature at for the current time step is concatenated with features from all previous time steps At−1 and fed into the semantic decoder for semantic feature prediction of the next time step. This anchor feature derived from confirmed content can better approximate the optimal feature, guiding the semantic prediction model to achieve more accurate outputs through what we refer to as the anchor mechanism. In the task of generating subsequent musical content given an opening, we extracted 100 samples each of semantic features z′ from the ACG paradigm and semantic features z from conventional autoregres-sive methods, and compared them by computing cosine distances with ground truth, thereby con-firming that our hypothesis holds in practice. The result shown in Figure 3. Compared to traditional Figure 2: ACG Paradigm Architecture. The embedding layer encodes the conditional information into feature vectors, concatenated with anchor features from existing content (anchor features are absent at the initial time step) and feeds into the semantic prediction model. The semantic prediction model generates semantic features z for the current time step and feeds it to semantic reconstruction model, which autoregressively generate a sequence of features corresponding to piano tokens s through multiple iterations. The generated token feature s concatenates with semantic feature z for iteration. The n piano tokens combine into a block as final output for semantic feature z,then convert into an anchor feature for iterative generation by re-embedding model.  
+
+> Figure 3: Cosine distances between predicted and ground truth feature vectors for the ACG paradigm and conventional autoregressive models across iterations. The ACG paradigm consistently achieves lower cosine distances compared to conventional autoregressive mod-els.
+
+autoregressive models, the ACG paradigm achieves an average reduction of 34.7% in cosine distance between predicted feature vectors and ground-truth semantic vectors. For the mathematical proof of the effectiveness of the ACG paradigm, please refer to the supplementary materials. This demonstrates that our proposed ACG paradigm effectively mitigates the error accumu-lation inherent in autoregressive models, thereby achieving superior generation performance. In terms of time complexity, ACG also outperforms conventional approaches. The time complex-ity O(L2) of conventional autoregressive mod-els scales quadratically with increasing sequence length L, whereas the time complexity of the ACG paradigm is O(L2
+
+> sem
+
+) + Lsem × O(L2
+
+> rec
+
+), where 
+
+Lsem represents the length of semantic features se-quence Z′, and Lrec represents the length of token sequence S. The ACG paradigm decomposes au-toregressive generation tasks into a two-stage sub-task framework, implemented through employing separate semantic prediction and semantic restora-tion models. The semantic prediction model oper-ates solely at the block level to predict semantic fea-tures, while the semantic restoration model focuses exclusively on reconstructing fixed-length token sequences from block features. This task decom-position significantly reduces the computational burden of models in long-sequence autoregressive generation tasks, with the efficiency gains becom-ing more pronounced as sequence length increases. 
+
+3.3 Hierarchical Anchored Cyclic Generation Framework 
+
+We propose the Hi-ACG framework, built upon the ACG paradigm, to generate high-quality, long-sequence symbolic music with complete structure and precise duration control. This cascaded model architecture embodies a core principle: simulat-ing human compositional cognition through hierar-chical music generation that proceeds from global structure to local refinement. This approach mirrors how composers naturally work—first establishing the overall structural framework, then gradually developing specific musical details. By doing so, the framework maintains both global musical co-herence and rich local expression, ultimately pro-ducing more natural and musically acceptable com-positions. The Hi-ACG framework features two intercon-nected loops: the Sketch Loop and the Refinement Figure 4: The Hi-ACG framework, which comprises a sketch loop and a refinement loop. The sketch loop takes duration condition and optional musical constraints as input, generating a musical sketch with coarse-grained information for the entire composition using block-by-block processing. The refinement loop then sequentially processes the sketch blocks, transforming each into multiple detailed blocks with rich musical representations. 
+
+Loop. The Sketch Loop generates high-level struc-tural sketches that establish the compositional back-bone. Building on this sketch information, the Re-finement Loop focuses on creating rich expressive details, transforming abstract structures into con-crete musical content. This clear division of respon-sibilities allows the framework to optimize music generation at different levels of abstraction, ensur-ing both structural coherence in long sequences and precise control over duration while enhancing local musical quality. We propose an approach where the Sketch Loop and Refinement Loop are trained separately with different objectives. We obtain training data for the Sketch Loop by resampling real music data, performing two samplings within each measure to extract each measure’s core musical informa-tion. This approach preserves the main musical characteristics of each measure while significantly reducing sequence length. After resampling the entire composition, we convert the results to pi-ano token representation for Sketch Loop training. The Refinement Loop uses paired training, utiliz-ing sketches generated by the Sketch Loop paired with corresponding complete musical pieces. We also convert the training data to piano token repre-sentation to maintain consistency. During training, the Refinement Loop learns to expand sketch in-formation into complete, detailed musical content, learning to map abstract structures to concrete mu-sical expressions. During the music generation phase, the frame-work follows this workflow: First, the Sketch Loop generates a piano token matrix of the complete composition sketch based on conditions such as du-ration or musical input, providing the overall struc-tural framework. The sketch is then segmented into sequence Bsketch = {b1, b 2, ..., b t} block-by-block, with each element in sequence Bsketch passed in-dividually to the Refinement Loop for processing. The Refinement Loop uses each input block bt to expand and generate corresponding detailed mu-sical content Brefinement . Finally, all refined block sequences are combined in chronological order to form the complete musical work. Through this hi-erarchical generation strategy, our framework can generate high-quality long-sequence symbolic mu-sic with rich detailed expression while ensuring overall structural coherence. For structural control, the global planning of the Sketch Loop ensures that generated music maintains coherent overall struc-ture, avoiding the structural drift commonly seen in long-sequence generation. To ensure quality, the Refinement Loop focuses on optimizing local mu-sical expression, producing music that maintains structural coherence while featuring rich musical details and expressiveness. Moreover, the hierar-chical design provides the framework with strong scalability, enabling it to handle music sequences of arbitrary length and making it technically feasi-ble to generate ultra-long musical compositions. 
+
+4 Experiment 
+
+To validate the Hi-ACG framework’s effectiveness, we conduct comprehensive objective and subjec-tive experiments evaluating the generation quality. This chapter presents the experimental setup and evaluation results. 
+
+4.1 Experimental Setup 4.1.1 Dataset 
+
+We train our model on the MuseScore dataset and the POP909 dataset. The MuseScore dataset con-tains 140,000 two-track piano scores lasting 1-3 minutes. We convert them to piano rolls in multi-hot array format, with a minimum resolution of 1/16 beat. Each time step preserves 88 pitches cor-responding to standard piano keys. We encode the piano rolls into piano tokens to train our model. For POP909, we similarly convert them into piano roll representations with the same temporal resolution, then transform them into piano tokens. 
+
+4.1.2 Details 
+
+During data preprocessing in our experiments, we set d to 2 and t to 4, with each token corresponding to a patch range of 2 × 4 elements. This results in a piano tokens matrix of size 44 × ( T 
+
+> 4
+
+). For model hyperparameters, in the ACG paradigm, the se-mantic prediction model contains 12 self-attention layers, the semantic reconstruction model contains 6 self-attention layers, and the re-embedding layer consists of 3 fully connected layers, all models use a hidden dimension of 1024. We trained on the MuseScore data for 30 epochs using 4 NVIDIA RTX 4090 GPUs, then continued fine-tuning our pre-trained model using POP909 data to improve generation performance. 
+
+4.2 Evaluation 4.2.1 Baseline 
+
+We compare against Transformer-based mod-els (Music Transformer, BPE Transformer) and diffusion-based model (Cascaded-Diff), all fine-tuned on the same datasets for fair comparison. We also conduct ablation studies on Hi-ACG compo-nents. In tables, “GT" denotes ground truth, “MT" denotes Music Transformer, “BT" denotes BPE Transformer, “CD" denotes Cascaded-Diff, “Full" denotes the complete framework, “SL" denotes the sketch loop, and “SP" denotes the semantic predic-tion. 
+
+4.2.2 Objective Evaluation 
+
+To objectively evaluate of the music generated by various models, we design specialized music evaluation metrics. The evaluation metrics encom-pass four aspects, assessing both model-generated and real music from pitch, rhythm, harmony, and melody. Pitch evaluation employs information en-tropy to quantify note diversity within a musical piece. The information entropy is calculated as fol-lows, where p(i) represents the probability of note occurrence. Higher pitch entropy indicates greater pitch diversity with a more uniform distribution. 
+
+Hpitch = −
+
+> n
+
+X
+
+> i=1
+
+p(i) log 2 p(i)
+
+Similar to pitch evaluation, rhythm evaluation em-ploys entropy to measure rhythmic complexity by analyzing the frequency and distribution of various note durations. Here, p(j) denotes the probability of each duration type. 
+
+Hrhythm = −
+
+> n
+
+X
+
+> j=1
+
+p(j) log 2 p(j)
+
+Harmonic consistency evaluates the degree of matching between notes and tonality. We iden-tify the musical tonality using Music21’s (Cuthbert and Ariza, 2010) key analysis algorithm, then cal-culate the proportion of notes that belong to the tonal distribution. The melodic smoothness metric is based on melodic fluency principles in music theory, assessing smoothness by analyzing the size of intervals between adjacent notes in the melody. Specifically, we define intervals exceeding a perfect fourth as large leaps and calculate the proportion of large leaps in the melody, where more frequent large leaps reduce the perceived musical quality. Additionally, we employ an LLM for music quality assessment. We use the Qwen3-235B-A22B model to evaluate musical quality, providing comprehen-sive scores considering multiple dimensions includ-ing melody, rhythm, and arrangement. The scoring employs the MOS (Mean Opinion Score) method with a score range of 1-5, where 1 is the lowest and 5 is the highest. We conduct objective evaluation across three tasks: 30-second short music genera-tion, 2-minute long music generation, and condi-tional input long music generation. Short music generation evaluation represents local music qual-ity, while long music generation assesses fluency, structure, and compositional completeness. Con-ditional music generation show the model’s ability to continue music from given input, demonstrating music understanding and completion capabilities. Pitch Rhythm Harmony Melody LLM score GT 1.92 1.43 0.87 0.52 3.50 MT 1.95 1.66 0.94 0.41 2.25 BT 3.16 1.74 0.90 0.55 2.43 CD 3.26 2.36 0.91 0.66 3.37                
+
+> w/o SL & SP 2.44 1.80 0.94 0.40 2.22 w/o SL 1.32 1.71 0.84 0.62 3.06 Full 1.43 1.69 0.89 0.60 3.10
+
+Table 1: Objective evaluation results for 30-seconds unconditional music generation. Performance improves when Pitch, Rhythm, Harmony, and Melody values match the ground truth. Higher LLM scores show better performance.                                        
+
+> Pitch Rhythm Harmony Melody LLM score GT 2.20 1.06 0.90 0.50 3.55 MT 3.49 3.19 0.92 0.29 2.29 BT 3.16 1.74 0.90 0.55 2.45 CD 3.38 2.30 0.91 0.90 2.89 w/o SL & SP -----w/o SL 1.56 0.84 0.83 0.41 2.92 Full 2.43 1.03 0.90 0.47 3.17
+
+Table 2: Objective evaluation results for 2-minutes un-conditional music generation. Performance improves when Pitch, Rhythm, Harmony, and Melody values match the ground truth. Higher LLM scores show better performance. 
+
+4.2.3 Subjective Evaluation 
+
+In music generation tasks, subjective evaluation often provides a more intuitive reflection of the quality of the generated music’s impact on listen-ers. We also conducted a comparison between our model and the baseline in subjective evalua-tion. The subjective evaluation employed the MOS method, where evaluators rate each music sample on a scale from 1 to 5, with higher scores indicating superior musical quality. Evaluators were blinded to which model generated each music sample. The evaluators were 79 volunteers with music education backgrounds, including 46 males and 33 females. 
+
+5 Conclusion 
+
+Long-sequence symbolic music generation faces a critical challenge: error accumulation that de-grades musical structure and fluency. To address this, we introduce the ACG paradigm with piano token representation and propose a hierarchical mu-sic generation framework. This approach enhances generation quality while enabling flexible condi-tional music generation. Our experiments demon-strate substantial improvements in both statistical metrics and overall music quality, with both ob-jective metrics and subjective evaluations consis-                                       
+
+> Pitch Rhythm Harmony Melody LLM score GT 2.20 1.06 0.90 0.50 3.55 MT 3.73 3.53 0.96 0.37 2.24 BT 3.89 3.20 0.88 0.66 2.33 CD -----w/o SL & SP -----w/o SL 2.69 1.90 0.99 0.33 3.05 Full 2.19 1.27 0.91 0.43 3.30
+
+Table 3: Objective evaluation results for 2-minutes con-ditional music generation. Performance improves when Pitch, Rhythm, Harmony, and Melody values match the ground truth. Higher LLM scores show better perfor-mance.              
+
+> GT MT BT CD w/o SL & SP w/o SL Full Score 3.31 1.96 2.05 2.91 1.85 2.52 3.02
+
+Table 4: Subjective evaluation for 2-minutes music gen-eration use MOS evaluation, higher score indicate supe-rior performance. 
+
+tently validating our approach’s superiority. The ACG paradigm represents a major breakthrough in long-sequence symbolic music generation, pro-viding a flexible framework easily integrated into existing autoregressive models. The system adapts well to downstream tasks through fine-tuning and offers valuable insights for music understanding applications. These foundational principles pave the way for more sophisticated and controllable symbolic music generation systems. While demon-strated on symbolic music, the core principle of ACG—using confirmed content as anchors to miti-gate error accumulation—is broadly applicable to other long-sequence generation tasks, including structured text generation and hierarchical content synthesis, opening promising directions for future research. 
+
+Limitations 
+
+Our method currently lacks fine-grained control during generation, limiting dynamic adjustment for personalized music creation. Future work will integrate additional tokens capturing musical ex-pression and structural elements to improve con-trollability. Additionally, while the piano token rep-resentation achieves efficient compression, it may lose subtle timing nuances present in event-based representations. The current framework focuses on piano music; extending to diverse instruments and timbres requires further investigation. We also plan to extend ACG to multi-track symbolic mu-sic generation and explore its application to other sequential generation domains. References 
+
+Iz Beltagy, Matthew E. Peters, and Arman Cohan. 2020. Longformer: The long-document transformer. 
+
+Preprint , arXiv:2004.05150. Jean-Pierre Briot, Gaëtan Hadjeres, and François-David Pachet. 2017. Deep learning techniques for music generation–a survey. arXiv preprint arXiv:1709.01620 .Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. 2019. Generating long se-quences with sparse transformers. arXiv preprint arXiv:1904.10509 .Darrell Conklin and Ian H Witten. 1995. Multiple view-point systems for music prediction. Journal of New Music Research , 24(1):51–73. Michael Scott Cuthbert and Christopher Ariza. 2010. music21: A toolkit for computer-aided musicology and symbolic music analysis. In 11th International Society for Music Information Retrieval Conference (ISMIR 2010) , pages 637–642. Hao-Wen Dong, Wen-Yi Hsiao, Li-Chia Yang, and Yi-Hsuan Yang. 2017. Musegan: Multi-track sequen-tial generative adversarial networks for symbolic music generation and accompaniment. Preprint ,arXiv:1709.06298. Kemal Ebcioglu. 1988. An expert system for harmo-nizing four-part chorales. Computer Music Journal ,12(3):43–51. Douglas Eck and Jürgen Schmidhuber. 2002. Finding temporal structure in music: Blues improvisation with lstm recurrent networks. In Proceedings of the 12th IEEE Workshop on Neural Networks for Signal Processing , pages 747–756. IEEE. Nathan Fradet, Nicolas Gutowski, Fabien Chhel, and Jean-Pierre Briot. 2023. Byte pair encoding for sym-bolic music. Preprint , arXiv:2301.11975. Zixun Guo, Jaeyong Kang, and Dorien Herremans. 2023. A domain-knowledge-inspired music embed-ding space and a novel attention mechanism for sym-bolic music modeling. Proceedings of the AAAI Con-ference on Artificial Intelligence , 37(4):5070–5077. Jonathan Ho, Ajay Jain, and Pieter Abbeel. 2020. De-noising diffusion probabilistic models. Preprint ,arXiv:2006.11239. Wen-Yi Hsiao, Jen-Yu Liu, Yin-Cheng Yeh, and Yi-Hsuan Yang. 2021a. Compound word transformer: Learning to compose full-song music over dynamic directed hypergraphs. Preprint , arXiv:2101.02402. Wen-Yi Hsiao, Jen-Yu Liu, Yin-Cheng Yeh, and Yi-Hsuan Yang. 2021b. Compound word transformer: Learning to compose full-song music over dynamic directed hypergraphs. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 35, pages 64–72. Cheng-Zhi Anna Huang, Ashish Vaswani, Jakob Uszko-reit, Noam Shazeer, Ian Simon, Curtis Hawthorne, Andrew M. Dai, Matthew D. Hoffman, Monica Din-culescu, and Douglas Eck. 2018. Music transformer. 
+
+Preprint , arXiv:1809.04281. Yu-Siang Huang and Yi-Hsuan Yang. 2020. Pop music transformer: Beat-based modeling and generation of expressive pop piano compositions. In Proceedings of the 28th ACM International Conference on Multi-media (MM ’20) , pages 1180–1188, New York, NY, USA. Association for Computing Machinery. Jiafeng Liu, Yuanliang Dong, Zehua Cheng, Xinran Zhang, Xiaobing Li, Feng Yu, and Maosong Sun. 2022. Symphony generation with permutation invari-ant language model. Preprint , arXiv:2205.05448. Gautam Mittal, Jesse Engel, Curtis Hawthorne, and Ian Simon. 2021. Symbolic music generation with diffusion models. arXiv preprint arXiv:2103.16091 .Javier Nistal, Marco Pasini, Cyran Aouameur, Maarten Grachten, and Stefan Lattner. 2024. Diff-a-riff: Mu-sical accompaniment co-creation via latent diffusion models. Preprint , arXiv:2406.08384. Sageev Oore, Ian Simon, Sander Dieleman, Douglas Eck, and Karen Simonyan. 2020. This time with feeling: learning expressive musical performance. 
+
+Neural computing and applications , 32(4):955–967. Matthias Plasser, Silvan Peter, and Gerhard Wid-mer. 2023. Discrete diffusion probabilistic mod-els for symbolic music generation. Preprint ,arXiv:2305.09489. Xingwei Qu, Yuelin Bai, Yinghao Ma, Ziya Zhou, Ka Man Lo, Jiaheng Liu, Ruibin Yuan, Lejun Min, Xueling Liu, Tianyu Zhang, Xinrun Du, Shuyue Guo, Yiming Liang, Yizhi Li, Shangda Wu, Junting Zhou, Tianyu Zheng, Ziyang Ma, Fengze Han, and 9 others. 2024. Mupt: A generative symbolic music pretrained transformer. Preprint , arXiv:2404.06393. Adam Roberts, Jesse Engel, Colin Raffel, Curtis Hawthorne, and Douglas Eck. 2018. A hierarchical latent vector model for learning long-term structure in music. In Proceedings of the 35th International Con-ference on Machine Learning (ICML) , pages 4364– 4373. PMLR. Bob L. Sturm, João Felipe Santos, Oded Ben-Tal, and Iryna Korshunova. 2016. Music transcription mod-elling and composition using deep learning. arXiv preprint arXiv:1604.08723 .Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in neural information pro-cessing systems , volume 30. Curran Associates, Inc. Ziyu Wang, Lejun Min, and Gus Xia. 2024. Whole-song hierarchical generation of symbolic music using cas-caded diffusion models. Preprint , arXiv:2405.09901. Algorithm 1 Piano roll to piano tokens conversion                                                                           
+
+> Require: Piano roll matrix P∈ { 0,1}88 ×W
+> Ensure: Token matrix S∈ { 0,1, . . . , 255 }W/ 4×44
+> 1: hp←2, w p←4▷Patch dimensions 2: Nr←88 /h p= 44 ,Nc←W/w p
+> 3: Initialize S∈ZNc×Nr
+> 4: for j= 0 to Nc−1do
+> 5: for i= 0 to Nr−1do
+> 6: patch ←P[i·hp: ( i+1) ·hp, j ·wp: ( j+1) ·wp]
+> 7: flat ←flatten (patch )
+> 8: token ←0
+> 9: for k= 0 to 7do
+> 10: token ←(token ≪1) ∨flat [k]
+> 11: end for
+> 12: S[j, i ]←token
+> 13: end for
+> 14: end for
+> 15: return S
+
+Shangda Wu, Xiaobing Li, Feng Yu, and Maosong Sun. 2023. Tunesformer: Forming irish tunes with control codes by bar patching. Preprint , arXiv:2301.02884. Botao Yu, Peiling Lu, Rui Wang, Wei Hu, Xu Tan, Wei Ye, Shikun Zhang, Tao Qin, and Tie-Yan Liu. 2022. Museformer: Transformer with fine- and coarse-grained attention for music generation. Preprint ,arXiv:2210.10349. Ruibin Yuan, Hanfeng Lin, Yi Wang, Zeyue Tian, Shangda Wu, Tianhao Shen, Ge Zhang, Yuhang Wu, Cong Liu, Ziya Zhou, Ziyang Ma, Liumeng Xue, Ziyu Wang, Qin Liu, Tianyu Zheng, Yizhi Li, Yinghao Ma, Yiming Liang, Xiaowei Chi, and 16 others. 2024. Chatmusician: Understanding and generating music intrinsically with llm. Preprint ,arXiv:2402.16153. Bin Zhao, Xuelong Li, and Xiaoqiang Lu. 2019. Hierar-chical recurrent neural network for video summariza-tion. Preprint , arXiv:1904.12251. 
+
+A Piano Token Conversion Algorithm 
+
+This section provides the conversion algorithms for the piano token representation. Algorithm 1 describes how to convert a piano roll representa-tion into piano tokens, and Algorithm 2 shows the reverse conversion. 
+
+B Mathematical Proof of ACG Effectiveness 
+
+We provide mathematical derivations validating the ACG paradigm’s effectiveness in reducing error accumulation. Let εt denote the local error at step t for conven-tional autoregressive models, and ε′ 
+
+> t
+
+for ACG. The cumulative errors are: 
+
+δn =
+
+> N
+
+X
+
+> t=1
+
+εt, δ′ 
+
+> n
+
+=
+
+> N
+
+X
+
+> i=1
+
+ε′
+
+> i
+
+Algorithm 2 Piano tokens to piano roll conversion                                                                
+
+> Require: Token matrix S∈ { 0,1, . . . , 255 }Nc×Nr
+> Ensure: Reconstructed piano roll P′∈ { 0,1}88 ×4Nc
+> 1: hp←2, w p←4
+> 2: Initialize P′∈ { 0,1}Nr·hp×Nc·wp
+> 3: for j= 0 to Nc−1do
+> 4: for i= 0 to Nr−1do
+> 5: token ←S[j, i ]
+> 6: binary ←int2bin (token, 8)
+> 7: patch ←reshape (binary ,(hp, w p))
+> 8: P′[i·hp: ( i+ 1) ·hp, j ·wp: ( j+ 1) ·wp]←
+> patch
+> 9: end for
+> 10: end for
+> 11: return P′
+
+We assume that features z′ 
+
+> t
+
+predicted based on anchor features At−1 are closer to optimal features 
+
+ht than purely autoregressive predictions zt:
+
+∀t, ∥z′ 
+
+> t
+
+− ht∥ ≤ ∥ zt − ht∥
+
+Since εt = zt − ht and ε′ 
+
+> t
+
+= z′ 
+
+> t
+
+− ht, by the anchoring mechanism, ε′ 
+
+> t
+
+≤ εt. Using MSE loss: 
+
+L1 = 1
+
+N
+
+> N
+
+X
+
+> t=1
+
+(zt − ht)2, L2 = 1
+
+N
+
+> N
+
+X
+
+> t=1
+
+(z′ 
+
+> t
+
+− ht)2
+
+Since the loss function satisfies the Lipschitz condition |f (x) − f (y)| ≤ K∥x − y∥:
+
+|L2 − L1| ≤ K
+
+> N
+
+X
+
+> t=1
+
+(ε′ 
+
+> t
+
+− εt) ≤ 0
+
+This demonstrates that ACG effectively miti-gates error accumulation. 
+
+C Time Complexity Analysis 
+
+Conventional autoregressive models have time complexity O(L2 · d) where L is sequence length and d is hidden dimension. The ACG paradigm decomposes this into two stages: • Semantic Prediction : Csem = O(L2 
+
+> sem
+
+· d)
+
+• Semantic Reconstruction : Crec = Lsem ×O(L2 
+
+> rec
+
+· d)
+
+Total ACG complexity: 
+
+CACG = O(L2 
+
+> sem
+
+· d) + Lsem × O (L2 
+
+> rec
+
+· d)
+
+Given L = Lsem × Lrec and fixed Lrec , the speedup factor is O(L2
+
+> rec
+
+), making ACG particu-larly effective for long sequences. Figure 5: Cosine distance comparison across 50 iterative steps. 
+
+Figure 6: Cosine distance comparison across 100 itera-tive steps. 
+
+D Extended Cosine Distance Comparison 
+
+Figure 5 and Figure 6 show cosine distances be-tween predicted and ground truth features for 50 and 100 timesteps respectively, demonstrating ACG’s consistent advantage. 
+
+E Ablation Studies 
+
+E.1 Architectural Ablation 
+
+We investigate the effects of model size with Small (4+8 layers), Middle (5+10 layers), and Large (6+12 layers) configurations. Results in Tables 5, 6, and 7 show the Large model achieves best perfor-mance. 
+
+E.2 Hyperparameter Ablation 
+
+We investigate patch dimensions (d, t ) affecting vocabulary size and sequence lengths. Tables 8, 9, and 10 show Patch 2,4 achieves optimal balance. 
+
+F Generation Examples 
+
+Figures 7 to 9 show piano roll visualizations of music generated by Hi-ACG. 
+
+Pitch Rhythm Harmony Melody LLM GT 1.92 1.43 0.87 0.52 3.50 Small 1.40 1.75 0.77 0.40 3.01 Middle 1.41 1.68 0.84 0.59 3.08 Large 1.43 1.69 0.89 0.60 3.10 
+
+Table 5: Architectural ablation on 30-second generation. 
+
+Pitch Rhythm Harmony Melody LLM GT 2.20 1.06 0.90 0.50 3.55 Small 2.45 1.08 0.94 0.55 3.11 Middle 2.51 1.03 0.92 0.46 3.12 Large 2.43 1.03 0.90 0.47 3.17 
+
+Table 6: Architectural ablation on 2-minute uncondi-tional generation. 
+
+Pitch Rhythm Harmony Melody LLM GT 2.20 1.06 0.90 0.50 3.55 Small 2.16 1.33 0.82 0.40 3.25 Middle 2.15 1.35 0.87 0.42 3.28 Large 2.19 1.27 0.91 0.43 3.30 
+
+Table 7: Architectural ablation on 2-minute conditional generation. 
+
+Pitch Rhythm Harmony Melody LLM GT 1.92 1.43 0.87 0.52 3.50 Patch 1,4 2.45 1.88 0.77 0.42 2.89 Patch 2,4 1.43 1.69 0.89 0.60 3.10 
+
+Patch 3,4 2.53 1.51 0.82 0.55 3.06 
+
+Table 8: Hyperparameter ablation on 30-second genera-tion. 
+
+Pitch Rhythm Harmony Melody LLM GT 2.20 1.06 0.90 0.50 3.55 Patch 1,4 2.81 1.22 0.95 0.53 3.02 Patch 2,4 2.43 1.03 0.90 0.47 3.17 
+
+Patch 3,4 2.45 1.02 0.91 0.45 3.14 
+
+Table 9: Hyperparameter ablation on 2-minute uncondi-tional generation. 
+
+Pitch Rhythm Harmony Melody LLM GT 2.20 1.06 0.90 0.50 3.55 Patch 1,4 2.24 1.34 0.95 0.56 3.19 Patch 2,4 2.19 1.27 0.91 0.43 3.30 
+
+Patch 3,4 2.18 1.20 0.90 0.49 3.22 
+
+Table 10: Hyperparameter ablation on 2-minute condi-tional generation. Figure 7: Example of 30-second music generated by Hi-ACG. 
+
+Figure 8: Example 1 of 2-minute unconditional music generated by Hi-ACG. 
+
+Figure 9: Example of 2-minute conditional music generated by Hi-ACG.

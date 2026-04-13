@@ -1,0 +1,253 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-13T19:52:13.555159+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2604.06832v2",
+      "title": "Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM",
+      "abstract": "Vision-language models (VLMs) predominantly rely on autoregressive decoding, which generates tokens one at a time and fundamentally limits inference throughput. This limitation is especially acute in physical AI scenarios such as robotics and autonomous driving, where VLMs are deployed on edge devices at batch size one, making AR decoding memory-bandwidth-bound and leaving hardware parallelism underutilized. While block-wise discrete diffusion has shown promise for parallel text generation, extending it to VLMs remains challenging due to the need to jointly handle continuous visual representations and discrete text tokens while preserving pretrained multimodal capabilities. We present Fast-dVLM, a block-diffusion-based VLM that enables KV-cache-compatible parallel decoding and speculative block decoding for inference acceleration. We systematically compare two AR-to-diffusion conversion strategies: a two-stage approach that first adapts the LLM backbone with text-only diffusion fine-tuning before multimodal training, and a direct approach that converts the full AR VLM in one stage. Under comparable training budgets, direct conversion proves substantially more efficient by leveraging the already multimodally aligned VLM; we therefore adopt it as our recommended recipe. We introduce a suite of multimodal diffusion adaptations, block size annealing, causal context attention, auto-truncation masking, and vision efficient concatenation, that collectively enable effective block diffusion in the VLM setting. Extensive experiments across 11 multimodal benchmarks show Fast-dVLM matches its autoregressive counterpart in generation quality. With SGLang integration and FP8 quantization, Fast-dVLM achieves over 6x end-to-end inference speedup over the AR baseline.",
+      "authors": [
+        "Chengyue Wu",
+        "Shiyi Lan",
+        "Yonggan Fu",
+        "Sensen Gao",
+        "Jin Wang",
+        "Jincheng Yu",
+        "Jose M. Alvarez",
+        "Pavlo Molchanov",
+        "Ping Luo",
+        "Song Han",
+        "Ligeng Zhu",
+        "Enze Xie"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-04-08T08:50:08+00:00",
+      "link": "https://arxiv.org/pdf/2604.06832v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Direct conversion from Autoregressive VLM to block-diffusion VLM",
+      "llm_evidence_cn": "从自回归VLM直接转换为块扩散VLM",
+      "llm_evidence": "从自回归VLM直接转换为块扩散VLM",
+      "canonical_evidence": "从自回归VLM直接转换为块扩散VLM",
+      "llm_tldr_en": "Proposes Fast-dVLM to convert autoregressive VLMs into efficient block-diffusion models for faster inference.",
+      "llm_tldr_cn": "提出Fast-dVLM，将自回归视觉语言模型转换为高效的块扩散模型以加速推理。",
+      "llm_tldr": "提出Fast-dVLM，将自回归视觉语言模型转换为高效的块扩散模型以加速推理。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08357v2",
+      "title": "Bias-Constrained Diffusion Schedules for PDE Emulations: Reconstruction Error Minimization and Efficient Unrolled Training",
+      "abstract": "Conditional Diffusion Models are powerful surrogates for emulating complex spatiotemporal dynamics, yet they often fail to match the accuracy of deterministic neural emulators for high-precision tasks. In this work, we address two critical limitations of autoregressive PDE diffusion models: their sub-optimal single-step accuracy and the prohibitive computational cost of unrolled training. First, we characterize the relationship between the noise schedule, the reconstruction error reduction rate and the diffusion exposure bias, demonstrating that standard schedules lead to suboptimal reconstruction error. Leveraging this insight, we propose an \\textit{Adaptive Noise Schedule} framework that minimizes inference reconstruction error by dynamically constraining the model's exposure bias. We further show that this optimized schedule enables a fast \\textit{Proxy Unrolled Training} method to stabilize long-term rollouts without the cost of full Markov Chain sampling. Both proposed methods enable significant improvements in short-term accuracy and long-term stability over diffusion and deterministic baselines on diverse benchmarks, including forced Navier-Stokes, Kuramoto-Sivashinsky and Transonic Flow.",
+      "authors": [
+        "Constantin Le Cleï",
+        "Nils Thuerey",
+        "Xiaoxiang Zhu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-04-09T15:21:31+00:00",
+      "link": "https://arxiv.org/pdf/2604.08357v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "addresses limitations of autoregressive PDE diffusion models and exposure bias",
+      "llm_evidence_cn": "解决自回归PDE扩散模型的局限性及曝光偏差问题",
+      "llm_evidence": "解决自回归PDE扩散模型的局限性及曝光偏差问题",
+      "canonical_evidence": "解决自回归PDE扩散模型的局限性及曝光偏差问题",
+      "llm_tldr_en": "Proposes an Adaptive Noise Schedule to improve accuracy and training efficiency in autoregressive PDE diffusion models.",
+      "llm_tldr_cn": "提出自适应噪声调度框架，旨在提高自回归PDE扩散模型的精度并降低训练成本。",
+      "llm_tldr": "提出自适应噪声调度框架，旨在提高自回归PDE扩散模型的精度并降低训练成本。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08964v1",
+      "title": "Breaking Block Boundaries: Anchor-based History-stable Decoding for Diffusion Large Language Models",
+      "abstract": "Diffusion Large Language Models (dLLMs) have recently become a promising alternative to autoregressive large language models (ARMs). Semi-autoregressive (Semi-AR) decoding is widely employed in base dLLMs and advanced decoding strategies due to its superior performance. However, our observations reveal that Semi-AR decoding suffers from inherent block constraints, which cause the decoding of many cross-block stable tokens to be unnecessarily delayed. To address this challenge, we systematically investigate the identification of stable tokens and present three key findings: (1) naive lookahead decoding is unreliable, (2) token stability closely correlates with convergence trend, and (3) historical information is isolated. Building on these insights, we propose Anchor-based History-stable Decoding (AHD), a training-free, plug-and-play dynamic decoding strategy. Specifically, AHD monitors the stability trend of tokens in real time through dynamic anchors. Once a token reaches stability, it initiates early cross-block decoding to enhance efficiency and performance. Extensive experiments across language, vision-language, and audio-language domains demonstrate that AHD simultaneously improves both performance and inference efficiency. Notably, AHD effectively reverses the performance degradation typically observed in existing advanced decoding acceleration strategies. For instance, on the BBH benchmark, our approach reduces decoding steps by 80% while improving performance by 3.67%.",
+      "authors": [
+        "Shun Zou",
+        "Yong Wang",
+        "Zehui Chen",
+        "Lin Chen",
+        "Chongyang Tao",
+        "Feng Zhao",
+        "Xiangxiang Chu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-04-10T05:08:39+00:00",
+      "link": "https://arxiv.org/pdf/2604.08964v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Semi-autoregressive decoding for Diffusion Large Language Models",
+      "llm_evidence_cn": "扩散大语言模型的半自回归解码研究",
+      "llm_evidence": "扩散大语言模型的半自回归解码研究",
+      "canonical_evidence": "扩散大语言模型的半自回归解码研究",
+      "llm_tldr_en": "Investigates semi-autoregressive decoding in diffusion LLMs to improve token stability and generation efficiency.",
+      "llm_tldr_cn": "研究扩散大语言模型的半自回归解码，通过识别稳定标记提升生成效率。",
+      "llm_tldr": "研究扩散大语言模型的半自回归解码，通过识别稳定标记提升生成效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.09527v1",
+      "title": "Envisioning the Future, One Step at a Time",
+      "abstract": "Accurately anticipating how complex, diverse scenes will evolve requires models that represent uncertainty, simulate along extended interaction chains, and efficiently explore many plausible futures. Yet most existing approaches rely on dense video or latent-space prediction, expending substantial capacity on dense appearance rather than on the underlying sparse trajectories of points in the scene. This makes large-scale exploration of future hypotheses costly and limits performance when long-horizon, multi-modal motion is essential. We address this by formulating the prediction of open-set future scene dynamics as step-wise inference over sparse point trajectories. Our autoregressive diffusion model advances these trajectories through short, locally predictable transitions, explicitly modeling the growth of uncertainty over time. This dynamics-centric representation enables fast rollout of thousands of diverse futures from a single image, optionally guided by initial constraints on motion, while maintaining physical plausibility and long-range coherence. We further introduce OWM, a benchmark for open-set motion prediction based on diverse in-the-wild videos, to evaluate accuracy and variability of predicted trajectory distributions under real-world uncertainty. Our method matches or surpasses dense simulators in predictive accuracy while achieving orders-of-magnitude higher sampling speed, making open-set future prediction both scalable and practical. Project page: http://compvis.github.io/myriad.",
+      "authors": [
+        "Stefan Andreas Baumann",
+        "Jannik Wiese",
+        "Tommaso Martorella",
+        "Mahdi M. Kalayeh",
+        "Björn Ommer"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-10T17:46:05+00:00",
+      "link": "https://arxiv.org/pdf/2604.09527v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Autoregressive diffusion model for sparse point trajectories in scene dynamics",
+      "llm_evidence_cn": "用于场景动力学稀疏点轨迹的自回归扩散模型",
+      "llm_evidence": "用于场景动力学稀疏点轨迹的自回归扩散模型",
+      "canonical_evidence": "用于场景动力学稀疏点轨迹的自回归扩散模型",
+      "llm_tldr_en": "Uses an autoregressive diffusion model to predict future scene dynamics via sparse point trajectories.",
+      "llm_tldr_cn": "利用自回归扩散模型通过稀疏点轨迹预测未来场景动力学演变。",
+      "llm_tldr": "利用自回归扩散模型通过稀疏点轨迹预测未来场景动力学演变。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.09035v1",
+      "title": "Advantage-Guided Diffusion for Model-Based Reinforcement Learning",
+      "abstract": "Model-based reinforcement learning (MBRL) with autoregressive world models suffers from compounding errors, whereas diffusion world models mitigate this by generating trajectory segments jointly. However, existing diffusion guides are either policy-only, discarding value information, or reward-based, which becomes myopic when the diffusion horizon is short. We introduce Advantage-Guided Diffusion for MBRL (AGD-MBRL), which steers the reverse diffusion process using the agent's advantage estimates so that sampling concentrates on trajectories expected to yield higher long-term return beyond the generated window. We develop two guides: (i) Sigmoid Advantage Guidance (SAG) and (ii) Exponential Advantage Guidance (EAG). We prove that a diffusion model guided through SAG or EAG allows us to perform reweighted sampling of trajectories with weights increasing in state-action advantage-implying policy improvement under standard assumptions. Additionally, we show that the trajectories generated from AGD-MBRL follow an improved policy (that is, with higher value) compared to an unguided diffusion model. AGD integrates seamlessly with PolyGRAD-style architectures by guiding the state components while leaving action generation policy-conditioned, and requires no change to the diffusion training objective. On MuJoCo control tasks (HalfCheetah, Hopper, Walker2D and Reacher), AGD-MBRL improves sample efficiency and final return over PolyGRAD, an online Diffuser-style reward guide, and model-free baselines (PPO/TRPO), in some cases by a margin of 2x. These results show that advantage-aware guidance is a simple, effective remedy for short-horizon myopia in diffusion-model MBRL.",
+      "authors": [
+        "Daniele Foffano",
+        "Arvid Eriksson",
+        "David Broman",
+        "Karl H. Johansson",
+        "Alexandre Proutiere"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-10T06:53:25+00:00",
+      "link": "https://arxiv.org/pdf/2604.09035v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "diffusion world models for trajectory generation in reinforcement learning",
+      "llm_evidence_cn": "强化学习中用于轨迹生成的扩散世界模型",
+      "llm_evidence": "强化学习中用于轨迹生成的扩散世界模型",
+      "canonical_evidence": "强化学习中用于轨迹生成的扩散世界模型",
+      "llm_tldr_en": "Uses advantage estimates to guide diffusion models for generating high-return trajectories in model-based RL.",
+      "llm_tldr_cn": "利用优势估计引导扩散模型，在基于模型的强化学习中生成高回报的轨迹。",
+      "llm_tldr": "利用优势估计引导扩散模型，在基于模型的强化学习中生成高回报的轨迹。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.05343v1",
+      "title": "Anchored Cyclic Generation: A Novel Paradigm for Long-Sequence Symbolic Music Generation",
+      "abstract": "Generating long sequences with structural coherence remains a fundamental challenge for autoregressive models across sequential generation tasks. In symbolic music generation, this challenge is particularly pronounced, as existing methods are constrained by the inherent severe error accumulation problem of autoregressive models, leading to poor performance in music quality and structural integrity. In this paper, we propose the Anchored Cyclic Generation (ACG) paradigm, which relies on anchor features from already identified music to guide subsequent generation during the autoregressive process, effectively mitigating error accumulation in autoregressive methods. Based on the ACG paradigm, we further propose the Hierarchical Anchored Cyclic Generation (Hi-ACG) framework, which employs a systematic global-to-local generation strategy and is highly compatible with our specifically designed piano token, an efficient musical representation. The experimental results demonstrate that compared to traditional autoregressive models, the ACG paradigm achieves reduces cosine distance by an average of 34.7% between predicted feature vectors and ground-truth semantic vectors. In long-sequence symbolic music generation tasks, the Hi-ACG framework significantly outperforms existing mainstream methods in both subjective and objective evaluations. Furthermore, the framework exhibits excellent task generalization capabilities, achieving superior performance in related tasks such as music completion.",
+      "authors": [
+        "Boyu Cao",
+        "Lekai Qian",
+        "Dehan Li",
+        "Haoyu Gu",
+        "Mingda Xu",
+        "Qi Liu"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI"
+      ],
+      "published": "2026-04-07T02:29:43+00:00",
+      "link": "https://arxiv.org/pdf/2604.05343v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Mitigating error accumulation in autoregressive sequence generation",
+      "llm_evidence_cn": "减轻自回归序列生成中的误差累积",
+      "llm_evidence": "减轻自回归序列生成中的误差累积",
+      "canonical_evidence": "减轻自回归序列生成中的误差累积",
+      "llm_tldr_en": "Proposes Anchored Cyclic Generation to improve long-sequence structural coherence in autoregressive models.",
+      "llm_tldr_cn": "提出锚定循环生成范式，以改善自回归模型在长序列生成中的结构连贯性。",
+      "llm_tldr": "提出锚定循环生成范式，以改善自回归模型在长序列生成中的结构连贯性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
