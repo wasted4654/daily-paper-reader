@@ -1,6 +1,11 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-04-15 <!--dpr-date:20260415-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/15/2604.12056v1-losa-locality-aware-sparse-attention-for-block-wise-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;LoSA: Locality Aware Sparse Attention for Block-Wise Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.12056v1-losa-locality-aware-sparse-attention-for-block-wise-diffusion-language-models&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;分块扩散语言模型作为自回归解码的替代方案&quot;}">LoSA: Locality Aware Sparse Attention for Block-Wise Diffusion Language Models</a>
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/15/2604.12617v1-soar-self-correction-for-optimal-alignment-and-refinement-in-diffusion-models" data-sidebar-item="{&quot;title&quot;: &quot;SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.12617v1-soar-self-correction-for-optimal-alignment-and-refinement-in-diffusion-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;解决了扩散模型中类似于自回归模型的曝光偏差问题&quot;}">SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models</a>
   * 2026-04-14 <!--dpr-date:20260414-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/14/2604.11035v1-introspective-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;Introspective Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.11035v1-introspective-diffusion-language-models&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;结合了扩散并行解码与自回归训练的一致性&quot;}">Introspective Diffusion Language Models</a>

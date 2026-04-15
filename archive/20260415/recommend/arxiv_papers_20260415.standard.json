@@ -1,0 +1,104 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-15T20:00:33.799622+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2604.12056v1",
+      "title": "LoSA: Locality Aware Sparse Attention for Block-Wise Diffusion Language Models",
+      "abstract": "Block-wise diffusion language models (DLMs) generate multiple tokens in any order, offering a promising alternative to the autoregressive decoding pipeline. However, they still remain bottlenecked by memory-bound attention in long-context scenarios. Naive sparse attention fails on DLMs due to a KV Inflation problem, where different queries select different prefix positions, making the union of accessed KV pages large. To address this, we observe that between consecutive denoising steps, only a small fraction of active tokens exhibit significant hidden-state changes, while the majority of stable tokens remain nearly constant. Based on this insight, we propose LOSA (Locality-aware Sparse Attention), which reuses cached prefix-attention results for stable tokens and applies sparse attention only to active tokens. This substantially shrinks the number of KV indices that must be loaded, yielding both higher speedup and higher accuracy. Across multiple block-wise DLMs and benchmarks, LOSA preserves near-dense accuracy while significantly improving efficiency, achieving up to +9 points in average accuracy at aggressive sparsity levels while maintaining 1.54x lower attention density. It also achieves up to 4.14x attention speedup on RTX A6000 GPUs, demonstrating the effectiveness of the proposed method.",
+      "authors": [
+        "Haocheng Xi",
+        "Harman Singh",
+        "Yuezhou Hu",
+        "Coleman Hooper",
+        "Rishabh Tiwari",
+        "Aditya Tomar",
+        "Minjae Lee",
+        "Wonjun Kang",
+        "Michael Mahoney",
+        "Chenfeng Xu",
+        "Kurt Keutzer",
+        "Amir Gholami"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-04-13T20:53:51+00:00",
+      "link": "https://arxiv.org/pdf/2604.12056v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "block-wise diffusion language models as an alternative to autoregressive decoding",
+      "llm_evidence_cn": "分块扩散语言模型作为自回归解码的替代方案",
+      "llm_evidence": "分块扩散语言模型作为自回归解码的替代方案",
+      "canonical_evidence": "分块扩散语言模型作为自回归解码的替代方案",
+      "llm_tldr_en": "Proposes LoSA to optimize memory-bound attention in block-wise diffusion language models for long contexts.",
+      "llm_tldr_cn": "提出LoSA，旨在优化长上下文场景下分块扩散语言模型的内存受限注意力机制。",
+      "llm_tldr": "提出LoSA，旨在优化长上下文场景下分块扩散语言模型的内存受限注意力机制。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.12617v1",
+      "title": "SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models",
+      "abstract": "The post-training pipeline for diffusion models currently has two stages: supervised fine-tuning (SFT) on curated data and reinforcement learning (RL) with reward models. A fundamental gap separates them. SFT optimizes the denoiser only on ground-truth states sampled from the forward noising process; once inference deviates from these ideal states, subsequent denoising relies on out-of-distribution generalization rather than learned correction, exhibiting the same exposure bias that afflicts autoregressive models, but accumulated along the denoising trajectory instead of the token sequence. RL can in principle address this mismatch, yet its terminal reward signal is sparse, suffers from credit-assignment difficulty, and risks reward hacking. We propose SOAR (Self-Correction for Optimal Alignment and Refinement), a bias-correction post-training method that fills this gap. Starting from a real sample, SOAR performs a single stop-gradient rollout with the current model, re-noises the resulting off-trajectory state, and supervises the model to steer back toward the original clean target. The method is on-policy, reward-free, and provides dense per-timestep supervision with no credit-assignment problem. On SD3.5-Medium, SOAR improves GenEval from 0.70 to 0.78 and OCR from 0.64 to 0.67 over SFT, while simultaneously raising all model-based preference scores. In controlled reward-specific experiments, SOAR surpasses Flow-GRPO in final metric value on both aesthetic and text-image alignment tasks, despite having no access to a reward model. Since SOAR's base loss subsumes the standard SFT objective, it can directly replace SFT as a stronger first post-training stage after pretraining, while remaining fully compatible with subsequent RL alignment.",
+      "authors": [
+        "You Qin",
+        "Linqing Wang",
+        "Hao Fei",
+        "Roger Zimmermann",
+        "Liefeng Bo",
+        "Qinglin Lu",
+        "Chunyu Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-14T11:45:15+00:00",
+      "link": "https://arxiv.org/pdf/2604.12617v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "addresses exposure bias in diffusion models similar to autoregressive models",
+      "llm_evidence_cn": "解决了扩散模型中类似于自回归模型的曝光偏差问题",
+      "llm_evidence": "解决了扩散模型中类似于自回归模型的曝光偏差问题",
+      "canonical_evidence": "解决了扩散模型中类似于自回归模型的曝光偏差问题",
+      "llm_tldr_en": "Proposes SOAR to fix exposure bias in diffusion models by aligning inference trajectories with training states.",
+      "llm_tldr_cn": "提出SOAR方法，通过对齐推理轨迹与训练状态来解决扩散模型中的曝光偏差问题。",
+      "llm_tldr": "提出SOAR方法，通过对齐推理轨迹与训练状态来解决扩散模型中的曝光偏差问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
