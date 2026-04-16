@@ -1,0 +1,5613 @@
+Title: Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs
+
+URL Source: https://arxiv.org/pdf/2604.10074v1
+
+Published Time: Tue, 14 Apr 2026 00:30:57 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+# Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Hongkang Li 1 Hancheng Min 2 Rene Vidal 1
+
+## Abstract 
+
+Transformer-based diffusion models have demon-strated remarkable performance at generating high-quality samples. However, our theoretical understanding of the reasons for this success re-mains limited. For instance, existing models are typically trained by minimizing a denoising ob-jective, which is equivalent to fitting the score function of the training data. However, we do not know why transformer-based models can match the score function for denoising, or why gradient-based methods converge to the optimal denois-ing model despite the non-convex loss landscape. To the best of our knowledge, this paper pro-vides the first convergence analysis for training transformer-based diffusion models. More specif-ically, we consider the population Denoising Dif-fusion Probabilistic Model (DDPM) objective for denoising data that follow a multi-token Gaussian mixture distribution. We theoretically quantify the required number of tokens per data point and training iterations for the global convergence to-wards the Bayes optimal risk of the denoising ob-jective, thereby achieving a desired score match-ing error. A deeper investigation reveals that the self-attention module of the trained transformer implements a mean denoising mechanism that en-ables the trained model to approximate the oracle Minimum Mean Squared Error (MMSE) estima-tor of the injected noise in the diffusion steps. Numerical experiments validate these findings. 
+
+## 1. Introduction 
+
+Diffusion models (Sohl-Dickstein et al., 2015; Ho et al., 2020; Song & Ermon, 2019; Song et al., 2021) have achieved state-of-the-art performance across a wide range of generative AI tasks, including the creation of images (Rom-
+
+> 1
+
+Department of Electrical and Systems Engineering, Univer-sity of Pennsylvania, Philadelphia, USA 2Institute of Natural Sci-ences & School of Mathematical Sciences, Shanghai Jiao Tong University, Shanghai, China. Correspondence to: Hongkang Li 
+
+<lihk@seas.upenn.edu >.
+
+Preprint. April 14, 2026. 
+
+bach et al., 2022; Peebles & Xie, 2023), videos (Bar-Tal et al., 2024; Xing et al., 2024), audio (Kong et al., 2021; Zhang et al., 2023a), text (Sahoo et al., 2024; Arriola et al., 2025), scientific data (Hoogeboom et al., 2022; Li et al., 2024e; Price et al., 2025), and multi-modal content (Ruan et al., 2023; Cai et al., 2025). A classical diffusion model consists of two stages: a forward process and a backward process. The forward process gradually transforms data into noise by adding white Gaussian noise, while the backward process learns a score-based model to progressively remove the injected noise and generate samples from noisy inputs. Specifically, score-based models are typically formulated as neural networks trained to approximate the score func-tion, namely the gradient of the logarithm of the probability density of the data at each time step. Among the various score-based diffusion models, the denois-ing diffusion probabilistic model (DDPM) (Ho et al., 2020) proposes a canonical training objective as the foundation of diffusion model training, which is to predict the added noise in the forward process. Early score-based generative models (Ho et al., 2020; Song et al., 2021) adopt convolution-based models, such as U-Net, as the backbone architectures for learning the score function. More recently, motivated by their superior scalability and stronger performance in vi-sual generation, transformer-based architectures, such as DiT (Peebles & Xie, 2023), have served as effective alterna-tives. However, despite the remarkable empirical success of transformer-based diffusion models for score learning, the theoretical reasons for this success are much less explored. These include fundamental questions such as: 
+
+(Q1) Why can a nonlinear transformer match the score function and denoise? 
+
+(Q2) Why gradient descent converges to the optimal nonlinear transformer under DDPM training? 
+
+Existing theoretical work addresses these questions only in a limited and separate manner. One line of work (Wang et al., 2024a; Li et al., 2024f) studies the optimal DDPM denoiser under specific data distributions via loss landscape analysis, but it does not establish convergence guarantees for training algorithms. Another line of work studies the training dynamics of neural networks for score matching (Han et al., 2024; Wang et al., 2024b; Han et al., 2025; Wang & Pehlevan, 2025; Bonnaire et al., 2025), but only 1
+
+> arXiv:2604.10074v1 [cs.LG] 11 Apr 2026 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs
+
+Theoretical Works Network Model Loss Landscape Convergence Analysis Denoising Mechanism Wang et al. (2024a) U-Net Global optimum ✗ PCA Han et al. (2024) Fully-connected N/A ✓ N/A Wang et al. (2024b) Fully-connected N/A ✓ N/A Han et al. (2025) Convolutional Stationary point ✗ Balanced FL Ours Transformer Global optimum ✓ Mean denoising   
+
+> Table 1. Comparison with existing works about training analysis and the optimality of denoising of diffusion models.
+> Figure 1. Mean denoising mechanism by the trained Transformer. Attention reduces the noise added to the data. Dark (light) red arrows: attention weights between the query and key that share the same (different) pattern.
+
+for simple architectures or unrealistic regimes. As far as we know, none of these studies investigates the convergence of training algorithms or the learned denoising mechanism for Transformer-based diffusion models. Please see Section 1.2 for a more detailed comparison between our work and sev-eral representative papers, and Table 1 for a summary. 
+
+1.1. Main Contributions 
+
+To the best of our knowledge, this paper is the first to ana-lyze the training dynamics of nonlinear transformers trained by gradient descent on the DDPM loss, providing theo-retical convergence and score matching error guarantees. Motivated by empirical observations that data are composed of multiple patterns, we consider a Multi-Token Gaussian Mixture (MTGM) data distribution, where each data point consists of multiple tokens that are sampled from a given set of Gaussian mixture components. Following prior work (Allen-Zhu & Li, 2023; Li et al., 2023a; 2024a; Jiang et al., 2024; Li et al., 2025a; Han et al., 2025), we characterize how the transformer parameters learn the mean patterns of different Gaussian components through gradient updates. Our main contributions include: 1. A quantitative analysis of how to optimize the DDPM loss with transformers towards convergence. We the-oretically analyze the training dynamics on a one-layer single-head transformer with softmax attention and quan-tify the number of training iterations and tokens per data required to optimize the DDPM loss. Our results charac-terize how the convergence is affected by the imbalance among the proportions of different Gaussian components in the MTGM distribution, the number of distinct pat-tern types present in each data, and the time-averaged signal-to-noise ratio of the diffusion noising process. 2. Theoretical characterization of how the trained trans-former learns the oracle MMSE estimator as the op-timal denoiser. The major technical difficulty in ana-lyzing why neural networks can converge to the optimal denoiser is that the true MMSE estimator for the DDPM loss is intractable to compute. To address this challenge, we define an oracle MMSE estimator , which is com-puted with the class of the Gaussian component of each token in the MTGM data as known. We then prove that the trained transformer can converge to this estimator. Moreover, we show that the oracle denoising risk corre-sponding to the oracle MMSE estimator is close to the true Bayes risk of the training problem if the number of tokens in each data is large enough. This implies that the training process globally converges to the optimal de-noiser, and consequently, the trained model can be used to construct a score network that enables score matching. 3. Theoretical understanding of how the self-attention structure performs denoising through a mean denois-ing mechanism. The key challenge in characterizing how a transformer approximates the oracle MMSE esti-mator lies in explaining how the model parameters learn the mean patterns of an MTGM data distribution. We are the first to propose a mean denoising mechanism of self-attention in diffusion model training, i.e., attention aggregates queries and keys that share the same pat-tern, thereby producing a minimum-variance unbiased estimator (MVUE) of the mean pattern and effectively removing the noise injected by the forward diffusion pro-cess. This mechanism also enables the trained model to denoise data with the same Gaussian components but shifted mixture proportions, as long as each data point contains a sufficient number of tokens. 
+
+1.2. Related Work Theoretical analysis of diffusion models. Recent work (Wang et al., 2024a; Li et al., 2024f) analyzes the landcape of the DDPM denoiser and shows that the optimal diffusion model essentially performs principal component analysis (PCA) for Gaussian data or low-rank Gaussian mixture data. 2Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+While these results theoretically characterize the structure of optimal solutions, they do not establish whether such solutions are attainable through gradient-based training of neural networks. Wang & Pehlevan (2025); Bonnaire et al. (2025); Han et al. (2024); Wang et al. (2024b) analyze the training dynamics of denoising score matching by consid-ering linear models or by adopting theoretical assumptions that reduce nonlinear models to linear ones, such as random feature models (Rahimi & Recht, 2007) or the neural tangent kernel regime (Jacot et al., 2018). Boffi et al. (2025) study optimizing the score matching loss over infinitely wide shal-low networks. Only Han et al. (2025) prove that, under the DDPM loss, a diffusion model parameterized by a two-layer convolutional neural network learns data features and noise to the same order, a phenomenon referred to as the balanced feature learning (FL) mechanism. However, their analysis does not provide a convergence guarantee for training dy-namics and does not analyze transformers. Other works study convergence guarantees of DDPM samplers in terms of total variation or KL divergence (Li et al., 2023c; Chen et al., 2023; Azangulov et al., 2024; Huang et al., 2024b; Li & Yan, 2024; Liang et al., 2025) or the generalization of diffusion models (Bonnaire et al., 2025; Li et al., 2025d; Sclocchi et al., 2025; Pham et al., 2025). These works do not involve the model training analysis and therefore differ from the focus of our paper. 
+
+Optimization and generalization of transformers. Many works study the optimization and generalization of trans-formers for supervised learning tasks. Jelassi et al. (2022); Li et al. (2023a; 2024c); Huang et al. (2024a); Jiang et al. (2024) study the convergence of Transformer with a gen-eralization guarantee for binary classification or linear re-gression tasks via feature learning analysis. Tarzanagh et al. (2023a;b) show the gradient updates of weights or prompts converge to a max-margin SVM solution. None of these works involves convergence analysis of denoising tasks. 
+
+## 2. Problem Formulation 
+
+Data distribution. Each data point X = [ x1, · · · , xP ] ∈
+
+Rd×P contains P tokens x1, · · · , xP in Rd, each one sam-pled i.i.d. from a Multi-Token Gaussian Mixture (MTGM) 
+
+distribution D( ˜ π, K, {μi}Mi=1 , ρ 2), where {μi ∈ Rd}Mi=1 
+
+is a set of M orthogonal patterns , i.e., μ⊤ 
+
+> i
+
+μj = √dδ ij ;
+
+˜π ∈ ∆M −1 is a vector in the probability simplex such that 
+
+1⊤ ˜π = 1 and min m∈[M ] ˜πm > 0; K ≤ M is the number of distinct patterns in X; and ρ2 = Θ(1) is the variance of Gaussian components. Specifically, 
+
+Definition 1. X = ( x1, · · · , xP ) ∼ D ( ˜ π, K, {μi}Mi=1 , ρ )
+
+is sampled according to the following procedure: 1. Sample Z ∼ Unif( {z ∈ { 0, 1}M : 0 < ∥z∥0 = K < M });2. Let π(Z) = ( π1, · · · , π M ) with πi(Z) = [ Z]i ˜πi/Z⊤ ˜π;3. For each p ∈ [P ], sample Yp|Z ∼ Categorical M (π(Z)) ,and then sample xp|Yp ∼ N (μYp , ρ 2I).
+
+Remark 1. Definition 1 is an extension of the Gaussian mixture distribution. When K = 1 and P = 1 , each data point contains one token sampled from a Gaussian Mixture Model with mutually orthogonal cluster centers, which is frequently used in theoretical studies of training neural networks for classification tasks (Min & Vidal, 2025; Shen et al., 2025). When K > 1, each data point consists of multiple patterns, a common, albeit simplified, assumption in computer vision to model an image composed of K out of M possible objects. 
+
+Learning model. Let f (Ψ; X, t ) ∈ Rd×P be the output of the learning model, where Ψ is the set of model parameters, 
+
+X is the input to the model, and t is the diffusion time step. We assume f is a one-layer single-head transformer with parameters Ψ = {W , {vt}Tt=1 } ∈ Rd×d × RT , i.e., 
+
+f (Ψ; X, t ) =( f (Ψ; X, t )1, · · · , f (Ψ; X, t )P ),
+
+f (Ψ; X, t )p =vt(X −Xsoftmax( X⊤W x p
+
+d )) , (1) where softmax([ a1,· · · , a P ]⊤) = [ ea1 ,· · · , e aP]⊤/(P 
+
+> j
+
+eaj).This softmax function applies to a matrix column-wise, i.e., 
+
+softmax([ a1, · · · , aP ]) = [softmax( ai)] i∈[P ].
+
+Training objective and algorithm. We use the training objective of the Denoising Diffusion Probabilistic Model (DDPM) (Ho et al., 2020). For a given time step t ∈ [T ]
+
+and an input data point X0, we sample 
+
+Xt = √¯αtX0 + √1 − ¯αtE, (2) where E = ( ϵ1, · · · , ϵP ) ∈ Rd×P is the additive white Gaussian noise with ϵpi.i.d. 
+
+∼ N (0 , Id), and {¯αt}Tt=1 is the pre-determined noise scheduling coefficients. Given a sam-ple data point X0 ∼ D ( ˜ π, K, {μi}Mi=1 , ρ ) and time step 
+
+t ∼ Unif([ T ]) , Xt is obtained from (2). We then minimize the following per-dimension DDPM loss in expectation as introduced in Ho et al. (2020); Bonnaire et al. (2025): 
+
+L(Ψ) = 
+
+> T
+
+X
+
+> t=1
+
+EX0,E [∥f (Ψ; Xt, t ) − E∥2 
+
+> F
+
+/(2 dP T )] . (3) The above learning objective (3) is minimized via gradient descent with a learning rate η > 0. That is, at the training step s = 0 , we set W (0) = 0 and randomly initialize each v(0)  
+
+> t
+
+, t ∈ [T ] from N (0 , 1/d ). Then, for each training iteration s, the parameters are updated as follows: 
+
+W (s+1) = W (s) − η∇W L(Ψ) ,v(s+1)  
+
+> t
+
+= v(s) 
+
+> t
+
+− η∇vt L(Ψ) , ∀t ∈ [T ]. (4) 
+
+Score matching. Let pt(Xt) be the probability density function of Xt at time step t ∈ [T ]. The score function is 3Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+defined as s(Xt, t ) = ∇Xt log pt(Xt). The goal of score matching is to train a neural network sθ (Xt, t ) parameter-ized by θ that minimizes the score matching error: 
+
+E(θ) = 
+
+> T
+
+X
+
+> t=1
+
+EX0,E [∥sθ (Xt, t )−s(Xt, t )∥2 
+
+> F
+
+/(2 dP T )] . (5) Note that we use the per-dimension score matching error in (5) following (Bonnaire et al., 2025). 
+
+## 3. Main Theoretical Results 
+
+Let us first introduce the Bayes risk for the DDPM objective. 
+
+Definition 2. The Bayes denoising risk for the MTGM data model in Definition 1 and t ∼ Unif([ T ]) is defined as: 
+
+RBayes := EX0,E,t [∥E − E[E|Xt]∥2 
+
+> F
+
+/(2 dP )] . (6) 
+
+RBayes is the optimal risk achieved if one can minimize the DDPM loss over all possible denoising models. Our main results will show that under certain conditions, the gradient descent in (9) can learn a transformer model f (Ψ; X, t ) that attains a risk of RBayes + O(ϵ) for any arbitrarily small ϵ.To state our results, we need some additional notation. For 
+
+X0 ∼ D ( ˜ π, K, {μi}Mi=1 , ρ ) with Y the latent variable in Definition 1, let the minimal average pattern ratio for pat-tern u ∈ [M ] and the pattern imbalance ratio be defined as: 
+
+ν ˜π
+
+> min
+
+(K) = min   
+
+> u∈[M]
+
+ν ˜π 
+
+> u
+
+(K) := EX0
+
+h PX
+
+> p=1
+
+1[Yp = u]/P 
+
+i
+
+(7) 
+
+δ( ˜ π) = min   
+
+> u∈[M]
+
+˜πu/ max   
+
+> u∈[M]
+
+˜πu. (8) The former is the minimum average probability of selecting a pattern, and the latter measures the degree of imbalance between the prior probabilities of different patterns. Since 
+
+¯αt/(1 − ¯αt) is computed as the signal-noise ratio at time step t by (Luo, 2022), we denote SNR = Et[¯ αt/(1 − ¯αt)] 
+
+as the time-averaged SNR over the noise schedule. With the above definitions and notations, we now state the following theoretical result about the convergence of diffu-sion model training. 
+
+Theorem 1 (Convergence) . For any ϵ ∈ (0 , δ ( ˜ π)Θ(1) ), if (i) the dimension d ≥ Ω( ϵ−1 log( ϵ−1ν ˜π
+
+> min
+
+(K)−1)) , (ii) the number of diffusion steps T ≥ Ω(log d), (iii) the data dis-tribution satisfies P ≥ Ω( ν ˜π
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d),(iv) the algorithm in (4) is run with a step size η ≤
+
+O((max {ρ, 1} + ϵ)−1) and (v) with a number of iterations 
+
+S = Ω  (ϵ−1 + ν ˜π
+
+> min
+
+(K)−3)η−1ν ˜π
+
+> min
+
+(K)−1
+
+· SNR −3 + log( ρ2 + 1) ϵ−1, (9) 
+
+then with high probability over the Gaussian random initial-ization, the learned model with parameters Ψ(S) satisfies 
+
+L(Ψ (S)) ≤ RBayes + O(ϵ). (10) Theorem 1 shows that, if each data contains a sufficiently large number of tokens and the number of training iterations is large enough , then the one-layer single-head transformer diffusion model trained by gradient descent (4) will achieve a DDPM loss that deviates from the Bayes denoising risk 
+
+RBayes by only O(ϵ).We shall elaborate those conditions. The requirement of the dimension in condition (i) is to ensure that the difference between attention weights of query-key pairs with the same pattern is small, as will be described in Section 4.2. 
+
+Number of tokens. The required number of tokens per data point in condition (iii) scales linearly in ν ˜π
+
+> min
+
+(K)−1 and ρ2.Therefore, a less uniform distribution over the patterns and a higher noise level in a single data point increases the com-plexity of the denoising task, requiring more tokens in the data to learn an effective denoising model. The reason why more tokens per data benefits denoising will be explained in more detail in Section 4. 
+
+Number of iterations. The required number of GD iter-ations in condition (v) scales polynomially in ν ˜π
+
+> min
+
+(K)−1
+
+and SNR −1. This means that a more uniform distribution over the patterns and a larger time-averaged SNR in the forward process help the model parameters learn all the patterns so that the self-attention identifies tokens sampled from the same Gaussian cluster, which is a core mechanism for denoising the MTGM data (discussed in Section 4.2). Moreover, we can derive the following simplification for (9) regarding different choices of K ∈ [M ].
+
+Corollary 1. (a) When K = 1 , the number of iterations reaches its minimum, which leads to S = Ω( ϵ−1η−1M ·
+
+SNR −3). (b) When K = M , the required number of itera-tions reaches its maximum, which results in S = Ω(( ϵ−1 +min u∈[M ]{˜πu}−3)η−1 min u∈[M ]{˜πu}−1SNR −3).
+
+Notice that min u∈[M ]{˜πu} < 1/M , which leads to 
+
+M −1 min u∈[M ]{˜πu}−1 > 1, then Corollary 1 indicates that the required number of iterations for K = M is at least Ω( M −1 min u∈[M ]{˜πu}−1) times larger than that for 
+
+K = 1 . Therefore, the simplest pattern structure in the data, i.e., the case of K = 1 , leads to the fastest convergence. This is also aligned with the previous intuition that more diverse patterns in each data increase the complexity of the denoising task, making the training more challenging. 
+
+Constructing score model from learned denoiser. Next, we show how the trained transformer model can achieve a desired score matching error. 
+
+Theorem 2 (Score Matching) . Given the trained model in Theorem 1 with parameters Ψ(S) that satisfies (10) for some 
+
+ϵ ∈ (0 , δ ( ˜ π)Θ(1) ), we can construct 
+
+sθ (Xt, t ) = sΨ(S) (Xt, t ) = − f (Ψ (S); Xt, t )
+
+√1 − ¯αt
+
+, (11) 4Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+with θ = Ψ (S), such that 
+
+E(θ) = E(Ψ (S)) ≤ ϵ · (SNR + 1) . (12) Theorem 2 shows that a model trained under the conditions in Theorem 1 can be directly used to construct a score network that can achieve a score matching error of O(ϵ).Note that the construction in (11) is typically used to fit the conditional score function ∇Xt log pt(Xt|X0). Theorem 2 demonstrates that, under our problem setting, (11) can also match ∇Xt log pt(Xt) with an error that is close to 0.
+
+## 4. In-Depth Analysis of Convergence and Denoising With the Trained Transformer 
+
+This section investigates why the trained Transformer can reduce the DDPM loss in (3) to the Bayes denoising risk and enable score learning, as stated in Theorem 1 and Theorem 2. In Section 4.1, we show that the Transformer f (Ψ) learns the “oracle MMSE estimator” through GD training, thereby achieving the oracle denoising risk up to an excessive O(ϵ)
+
+risk. In Section 4.2, we show that the learned self-attention structure exhibits a mean denoising mechanism to enable denoising and score matching on the MTGM data even with different Gaussian mixture proportions from training. 
+
+4.1. What Does the Trained Transformer Converge to? 
+
+The optimal model that achieves the Bayes denoising risk in (2) is computed as E[E|Xt], which is the Minimum Mean Squared Error (MMSE) estimator of the added Gaussian noise given a noisy input at time step t. However, computing 
+
+E[E|Xt] for the MTGM data is challenging due to the highly complicated probability density function of pt(Xt).In our problem setting, we define another estimator of the added noise with the data mean known, which is easier to obtain and does not need the knowledge of pt(Xt). The specific definition is as follows. 
+
+Definition 3 (Oracle MMSE estimator and denoising risk) .
+
+With Definition 1, let MY = ( μY1 , · · · , μYP ) ∈ Rd×P be the matrix of mean patterns given Y . Then, for a noisy data Xt obtained from some X0 with latent variable Y ,we define the oracle MMSE estimator of E given MY as 
+
+E[E|Xt, MY ] = 
+
+√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+(Xt − √αtMY ). (13) 
+
+We define the oracle denoising risk , denoted by Roracle , as the DDPM loss with the oracle MMSE estimator as the denoising model for t ∼ Unif([ T ]) , which is computed as 
+
+Roracle := EX0,E,t [∥E − E[E|Xt, MY ]∥2 
+
+> F
+
+/(2 dP )] . (14) Note that Roracle is a lower bound of RBayes , because pro-viding the prior knowledge of MY gives more information than conditioning on Xt alone. Under squared loss, more information cannot worsen the optimal estimator. 
+
+Convergence to the oracle MMSE estimator. We then show that a one-layer, single-head Transformer trained un-der conditions in Theorem 1 approximates the oracle MMSE estimator. The following proposition reveals the implicit mechanism learned by the trained model. 
+
+Proposition 1. Given training conditions (i)-(v) in Theorem 1, with a high probability over random initialization, the algorithm in (4) returns a model with parameters Ψ(S) =
+
+{W (S), {v(S) 
+
+> t
+
+}Tt=1 } with the following properties: 1. The self-attention module satisfies that with a high prob-ability over the sampling of the clean data X0 and the noise E, for any computed noisy data Xt, t ∈ [T ] (to-gether with latent variable Y ), we have 
+
+∥√¯αtMY − Xtsoftmax( Xt⊤W (S)Xt/d )∥2
+
+> F
+
+dP 
+
+≤ O(( ρ2 + 1) log d/ (P ν ˜π
+
+> min
+
+(K))) ,
+
+(15) 
+
+2. The output weights satisfy that ∀t ∈ [T ],
+
+|v(S) 
+
+> t
+
+− √1 − ¯αt/(1 − ¯αt + ρ2 ¯αt)| ≤ O(ϵ). (16) Recall that our Transformer model is defined as 
+
+f (Ψ; Xt, t ) = vt
+
+ Xt − Xtsoftmax( Xt⊤W X t/d ) ,
+
+then (15) and (16) in Proposition 1 show that the trained model f (Ψ (S)) can approximate (13), i.e., the oracle MMSE estimator under known mean pattern MY of each data X0 with a diminishing error. Specifically, (15) indi-cates that the approximation error of MY decreases with an increasing total number of tokens P . A larger P can re-duce the estimation variance introduced by the noise added through the diffusion process. This means that if condition (iii) in Theorem 1 holds, the trained self-attention structure 
+
+Xtsoftmax (Xt⊤W (S)Xt/d ) can approximate √¯αtMY
+
+with a squared error of O(ϵ) per dimension (The key mech-anism behind such an approximation is discussed in Section 4.2). Then, (16) implies that the trained v(S) 
+
+> t
+
+for any t ∈ [T ]
+
+can approximate the linear coefficient term in(13) with an 
+
+O(ϵ) error. Finally, one can conclude with (15), (16) that 
+
+f (Ψ (S)) can approximate the oracle MMSE estimator (13) in the sense that they achieve similar denoising risks, i.e., 
+
+Corollary 2. The trained model with parameter Ψ(S) in Proposition 1 satisfies that L(Ψ (S)) ≤ Roracle + O(ϵ).
+
+Trained Transformer achieves near-optimal denoising. 
+
+Recall that in the DDPM loss (3) used for training, the mean pattern of each data MY is unknown, so in principle the best attainable loss after training should be RBayes as in (10). However, (15) has a straightforward but important implication: since the latent mean patterns MY can be reliably estimated from the observed noisy data Xt at every diffusion time steps when the total number of tokens per 5Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+data is large, the Bayes risk in (6) with only the knowledge of Xt should not be much worse than the oracle one in (14). Indeed, it can be shown independently that 
+
+Proposition 2. Given condition (iii) in Theorem 1 hold for some ϵ ∈ (0 , δ Θ(1) ), we can obtain 
+
+RBayes − Roracle ≤ O(ϵ). (17) Combining Corollary 2 and Proposition 2, one obtain our main Theorem 1, showing that the trained transformer achieves near optimal denoising risk. 
+
+Remark 2. As illustrated in this Section 4.1, we have taken a novel approach to characterizes the near-optimal denois-ing model for the MTGM data. Prior work, Wang et al. (2024a) for example, considers much simpler data distribu-tions such as low-rank Gaussian mixture model, for which the true MMSE estimator E[E|Xt] can be analyzed directly. For MTGM data, however, the true MMSE estimator has a complicated expression due to the additional pattern subset selection step in the data sampling procedure (as in Defi-nition 1). To address this challenge, our work adopts the oracle MMSE estimator, which has a simple interpretable ex-pression and approximates the true MMSE estimator closely in the large-P regime, as a bridge to characterize the near-optimal denoising model, thereby showing that Transformer can indeed learn the optimal denoiser. 
+
+4.2. What Mechanism Does the Trained Transformer Parameters Learn from Diffusion Model Training? 
+
+In this section, we delve into the question of what denois-ing mechanism the Transformer parameters learn during training, which enables the model to approximate the ora-cle MMSE estimator and exhibit a desired performance of score matching. Recall the expressions for the transformer model in (1) and the oracle MMSE estimator in (13), one core question is why the self-attention structure in (1) can approximate the mean patterns √αtMY at diffusion time step t, which we shall explain carefully next. 
+
+Query-key inner products reveal tokens with the same pattern. First, the following proposition reveals how the trained self-attention behaves on different input data. 
+
+Proposition 3. Consider the trained model in Theorem 1 with parameters Ψ(S) = {W (S), {v(S) 
+
+> t
+
+}Tt=1 } that satisfies (10) for some ϵ ∈ (0 , δ ( ˜ π)Θ(1) ). With a high probability over the sampling of the clean data X0 and the noise E,any computed noisy data Xt, t ∈ [T ] (together with latent variable Y ) satisfies that for any triplet i, j, k ∈ [P ] whose corresponding latent variables satisfy that Yi = Yj̸ = Yk,we have 
+
+xtj ⊤W (S)xti/d ≥ log  Ω( ϵ−1Kδ ( ˜ π)) /2, (18) 
+
+|xtk⊤W (S)xti/d | ≤ O(log d/ √d) · xtj ⊤W (S)xti/d. (19) Proposition 3 shows that, on the one hand, if the query and key vectors are two tokens sampled with the same pattern, which is indicated by their latent variables Yi = Yj , then their inner product admits a large lower bound of order 
+
+log Ω( ϵ−1) after training. On the other hand, if the query and key vectors are tokens with two different patterns, then the absolute value of their inner product is relatively small, which is on the order of O(d−1/2) times that of a query–key pair with the same pattern. This implies that, even though each token of Xt contains a large amount of noise injected by the forward diffusion process, the trained self-attention layer can still capture and pair tokens with the same pattern. 
+
+Softmax attention concentration enables mean denoising. 
+
+Based on Proposition 3, we then compute the weights output by the softmax attention of the trained model to introduce the mean denoising mechanism in the following corollary. 
+
+Corollary 3 (Mean denoising mechanism) . For any data 
+
+X0 ∼ D ( ˜ π, {μi}Mi=1 , ρ ) with a latent variable Y , denote 
+
+SY 
+
+> u
+
+= {p ∈ [P ] : Yp = u} for any u ∈ [M ]. Then, given the same trained model as in Proposition 3, with a high probability over the sampling of the clean data X0
+
+and the noise E, for any computed noisy data Xt, t ∈ [T ]
+
+(together with latent variable Y ), u ∈ [M ], and p ∈ S Y 
+
+> u
+
+,
+
+p′, p ′′ ∈ S Y 
+
+> u
+
+, p′̸ = p′′ , we have 
+
+X
+
+> p′∈S u
+
+softmax( Xt⊤W (S)xtp/d )p′ ≥ 1 − √ϵ, (20) 
+
+softmax( Xt⊤W (S)xtp/d )p′
+
+=(1 ± Θ( ϵ))softmax( Xt⊤W (S)xtp/d )p′′ . (21) Corollary 3 shows that: When one inspects each column of the softmax attention output of the trained model given a new noisy data Xt whose p-th token xtp is associated with the latent variable Yp = u, the attention weights are con-centrated among all tokens with the same pattern, as char-acterized by (20); Moreover, the attention probabilities are distributed almost uniformly among those tokens, as shown by (21). As such, for each input token xtp, the self-attention structure approximately outputs the mean of tokens that share the same pattern, i.e., a minimum-variance unbiased estimator (MVUE) of the mean of the Gaussian component from which xtp is sampled. We refer to this attention be-havior as the Mean denoising mechanism. This mechanism suggests that self-attention can estimate √αtMY in (13) reliably and with minimal bias as long as for every pattern appeared in MY , there is a sufficient number of tokens sampled with that pattern. Consequently, the total number of tokens per data P is required to be large, as stated in (iii) in our Theorem 1, to achieve near-optimal denoising for the MTGM data. 
+
+Implication of the mechanism on denoising data with a shifted ˜π. The conclusion of Proposition 3 shows that the 6Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+trained self-attention module learns all patterns, regardless of their proportions in the data distribution. This motivates our discussion of the generative performance on test data with a shifted pattern proportion parameter ˜π.Specifically, consider X0 ∼ D ( ˜ π′, K, {μi}Mi=1 , ρ ), where 
+
+˜π′ may not equal to ˜π, i.e., the fraction of Gaussian com-ponents of training data. The DDPM loss in expectation and the score matching error are then computed following (3) and (5), respectively, but based on input distribution parameterized with ˜π′. We obtain the following corollary. 
+
+Corollary 4. Given the trained model in Theorem 1 with pa-rameters Ψ(S) that satisfies (10) for some ϵ ∈ (0 , δ ( ˜ π)Θ(1) ),then for any X0 ∼ D ( ˜ π′, K, {μi}Mi=1 , ρ ) with the num-ber of tokens P ≥ Ω( ν ˜π′
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d) in each data, we have L(Ψ (S)) ≤ Roracle + O(ϵ), E(Ψ (S)) ≤ O(ϵ).
+
+Corollary 4 shows that a model trained under the conditions of Theorem 1 can also achieve an O(ϵ) DDPM loss and score matching error on data with distribution-shifted pat-tern proportions if the number of tokens per data is large enough. This is because (18) shows that the trained self-attention mechanism yields a large lower bound on the in-ner product between queries and keys that share the same pattern. This bound holds uniformly for all patterns, and therefore the model does not fail to learn a pattern simply because it appears with low frequency. As a result, even when ˜π shifts to ˜π′, as long as each data point contains sufficiently many tokens that scales with ν ˜π′
+
+> min
+
+(K)−1 such that self-attention can denoise by averaging tokens with the same pattern, the model can successfully denoise under the shifted data distribution and achieve effective score learning. 
+
+4.3. Proof Idea, Technical Novelty, and Limitations Proof idea of Theorem 1 . In Lemma 3, we prove that the gradient updates of W (s) along directions corresponding to query–key pairs with the same pattern admit a lower bound, while the norm of the gradient updates along directions cor-responding to query–key pairs with different patterns is very small. By accumulating gradients updates over steps, we obtain the mean denoising mechanism described in Proposi-tion 3 and Corollary 3, at which point the optimization of 
+
+W (s) converges (Lemma 4). Note that patterns with smaller fractions are learned more slowly than those with larger frac-tions. To ensure that the mean denoising mechanism holds for all patterns, the required number of training iterations we derive depends on ν ˜π
+
+> min
+
+, the minimum probability of selecting a pattern in data. The training of v(s) 
+
+> t
+
+is then re-duced to a linear problem, and Lemma 5 provides a proof of convergence. Since the learned parameters are close to the oracle MMSE estimator, we can show that the DDPM loss after training is close to Roracle . Combined with Proposition 2, this yields the global convergence result stated in (10). 
+
+Proof idea of Theorem 2. The score matching error (5) can be decomposed into the error of fitting the conditional score function ∇Xt log pt(Xt|X0) and the discrepancy be-tween the score function and the conditional score function. The former can be upper bounded by O(ϵ) since the trained Transformer can approximate the conditional score function by Proposition 1. The latter can be shown, based on Propo-sition 2, to be O(ϵ). Therefore, we can construct a score network in (11) via the trained model Ψ such that the score matching error is as small as O(ϵ).
+
+Technical novelty. Our proof technique is inspired by the feature learning technique in studying Transformers. For the first time, we extend their analysis of label-prediction tasks, such as binary classification (Li et al., 2023a; 2024a; Jiang et al., 2024) and linear regression (Zhang et al., 2023b; Huang et al., 2023), to denoising tasks. Our work also extends the mechanism of attention concentration (Huang et al., 2023; Li et al., 2023a; 2024a) to diffusion models in denoising (Corollary 3). Our technique preserves the nonlinearity of diffusion models rather than linearizing the model by an impractical extremely-wide network assump-tion in (Han et al., 2024; Wang et al., 2024b). This enables a convergence analysis beyond the NTK regime. 
+
+Limitations and possible future extensions Although we consider more complex models and data distributions than those in prior works as discussed in Section 1, our analy-sis is still under a restricted setting: the network model is a one-layer, single-head Transformer, the data follows the MTGM distribution with orthogonal patterns, and the GD algorithm is run on population DDPM loss. We emphasize, however, that the focus of this paper is to provide an initial theoretical understanding of the convergence and denois-ing mechanisms of Transformer-based diffusion models, which could serve as building blocks for rigorous analysis in more realistic settings. One potential future extension is to study the convergence behavior of the multi-head atten-tion Transformer when the data model possesses multiple types of internal relationships among tokens. Another is to extend the convergence results to empirical DDPM losses and analyze the generalization of DDPM by studying the gap between the empirical and population loss. 
+
+## 5. Numerical Experiments 
+
+In this section, we conduct synthetic experiments in Sec-tion 5.1 and real-data experiments in Section 5.2 to justify our findings, respectively. Due to space limitations, some additional experiments are moved to Appendix. 
+
+5.1. Synthetic Experiments Setup. Synthetic data are generated as described in Def-inition 1. Let d = 64 , M = 8 , P = 256 , ρ = 0 .3. If not specified, K = 4 . We consider generating uniform or non-uniform scenarios by varying min u∈[M ] ˜πu. A smaller 
+
+min u∈[M ] ˜πu indicates a more non-uniform distribution 7Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+(A) (B) (C) (D) (E)                               
+
+> Figure 2. The convergence performance and the attention behavior of the trained model. (A) The green and red curves are the test loss and score matching error during diffusion model training, respectively. Blue dashed line: Bayes denoising risk. Black dashed line: oracle denoising risk. (B) Excess risk with varying K, the number of Gaussian components per data. (C) Excess risk with varying min u∈[M]˜πu,i.e., the minimal fraction among all the Gaussian components. A larger min u∈[M]˜πuindicates a more uniform distribution of all the patterns. (D) Excess risk with different sampling strategies. Red curve: uniform sampling t∼Unif([ T]) . Green curve: sampling from the first 40% time steps, i.e., t∼Unif([1 ,0.4·T]) . Blue curve: sampling from the last 40% time steps, i.e., t∼Unif(0 .6·T, T ). (E) The attention weight summation on keys with the same pattern as the query and on other keys.
+
+among patterns. The learning model is a one-layer single-head Transformer as formulated in (1). The total number of time steps is T = 50 . We adopt a linear schedule, i.e., 
+
+¯αt = Qti=1 αi, where αt = α1 −(α1 −αT )·(t−1) /(T −1) .We set α1 = 0 .98 , αT = 0 .95 . Since the Bayes denoising risk may vary under different hyperparameter settings, we compute the excess risk, denoted by L(Ψ (s)) − Roracle with 
+
+X0 ∼ D ( ˜ π′, K, {μi}Mi=1 , ρ ), to characterize the distance between the model and global convergent point. Note that during evaluation, we directly use ˜π′, which is a randomly generated uniform pattern distribution independent of ˜π.This is to measure the performance of the trained model under distribution shifts in the pattern proportion, thereby more accurately characterizing the quality of how the model learns the patterns. 
+
+Convergence and score learning. In Figure 2, we showcase the results of convergence and score matching performance of the trained model. 2 A reveals that the Bayes denoising risk is close to the oracle denoising risk, which verifies (17) of Proposition 2. In addition, the DDPM loss gradually decreases during training to a value close to these two risks, while the score matching error gradually decreases to near zero. These observations are consistent with (10) of Theo-rem 1 and (5) in Theorem 2, respectively. 2 B substantiates the discussion in Corollary 1 regarding the effect of K on the number of training iterations required for convergence. 2 C shows that a more uniform distribution over pattern types can reduce the number of iterations needed for train-ing. 2 D explains that sampling only at smaller time steps can accelerate convergence, because under a linear schedule, 
+
+¯αt is a decreasing function of the time step t. Therefore, sampling only from the first 40% of time steps is equiva-lent to increasing the time-averaged SNR, which speeds up convergence according to Theorem 1. 
+
+Mean denoising mechanism. We next verify the findings in Section 4.2 regarding the mean denoising mechanism. We demonstrate that the sum of attention weights on keys with the same pattern as the query increases to close to 1
+
+during the training in Figure 2 (E), which justifies (20) in Corollary 3 for mean denoising. 
+
+5.2. Real-Data Experiments Setup. We conduct experiments on the real dataset MNIST (LeCun et al., 2002). We select digits “0”, “1”, “2”, and “3” for training and generation, where digit “2” is treated as a minority class with only 30% of its training set used, while the other digits use the full training set. The training model is a 6-layer, 4-head DiT (Peebles & Xie, 2023). We also train a CNN on MNIST to label the generated digits. During the training, we compute the FID score for each of the four generated digits to measure generation quality at different training stages.  
+
+> Figure 3. FID score of the four generated digits of MNIST. The FID of the mi-nority, “2” decreases more slowly than the others.
+
+Training dynamics for gener-ation. As a minority pattern, digit “2” exhibits a slower de-crease in FID score than the other digits (Figure 3). This in-dicates that different patterns are learned at different speeds, i.e., the high-frequency pat-tern is learned faster than the low-frequency pattern, which is consistent with the training dynamics from the proof of Theorem 1 in Section 4.3. 
+
+## 6. Conclusion 
+
+This paper provides a global convergence and score-learning analysis for a one-layer, single-head nonlinear Transformer in diffusion model training. This work also offers a theo-retical understanding of how Transformer models learn the oracle MMSE estimator of the training problem through the mean denoising mechanism. Future directions include analyzing and designing different sampling strategies, opti-mization algorithms, and diffusion model frameworks. 8Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+## Impact Statement 
+
+This paper aims to explore the convergence analysis and the denoising mechanism of diffusion model parameterized by Transformers. The primary focus is on the mathematical analysis of convergence and training dynamics. To the best of our knowledge, no potential societal consequences are associated with our work. 
+
+## The Use of Large Language Models 
+
+We used large-language models (ChatGPT) to help polish the writing of this paper. 
+
+## References 
+
+Allen-Zhu, Z. and Li, Y. Towards understanding ensem-ble, knowledge distillation and self-distillation in deep learning. In The Eleventh International Conference on Learning Representations , 2023. Arriola, M., Sahoo, S. S., Gokaslan, A., Yang, Z., Qi, Z., Han, J., Chiu, J. T., and Kuleshov, V. Block diffusion: Interpolating between autoregressive and diffusion lan-guage models. In The Thirteenth International Confer-ence on Learning Representations , 2025. URL https: //openreview.net/forum?id=tyEyYT267x .Azangulov, I., Deligiannidis, G., and Rousseau, J. Conver-gence of diffusion models under the manifold hypothesis in high-dimensions. arXiv preprint arXiv:2409.18804 ,2024. Bar-Tal, O., Chefer, H., Tov, O., Herrmann, C., Paiss, R., Zada, S., Ephrat, A., Hur, J., Liu, G., Raj, A., et al. Lu-miere: A space-time diffusion model for video generation. In SIGGRAPH Asia 2024 Conference Papers , pp. 1–11, 2024. Boffi, N. M., Jacot, A., Tu, S., and Ziemann, I. Shallow dif-fusion networks provably learn hidden low-dimensional structure. In The Thirteenth International Conference on Learning Representations , 2025. Bonnaire, T., Urfin, R., Biroli, G., and M ´ezard, M. Why diffusion models don’t memorize: The role of implicit dynamical regularization in training. arXiv preprint arXiv:2505.17638 , 2025. Cai, M., Cun, X., Li, X., Liu, W., Zhang, Z., Zhang, Y., Shan, Y., and Yue, X. Ditctrl: Exploring attention control in multi-modal diffusion transformer for tuning-free multi-prompt longer video generation. In Proceedings of the Computer Vision and Pattern Recognition Conference , pp. 7763–7772, 2025. Chen, S., Chewi, S., Li, J., Li, Y., Salim, A., and Zhang, A. Sampling is as easy as learning the score: theory for diffusion models with minimal data assumptions. In The Eleventh International Conference on Learning Repre-sentations , 2023. Han, A., Huang, W., Cao, Y., and Zou, D. On the feature learning in diffusion models. In The Thirteenth Interna-tional Conference on Learning Representations , 2025. Han, Y., Razaviyayn, M., and Xu, R. Neural network-based score estimation in diffusion models: Optimization and generalization. In The Twelfth International Conference on Learning Representations , 2024. Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-bilistic models. Advances in neural information process-ing systems , 33:6840–6851, 2020. Hoogeboom, E., Satorras, V. G., Vignac, C., and Welling, M. Equivariant diffusion for molecule generation in 3d. In 
+
+International conference on machine learning , pp. 8867– 8887. PMLR, 2022. Huang, Y., Cheng, Y., and Liang, Y. In-context conver-gence of transformers. In NeurIPS 2023 Workshop on Mathematics of Modern Machine Learning , 2023. Huang, Y., Wen, Z., Chi, Y., and Liang, Y. Transformers provably learn feature-position correlations in masked im-age modeling. arXiv preprint arXiv:2403.02233 , 2024a. Huang, Z., Wei, Y., and Chen, Y. Denoising diffusion probabilistic models are optimally adaptive to unknown low dimensionality. arXiv preprint arXiv:2410.18784 ,2024b. Jacot, A., Gabriel, F., and Hongler, C. Neural tangent ker-nel: Convergence and generalization in neural networks. 
+
+Advances in neural information processing systems , 31, 2018. Jelassi, S., Sander, M., and Li, Y. Vision transformers provably learn spatial structure. Advances in Neural In-formation Processing Systems , 35:37822–37836, 2022. Jiang, J., Huang, W., Zhang, M., Suzuki, T., and Nie, L. Un-veil benign overfitting for transformer in vision: Training dynamics, convergence, and generalization. In The Thirty-eighth Annual Conference on Neural Information Pro-cessing Systems , 2024. URL https://openreview. net/forum?id=FGJb0peY4R .Kong, Z., Ping, W., Huang, J., Zhao, K., and Catanzaro, B. Diffwave: A versatile diffusion model for audio synthesis. In International Conference on Learning Representations ,2021. 9Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+LeCun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradient-based learning applied to document recognition. Proceed-ings of the IEEE , 86(11):2278–2324, 2002. Li, G. and Yan, Y. Adapting to unknown low-dimensional structures in score-based diffusion models. Advances in Neural Information Processing Systems , 37:126297– 126331, 2024. Li, H., Wang, M., Liu, S., and Chen, P.-Y. A theoretical understanding of shallow vision transformers: Learning, generalization, and sample complexity. In The Eleventh International Conference on Learning Representations ,2023a. URL https://openreview.net/forum? id=jClGv3Qjhb .Li, H., Wang, M., Lu, S., Wan, H., Cui, X., and Chen, P.-Y. Transformers as multi-task feature selectors: Generaliza-tion analysis of in-context learning. In NeurIPS 2023 Workshop on Mathematics of Modern Machine Learning ,2023b. URL https://openreview.net/forum? id=BMQ4i2RVbE .Li, H., Wang, M., Lu, S., Cui, X., and Chen, P.-Y. How do nonlinear transformers learn and generalize in in-context learning? In Forty-first International Con-ference on Machine Learning , 2024a. URL https: //openreview.net/forum?id=I4HTPws9P6 .Li, H., Wang, M., Lu, S., Cui, X., and Chen, P.-Y. How do nonlinear transformers acquire generalization-guaranteed cot ability? In High-dimensional Learning Dynamics 2024: The Emergence of Structure and Reasoning , 2024b. Li, H., Wang, M., Ma, T., Liu, S., ZHANG, Z., and Chen, P.-Y. What improves the generalization of graph trans-formers? a theoretical dive into the self-attention and positional encoding. In Forty-first International Con-ference on Machine Learning , 2024c. URL https: //openreview.net/forum?id=mJhXlsZzzE .Li, H., Wang, M., Zhang, S., Liu, S., and Chen, P.-Y. Learn-ing on transformers is provable low-rank and sparse: A one-layer analysis. In 2024 IEEE 13rd Sensor Array and Multichannel Signal Processing Workshop (SAM) ,pp. 1–5. IEEE, 2024d. Li, H., Lu, S., Chen, P.-Y., Cui, X., and Wang, M. Training nonlinear transformers for chain-of-thought inference: A theoretical generalization analysis. In The Thirteenth International Conference on Learning Representations ,2025a. Li, H., Lu, S., Cui, X., Chen, P.-Y., and Wang, M. Can mamba learn in context with outliers? a theoretical gen-eralization analysis. arXiv preprint arXiv:2510.00399 ,2025b. Li, H., Zhang, Y., Zhang, S., Chen, P.-Y., Liu, S., and Wang, M. When is task vector provably effective for model editing? a generalization analysis of nonlinear transformers. In The Thirteenth International Conference on Learning Representations , 2025c. Li, P., Li, Z., Zhang, H., and Bian, J. On the generaliza-tion properties of diffusion models. Advances in Neural Information Processing Systems , 36:2097–2127, 2023c. Li, T., Biferale, L., Bonaccorso, F., Scarpolini, M. A., and Buzzicotti, M. Synthetic lagrangian turbulence by gener-ative diffusion models. Nature Machine Intelligence , 6 (4):393–403, 2024e. Li, X., Dai, Y., and Qu, Q. Understanding generalizability of diffusion models requires rethinking the hidden gaussian structure. Advances in neural information processing systems , 37:57499–57538, 2024f. Li, X., Zhang, Z., Li, X., Chen, S., Zhu, Z., Wang, P., and Qu, Q. Understanding representation dynamics of diffusion models via low-dimensional modeling. arXiv preprint arXiv:2502.05743 , 2025d. Liang, J., Huang, Z., and Chen, Y. Low-dimensional adapta-tion of diffusion models: Convergence in total variation. 
+
+arXiv preprint arXiv:2501.12982 , 2025. Luo, C. Understanding diffusion models: A unified perspec-tive. arXiv preprint arXiv:2208.11970 , 2022. Luo, Y., Li, H., Shi, L., and Wu, X.-M. Enhancing graph transformers with hierarchical distance structural encod-ing. In The Thirty-eighth Annual Conference on Neural Information Processing Systems , 2024. URL https: //openreview.net/forum?id=U4KldRgoph .Min, H. and Vidal, R. Gradient flow provably learns ro-bust classifiers for orthonormal gmms. In Forty-second International Conference on Machine Learning , 2025. Mohri, M., Rostamizadeh, A., and Talwalkar, A. Founda-tions of machine learning . MIT press, 2018. Peebles, W. and Xie, S. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF interna-tional conference on computer vision , pp. 4195–4205, 2023. Pham, B., Raya, G., Negri, M., Zaki, M. J., Ambrogioni, L., and Krotov, D. Memorization to generalization: Emergence of diffusion models from associative memory. 
+
+arXiv preprint arXiv:2505.21777 , 2025. Price, I., Sanchez-Gonzalez, A., Alet, F., Andersson, T. R., El-Kadi, A., Masters, D., Ewalds, T., Stott, J., Mohamed, S., Battaglia, P., et al. Probabilistic weather forecasting with machine learning. Nature , 637(8044):84–90, 2025. 10 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Rahimi, A. and Recht, B. Random features for large-scale kernel machines. In Advances in Neural Information Processing Systems , volume 20, 2007. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., and Ommer, B. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition , pp. 10684–10695, 2022. Ruan, L., Ma, Y., Yang, H., He, H., Liu, B., Fu, J., Yuan, N. J., Jin, Q., and Guo, B. Mm-diffusion: Learning multi-modal diffusion models for joint audio and video generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 10219– 10228, 2023. Sahoo, S., Arriola, M., Schiff, Y., Gokaslan, A., Marroquin, E., Chiu, J., Rush, A., and Kuleshov, V. Simple and effective masked diffusion language models. Advances in Neural Information Processing Systems , 37:130136– 130184, 2024. Sclocchi, A., Favero, A., and Wyart, M. A phase transition in diffusion models reveals the hierarchical nature of data. 
+
+Proceedings of the National Academy of Sciences , 122 (1):e2408799121, 2025. Shandirasegaran, M., Li, H., Zhang, S., Wang, M., and Zhang, S. A theoretical analysis of mamba’s training dynamics: Filtering relevant features for generalization in state space models. In The Fourteenth International Conference on Learning Representations , 2026. Shen, W., Zhou, R., Yang, J., and Shen, C. On the training convergence of transformers for in-context classification of gaussian mixtures. In Forty-second International Con-ference on Machine Learning , 2025. Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and Ganguli, S. Deep unsupervised learning using nonequi-librium thermodynamics. In International conference on machine learning , pp. 2256–2265. pmlr, 2015. Song, Y. and Ermon, S. Generative modeling by estimating gradients of the data distribution. Advances in neural information processing systems , 32, 2019. Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Er-mon, S., and Poole, B. Score-based generative modeling through stochastic differential equations. In International Conference on Learning Representations , 2021. Sun, J., Zhang, S., Li, H., and Wang, M. Contrastive learn-ing with data misalignment: Feature purity, training dy-namics and theoretical generalization guarantees. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. Tarzanagh, D. A., Li, Y., Thrampoulidis, C., and Oymak, S. Transformers as support vector machines. arXiv preprint arXiv:2308.16898 , 2023a. Tarzanagh, D. A., Li, Y., Zhang, X., and Oymak, S. Max-margin token selection in attention mechanism. CoRR ,2023b. Vershynin, R. Introduction to the non-asymptotic analysis of random matrices. arXiv preprint arXiv:1011.3027 ,2010. Wang, B. and Pehlevan, C. An analytical theory of spectral bias in the learning dynamics of diffusion models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. Wang, P., Zhang, H., Zhang, Z., Chen, S., Ma, Y., and Qu, Q. Diffusion models learn low-dimensional distributions via subspace clustering. arXiv preprint arXiv:2409.02426 ,2024a. Wang, Y., He, Y., and Tao, M. Evaluating the design space of diffusion-based generative models. Advances in Neu-ral Information Processing Systems , 37:19307–19352, 2024b. Xing, Z., Feng, Q., Chen, H., Dai, Q., Hu, H., Xu, H., Wu, Z., and Jiang, Y.-G. A survey on video diffusion models. 
+
+ACM Computing Surveys , 57(2):1–42, 2024. Zhang, B., Li, H., Shi, C., Rong, G., Zhao, H., Wang, D., Guo, D., and Wang, M. Merging smarter, generalizing better: Enhancing model merging on ood data. arXiv preprint arXiv:2506.09093 , 2025a. Zhang, C., Zhang, C., Zheng, S., Zhang, M., Qamar, M., Bae, S.-H., and Kweon, I. S. A survey on audio diffusion models: Text to speech synthesis and enhancement in generative ai. arXiv preprint arXiv:2303.13336 , 2023a. Zhang, R., Frei, S., and Bartlett, P. L. Trained trans-formers learn linear models in-context. arXiv preprint arXiv:2306.09927 , 2023b. Zhang, Y., Li, H., Yao, Y., Chen, A., Zhang, S., Chen, P.-Y., Wang, M., and Liu, S. Visual prompting reimagined: The power of activation prompts. In The Second Conference on Parsimony and Learning (Recent Spotlight Track) ,2025b. 11 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+The appendix is organized as follows. In Section A, we show some extra experiments. In Section B, we introduce important notations and lemmas used in the paper. In Section C, we prove the main theorems of the paper. In Section D, we provide the proof of the supporting key lemmas. 
+
+## A. Additional Experiments 
+
+We first plot the query-key inner product of synthetic data. Figure 4 shows that, first, the query–key inner products corresponding to the same pattern are large and grow along the training, while those corresponding to different patterns remain small. Second, different patterns are learned at different speeds: the high-frequency pattern associated with 
+
+max u∈[M ] ˜πu is learned faster and with smaller magnitude fluctuations than the low-frequency pattern associated with 
+
+min u∈[M ] ˜πu. We use a red dashed line and a red solid line to show the different required number of iterations of the inner products corresponding to different patterns. This result is aligned with Proposition 3.      
+
+> Figure 4. Query-key inner products with the same or different patterns, where query patterns are the minimal or maximal of ˜π.
+> min u∈[M]˜πu= 0 .01 .
+
+In Figure 5, we show the visualization of the four generated MNIST digits using DiT (Peebles & Xie, 2023). The result shows that the final generation quality of the minority digit “2”, is relatively worse. 
+
+## B. Preliminaries 
+
+We first present Table 2 for a summary of notations used in the proof. 
+
+Lemma 1. (Multiplicative Chernoff bounds, Theorem D.4 of (Mohri et al., 2018)) Let X1, · · · , Xm be independent random variables drawn according to some distribution D with mean p and support included in [0 , 1] . Then, for any γ ∈ [0 , 1 
+
+> p
+
+− 1] , 
+
+> Figure 5. Visualization of the generated digits.
+
+12 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs  
+
+> Table 2. Summary of Notations
+
+Notations Annotation 
+
+d, P d is the dimension of each token of data. P is the total number of tokens in each data. 
+
+M , K M is the total number of mean patterns. K is the number of distinct patterns in each data. 
+
+˜π, {μi}Mi=1 , ρ ˜π is the fraction vector of all the Gaussian components of the MTGM distribution. {μi}Mi=1 is the set of all the mean patterns. ρ2 is the variance of the Gaussian components. 
+
+X, Y , Z X denotes the data. Y ad Z are the latent variable to define the distribution of X.
+
+Ψ, W , T , {vt}Tt=1 Ψ is the set of parameters in the learning model. In our work, Ψ contains W and {vt}Tt=1 ,where W is the self-attention parameter, and {vt}Tt=1 is the coefficient parameter. T is the total number of diffusion time steps. 
+
+X0, {¯αt}Tt=1 , E, Xt Xt is the noisy input at time step t. X0 is the clean input before adding the noise. {¯α}Tt=1 is the noise schedule coefficients. E is the additive Gaussian noise. 
+
+s(Xt, t ), sθ (Xt, t ) s(Xt, t ) is the score function. sθ (Xt, t ) is the neural network parameterized by θ to learn the score function. 
+
+ν ˜π
+
+> min
+
+, δ(π), SNR ν ˜π 
+
+> min
+
+is the minimum average probability of selecting a pattern in the data. δ(π) is the degree of imbalance between the prior probabilities of the least and the most probable patterns. SNR is the time-averaged signal-noise-ratio over the noise schedule. 
+
+RBayes , MY , Roracle RBayes is the optimal risk of minimizing the DDPM loss, where the denoising model is chosen as the MMSE estimator of the noise. MY is the matrix of mean patterns given Y , the latent variable of X. Roracle is the risk if the denoising model is chosen as the oracle MMSE estimator with MY as known.    
+
+> O() ,Ω() ,Θ()
+
+We follow the convention that f (x) = O(g(x)) (or Ω( g(x)) , Θ( g(x))) ) means that f (x)
+
+increases at most, at least, or in the order of g(x), respectively. Specifically, if f (x) = O(g(x)) ,then there exists C > 0 and a > 0, such that f (x) ≤ C · g(x) when x > a . If f (x) = Ω( g(x)) ,then there exists c > 0 and a > 0, such that f (x) ≥ c · g(x) when x > a . If f (x) = Θ( g(x)) ,then there exists C > c > 0 and a > 0, such that c · g(x) ≤ f (x) ≤ C · g(x) when x > a .  
+
+> ≳,≲
+
+f (x) ≳ g(x) (or f (x) ≲ g(x) ) means that f (x) ≥ Ω( g(x)) (or f (x) ≲ O(g(x)) ).  
+
+> poly()
+
+If f (x) = poly( x), then there exists k > 0 and a set of constants {ci}ki=0 , such that f (x) = 
+
+Pki=0 cixi, which means f (x) is a polynomial function of x with a finite maximal power. 
+
+the following inequality holds for ˆp = 1
+
+> m
+
+Pmi=1 Xi:
+
+Pr(ˆ p ≥ (1 + γ)p) ≤ e− mpγ 23 , (22) 
+
+Pr(ˆ p ≤ (1 − γ)p) ≤ e− mpγ 22 . (23) 
+
+Definition 4. (Vershynin, 2010) We say X is a sub-Gaussian random variable with sub-Gaussian norm K > 0, if 
+
+(E|X|p) 1 
+
+> p
+
+≤ K√p for all p ≥ 1. In addition, the sub-Gaussian norm of X, denoted ∥X∥ψ2 , is defined as ∥X∥ψ2 =sup p≥1 p− 12 (E|X|p) 1 
+
+> p
+
+.
+
+Lemma 2. ((Vershynin, 2010) Proposition 5.1, Hoeffding’s inequality) Let X1, X 2, · · · , X N be independent centered sub-gaussian random variables, and let K = max i ∥Xi∥ψ2 . Then for every a = ( a1, · · · , a N ) ∈ RN and every t ≥ 0, we have 
+
+Pr 
+
+ NX
+
+> i=1
+
+aiXi ≥ t
+
+
+
+≤ e · exp 
+
+
+
+− ct 2
+
+K2∥a∥2
+
+
+
+, (24) 
+
+where c > 0 is an absolute constant. 
+
+Definition 5. For i, p ∈ [P ], t ∈ [T ], u ∈ [M ], and X that follows Definition 1, we denote ζui,p,t (s) =
+
+softmax p(xti⊤W (s)xtp/d )1[Yp = u].
+
+Lemma 3. Given conditions (i)-(v) in Theorem 1, we have that for any ˜X that follows the distribution in Definition 1, where 
+
+13 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+˜xj and ˜xj′ have μu as the mean, and ˜xk has μu′ as the mean ( u̸ = u′), then we have for any s > 0,
+
+(− ˜xtj ⊤) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′
+
+≳ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s0) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+d(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s0)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s0)] · ν ˜π 
+
+> u
+
+(K),
+
+(25) 
+
+(− ˜x⊤ 
+
+> k
+
+) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′ ≲ log d
+
+√d · (− ˜x⊤ 
+
+> j
+
+) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′ . (26) 
+
+Lemma 4. For any ϵ ∈ (0 , δ Θ(1) ), when the number of iterations satisfies 
+
+I1 ≥ Ω(( ϵ−1 + ν ˜π
+
+> min
+
+(K)−3)η−1ν ˜π
+
+> min
+
+(K)−1SNR −3), (27) 
+
+P ≥ Ω( ν ˜π
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d), d ≥ Ω( ϵ−1 log( ϵ−1ν ˜π
+
+> min
+
+(K)−1)) , and T ≥ Ω(log d), with the step size η1 ≤ O(1) ,then w.h.p., the learned model returns W (I1) such that 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+∇W EX0,E ∥f (Ψ (I1); √¯αtX0 + √1 − ¯αtE, t ) − E∥2 
+
+> F
+
+/(dP ) ≤ ϵ2 · η · K−1δ( ˜ π)−1 · log( I1(ρ2 + 1) ϵ−1). (28) 
+
+Lemma 5. For any ϵ ∈ (0 , δ Θ(1) ), s > Ω( I1), with the step size η ≤ O((max {ρ, 1} + ϵ)−1), then vt converges linearly to 
+
+v∗ 
+
+> t
+
+with 
+
+|v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+| ≤ (1 − 2η(ρ√¯αt + √1 − ¯αt + ϵ)) s|v(I1) 
+
+> t
+
+− v∗ 
+
+> t
+
+|, (29) 
+
+where 
+
+|v∗ 
+
+> t
+
+− √1 − ¯αt/(¯ αtρ2 + 1 − ¯αt)| ≤ ϵ/ (¯ αtρ2 + 1 − ¯αt). (30) 
+
+When (i) the number of iterations satisfies 
+
+I2 ≥ Ω(log ϵ−1I1(1 + ρ2)) , (31) 
+
+and (ii) P ≥ Ω( ν ˜π
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d), then w.h.p., we have for s ≥ Ω( I1 + I2)
+
+|v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+| ≤ ϵ. (32) 
+
+## C. Proof of Main Theorems 
+
+C.1. Proof of Theorem 1 
+
+Proof. Following the analytical framework used in (Li et al., 2023a;b; Luo et al., 2024; Li et al., 2024d;b; Zhang et al., 2025b; Li et al., 2025c; Sun et al., 2025; Li et al., 2025a; Zhang et al., 2025a; Li et al., 2025b; Shandirasegaran et al., 2026), we provide a convergence analysis of the DDPM training. This part mainly introduces the proof steps that combine the lemmas of gradient updates of different model parameters and training stages to derive the final convergence conclusion. The overall proof idea is summarized in Section 4.3. Note that the oracle denoising risk with the mean matrix of Xt known is 
+
+Roracle = ρ2 ¯αt
+
+ρ2 ¯αt + 1 − ¯αt
+
+. (33) Therefore, by the Mean Value Theorem, for ˜v between v(I2) 
+
+> t
+
+and √1− ¯αt   
+
+> 1−¯αt+ρ2¯αt
+
+,
+
+EE,X0 [∥v(I2) 
+
+> t
+
+(xtp −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )) − ϵp∥2/d ] − Roracle 
+
+≤ϵ · 2(˜ v · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] − (√1 − ¯αt + β2
+
+d )) 
+
+≲O(ϵ),
+
+(34) 14 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+and we can obtain that for any t,
+
+EX0,E ∥f (Ψ (S); √¯αtX0 + √1 − ¯αtE, t ) − E∥2 
+
+> F
+
+/(dP )∥ ≤ Roracle + O(ϵ). (35) Note that 
+
+I1 + I2 ≲ I1 + log(1 + ρ2)ϵ−1. (36) Therefore, by combining Lemma 4 and 5, we can obtain the following result. For any ϵ ∈ (0 , δ Θ(1) ), when the number of iterations satisfies 
+
+s ≥ Ω(( ϵ−1 + ν ˜π
+
+> min
+
+(K)−3)η−1ν ˜π
+
+> min
+
+(K)−1SNR −3 + log(1 + ρ2)ϵ−1), (37) and the number of tokens 
+
+P ≥ Ω( ν ˜π
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d), (38) with the step size η ≤ (max {ρ, 1} + ϵ)−1, then with a high probability, the learned model Ψ(S) satisfies 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EX0∼D ( ˜ π,{μi}Mi=1 ,ρ ),E
+
+∥f (Ψ (S); √¯αtX0 + √1 − ¯αtE, t ) − E∥2 
+
+> F
+
+/dP 
+
+≤Roracle + O(ϵ).
+
+(39) Combining Corollary 2, we have 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EX0∼D ( ˜ π,{μi}Mi=1 ,ρ ),E
+
+∥f (Ψ (S); √¯αtX0 + √1 − ¯αtE, t ) − E∥2 
+
+> F
+
+/dP 
+
+≤RBayes + O(ϵ).
+
+(40) 
+
+C.2. Proof of Corollary 1 
+
+Proof. Given a fixed ˜π and M , when K = 1 , we have E[πu] = 1 for any u ∈ [M ]. Then, 
+
+E[πu] = EZ∈{ 0,1}M ,∥Z∥0=K
+
+ ˜πu
+
+Z⊤ ˜π
+
+, (41) 
+
+min  
+
+> u∈[M]
+
+{E[πu]} = 1
+
+K . (42) Since that X 
+
+> u∈[M]
+
+E[πu] = 1 , (43) 
+
+K = 1 is the case where min u∈[M ]{E[πu]} · KM reaches its maximal. In this case, we have 
+
+I1 = ( ϵ−1 + 1) η−1M · SNR −3 (44) When K = M , we have E[πu] = ˜ πu for any u ∈ [M ]. Then, 
+
+min  
+
+> u∈[M]
+
+{E[πu]} · KM = min  
+
+> u∈[M]
+
+{˜πu}. (45) By Jensen’s inequality, 
+
+E[πu] = EZ∈{ 0,1}M ,∥Z∥0=K
+
+ ˜πu
+
+Z⊤ ˜π
+
+
+
+=EZ∈{ 0,1}M ,∥Z∥0=K
+
+ ˜πu
+
+(Z⊤ ˜π − ˜πu) + ˜ πu
+
+
+
+≥ ˜πu
+
+EZ∈{ 0,1}M ,∥Z∥0=K [Z⊤ ˜π − ˜πu] + ˜ πu
+
+= ˜πu  
+
+> (K−1)(1 −˜πu)
+> M−1
+
++ ˜ πu
+
+(46) 15 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Then, for any u ∈ [M ], we have 
+
+EK=M [πu] = ˜ πu∗ = ˜πu   
+
+> (M−1)(1 −˜πu)
+> M−1
+
++ ˜ πu
+
+≤ ˜πu  
+
+> (K−1)(1 −˜πu)
+> M−1
+
++ ˜ πu
+
+≤ EK<M [πu], (47) where the first inequality comes from the fact that g(K) = ˜πu  
+
+> (K−1)(1 −˜πu )
+> M−1+˜ πu
+
+is a decreasing function of K. Therefore, 
+
+K = M is the case where min u∈[M ]{E[πu]} · KM reaches its minimal. In this case, we have 
+
+I1 = ( ϵ−1 + min  
+
+> u∈[M]
+
+{˜πu}−3)η−1 min  
+
+> u∈[M]
+
+{˜πu}−1SNR −3 (48) 
+
+C.3. Proof of Theorem 2 
+
+Proof. By Fisher identity, we have 
+
+∇Xt log q(Xt) = E[∇Xt log q(Xt|X0)|Xt]=E
+
+h
+
+− 11 − ¯αt
+
+(Xt − √¯αtX0) Xti
+
+= − 1
+
+√1 − ¯αt
+
+E[E|Xt]
+
+(49) where the second step is by XT = √¯αtX0 + √1 − ¯αtE. Let 
+
+sΨ(S) (Xt, E, t ) = − 1
+
+√1 − ¯αt
+
+f (W (S), v(S); √¯αtX0 + √1 − ¯αtE, t ) (50) for the required number of iterations in (9). Then, we can obtain that with s ≥ Ω( I1 + I2),
+
+EX0,E
+
+∥∇ Xt log q(Xt) − sΨ(S) (Xt, E, t )∥2
+
+=EX0,E
+
+h 1
+
+√1 − ¯αt
+
+E[E|Xt] − 1
+
+√1 − ¯αt
+
+E[E|Xt, Y ]+ 1
+
+√1 − ¯αt
+
+E[E|Xt, Y ] + sΨ(S) (Xt, E, t ) 2i
+
+≤2EX0,E
+
+h 1
+
+√1 − ¯αt
+
+E[E|Xt] − 1
+
+√1 − ¯αt
+
+E[E|Xt, Y ] 2i
+
++ 2 EX0,E
+
+h 1
+
+√1 − ¯αt
+
+E[E|Xt, Y ] + sΨ(S) (Xt, E, t ) 2i
+
+:=2 C1 + 2 C2.
+
+(51) Note that 
+
+E[E|Xt, Y ] = 
+
+√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+(Xt − √¯αtMY ). (52) Therefore, 
+
+C2 =EX0,E
+
+h 11 − ¯αt
+
+f (W , v; √¯αtX0 + √1 − ¯αtE, t ) − E[E|Xt, Y ] 2i
+
+=EX0,E
+
+h PPp=1 
+
+1 − ¯αt
+
+(v(s) 
+
+> t
+
+−√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+)( xtp −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (s)xtp
+
+d )) +
+
+√1 − ¯αt · (PPi=1 xtisoftmax p( xti  
+
+> ⊤W(s)xtp
+> d
+
+) − √¯αt(MY )p)1 − ¯αt + ρ2 ¯αt
+
+> 2
+
+i
+
+≲dP · 11 − ¯αt
+
+(ϵ2 + ϵ/d 
+
+(1 − ¯αt)2 ) + dP ϵ · 1(1 − ¯αt + ρ2 ¯αt)2
+
+(53) 16 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+where the last step is by (142), and 
+
+|v(s) 
+
+> t
+
+−√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+|≤| v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+| + |v∗ 
+
+> t
+
+−√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+|≤ϵ +
+
+pϵ/d 
+
+¯αtρ2 + 1 − ¯αt
+
++ O(
+
+√1 − ¯αt
+
+pϵ/d 
+
+(¯ αtρ2 + 1 − ¯αt) 32
+
+)
+
+≤ϵ + O(
+
+pϵ/d 
+
+1 − ¯αt
+
+).
+
+(54) Consider the Hilbert space H := L2(Ω , F, P) equipped with the inner product ⟨X, Y ⟩ = E[XY ], where (Ω , F, P) is the underlying probability space. We define 
+
+HA := {X ∈ H : X is A-measurable } (55) as the closed subspace for any sub-σ-algebra A ⊆ F . Let G1 = σ(Xt) and G2 = σ(Xt, Y ). We have G1 ⊆ G 2. We know that E[E|Xt] and E[E|Xt, Y ] are orthogonal projections from E onto G1 and G2, respectively. Then, by Pythagorean identity, we have 
+
+E[∥E − E[E|Xt]∥2] = E[∥E − E[E|Xt, Y ]∥2] + E[∥E[E|Xt] − E[E|Xt, Y ]∥2]. (56) Hence, 
+
+C1 ≤ 11 − ¯αt
+
+(E[∥E − E[E|Xt]∥2] − E[∥E − E[E|Xt, Y ]∥2]) 
+
+≤ 11 − ¯αt
+
+· dP ϵ. 
+
+(57) Combining (57) and (53), we have 
+
+EX0,E
+
+∥∇ Xt log q(Xt) − sΨ(S) (Xt, E, t )∥2 ≤ dP ϵ · ( 11 − ¯αt
+
+). (58) By Hoeffding’s inequality (24), we have that with a probability of 1 − d−C for a large C > 1,
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EX0,E
+
+∥∇ Xt log q(Xt) − sΨ(S) (Xt, E, t )∥2
+
+≤EX0,E,t 
+
+∥∇ Xt log q(Xt) − sΨ(S) (Xt, E, t )∥2 + dP ϵ · 1(1 − ¯α1) ·
+
+r log dT
+
+≲dP ϵ (SNR + 1) ,
+
+(59) where the first step is by Hoeffding’s inequality (24), and the last step holds if T ≥ Ω(log d). Hence, 
+
+1
+
+dP T 
+
+> T
+
+X
+
+> t=1
+
+EX0,E
+
+∥∇ Xt log q(Xt) − sΨ(S) (Xt, E, t )∥2 ≲ ϵ(SNR + 1) , (60) 
+
+C.4. Proof of Proposition 1 
+
+Proof. From (142), we have 
+
+∥√¯αtMY ,Z − Xtsoftmax (Xt⊤W (S)Xt/d )∥2
+
+> F
+
+dP 
+
+≤O( (ρ2 + 1) log d
+
+PPp=1 1[Yp = arg min u∈[M ] ν ˜π 
+
+> u
+
+(K)] )
+
+≲ (ρ2 + 1) log dP ν ˜π
+
+> min
+
+(K) .
+
+(61) 17 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+By (54), we have 
+
+|v(s) 
+
+> t
+
+−√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+| ≤ ϵ + O(
+
+pϵ/d 
+
+1 − ¯αt
+
+) ≤ O(ϵ + pϵ/d ) ≤ O(ϵ), (62) where the last step comes from d ≳ ϵ−1.
+
+C.5. Proof of Corollary 2 
+
+Proof. Note that 
+
+Roracle = 1
+
+dP E[∥E − E[E|Xt, Y ]∥2] = 1
+
+dP E[Var( E|Xt, Y )] , (63) while 
+
+RBayes = 1
+
+dP E[∥E − E[E|Xt]∥2] = 1
+
+dP E[Var( E|Xt)] . (64) By the law of total variance, we have 
+
+Var( E|Xt) = E[Var( E|Xt, Y, Z )|Xt] + Var( E[E|Xt, Y ]|Xt). (65) Therefore, 
+
+RBayes − Roracle = 1
+
+dP E[Var( E[E|Xt, Y ]|Xt)] > 0. (66) Recall that 
+
+E[E|Xt, Y ] = 
+
+√1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+(Xt − √¯αtMY ), (67) where MY denotes the mean matrix of Xt given Y . Then, 
+
+E[X0|Xt, Y ] = E
+
+h Xt − √1 − ¯αtE
+
+√¯αt
+
+|Xt, Y
+
+i
+
+= ρ2√¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+Xt + 1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+MY ,
+
+(68) 
+
+Var( E[X0|Xt, Y ]|Xt) = ( 1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+)2Var( MY |Xt). (69) Note that E[Var( MY |Xt)] = E[∥MY − E[MY |Xt]∥2]=E[∥MY − arg min 
+
+> A(Xt)
+
+E[∥MY − A(Xt)∥2]∥2]
+
+≤E[∥MY − A(Xt)∥2].
+
+(70) Let 
+
+A(Xt) = 
+
+ 1
+
+|{ i : Yi = Yp}| 
+
+X
+
+> i:Yi=Yp
+
+xti
+
+Pp=1 
+
+. (71) Since that 1
+
+|{ i : Yi = Yp}| 
+
+X
+
+> i:Yi=Yp
+
+xti ∼ N (μYp , (¯ αtρ2 + (1 − ¯αt)) · I
+
+|{ i : Yi = Yp}| ), (72) we have 
+
+E[∥MY − A(Xt)∥2] ≤
+
+> P
+
+X
+
+> p=1
+
+ρ2
+
+|{ i : Yi = Yp}| = ρ2K. (73) Hence, we can obtain 
+
+RBayes − Roracle ≤ ( 1 − ¯αt
+
+1 − ¯αt + ρ2 ¯αt
+
+)2 · ρ2
+
+|{ i : Yi = Yp}| ≤ ϵ, (74) as long as for any p ∈ [P ], t ∈ [T ],
+
+|{ i : Yi = Yp}| ≥ ϵ−1ρ2, (75) which holds if P ≥ ν ˜π
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d.18 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+C.6. Proof of Proposition 3 
+
+Proof. By (129), we have that for Yi = Yj ,
+
+xtj ⊤W (S)xti/d 
+
+≳ 12 log( ϵ−1( (1 − max u∈[M ] ν ˜π 
+
+> u
+
+(K)) max u∈[M ] ν ˜π 
+
+> u
+
+(K) )2)
+
+≳ 12 log ϵ−1Kδ ( ˜ π),
+
+(76) where the last step holds since 
+
+max   
+
+> u∈[M]
+
+ν ˜π 
+
+> u
+
+(K) ≤ max u∈[M ] ˜π
+
+max u∈[M ] ˜π + ( K − 1) min u∈[M ] ˜π ≤ 1
+
+Kδ ( ˜ π) . (77) This leads to (18). (19) comes from an accumulation of (26). 
+
+C.7. Proof of Corollary 3 
+
+Proof. (20) comes from (140). (21) is derived by (115) plus the training condition (i) in Theorem 1. 
+
+C.8. Proof of Corollar 4 
+
+Proof. We still need the condition (143) to hold for generation on D( ˜ π′, K, {μi}Mi=1 , ρ ). Then, the required number of tokens per data becomes 
+
+P ≳ ν ˜π′
+
+> min
+
+(K)−1(ρ2 + 1) ϵ−1 log d. (78) Combining Corollary (2), we can obtain the desired result. 
+
+## D. Proof of Key Lemmas 
+
+D.1. Proof of Lemma 3 
+
+Proof. Let E = ( ϵ1, ϵ2, · · · , ϵP ). Then, we can compute 
+
+∂L (Ψ (s0))
+
+∂W
+
+=
+
+> P
+
+X
+
+> p=1
+
+∂∥f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp∥2
+
+∂W · 1
+
+dP 
+
+=
+
+> P
+
+X
+
+> p=1
+
+(f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤ ∂f (W ; √¯αtX0 + √1 − ¯αtE, t )
+
+∂W · 1
+
+dP 
+
+=
+
+> P
+
+X
+
+> p=1
+
+(f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− vt
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W x tp
+
+d )
+
+· (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W x tp)xtr
+
+d )xtp⊤.
+
+(79) We then complete the proof using induction. When iterations s = 0 , we have that with a high probability, 
+
+∥xtp∥2 ≳ (1 + ¯ αtρ2)d log d. (80) 19 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+If xti and xtp share the same feature μu as the mean, then 
+
+μ⊤ 
+
+> u
+
+(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d )xtr )xtp⊤μu
+
+=( √¯αtd + μ⊤ 
+
+> u
+
+(xti − √¯αtμu) −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d )μ⊤ 
+
+> u
+
+xtr )( √¯αtd + μ⊤ 
+
+> u
+
+(xtp − √¯αtμu)) .
+
+(81) Consider ˜X0 independently sampled from Definition x so that x0 
+
+> j
+
+and x0 
+
+> j′
+
+shares the same mean as x0
+
+> p
+
+. ˜X0̸ = X0. Then, 
+
+˜xtj ⊤(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳(¯ αtd −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d ) ˜ xtj ⊤xtr ) · ¯αtd, 
+
+(82) Meanwhile, 
+
+(f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti
+
+=( v(0) 
+
+> t
+
+√¯αtρϵ′ 
+
+> p
+
++ v(0)  
+
+> t
+
+(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (0) xtp
+
+d )) − (v(0) 
+
+> t
+
+√1 − ¯αt − 1) ϵp)( √¯αt(μu + ρϵ′
+
+> p
+
+)+ √1 − ¯αtϵp).
+
+(83) If xti and xtp does not share the same feature μu as the mean, then for ˜xtj and ˜xtj′ that is from another ˜Xt with the same mean as xtp,
+
+˜x⊤ 
+
+> j
+
+(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+=( ˜ x⊤ 
+
+> j
+
+(xti − √¯αtμu′ ) −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (0) xtp
+
+d ) ˜ x⊤ 
+
+> j
+
+xtr ) · (¯ αtd + ˜ x⊤ 
+
+> j′
+
+(xtp − √¯αtμu)) ,
+
+(84) 
+
+(f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti
+
+=( v(0) 
+
+> t
+
+√¯αtρϵ′ 
+
+> p
+
++ v(0)  
+
+> t
+
+(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (0) xtp
+
+d )) − (v(0) 
+
+> t
+
+√1 − ¯αt − 1) ϵp)⊤(√¯αt(μu′ + ρϵ′
+
+> i
+
+)+ √1 − ¯αtϵi),
+
+(85) if the mean of xti is μu′ . Therefore, combining (82) and (83), we have that for ˜xtj and ˜xtj′ that share the same mean as xtp,
+
+(− ˜xtj ⊤)EE,X0
+
+(f (W (0) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(0) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (0) xtp
+
+d )
+
+· (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax ( xtr ⊤W (0) xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳EE,X0
+
+ 1
+
+P 1[Yp = u]
+
+> P
+
+X
+
+> i=1
+
+ζi,p,t (0)( v(0)  
+
+> t
+
+)2 · (d¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (0)) 2 + ¯ α3 
+
+> t
+
+dρ 2 − ¯α2 
+
+> t
+
+(1 − ¯αt −√1 − ¯αt
+
+v(0) 
+
+> t
+
+)d1[i = p]
+
+− d¯α3 
+
+> t
+
+ζui,p,t (0) ρ2),
+
+(86) 20 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜xtj ⊤)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳ 1
+
+T
+
+> T
+
+X
+
+> t=1
+> P
+
+X
+
+> p=1
+
+1[Yp = u]
+
+P 2 EE,X0 [v(0)  
+
+> t
+
+¯α2
+
+> t
+
+√1 − ¯αtd(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (0)) 2]
+
+≳v(0)  
+
+> t
+
+· dP ,
+
+(87) which means that the update from W (0) to W (1) almost makes no difference to the attention map. Note that 
+
+∂EE,X0 [∥v(0)  
+
+> t
+
+(xtp − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(0) xtp
+> d
+
+)) − ϵp∥2/d ]
+
+∂v t
+
+=v(0)  
+
+> t
+
+ρ2 ¯αt + √1 − ¯αt(v(0) 
+
+> t
+
+√1 − ¯αt − 1) + EE,X0 [v(0)  
+
+> t
+
+∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (0) xtp
+
+d )∥2/d ]+ 2 EE,X0 [ β1v(0)  
+
+> t
+
+ρ√¯αt
+
+d ] + EE,X0 [ 2β2
+
+√1 − ¯αtv(0)  
+
+> t
+
+− β2
+
+d ]=( v(0)  
+
+> t
+
+· EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (0) xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] − (√1 − ¯αt + β2
+
+d )) ,
+
+(88) where we denote β1 = ϵ′
+
+> p⊤
+
+(√¯αtμu − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(0) xtp
+> d
+
+)) and β2 = ϵ⊤ 
+
+> p
+
+(√¯αtμu −
+
+PPi=1 xtisoftmax p( xti  
+
+> ⊤W(0) xtp
+> d
+
+)) . We have β1, β 2 ≲ √d. Hence, since |v(0)  
+
+> t
+
+| ≲ plog d/d , we have 
+
+v(1)  
+
+> t
+
+=v(0)  
+
+> t
+
+− η∂ EE,X0 [∥v(0)  
+
+> t
+
+(xtp −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (0) xtp
+
+d )) − ϵp∥2/d ]/∂v t
+
+<η √1 − ¯αt,
+
+(89) and 
+
+1 − ¯αt −√1 − ¯αt
+
+v(0) 
+
+> t
+
+< 1 − η−1 − ¯αt < 0. (90) Then, we can obtain 
+
+(− ˜xtj ⊤)EE,X0
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (1) xtp
+
+d )
+
+· (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax ( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳EE,X0
+
+ 1
+
+P 1[Yp = u]
+
+> P
+
+X
+
+> i=1
+
+ζi,p,t (1)( v(1)  
+
+> t
+
+)2 · (d¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (1)) 2 + ¯ α3 
+
+> t
+
+dρ 2 − ¯α2 
+
+> t
+
+(1 − ¯αt −√1 − ¯αt
+
+v(1) 
+
+> t
+
+)d1[i = p]
+
+− d¯α3 
+
+> t
+
+ζui,p,t (1) ρ2)
+
+≳EE,X0
+
+ 1
+
+P 1[Yp = u]
+
+> P
+
+X
+
+> i=1
+
+ζi,p,t (1)( v(1)  
+
+> t
+
+)2 · (d¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (1)) 2,
+
+(91) 21 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+where the last step holds if v(0)  
+
+> t
+
+> 0. Therefore, by summing up over (91), we can obtain that for any ˜xtj and ˜xj′ with μu as the mean, 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜xtj ⊤)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳ 1
+
+T
+
+> T
+
+X
+
+> t=1
+> P
+
+X
+
+> p=1
+
+1[Yp = u]
+
+P EE,X0 [( v(1)  
+
+> t
+
+)2 ¯α3 
+
+> t
+
+d(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (0)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (0)] 
+
+≳ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(1)  
+
+> t
+
+)2 ¯α3 
+
+> t
+
+d(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (0)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (0)] · ν ˜π 
+
+> u
+
+(K),
+
+(92) where the last step holds with a high probability if 
+
+P · ν ˜π 
+
+> u
+
+(K) ≳ log dK, (93) by Lemma 1. For μu̸ = μu′ , we consider two cases of xti as follows, where the mean of ˜μk is μu′ .1. The corresponding mean of xti is μu′ : Then, μ⊤ 
+
+> u′
+
+(xti − PPr=1 softmax p( xtr  
+
+> ⊤W(1) xtp
+> d
+
+)xtr )xtp⊤μu is in the order of d2.
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti is in the order of −d if d is large enough, and the order of positive term is no more than √d log d.2. The corresponding mean of xti is not μu′ : Then, the order of μ⊤ 
+
+> u′
+
+(xti − PPr=1 softmax p( xtr  
+
+> ⊤W(1) xtp
+> d
+
+)xtr )xtp⊤μu is at most d 32 log d, which is already smaller than the order of d2. (f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti is in the order of at most √d log d.The above discussion indicates that for ˜xj and ˜xj′ with the mean of μu and ˜xk with the mean of μu′ ,
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xj
+
+≲ log d
+
+√d · (− ˜x⊤ 
+
+> j′
+
+)EE,X0
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xj
+
+(94) 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xj
+
+≤ log d
+
+√d · (− ˜x⊤ 
+
+> j′
+
+) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+(f (W (1) ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(1) 
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (1) xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (1) xtp
+
+d )xtr )xtp⊤ ˜xj .
+
+(95) 22 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Suppose that when iterations s = s0 > 1, the conclusion holds. Then, when s = s0 + 1 , we have that if xti and xtp share the same feature μu as the mean, then 
+
+μ⊤ 
+
+> u
+
+(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤μu
+
+=( √¯αtd + μ⊤ 
+
+> u
+
+(xti − √¯αtμu) −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )μ⊤ 
+
+> u
+
+xtr )( √¯αtd + μ⊤ 
+
+> u
+
+(xtp − √¯αtμu)) .
+
+(96) Consider ˜X0 independently sampled from Definition x so that x0 
+
+> j
+
+and x0 
+
+> j′
+
+share the same mean as x0
+
+> p
+
+. ˜X0̸ = X0. Then, 
+
+˜xtj ⊤(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳(¯ αtd −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d ) ˜ xj t⊤xtr ) · ¯αtd, 
+
+(97) Meanwhile, 
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti
+
+=( v(s0)
+
+> t
+
+√¯αtρϵ′ 
+
+> p
+
++ v(s0) 
+
+> t
+
+(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p(xti⊤W (s0)xtp)) − (v(s0)
+
+> t
+
+√1 − ¯αt − 1) ϵp)( √¯αt(μu + ρϵ′
+
+> p
+
+)+ √1 − ¯αtϵp).
+
+(98) If xti and xtp do not share the same feature μu as the mean, then for xtj and xtj′ that share the same mean as xtp,
+
+˜x⊤ 
+
+> j
+
+(xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+=( ˜ x⊤ 
+
+> j
+
+(xti − √¯αtμu′ ) −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d ) ˜ x⊤ 
+
+> j
+
+xtr ) · (√¯αtd + ˜ x⊤ 
+
+> j′
+
+(xtp − √¯αtμu)) ,
+
+(99) 
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti
+
+=( v(s0)
+
+> t
+
+√¯αtρϵ′ 
+
+> p
+
++ v(s0) 
+
+> t
+
+(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p(xti⊤W (s0)xtp)) − (v(s0)
+
+> t
+
+√1 − ¯αt − 1) ϵp)( √¯αt(μu′ + ρϵ′
+
+> i
+
+)+ √1 − ¯αtϵi),
+
+(100) if the mean of xti is μu′ . Therefore, combining (97) and (98), we have that for ˜xtj and ˜xtj′ from another ˜Xt that share the same mean as xtp,
+
+(− ˜xtj ⊤)EE,X0
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (s0)xtp
+
+d )
+
+· (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax ( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳EE,X0
+
+ 1
+
+P 1[Yp = u]
+
+> P
+
+X
+
+> i=1
+
+ζi,p,t (s0)( v(s0) 
+
+> t
+
+)2 · (d¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s0)) + ¯ α3 
+
+> t
+
+dρ 2 − ¯α2 
+
+> t
+
+(1 − ¯αt −√1 − ¯αt
+
+v(s0)
+
+> t
+
+)d1[i = p]
+
+− d¯α3
+
+> tP
+
+X
+
+> p=1
+
+ζui,p,t (s0)ρ2)
+
+≳EE,X0
+
+ 1
+
+P 1[Yp = u]
+
+> P
+
+X
+
+> i=1
+
+ζi,p,t (s0)( v(s0) 
+
+> t
+
+)2 · (d¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s0)) 2,
+
+(101) 23 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+where the last step holds because if v(1)  
+
+> t
+
+< √1− ¯αt  
+
+> ¯αtρ2+1 −¯αt
+
++ o(1) , then v(s0) 
+
+> t
+
+< √1− ¯αt  
+
+> ¯αtρ2+1 −¯αt
+
++ o(1) and 
+
+1 − ¯αt −√1 − ¯αt
+
+v(s0)
+
+> t
+
+< −ρ2 < 0; (102) and if v(1)  
+
+> t
+
+> √1− ¯αt  
+
+> ¯αtρ2+1 −¯αt
+
++ o(1) , then v(s0) 
+
+> t
+
+> √1− ¯αt  
+
+> ¯αtρ2+1 −¯αt
+
++ o(1) and 
+
+1 − ¯αt −√1 − ¯αt
+
+v(0) 
+
+> t
+
+< 0. (103) For μu̸ = μu′ and ˜xj , ˜xj′ with the mean of μu and ˜xk with the mean of μu′ , we have that 
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+≤ log d
+
+√d · (− ˜x⊤ 
+
+> j
+
+)EE,X0
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+(104) 
+
+(− ˜x⊤ 
+
+> k
+
+) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+≤ log d
+
+√d · (− ˜x⊤ 
+
+> j
+
+) 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′ .
+
+(105) Since 
+
+W (s0+1) = W (s0) − η 1
+
+T
+
+> T
+
+X
+
+> t=1
+> s0
+
+X
+
+> q=1
+
+EE,X0,t [ ∂L (Ψ (s0); Xt)
+
+∂W ], (106) where 1
+
+> T
+
+PTt=1 EE,X0,t [ ∂L (Ψ (s0);Xt) 
+
+> ∂W
+
+] is not a function of any noise term, we have 
+
+˜xtj ⊤ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0,t [ ∂L (Ψ (s0); Xt)
+
+∂W ] ˜ xtp − 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0 [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp]
+
+= ˜xtj ⊤ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp − 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [μ⊤ 
+
+> u
+
+EE,X0 [ ∂L (Ψ (s0))
+
+∂W ]μu]
+
+= a1
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [ ∂L (Ψ (s0))
+
+∂W ]a2 + 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+a⊤ 
+
+> 1
+
+EE,X0 [ ∂L (Ψ (s0))
+
+∂W ]μu
+
++ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+μ⊤ 
+
+> u
+
+EE,X0 [ ∂L (Ψ (s0))
+
+∂W ]a2 ,
+
+(107) 24 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+where a1 = ˜ xtj − √¯αtμu, a2 = ˜ xtp − √¯αtμu. We can obtain a1, a2 ∼ N (0 , ¯αtρ2 + 1 − ¯αt). We then have the following discussion on xti in the gradient (79). a⊤ 
+
+> 1
+
+(xti − PPr=1 softmax p( xtr  
+
+> ⊤W(0) xtp
+> d
+
+)xtr )xtp⊤a2 is in the order of d log d. a⊤ 
+
+> 1
+
+(xti −
+
+PPr=1 softmax p( xtr  
+
+> ⊤W(0) xtp
+> d
+
+)xtr )xtp⊤μu is in the order of d 32 log d. μ⊤ 
+
+> u
+
+(xti − PPr=1 softmax p( xtr  
+
+> ⊤W(0) xtp
+> d
+
+)xtr )xtp⊤a2 is in the order of d 32 log d. (f (W ; √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤xti is in the order of −d if d is large enough, and the order of positive term is no more than √d log d. Therefore, 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+a1EE,X0 [ ∂L (Ψ (s0))
+
+∂W ]a2 ≲ log dd 32
+
+· 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp], (108) 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+a1EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ]μU ≲ log dd · 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp], (109) 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+μuEE,X0,t [ ∂L (Ψ (s0))
+
+∂W ]a2 ≲ log dd · 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp], (110) for any Yj = Yp = u. Hence, we have that for any u ∈ [M ] and Yj = Yp = u,
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+˜xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp − 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp]
+
+≲ log dd · 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+E ˜X0 [ ˜ xtj ⊤EE,X0,t [ ∂L (Ψ (s0))
+
+∂W ] ˜ xtp].
+
+(111) We can also derive 
+
+˜xtj ⊤W (0) ˜xtp − E ˜X0 [ ˜ xtj ⊤W (0) ˜xtp] ≲ log dd · E ˜X0 [ ˜ xtj ⊤W (0) ˜xtp], (112) by replacing EE,X0 [ ∂L (Ψ (s0)) 
+
+> ∂W
+
+] with an arbitrarily initialized W (0) . Thus, we have We can also derive 
+
+˜xtj ⊤W (s0+1) ˜xtp − E ˜X0 [ ˜ xtj ⊤W (s0+1) ˜xtp] ≲ log dd · E ˜X0 [ ˜ xtj ⊤W (s0+1) ˜xtp]. (113) This ensures that for any u ∈ [M ] and Yi = Yp = Yj = u,
+
+∥softmax p( xti⊤W (s0+1) xtp
+
+d ) − E[softmax p( xti⊤W (s0+1) xtp
+
+d )] ∥
+
+≲E[softmax p( xti⊤W (s0+1) xtp
+
+d )] · log d log ϵ−1(min u∈[M ]{min u∈[M ](ν ˜π 
+
+> u
+
+(K)) }−1 − 1) 2
+
+d .
+
+(114) Hence, 
+
+softmax p( xti⊤W (s0+1) xtp
+
+d ) − softmax p( xtj ⊤W (s0+1) xtp
+
+d ) ≲ log d log ϵ−1((min u∈[M ] ν ˜π 
+
+> u
+
+(K)) −1 − 1) 2
+
+d PPq=1 1[Yq = u] . (115) Therefore, by summing up over (101), we can obtain that for xtj and xtj′ with μu as the mean, 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜xtj ⊤)EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′
+
+= 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜xtj ⊤)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≳ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s0) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+d(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s0)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s0)] · ν ˜π 
+
+> u
+
+(K),
+
+(116) 25 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+where the last step holds with a high probability if 
+
+P · ν ˜π 
+
+> u
+
+(K) ≳ log dK. (117) Similarly, we hvae that for μu̸ = μu′ and ˜xj , ˜xj′ with the mean of μu and ˜xk with the mean of μu′ , we have that 
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′
+
+=( − ˜x⊤ 
+
+> k
+
+)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+≤ log d
+
+√d · (− ˜x⊤ 
+
+> j
+
+)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xtj′
+
+= log d
+
+√d · (− ˜x⊤ 
+
+> j
+
+)EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′
+
+(118) 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′
+
+= 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜x⊤ 
+
+> k
+
+)EE,X0
+
+ PX
+
+> p=1
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+≤ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜x⊤ 
+
+> j
+
+) log d
+
+√d · EE,X0
+
+ PX
+
+> p=1
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤(− v(s0)
+
+> t
+
+d2P )
+
+> P
+
+X
+
+> i=1
+
+xti
+
+· softmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+= log d
+
+√d · 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+(− ˜x⊤ 
+
+> j
+
+)EE,X0
+
+h ∂L (Ψ (s0))
+
+∂W
+
+i
+
+˜xtj′ .
+
+(119) 
+
+D.2. Proof of Lemma 4 
+
+Proof. For any ˜xj and ˜xj′ with μu as the mean, where ˜X is generated by Definition, denote 
+
+Zuj,j ′ (s) = ˜x⊤ 
+
+> j
+
+W (s) ˜xj′
+
+d
+
+= ˜x⊤ 
+
+> j
+
+W (0) ˜xj′
+
+d − η 1
+
+T
+
+> T
+
+X
+
+> t=1
+> s−1
+
+X
+
+> s0=0
+> P
+
+X
+
+> p=1
+
+EE,X0
+
+ − ˜x⊤ 
+
+> j
+
+(f (W (s0); √¯αtX0 + √1 − ¯αtE, t )p − ϵp)⊤
+
+· (− v(s)
+
+> t
+
+d3P )
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti⊤W (s0)xtp
+
+d ) · (xti −
+
+> P
+
+X
+
+> r=1
+
+softmax p( xtr ⊤W (s0)xtp
+
+d )xtr )xtp⊤ ˜xj′
+
+
+
+(120) 26 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Denote γ(u) = η · 1
+
+> T
+
+PTt=1 (v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+· ν ˜π 
+
+> u
+
+(K). Note that 
+
+> P
+
+X
+
+> j=1
+
+ζuj,j ′,t (s) ≳
+
+PPp=1 1[Yp = u] · eZuj,j ′ (s)
+
+PPp=1 1[Yp = u] · eZuj,j ′ (s) + PPp=1 1[Yp̸ = u] . (121) When Zuj,j ′ (s) ≤ Θ(log 1−ν ˜π    
+
+> u(K)
+> ν˜π
+> u(K)
+
+), we have that by Lemma 1, with a high probability, 
+
+1 −
+
+> P
+
+X
+
+> j=1
+
+ζuj,j ′,t (s) ≳
+
+PPp=1 1[Yp̸ = u]
+
+PPp=1 1[Yp = u] · eZuj,j ′ (s) + PPp=1 1[Yp̸ = u] ≳ (1 − ν ˜π 
+
+> u
+
+(K)) e−Zuj,j ′ (s). (122) Otherwise, 
+
+1 −
+
+> P
+
+X
+
+> j=1
+
+ζuj,j ′,t (s) ≳
+
+PPp=1 1[Yp̸ = u]
+
+PPp=1 1[Yp = u] · eZuj,j ′ (s) + PPp=1 1[Yp̸ = u] ≳ 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) · e−Zuj,j ′ (s). (123) Note that by (25) in Lemma 3, 
+
+Zuj,j ′ (s) ≳ η 1
+
+T
+
+> T
+
+X
+
+> t=1
+> s−1
+
+X
+
+> b=0
+
+EE,X0 [¯ α3 
+
+> t
+
+(v(s) 
+
+> t
+
+)2(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (b)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (b)] · ν ˜π 
+
+> u
+
+(K) (124) We first prove that when Zuj,j ′ (s) ≤ Θ(log 1−ν ˜π    
+
+> u(K)
+> ν˜π
+> u(K)
+
+), we have Zuj,j ′ (s) ≥ 12 log(1 + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K) · s) by induction. The conclusion holds when s = 0 . Suppose that this conclusion holds when s ≤ s0. Then, 
+
+Zuj,j ′ (s + 1) 
+
+≥η 1
+
+T
+
+> T
+
+X
+
+> t=1
+> s−1
+
+X
+
+> b=0
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (b)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (b)] · ν ˜π 
+
+> u
+
+(K)+ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s)] · ν ˜π 
+
+> u
+
+(K)
+
+≥ 12 log(1 + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)s) + 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s)] · ν ˜π 
+
+> u
+
+(K)
+
+≥ 12 log(1 + 2 · γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)( s + 1)) ,
+
+(125) where the last step is by 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s0)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s0)] · ν ˜π 
+
+> u
+
+(K)
+
+≥ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+· e−2Zj,j ′ (s)] · (1 − ν ˜π 
+
+> u
+
+(K)) 2 · (ν ˜π 
+
+> u
+
+(K)) 2
+
+≥ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+· 11 + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)s ] · (ν ˜π 
+
+> u
+
+(K)) 2(1 − ν ˜π 
+
+> u
+
+(K)) 2
+
+≥ 12 log(1 + 2γ(u)ν ˜π 
+
+> u
+
+(K)(1 − ν ˜π 
+
+> u
+
+(K)) 2
+
+1 + 2 γ(u)ν ˜π 
+
+> u
+
+(K)(1 − ν ˜π 
+
+> u
+
+(K)) 2 · s ).
+
+(126) Therefore, the conclusion holds when s = s0 + 1 . When s ≥ I0(u) := 1   
+
+> γ(u)( ν˜π
+> u(K)) 3
+
+, we have Zuj,j ′ (s) ≥ log 1−ν ˜π    
+
+> u(K)
+> ν˜π
+> u(K)
+
+.Then, we prove that Zuj,j ′ (s) ≥ 12 log(1 + 2 γ(u) · ( 1−ν ˜π    
+
+> u(K)
+> ν˜π
+> u(K)
+
+)2(s − I0(u)) + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)I0(u)) by induction 27 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+for Zuj,j ′ (s) ≥ Θ(log 1−ν ˜π    
+
+> u(K)
+> ν˜π
+> u(K)
+
+). Suppose that this conclusion holds when s ≤ s0. Then, 
+
+Zuj,j ′ (s + 1) ≥η 1
+
+T
+
+> T
+
+X
+
+> t=1
+> s−1
+
+X
+
+> b=0
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (b)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (b)] · ν ˜π 
+
+> u
+
+(K)+ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s)] · ν ˜π 
+
+> u
+
+(K)
+
+≥ 12 log(1 + 2 γ(u) · ( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2(s − I0(u)) + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)I0(u)) + 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s)] ν ˜π 
+
+> u
+
+(K)
+
+≥ 12 log(1 + 2 · ( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2γ(u)( s + 1 − I0(u)) + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)I0(u)) ,
+
+(127) where the last step is by 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+(1 −
+
+> P
+
+X
+
+> l=1
+
+ζul,p,t (s)) 2
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (s)] · ν ˜π 
+
+> u
+
+(K)
+
+≥ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+EE,X0 [( v(s) 
+
+> t
+
+)2 ¯α3 
+
+> t
+
+e−2Zuj,j (s)] · ν ˜π 
+
+> u
+
+(K) · ( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2
+
+≥ γ(u) · (1 −ν ˜π   
+
+> u(K)) 2
+> (ν˜π
+> u(K)) 2
+
+1 + 2 γ(u) · (1 −ν ˜π    
+
+> u(K)) 2
+> (ν˜π
+> u(K)) 2
+
+(s − I0(u)) + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)I0(u)
+
+≥ 12 log(1 + 2γ(u) · (1 −ν ˜π   
+
+> u(K)) 2
+> (ν˜π
+> u(K)) 2
+
+1 + 2 γ(u) · (1 −ν ˜π    
+
+> u(K)) 2
+> (ν˜π
+> u(K)) 2
+
+(s − I0(u)) + 2 γ(u)(1 − ν ˜π 
+
+> u
+
+(K)) 2ν ˜π 
+
+> u
+
+(K)I0(u) ).
+
+(128) Then, 
+
+Zj,j ′ (γ(u)−1ϵ−1 + I0(u)) ≥ 12 log( γ(u)( (1 − ν ˜π 
+
+> u
+
+(K)) 
+
+ν ˜π 
+
+> u
+
+(K) )2γ(u)−1ϵ−1 + ( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2)
+
+≳ 12 log(( (1 − ν ˜π 
+
+> u
+
+(K)) 
+
+ν ˜π 
+
+> u
+
+(K) )2ϵ−1),
+
+(129) where the second step holds if ϵ ≤ 1. Let u∗ = arg min u∈[M ]{ν ˜π 
+
+> u
+
+(K)}. We have 
+
+Zj,j ′ (γ(u∗)−1ϵ−1 + I0(u∗)) 
+
+≳ 12 log(( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2ϵ−1 + γ(u)( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2(I0(u∗) − I0(u) + ϵ−1(γ(u∗)−1 − γ(u)−1))) . (130) Hence, as long as 
+
+γ(u)( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2ϵ−1(γ(u∗)−1 − γ(u)−1) ≲ poly (( (1 − ν ˜π 
+
+> u
+
+(K)) 
+
+ν ˜π 
+
+> u
+
+(K) )2ϵ−1), (131) and 
+
+γ(u)( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2(I0(u∗) − I0(u)) ≲ poly (( (1 − ν ˜π 
+
+> u
+
+(K)) 
+
+ν ˜π 
+
+> u
+
+(K) )2ϵ−1), (132) which hold if 
+
+ϵ ≤ δΘ(1) , (133) 28 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+we have 
+
+Zj,j ′ (ϵ−1γ(u)−1 + I0(u)) = Θ( Zj,j ′ (ϵ−1γ(u∗)−1 + I0(u∗))) . (134) We then have 
+
+∂L (Ψ (s); Xt, t )
+
+∂W (s) |s=I
+
+= max 
+
+> x̸=0
+
+∥ ∂L (Ψ (s);Xt,t )  
+
+> ∂W(s)
+
+|s=I x∥∥x∥≤ max   
+
+> u∈[M]
+
+μu
+
+∂L (Ψ (s); Xt, t )
+
+∂W (s) s=I
+
+μu · 1
+
+d
+
+≲γ(u) · ( 1 − ν ˜π 
+
+> u
+
+(K)
+
+ν ˜π 
+
+> u
+
+(K) )2 · e−2Zuj,j (s)
+
+≤γ(u)ϵ2,
+
+(135) as long as 
+
+s ≳γ(u)−1ϵ−1 + I0(u)
+
+≳(ϵ−1 + ν ˜π 
+
+> u
+
+(K)−3)η−1ν ˜π 
+
+> u
+
+(K)−1Et[¯ αt/(1 − ¯αt)] −3(1 − α1)−3
+
+≳(ϵ−1 + ν ˜π 
+
+> u
+
+(K)−3)η−1ν ˜π 
+
+> u
+
+(K)−1SNR −3(1 − α1)−3,
+
+(136) since ¯α3 
+
+> t
+
+≥ (1 − α1)3 ¯α3 
+
+> t
+
+/(1 − ¯αt)3. By Jensen’s inequality, we have 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+¯α3
+
+> t
+
+(1 − ¯αt)3 ≥
+
+ 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+¯αt
+
+(1 − ¯αt)
+
+3
+
+. (137) 
+
+> 1
+> T
+
+PTt=1 ¯αt  
+
+> (1 −¯αt)
+
+can be approximated by SNR , which comes from Hoeffding’s inequality (24), i.e., with a high probability, 
+
+1
+
+T
+
+> T
+
+X
+
+> t=1
+
+¯αt
+
+1 − ¯αt
+
+− SNR ≤ α1
+
+1 − α1
+
+r log dT (138) Therefore, when T ≳ log d, the required condition for the number of iterations is 
+
+s ≳ I1 := ( ϵ−1 + min  
+
+> u∈[M]
+
+{ν ˜π 
+
+> u
+
+(K)}−3)η−1 min  
+
+> u∈[M]
+
+{ν ˜π 
+
+> u
+
+(K)}−1SNR −3. (139) When s ≳ I1, we have 
+
+1 −
+
+> P
+
+X
+
+> j=1
+
+ζuj,j ′,t (s) ≳ √ϵ. (140) 
+
+D.3. Proof of Lemma 5 
+
+Proof. First, for any u ∈ [M ] and Yp = u, by (115), we know that for i, i′, such that Yi = Yi′ = u, we have ζui,p,t (s) = (1 + log ϵ−1(min u∈[M ] E[πu]) −1 − 1) 2/d ) · ζui′,p,t (s) for any s ≤ I. Then, by Hoeffding’s inequality (24), 
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u]ζui,p,t (s)( xti − √¯αtμu)
+
+=
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u]ζui,p,t (s)( xti − √¯αtμu) − E[
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u]ζui,p,t (s)( xti − √¯αtμu)] 
+
+≤
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u] (1 + log d log ϵ−1(min u∈[M ](ν ˜π  
+
+> u(K)) −1−1) 2
+> d
+
+)
+
+PPi=1 1[Yi = u] (xti − √¯αtμu) − E[
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u]ζui,p,t (s)( xti − √¯αtμu)] 
+
+≲(1 + log d log ϵ−1(min u∈[M ](ν ˜π 
+
+> u
+
+(K)) −1 − 1) 2
+
+d ) · p1 − ¯αt + ρ2 ¯αt ·
+
+s d log d
+
+PPi=1 1[Yi = u] ,
+
+(141) 29 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+with a high probability. We also have a similar result for i such that Yi̸ = u.We next study the training phase of the model after I1 iterations. Let μu be the mean of xtp. Then, we have 
+
+∥(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )) ∥2
+
+≲((1 −
+
+> P
+
+X
+
+> i=1
+
+ζui,p,t (I1)) 2 ¯αtd + (ρ2 ¯αt + 1 − ¯αt)(1 + log d log ϵ−1(min u∈[M ]((min u∈[M ](ν ˜π  
+
+> u(K)) −1−1) 2)−1−1) 2
+> d
+
+)2 log d
+
+PPi=1 1[Yp = u] d)
+
+≤dϵ, 
+
+(142) where the second term of the first step is by (141), and the last step is by (140) and holds if 
+
+> P
+
+X
+
+> i=1
+
+1[Yi = u] ≥ (ρ2 + 1) ϵ−1 log d. (143) for any u ∈ [M ] as long as ϵ ∈ (0 , δ Θ(1) ) with d ≳ log ϵ−1ν ˜π
+
+> min
+
+(K)−1, which is equivalent to 
+
+P ≳ min  
+
+> u∈[M]
+
+{ν ˜π 
+
+> u
+
+(K)}−1(ρ2 + 1) ϵ−1 log d, (144) with a high probability, because 
+
+Pr 
+
+ 1
+
+P
+
+> P
+
+X
+
+> i=1
+
+1[Yi = arg min   
+
+> u∈[M]
+
+γ(u)] ≥
+
+
+
+1 + 
+
+s
+
+log dK P min u∈[M ]{ν ˜π 
+
+> u
+
+(K)}
+
+
+
+min  
+
+> u∈[M]
+
+{ν ˜π 
+
+> u
+
+(K)}
+
+
+
+≤e−          
+
+> Pmin u∈[M]{ν˜π
+> u(K)}· log dK Pmin u∈[M]{ν˜π
+> u(K)}
+> 3
+
+≤(dK )−C
+
+(145) for some C > 1. We reduce log dK to log d in the final bound of P since d ≥ M ≥ K. Denote β1 = ϵ′
+
+> p⊤
+
+(√¯αtμu −
+
+PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)) and β2 = ϵ⊤ 
+
+> p
+
+(√¯αtμu − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)) . Note that by Cauchy-Schwarz inequality, 
+
+EE,X0 [β1], EE,X0 [β2] ≤ √dϵ (146) Therefore, with (142), we have 
+
+EE,X0 [∥v(I1) 
+
+> t
+
+(xtp −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )) − ϵp∥2/d ]=EE,X0 [∥v(I1) 
+
+> t
+
+ρ√¯αtϵ′ 
+
+> p
+
++ ( v(I1)
+
+> t
+
+√1 − ¯αt − 1) ϵp + v(I1) 
+
+> t
+
+(√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )) ∥2/d ]=EE,X0 [∥v(I1) 
+
+> t
+
+ρ√¯αtϵ′ 
+
+> p
+
++ ( v(I1)
+
+> t
+
+√1 − ¯αt − 1) ϵp∥/d ]2 + ( v(I1) 
+
+> t
+
+)2EE,X0 [∥√¯αtμu
+
+−
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d ] + 2 EE,X0 [ β1v(I1) 
+
+> t2
+
+√¯αt
+
+d ] + 2 EE,X0 [ β2(v(I1) 
+
+> t2
+
+√1 − ¯αt − 1) 
+
+d ]=(( v(I1) 
+
+> t
+
+)2ρ2 ¯αt + ( v(I1)
+
+> t
+
+√1 − ¯αt − 1) 2) + EE,X0 [( v(I1) 
+
+> t
+
+)2∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d ]+ 2 EE,X0 [ β1v(I1) 
+
+> t2
+
+ρ√¯αt
+
+d ] + 2 EE,X0 [ β2v(I1) 
+
+> t
+
+(v(I1)
+
+> t
+
+√1 − ¯αt − 1) 
+
+d ]
+
+(147) 30 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+Since that Et[¯ α2 
+
+> t
+
+] < ∞, we have 
+
+∂EE,X0 [∥vt(xtp − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)) − ϵp∥2/d ]
+
+∂v t
+
+=2 vtρ2 ¯αt + 2 √1 − ¯αt(vt
+
+√1 − ¯αt − 1) + EE,X0 [2 vt∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d ]+ 4 EE,X0 [ β1vtρ√¯αt
+
+d ] + 2 EE,X0 [ 2β2
+
+√1 − ¯αtvt − β2
+
+d ]=2( vt · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] − (√1 − ¯αt + β2
+
+d )) .
+
+(148) Denote 
+
+v∗ 
+
+> t
+
+=
+
+√1 − ¯αt + β2
+
+> d
+
+¯αtρ2 + 1 − ¯αt + EE,X0 [∥√¯αtμu − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)∥2/d ] + 2 β1ρ√ ¯αt+β2 
+
+> √1−¯αt
+> d
+
+. (149) Define the error et(s) = v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+. Then, by gradient update, 
+
+et(s + 1) =v(s+1)  
+
+> t
+
+− v∗
+
+> t
+
+=v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+− 2η · (v(s) 
+
+> t
+
+· EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] − (√1 − ¯αt + β2
+
+d )) =( v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+) − 2η · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] · (v(s) 
+
+> t
+
+− v∗ 
+
+> t
+
+)=(1 − 2η · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ]) · et(s).
+
+(150) Hence, given 
+
+η ≲(EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d + 2β1ρ√¯αt
+
+d
+
++ 2β2
+
+√1 − ¯αt
+
+d ]) −1/2,
+
+(151) i.e., 
+
+η ≲ 1max {ρ, 1} + ϵ (152) by (142), we can derive 
+
+|et(s)| ≤ (1 − 2η · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ]) s · | et(I1)|,
+
+(153) 31 Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs 
+
+which means after 
+
+s ≳ I2 := log |et(I1)|
+
+ϵ / log(1 − 2η · EE,X0 [¯ αtρ2 + 1 − ¯αt + ∥√¯αtμu −
+
+> P
+
+X
+
+> i=1
+
+xtisoftmax p( xti
+
+> ⊤
+
+W (I1)xtp
+
+d )∥2/d 
+
++ 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ]) −1
+
+=Θ(log |et(I1)|
+
+ϵ )
+
+(154) iterations, we can achieve that |et(s)| ≤ ϵ and v(s) 
+
+> t
+
+converges to v∗ 
+
+> t
+
+. Given v(0)  
+
+> t
+
+= Θ(1) , by (148), we have that for any 
+
+vt ≤ Θ(1) ,
+
+∂EE,X0 [∥vt(xtp − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)) − ϵp∥2/d ]
+
+∂v t
+
+≤EE,X0 [¯ αtρ2 + 1 − ¯αt + ¯ αt + 2β1ρ√¯αt
+
+d + 2β2
+
+√1 − ¯αt
+
+d ] − (√1 − ¯αt + β2
+
+d )] 
+
+≲ρ2 + 1 ,
+
+(155) where the last step is by β1 ∼ N (0 , ∥√¯αtμu − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)∥2), β2 ∼ N (0 , ∥√¯αtμu −
+
+PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)∥2), so that with a high probability, 
+
+β1, β 2 ≲ √d. (156) Hence, 
+
+|v(I1) 
+
+> t
+
+| = v(0)  
+
+> t
+
+−
+
+> I1−1
+
+X
+
+> s=0
+
+∂EE,X0 [∥v(s) 
+
+> t
+
+(xtp − PPi=1 xtisoftmax p( xti  
+
+> ⊤W(I1)xtp
+> d
+
+)) − ϵp∥2/d ]
+
+∂v t
+
+≲I1(ρ2 + 1) ,
+
+(157) and 
+
+|et(I1)| ≲ I1(ρ2 + 1) . (158) Then, 
+
+I2 = Θ(log I1(ρ2 + 1) 
+
+ϵ ). (159) 32

@@ -6,28 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-15
-- 运行时间：2026-04-15 20:01:26 UTC
+- 最新运行日期：2026-04-16
+- 运行时间：2026-04-16 20:29:55 UTC
 - 运行状态：成功
 - 本次总论文数：2
 - 精读区：1
 - 速读区：1
 
 ### 今日简报（AI）
-今日聚焦扩散模型性能优化，重点攻克语言生成效率与自我修正对齐技术。
-核心突破在于 LoSA 利用局部感知稀疏注意力强化块状扩散语言模型，SOAR 则实现了扩散过程的自修复对齐。
-建议优先研读 8.0 分的 LoSA，深入了解如何通过稀疏注意力提升文本扩散模型的生成质量。
-- 详情：[/202604/15/README](/202604/15/README)
+今日聚焦 Diffusion Transformer 在实时视频风格化中的突破，探索自回归渲染新范式。
+重点关注 DiT 作为实时重渲染器实现的流式视频风格化，以及 Transformer 学习最优 DDPM 去噪器的理论验证。
+建议关注视频生成模型从离线创作向实时交互渲染的演进，探索自回归扩散模型在动态视觉任务中的应用。
+- 详情：[/202604/16/README](/202604/16/README)
 
 ### 精读区论文标签
-1. [LoSA: Locality Aware Sparse Attention for Block-Wise Diffusion Language Models](/202604/15/2604.12056v1-losa-locality-aware-sparse-attention-for-block-wise-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：分块扩散语言模型作为自回归解码的替代方案
+1. [DiT as Real-Time Rerenderer: Streaming Video Stylization with Autoregressive Diffusion Transformer](/202604/16/2604.13509v1-dit-as-real-time-rerenderer-streaming-video-stylization-with-autoregressive-diffusion-transformer)  
+   标签：评分：9.0/10、query:ardm
+   evidence：用于流式视频风格化的自回归扩散Transformer
 
 ### 速读区论文标签
-1. [SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models](/202604/15/2604.12617v1-soar-self-correction-for-optimal-alignment-and-refinement-in-diffusion-models)  
+1. [Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs](/202604/16/2604.10074v1-transformers-learn-the-optimal-ddpm-denoiser-for-multi-token-gmms)  
    标签：评分：6.0/10、query:ardm
-   evidence：解决了扩散模型中类似于自回归模型的曝光偏差问题
+   evidence：分析了基于Transformer的扩散模型的收敛性
 
 
 <div class="dpr-home-promo-card">

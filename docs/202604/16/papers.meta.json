@@ -1,0 +1,37 @@
+{
+  "label": "2026-04-16",
+  "date": "2026-04-16",
+  "generated_at": "2026-04-16T20:30:05",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202604/16/2604.13509v1-dit-as-real-time-rerenderer-streaming-video-stylization-with-autoregressive-diffusion-transformer",
+      "section": "deep",
+      "title_en": "DiT as Real-Time Rerenderer: Streaming Video Stylization with Autoregressive Diffusion Transformer",
+      "authors": "Hengye Lyu, Zisu Li, Yue Hong, Yueting Weng, Jiaxin Shi, Hanwang Zhang, Chen Liang",
+      "date": "2026-04-15",
+      "pdf": "https://arxiv.org/pdf/2604.13509v1",
+      "score": "9.0",
+      "evidence": "用于流式视频风格化的自回归扩散Transformer",
+      "tldr": "针对现有视频风格化方法在长视频处理中稳定性差、计算开销大且难以实时应用的问题，本文提出了RTR-DiT框架。该方法基于扩散Transformer（DiT），通过自回归蒸馏技术将双向教师模型转化为高效的少步生成模型，并引入参考保持的KV缓存策略。RTR-DiT不仅实现了长视频的稳定风格化，还支持文本和参考图引导的实时风格切换，在视觉质量和处理速度上均优于现有方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Recent advances in video generation models has significantly accelerated video generation and related downstream tasks. Among these, video stylization holds important research value in areas such as immersive applications and artistic creation, attracting widespread attention. However, existing diffusion-based video stylization methods struggle to maintain stability and consistency when processing long videos, and their high computational cost and multi-step denoising make them difficult to apply in practical scenarios. In this work, we propose RTR-DiT (DiT as Real-Time Rerenderer), a steaming video stylization framework built upon Diffusion Transformer. We first fine-tune a bidirectional teacher model on a curated video stylization dataset, supporting both text-guided and reference-guided video stylization tasks, and subsequently distill it into a few-step autoregressive model via post-training with Self Forcing and Distribution Matching Distillation. Furthermore, we propose a reference-preserving KV cache update strategy that not only enables stable and consistent processing of long videos, but also supports real-time switching between text prompts and reference images. Experimental results show that RTR-DiT outperforms existing methods in both text-guided and reference-guided video stylization tasks, in terms of quantitative metrics and visual quality, and demonstrates excellent performance in real-time long video stylization and interactive style-switching applications.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/16/2604.10074v1-transformers-learn-the-optimal-ddpm-denoiser-for-multi-token-gmms",
+      "section": "quick",
+      "title_en": "Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs",
+      "authors": "Hongkang Li, Hancheng Min, Rene Vidal",
+      "date": "2026-04-11",
+      "pdf": "https://arxiv.org/pdf/2604.10074v1",
+      "score": "6.0",
+      "evidence": "分析了基于Transformer的扩散模型的收敛性",
+      "tldr": "本研究针对基于Transformer的扩散模型缺乏理论解释的问题，首次提供了其训练收敛性分析。研究聚焦于多token高斯混合模型（GMM）数据，证明了梯度下降法能使Transformer收敛至贝叶斯最优去噪风险。研究揭示了自注意力机制通过实现均值去噪机制来逼近最小均方误差（MMSE）估计器，并通过数值实验验证了理论发现，为理解Transformer在扩散模型中的成功提供了数学基础。",
+      "tags": "query:ardm",
+      "abstract_en": "Transformer-based diffusion models have demonstrated remarkable performance at generating high-quality samples. However, our theoretical understanding of the reasons for this success remains limited. For instance, existing models are typically trained by minimizing a denoising objective, which is equivalent to fitting the score function of the training data. However, we do not know why transformer-based models can match the score function for denoising, or why gradient-based methods converge to the optimal denoising model despite the non-convex loss landscape. To the best of our knowledge, this paper provides the first convergence analysis for training transformer-based diffusion models. More specifically, we consider the population Denoising Diffusion Probabilistic Model (DDPM) objective for denoising data that follow a multi-token Gaussian mixture distribution. We theoretically quantify the required number of tokens per data point and training iterations for the global convergence towards the Bayes optimal risk of the denoising objective, thereby achieving a desired score matching error. A deeper investigation reveals that the self-attention module of the trained transformer implements a mean denoising mechanism that enables the trained model to approximate the oracle Minimum Mean Squared Error (MMSE) estimator of the injected noise in the diffusion steps. Numerical experiments validate these findings.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
