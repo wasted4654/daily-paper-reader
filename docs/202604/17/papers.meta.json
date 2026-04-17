@@ -1,0 +1,23 @@
+{
+  "label": "2026-04-17",
+  "date": "2026-04-17",
+  "generated_at": "2026-04-17T20:36:36",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202604/17/2604.14591v1-prompt-guided-image-editing-with-masked-logit-nudging-in-visual-autoregressive-models",
+      "section": "quick",
+      "title_en": "Prompt-Guided Image Editing with Masked Logit Nudging in Visual Autoregressive Models",
+      "authors": "Amir El-Ghoussani, Marc Hölle, Gustavo Carneiro, Vasileios Belagiannis",
+      "date": "2026-04-16",
+      "pdf": "https://arxiv.org/pdf/2604.14591v1",
+      "score": "6.0",
+      "evidence": "在视觉自回归模型中使用逻辑值微调进行图像编辑",
+      "tldr": "本研究针对视觉自回归（VAR）模型中的提示词引导图像编辑问题，提出了 Masked Logit Nudging (MLN) 方法。该方法通过将源图像编码转换为 Logit，并利用源-目标提示词定义的语义轨迹引导模型预测，实现了在保留无关区域的同时进行精准编辑。结合基于交叉注意力的空间掩码方案和量化误差细化步骤，MLN 在 PIE 基准测试中取得了领先性能，且在重建质量和生成速度上均优于扩散模型及现有 VAR 方法。",
+      "tags": "query:ardm",
+      "abstract_en": "We address the problem of prompt-guided image editing in visual autoregressive models. Given a source image and a target text prompt, we aim to modify the source image according to the target prompt, while preserving all regions which are unrelated to the requested edit. To this end, we present Masked Logit Nudging, which uses the source image token maps to introduce a guidance step that aligns the model's predictions under the target prompt with these source token maps. Specifically, we convert the fixed source encodings into logits using the VAR encoding, nudging the model's predicted logits towards the targets along a semantic trajectory defined by the source-target prompts. Edits are applied only within spatial masks obtained through a dedicated masking scheme that leverages cross-attention differences between the source and edited prompts. Then, we introduce a refinement to correct quantization errors and improve reconstruction quality. Our approach achieves the best image editing performance on the PIE benchmark at 512px and 1024px resolutions. Beyond editing, our method delivers faithful reconstructions and outperforms previous methods on COCO at 512px and OpenImages at 1024px. Overall, our method outperforms VAR-related approaches and achieves comparable or even better performance than diffusion models, while being much faster. Code is available at 'https://github.com/AmirMaEl/MLN'.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

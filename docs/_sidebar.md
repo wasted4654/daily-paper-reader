@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-04-17 <!--dpr-date:20260417-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/17/2604.14591v1-prompt-guided-image-editing-with-masked-logit-nudging-in-visual-autoregressive-models" data-sidebar-item="{&quot;title&quot;: &quot;Prompt-Guided Image Editing with Masked Logit Nudging in Visual Autoregressive Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.14591v1-prompt-guided-image-editing-with-masked-logit-nudging-in-visual-autoregressive-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;在视觉自回归模型中使用逻辑值微调进行图像编辑&quot;}">Prompt-Guided Image Editing with Masked Logit Nudging in Visual Autoregressive Models</a>
   * 2026-04-16 <!--dpr-date:20260416-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/16/2604.13509v1-dit-as-real-time-rerenderer-streaming-video-stylization-with-autoregressive-diffusion-transformer" data-sidebar-item="{&quot;title&quot;: &quot;DiT as Real-Time Rerenderer: Streaming Video Stylization with Autoregressive Diffusion Transformer&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.13509v1-dit-as-real-time-rerenderer-streaming-video-stylization-with-autoregressive-diffusion-transformer&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;用于流式视频风格化的自回归扩散Transformer&quot;}">DiT as Real-Time Rerenderer: Streaming Video Stylization with Autoregressive Diffusion Transformer</a>

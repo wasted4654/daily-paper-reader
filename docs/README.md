@@ -6,28 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-16
-- 运行时间：2026-04-16 20:29:55 UTC
+- 最新运行日期：2026-04-17
+- 运行时间：2026-04-17 20:36:28 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：1
+- 本次总论文数：1
+- 精读区：0
 - 速读区：1
 
 ### 今日简报（AI）
-今日聚焦 Diffusion Transformer 在实时视频风格化中的突破，探索自回归渲染新范式。
-重点关注 DiT 作为实时重渲染器实现的流式视频风格化，以及 Transformer 学习最优 DDPM 去噪器的理论验证。
-建议关注视频生成模型从离线创作向实时交互渲染的演进，探索自回归扩散模型在动态视觉任务中的应用。
-- 详情：[/202604/16/README](/202604/16/README)
+今日聚焦视觉自回归模型（VAR）下的图像编辑新进展，探索 Masked Logit Nudging 引导技术。
+该研究通过在 VAR 模型中引入掩码 Logit 微调，实现了更精准的提示词引导图像局部编辑。
+建议关注自回归架构在图像生成与编辑领域的潜力，尝试将其应用于精细化的视觉内容创作。
+- 详情：[/202604/17/README](/202604/17/README)
 
 ### 精读区论文标签
-1. [DiT as Real-Time Rerenderer: Streaming Video Stylization with Autoregressive Diffusion Transformer](/202604/16/2604.13509v1-dit-as-real-time-rerenderer-streaming-video-stylization-with-autoregressive-diffusion-transformer)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于流式视频风格化的自回归扩散Transformer
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Transformers Learn the Optimal DDPM Denoiser for Multi-Token GMMs](/202604/16/2604.10074v1-transformers-learn-the-optimal-ddpm-denoiser-for-multi-token-gmms)  
+1. [Prompt-Guided Image Editing with Masked Logit Nudging in Visual Autoregressive Models](/202604/17/2604.14591v1-prompt-guided-image-editing-with-masked-logit-nudging-in-visual-autoregressive-models)  
    标签：评分：6.0/10、query:ardm
-   evidence：分析了基于Transformer的扩散模型的收敛性
+   evidence：在视觉自回归模型中使用逻辑值微调进行图像编辑
 
 
 <div class="dpr-home-promo-card">
