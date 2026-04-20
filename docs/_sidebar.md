@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-04-20 <!--dpr-date:20260420-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/20/2604.12617v2-soar-self-correction-for-optimal-alignment-and-refinement-in-diffusion-models" data-sidebar-item="{&quot;title&quot;: &quot;SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.12617v2-soar-self-correction-for-optimal-alignment-and-refinement-in-diffusion-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;解决了扩散模型中类似于自回归模型的曝光偏差问题&quot;}">SOAR: Self-Correction for Optimal Alignment and Refinement in Diffusion Models</a>
   * 2026-04-19 <!--dpr-date:20260419-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/19/2604.11748v3-langflow-continuous-diffusion-rivals-discrete-in-language-modeling" data-sidebar-item="{&quot;title&quot;: &quot;LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.11748v3-langflow-continuous-diffusion-rivals-discrete-in-language-modeling&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;连续扩散语言模型研究进展&quot;}">LangFlow: Continuous Diffusion Rivals Discrete in Language Modeling</a>
