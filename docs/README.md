@@ -6,52 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-21
-- 运行时间：2026-04-21 20:01:49 UTC
+- 最新运行日期：2026-04-22
+- 运行时间：2026-04-22 20:23:36 UTC
 - 运行状态：成功
-- 本次总论文数：10
-- 精读区：6
-- 速读区：4
+- 本次总论文数：6
+- 精读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今日深度研读 10 篇前沿论文，聚焦自回归扩散模型在 3D 布局与视频生成领域的双重突破。
-满分佳作揭示了 3D 形状协同生成的新范式，并利用投机解码显著提升了视频生成的推理效率。
-建议普通读者优先关注自回归模型在多模态生成
-- 详情：[/202604/21/README](/202604/21/README)
+今日聚焦多模态与扩散模型的高效融合，深度解析 BARD 与 DepCap 等 6 篇前沿推理优化方案。
+重点关注 BARD 如何通过渐进式块合并打破自回归与扩散模型的界限，以及 DepCap 实现的扩散语言模型并行解码提速。
+建议优先研读高分论文 BARD 的蒸馏策略，掌握多模态模型在保持高性能的同时实现极致轻量化的最新路径。
+- 详情：[/202604/22/README](/202604/22/README)
 
 ### 精读区论文标签
-1. [Co-generation of Layout and Shape from Text via Autoregressive 3D Diffusion](/202604/21/2604.16552v1-co-generation-of-layout-and-shape-from-text-via-autoregressive-3d-diffusion)  
-   标签：评分：10.0/10、query:ardm
-   evidence：用于场景生成的 3D 自回归扩散模型 (3D-ARD+)
-2. [Speculative Decoding for Autoregressive Video Generation](/202604/21/2604.17397v1-speculative-decoding-for-autoregressive-video-generation)  
-   标签：评分：10.0/10、query:ardm
-   evidence：自回归视频扩散的投机解码
-3. [BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation](/202604/21/2604.16514v1-bard-bridging-autoregressive-and-diffusion-vision-language-models-via-highly-efficient-progressive-block-merging-and-stage-wise-distillation)  
+1. [BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation](/202604/22/2604.16514v2-bard-bridging-autoregressive-and-diffusion-vision-language-models-via-highly-efficient-progressive-block-merging-and-stage-wise-distillation)  
    标签：评分：9.0/10、query:ardm
-   evidence：BARD 框架桥接了自回归和扩散视觉语言模型
-4. [Marrying Text-to-Motion Generation with Skeleton-Based Action Recognition](/202604/21/2604.17090v1-marrying-text-to-motion-generation-with-skeleton-based-action-recognition)  
-   标签：评分：9.0/10、query:ardm
-   evidence：基于坐标的自回归运动扩散模型 (CoAMD)
-5. [Video-Robin: Autoregressive Diffusion Planning for Intent-Grounded Video-to-Music Generation](/202604/21/2604.17656v1-video-robin-autoregressive-diffusion-planning-for-intent-grounded-video-to-music-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：将自回归规划与基于扩散的合成相结合
-6. [Interpolating Discrete Diffusion Models with Controllable Resampling](/202604/21/2604.17310v1-interpolating-discrete-diffusion-models-with-controllable-resampling)  
+   evidence：桥接自回归与扩散视觉语言模型
+2. [DepCap: Adaptive Block-Wise Parallel Decoding for Efficient Diffusion LM Inference](/202604/22/2604.15750v1-depcap-adaptive-block-wise-parallel-decoding-for-efficient-diffusion-lm-inference)  
    标签：评分：8.0/10、query:ardm
-   evidence：用于文本生成的插值离散扩散模型
+   evidence：扩散语言模型作为自回归生成的替代方案
+3. [Discrete Tilt Matching](/202604/22/2604.18739v1-discrete-tilt-matching)  
+   标签：评分：8.0/10、query:ardm
+   evidence：掩码扩散作为自回归生成的替代方案
+4. [$R^2$-dLLM: Accelerating Diffusion Large Language Models via Spatio-Temporal Redundancy Reduction](/202604/22/2604.18995v1-r2-dllm-accelerating-diffusion-large-language-models-via-spatio-temporal-redundancy-reduction)  
+   标签：评分：8.0/10、query:ardm
+   evidence：讨论扩散大语言模型 (dLLMs) 作为自回归生成的替代方案
 
 ### 速读区论文标签
-1. [NI Sampling: Accelerating Discrete Diffusion Sampling by Token Order Optimization](/202604/21/2604.18471v1-ni-sampling-accelerating-discrete-diffusion-sampling-by-token-order-optimization)  
-   标签：评分：8.0/10、query:ardm
-   evidence：离散扩散作为自回归的替代方案
-2. [CAGenMol: Condition-Aware Diffusion Language Model for Goal-Directed Molecular Generation](/202604/21/2604.11483v1-cagenmol-condition-aware-diffusion-language-model-for-goal-directed-molecular-generation)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于序列生成的扩散语言模型
-3. [(1D) Ordered Tokens Enable Efficient Test-Time Search](/202604/21/2604.15453v1-1d-ordered-tokens-enable-efficient-test-time-search)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于生成模型的自回归分词器
-4. [Elucidating the SNR-t Bias of Diffusion Probabilistic Models](/202604/21/2604.16044v1-elucidating-the-snr-t-bias-of-diffusion-probabilistic-models)  
+1. [Turbulent pair dispersion with Stochastic Generative Diffusion Models](/202604/22/2604.12932v1-turbulent-pair-dispersion-with-stochastic-generative-diffusion-models)  
+   标签：评分：6.0/10、query:diffpl
+   evidence：使用扩散模型生成拉格朗日速度轨迹
+2. [IncreFA: Breaking the Static Wall of Generative Model Attribution](/202604/22/2604.17736v1-increfa-breaking-the-static-wall-of-generative-model-attribution)  
    标签：评分：6.0/10、query:ardm
-   evidence：减轻扩散模型推理中的误差累积
+   evidence：扩散和自回归生成器的归属识别
 
 
 <div class="dpr-home-promo-card">

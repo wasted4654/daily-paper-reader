@@ -1,0 +1,1650 @@
+Title: Discrete Tilt Matching
+
+URL Source: https://arxiv.org/pdf/2604.18739v1
+
+Published Time: Wed, 22 Apr 2026 00:10:56 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Discrete Tilt Matching 
+
+Yuyuan Chen * 1 Shiyi Wang * 1 Peter Potaptchik 1 2 Jaeyeon Kim 1 Michael S. Albergo 1 3 4 
+
+# Abstract 
+
+Masked diffusion large language models (dLLMs) are a promising alternative to autoregressive generation. While reinforcement learning (RL) methods have recently been adapted to dLLM fine-tuning, their objectives typically depend on sequence-level marginal likelihoods, which are in-tractable for masked diffusion models. To address this, we derive Discrete Tilt Matching (DTM), a likelihood-free method that recasts dLLM fine-tuning as state-level matching of local unmasking posteriors under reward tilting. DTM takes the form of a weighted cross-entropy objective with explicit minimizer, and admits control variates that improve training stability. On a synthetic maze-planning task, we analyze how DTM’s an-nealing schedule and control variates affect train-ing stability and prevent mode collapse. At scale, fine-tuning LLaDA-8B-Instruct with DTM yields strong gains on Sudoku and Countdown while re-maining competitive on MATH500 and GSM8K. 
+
+# 1. Introduction 
+
+Fine-tuning large language models (LLMs) is critical for aligning models with downstream objectives and user pref-erences. For autoregressive LLMs, a mature set of reinforce-ment learning (RL) and preference-optimization methods has emerged (Schulman et al., 2017; Ouyang et al., 2022; Rafailov et al., 2024; Shao et al., 2024). Meanwhile, masked diffusion large language models (dLLMs) (Nie et al., 2025; Xie et al., 2025; Gong et al., 2025; Bie et al., 2025; Fan et al., 2026) have become a promising alternative to autore-gressive models, enabling parallel and flexible any-order inference, potentially offering new avenues for modeling unconventional modalities such as structured inputs (Chang et al., 2022; Sahoo et al., 2024; Shi et al., 2024; Campbell et al., 2024; Gong et al., 2025). 
+
+> *
+
+Equal contribution, alphabetical order. 1Harvard University 
+
+> 2
+
+University of Oxford 3IAIFI 4Kempner Institute. Correspondence to: Yuyuan Chen <yuyuanchen@math.harvard.edu >, Shiyi Wang 
+
+<fwang@math.harvard.edu >.
+
+Preprint. April 22, 2026. 
+
+In light of this, a large body of recent studies has adopted RL post-training to dLLMs and reported empirical gains (Zhao et al., 2025; Wang et al., 2025a; Tang et al., 2025; Zhu et al., 2025; Yang et al., 2025; Rojas et al., 2025). However, these methods come with a fundamental, structural complication: the objectives depend on the model’s marginal likelihood 
+
+for a complete sequence, which is intractable for dLLMs. This is because a single terminal sequence can be obtained through various decoding orders; the likelihood thus entails aggregating over an exponentially large set of unmasking trajectories. This makes exact likelihood evaluation im-practical and necessitates biased likelihood surrogates or high-variance estimators. This suggests that post-training for dLLMs should be formu-lated in terms of tractable state-level quantities—namely, lo-cal unmasking posteriors on partially masked states—rather than sequence-level objectives based on marginal likelihood. In this work, we introduce Discrete Tilt Matching (DTM) , a likelihood-free fine-tuning method for dLLMs that recasts post-training as state-level posterior matching under reward tilting , rather than as LLM-style policy optimization (Shao et al., 2024). Specifically, given a pretrained dLLM with target distribution ρ1 and a reward function r(·), we define the tilted target 
+
+ρ1,A (x) ∝ ρ1(x)eAr (x),
+
+where A > 0 is a scaling factor that controls the strength of the tilt. Rather than targeting ρ1,A in a single step, we follow recent work in continuous diffusion (Potaptchik et al., 2026; Guo et al., 2025) and progressively anneal a tilt parameter 
+
+a ∈ [0 , A ], performing incremental updates from ρ1,a to 
+
+ρ1,a +h.We extend this incremental tilting perspective to discrete-space continuous-time Markov chains and derive DTM as a cross-entropy fine-tuning objective for dLLMs. The minimizer of the objective is explicitly characterized by the Markov chain (with rate matrix) corresponding to the reward-tilted target, enabling updates from a to a+h without requiring sequence-level likelihood evaluation . Our formu-lation also admits control variates that preserve the mini-mizer while reducing gradient variance, improving training stability. Empirically, we show that DTM remains competitive with, 1 
+
+> arXiv:2604.18739v1 [cs.LG] 20 Apr 2026 Discrete Tilt Matching
+> Figure 1. Evaluation accuracy of DTM and baseline methods on benchmarks. All methods are of length 256 in 128 denoising steps.
+
+and often outperforms, prior RL-based fine-tuning ef-forts (Zhao et al., 2025; Tang et al., 2025; Wang et al., 2025a; Rojas et al., 2025; Yang et al., 2025) on LLaDA-8B-Instruct (Nie et al., 2025) across Sudoku, Countdown, MATH500, and GSM8K. We highlight our main contributions :• Derivation of the DTM Algorithm: We introduce Discrete Tilt Matching, a likelihood-free fine-tuning method for dLLMs that recasts post-training as state-level matching of unmasking posteriors. We derive a cross-entropy objective whose explicit minimizer is the reward-tilted posterior and which admits variance reduction via control variates. • Fine-Tuning LLaDA-8B-Instruct: We validate DTM at scale by applying it to LLaDA-8B-Instruct, where it achieves particularly strong results on struc-tured planning tasks such as Sudoku and Countdown while remaining competitive on mathematical rea-soning benchmarks. 
+
+Organization. In Section 2, we provide an overview of the continuous-time Markov chain formulation of MDMs, as well as how to phrase reward fine-tuning in this context. From there, in Section 3, we describe Discrete Tilt Matching (DTM), a likelihood-free fine-tuning method for dLLMs. In Section 4, we provide empirical results on using DTM to fine-tune LLaDA-8B-Instruct (Nie et al., 2025). 
+
+# 2. Background 
+
+We review masked diffusion models (MDMs) as continuous-time Markov chains (CTMCs) on discrete sequences, and formalize fine-tuning as reward-tilting in this setting. 
+
+Notation. Let V be a vocabulary set and let m denote the special mask token. We denote X = ( V ∪ { m})L for the space of length-L sequences. For x ∈ X , xi indicates the token at position i ∈ [L]. We use ρt for the marginal distribution of a time-indexed stochastic process Xt.
+
+2.1. Continuous-time Markov Chains: Dynamical Transport on Discrete State Space 
+
+A continuous-time markov chain (CTMC) {Xt}t∈[0 ,1] on 
+
+X is a stochastic process with an associated family of rate matrices {Rt(x, y )}t∈[0 ,1] capturing the instantaneous tran-sition likelihood from a state x to a state y, with 
+
+P[Xt+∆ t = y | Xt = x] = 1x=y + ∆ t · Rt(x, y ) + o(∆ t)
+
+(1) for small ∆t > 0. For x̸ = y, Rt(x, y ) ≥ 0, and Rt(x, x ) = P  
+
+> y̸=x
+
+−Rt(x, y ). Intuitively, this captures the law of total probability. The marginal distribution ρt of Xt evolves by the Kol-mogorov forward equation 
+
+∂tρt(x) = X
+
+> y∈X
+
+ρt(y)Rt(y, x ). (2) With generative modeling, given a prior distribution ρ0 and target distribution ρ1, the goal is to learn the rate matri-ces {Rt}t∈[0 ,1] such that (2) is satisfied with the correct marginals ρt=0 = ρ0 and ρt=1 = ρ1.
+
+2.2. Masked Diffusion Models 
+
+Let ρ0 be a point mass at the fully masked length-L sequence 
+
+(m, · · · , m). MDMs (Chang et al., 2022; Sahoo et al., 2024; Shi et al., 2024; Campbell et al., 2024) instantiate a CTMC that transports this simple prior ρ0 to a data distribution ρ1
+
+on clean sequences of length L. The evolution from ρ0 to 
+
+ρ1 can thus be interpreted as gradual unmasking. 
+
+Discrete stochastic interpolant. To construct this trans-2Discrete Tilt Matching 
+
+port between ρ0 and ρ1, one can use discrete stochastic interpolant, (Gat et al., 2024; Shaul et al., 2025; Kim et al., 2025a) which characterizes the intermediate distributions 
+
+{ρt}t∈(0 ,1) in law. Let α : [0 , 1] → [0 , 1] be a smooth, monotone schedule with α(0) = 0 and α(1) = 1 . By sampling a clean x1 ∼ ρ1, and for each i ∈ [L] in-dependently drawing an unmasking time T i with proba-bility P[T i < t ] = α(t) (or equivalently with density 
+
+T i ∼ ˙α(t)dt ), we define the partially masked state xt by 
+
+xit := 
+
+(
+
+xi
+
+> 1
+
+, t ≥ T i
+
+m, t < T i , (3) Let ρt := Law( xt).
+
+From the interpolant to the CTMC rate matrices. For the masking interpolant (3) , the only transitions over an infinitesimal interval [t, t +dt ] are single-coordinate reveals :from a state x we may unmask one masked position i and move to x[xi ← v] for some v ∈ V . Moreover, since each reveal time T i satisfies P[T i < t ] = α(t), the instantaneous likelihood that a still-masked coordinate reveals in [t, t + dt ]
+
+is the hazard rate λ(t)dt where 
+
+λ(t) = ˙α(t)1 − α(t) .
+
+Then the marginal law {ρt}t∈[0 ,1] induced by the interpolant (3) can be realized by a CTMC whose rate matrices are 
+
+Rt(x, x [xi ← v]) = λ(t) · P[xi 
+
+> 1
+
+= v | xt = x], (4) i.e. λ(t) is the instantaneous unmask event rate at the still-masked position i, and multiplying by conditional probabil-ity allocates that event to the specific token v.
+
+Unmasking posterior. From (4) , the key object needed for generation is the unmasking posterior 
+
+π∗(v | xt, i ) := P[xi 
+
+> 1
+
+= v | xt],
+
+i.e., the distribution of the clean token at a masked position 
+
+i given the current partially-masked sequence xt. A neural network πθ 1 approximates π∗(v | xt, i ) and is trained by minimizing the ELBO-based loss 
+
+LMDM (θ) = −
+
+Z 10
+
+λ(t)E
+
+h X 
+
+> i∈[L]: xit=m
+
+log πθ (xi 
+
+> 1
+
+| xt, i )
+
+i
+
+dt 
+
+(5) where the expectation is taken over x1 ∼ ρ1 and xt ∼
+
+ρt(· | x1). The unique minimizer is the ground-truth un-masking posterior π∗. More precisely, if ρθ 
+
+> 1
+
+is the terminal                 
+
+> 1Slight abuse of notation: although we write πθ(· | xt, i )as a conditional distribution over V, in implementation the neural network πθtakes in the partially masked sequence xtand outputs an L-by-|V| matrix of logits; πθ(· | xt, i )corresponds to the i-th row of this matrix after softmax.
+
+distribution induced by the parametric model, then 
+
+KL( ρ1∥ρθ
+
+> 1
+
+) ≤ L MDM (θ) − min  
+
+> θ′
+
+LMDM (θ′). (6) Appendix C of Kim et al. (2025a) provides a more compre-hensive overview of the framework of MDMs through the lens of discrete stochastic interpolants. 
+
+MDM inference and the intractability challenge. At inference time, given a learned unmasking posterior πθ (· | 
+
+xt, i ), a simple sampling procedure using (1) discretizes the given CTMC into N steps, starting from the fully-masked sequence, and iteratively selects ⌊L/N ⌋ masked positions and reveals them according to the prediction πθ (· | xt, i )
+
+until all tokens are unmasked. This inference procedure makes the terminal marginal like-lihood ρθ (x1) computationally intractable, as a single ter-minal sequence x1 can be generated via exponentially many unmasking trajectories, i.e., orders of revealing tokens, and 
+
+ρθ (x1) marginalizes over all such trajectories. As a result, likelihood-based reinforcement learning objectives such as GRPO, which require computing log ρθ (x1), are not directly tractable. Therefore, rather than adopting a likelihood-based RL view-point, we recast fine-tuning as reward tilting of the terminal distribution. As we will see, this perspective, combined with the structure of MDMs, yields tractable objectives that depend only on local unmasking posteriors, providing the framework for what we call Discrete Tilt Matching .
+
+2.3. Fine-tuning as Reward-tilting 
+
+Let r : VL → R be a reward function and A > 0 be a constant. Given a pre-trained MDM with unmasking posterior π0(· | xt, i ) that samples from the data distribution 
+
+ρ1, we can frame the goal of fine-tuning as training a tilted unmasking posterior πA(· | xt, i ) whose induced terminal marginal ρ1,A is given by 
+
+ρ1,A (x) ∝ ρ1(x)eAr (x). (7) 
+
+Annealing from a = 0 to a = A. Directly re-weighting samples under ρ1 to be samples under ρ1(x)eAr (x) on which to perform supervised fine-tuning is usually an untenable strategy, as the weights have high variance and cause mode collapse (Guo et al., 2025). An alternative strategy is to anneal toward the terminal target tilted distribution with a parameter a ∈ [0 , A ], i.e. to set an intermediate target 
+
+ρ1,a (x) ∝ ρ1(x)ear (x). (8) Recent works (Potaptchik et al., 2026; Guo et al., 2025) have found it useful to phrase fine-tuning in this light, not only because it allows one to consider optimization procedures 3Discrete Tilt Matching 
+
+via a sequence of local subproblems whose minimizers re-main close, but also to enable new objective functions that arise from dynamical relations between the different ρt,a .To sample from the tilted distribution (8) , a natural approach is to keep the same masked-diffusion CTMC structure as in (4) , and simply replace the base unmasking posterior 
+
+P[xi 
+
+> 1
+
+= v | xt] with one conditional on a new interpolant 
+
+xt,a . In light of this, we define the tilted interpolant by first drawing x1 ∼ ρ1,a and then applying the same schedule: 
+
+xit,a := 
+
+(
+
+xi
+
+> 1
+
+, t ≥ T i,
+
+m, t < T i, T i ∼ ˙α(t) dt, x1 ∼ ρ1,a (9) The induced marginals {ρt,a }t∈[0 ,1] can then be realized by the CTMC with rate matrices 
+
+Rt,a (x, x [xi ← v]) = λ(t) · Pa[xi 
+
+> 1
+
+= v | xt]
+
+where Pa denotes the tilted distribution induced by (9). 
+
+Problem formulation. Using this notation, we cast fine-tuning as an incremental problem: given at tilt level a, we aim to fine-tune it to match the next tilted distribution at level a + h, where h > 0 is a small annealing step size. Fix 0 ≤ a < A . Suppose we have an unmasking posterior 
+
+πa(· | xt, i ) whose induced terminal marginal is ρ1,a . Our objective is to train a further tilted unmasking posterior 
+
+πθ (· | xt, i ) ≈ πa+h(v | xt, i ) = Pa+h[xi 
+
+> 1
+
+= v | xt]
+
+whose induced terminal marginal satisfies 
+
+ρ1,a +h(x) ∝ ρ1,a (x)ehr (x) ∝ ρ1(x)e(a+h)r(x).
+
+# 3. Discrete Tilt Matching 
+
+Section 2.3 reduces fine-tuning under reward-tilting to the 
+
+incremental tilting problem : given πa sampling ρ1,a , train 
+
+πθ ≈ πa+h to sample from ρ1,a +h. In this section, we derive Discrete Tilt Matching (DTM), a tractable objective for carrying out this update without requiring likelihood evaluation. 
+
+The ideal objective. If we had access to tilted samples 
+
+x1 ∼ ρ1,a +h and could evaluate the ground-truth posterior 
+
+πa+h, then the most direct approach would be the standard MDM objective with respect to the tilted unmasking poste-rior, i.e. minimize the cross-entropy on masked positions 
+
+min  
+
+> θ
+
+Ea+h
+
+h X 
+
+> i:xit=m
+
+CE  πa+h(· | xt, i )∥πθ (· | xt, i )i
+
+,
+
+(10) where CE( ·∥· ) denotes the cross-entropy. The above equa-tion, however, is intractable, as we cannot sample from 
+
+x1 ∼ ρ1,a +h, i.e., πa+h(· | xt, i ) is inaccessible. 
+
+3.1. Esscher Transform: Tilting as Conditional Reweighting 
+
+The idea then is to express the unknown tilt a+h in terms of quantities under the base tilt a to which we do have access. The path measure Pa+h of the tilted MDM is defined via 
+
+x1 ∼ ρ1,a +h and then sampling xt via the same masking construction in (9) . Crucially, by construction of the inter-polant in (9) , conditional on x1, the masking process—and hence the conditional law of xt given x1—is independent of the tilt level. The tilt changes only the marginal law of 
+
+x1 from ρ1,a to ρ1,a +h. Since ρ1,a +h(x) ∝ ρ1,a (x)ehr (x),it follows that the corresponding path measures are related by the Radon–Nikodym derivative 
+
+dPa+h
+
+dPa
+
+= ehr (x1)
+
+Ea[ehr (x1)] . (11) Consequently, for any integrable functional φ of the path, 
+
+Ea+h[φ] = Ea
+
+ehr (x1)φ
+
+Ea
+
+ehr (x1) , (12) which gives a way to rewrite the previously intractable ex-pectation Ea+h in (10) as tractable importance-weighted expectations Ea. Similarly, we have the conditional change-of-measure identity: for any t ∈ [0 , 1] ,
+
+Ea+h[G | xt] = Ea[Ge hr (x1) | xt]
+
+Ea[ehr (x1) | xt] . (13) Applying (13) with G = 1{xi 
+
+> 1
+
+= v}, the left hand side of (13) becomes precisely the target unmasking posterior 
+
+Ea+h[1{xi 
+
+> 1
+
+= v} | xt] = πa+h(v | xt, i )
+
+Estimating this ratio directly can be high-variance. How-ever, clearing denominators yields the following equivalent characterization of the tilted posterior: 
+
+Proposition 3.1. Fix t ∈ [0 , 1] , partially masked x ∈ X ,and position i with xi = m. Then πa+h(· | x, i ) is the unique probability simplex on V such that 
+
+Ea[ehr (x1)πa+h(v | x, i ) | xt] = Ea[ehr (x1)1{xi 
+
+> 1
+
+= v} | xt]
+
+(14) 
+
+for every v ∈ V .
+
+This is the key step toward making the ideal objective (10) tractable: it characterizes the unknown πa+h through known conditional weighted moments under Pa.
+
+Remark. The conditional reweighting identities (11) –(13) are a special case of the classical Esscher transform (i.e. exponential tilting) and, more generally, of a conditional tilting principle for arbitrary random targets and losses. For completeness, Appendix A presents a general tilted regres-sion framework that recovers our setting by a particular choice of variables and Bregman divergence. 4Discrete Tilt Matching 
+
+3.2. Moving beyond the Ideal World: DTM as a Variance-reduced Projection 
+
+Using (12) and (14) , we now turn (10) into a tractable ob-jective using only samples from Pa and evaluations of πa.
+
+Fixing the expectation. By (12) , any Ea+h[·] appearing in the ideal objective can be rewritten as an importance-weighted Ea[·]. Concretely, we can replace samples x1 ∼
+
+ρ1,a +h in (10) by rollouts from Pa and weight each x1 ∼
+
+ρ1,a by ehr (x1).
+
+Fixing the target without evaluating πa+h. The remain-ing issue is the target distribution inside the cross-entropy. Proposition 3.1 shows that the weighted target moments we need are those of the one-hot indicator 1{xi 
+
+> 1
+
+= v}, which is typically high variance. This motivates introducing a ran-dom target distribution Tc(· | xt, i, x 1) (parameterized by a control parameter c) that is conditionally unbiased in the same weighted sense: 
+
+Ea[ehr (x1)Tc(v | xt, i, x 1) | xt] = Ea[ehr (x1)1{xi 
+
+> 1
+
+= v} | xt]
+
+(15) for all v ∈ V . Intuitively, Tc replaces the raw one-hot target with a lower-variance random simplex while preserving the same weighted conditional mean as in (14) . One concrete choice of Tc is given below in (17). 
+
+The c-DTM objective. Given (15) , we arrive at the (variance-controlled) Discrete Tilt Matching objective: 
+
+Proposition 3.2 (c-DTM objective) . Assume (15) holds for all (t, x, i ). Then the unique minimizer of 
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) = 
+
+Z 10
+
+λ(t) Ea
+
+h X
+
+> i∈[L], x it=m
+
+ehr (x1)
+
+· CE  Tc(· | xt, i, x 1)∥πθ (· | xt, i )i
+
+dt. 
+
+(16) 
+
+is the ground-truth tilted unmasking posterior πa+h, i.e. 
+
+πθ∗ (· | xt, i ) = πa+h(· | xt, i ).
+
+Proof sketch. Fix (t, x, i ) and consider minimizing the con-ditional objective Ea[ehr (x1)CE( Tc∥π) | xt] over π on the simplex over V. By convexity of cross-entropy, the mini-mizer is the normalized conditional mean of ehr (x1)Tc(·)
+
+given xt. Using (15) and Proposition 3.1, this normalized mean is precisely πa+h(· | xt, i ).
+
+A concrete unbiased target with control variate. One concrete target that satisfies (15) is 
+
+Tc(v | xt, i, x 1) := cπ a(v | xt, i ) + ( ehr (x1) − c)1{v = xi
+
+> 1
+
+}
+
+ehr (x1) ,
+
+(17) where in most generality c can be any σ(xt)-measurable function. It recovers the simple one-hot target 1{v = xi
+
+> 1
+
+}
+
+when c = 0 . By construction, we check that 
+
+## Ea[ehr (x1)Tc(v | xt, i, x 1) | xt]= Ea[c π a(v | xt, i ) + ( ehr (x1) − c)1{xi 
+
+> 1
+
+## = v} | xt]= Ea[ehr (x1)1{xi 
+
+> 1
+
+## = v} | xt]
+
+since by definition πa(v | xt, i ) = Ea[1{xi 
+
+> 1
+
+= v} | xt].This establishes (15) , and concludes our derivation of the 
+
+c-DTM loss function as a principled and tractable objec-tive with guaranteed unique minimizer and requiring no likelihood computations. In practice, with sufficiently small h, it would be convenient to choose c = 1 :
+
+Proposition 3.3. For sufficiently small h > 0,
+
+Var[ ∇L 0-DTM 
+
+> a→a+h
+
+(θ)] ≥ Var[ ∇L 1-DTM 
+
+> a→a+h
+
+(θ)] . (18) We present a proof of (18) in Appendix B. 
+
+3.3. DTM Loss Bounds KL on Terminal Law 
+
+Via the reweighting by the unmasking schedule, the c-DTM objective (16) inherits the standard MDM principle that controlling local posteriors controls the terminal marginal. Analogous to (6), we have 
+
+Proposition 3.4. Let ρθ be the terminal marginal distribu-tion on VL induced by the parametric model’s unmasking posterior πθ . Then 
+
+KL( ρ1,a +h∥ρθ ) ≤ 1
+
+Z
+
+
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) − L c-DTM 
+
+> a→a+h
+
+(θ∗)
+
+
+
+,
+
+(19) 
+
+where Z = Ea[ehr (x1)].
+
+A proof is given in Appendix B. 
+
+# 4. Experiments 
+
+In this section, we evaluate DTM on both controlled syn-thetic settings and large-scale dLLM fine-tuning. In 4.1, we first describe two practical interventions: aligning DTM with semi-autoregressive (SAR) decoding, a commonly used dLLM inference strategy, and improving sample efficiency via a replay buffer. In 4.2, we then implement DTM on a synthetic maze-planning task to study the effects of the con-trol variate and annealing step size on stability, reward, and diversity. Finally, in 4.3, we fine-tune LLaDA-8B-Instruct with DTM on math reasoning and planning benchmarks, and complement the main results with ablations and a wallclock comparison against prior RL-based methods. 5Discrete Tilt Matching  
+
+> Figure 2. Comparison of performance on maze planning task for DTM with and without the control variate.
+
+4.1. Practical Interventions DTM is adaptive to semi-autoregressive decoding. 
+
+Many state-of-the-art dLLMs are deployed with semi-autoregressive (SAR) decoding, generating blocks autore-gressively while allowing any-order updates within each block (Han et al., 2023; Arriola et al., 2025; Nie et al., 2025; Kim et al., 2025b). This makes it desirable to align the 
+
+xt’s masking pattern encountered during training to match those arising from SAR decoding, rather than from random masking over the full sequence. Our key observation is that DTM’s guarantee naturally ex-tends to this setup. Since the c-DTM loss is defined point-wise in (t, x t, i ) pair, its minimizer depends on the decoding procedure only through the distribution of the conditioning states xt and the set of masked indices i. Therefore, to align DTM with SAR decoding, it suffices to replace the fully random-masking interpolant (9) with an SAR-compatible one and restrict the per-time summation to the active block. The only further modification is to replace the hazard λ(t)
+
+with the one induced by the SAR interpolant, which pre-serves the same KL-control guarantee through the corre-sponding reweighting of local cross-entropies. We present the SAR interpolant, its hazard, and the resulting SAR-aligned c-DTM objective in Appendix C. 
+
+Replay buffer. A practical advantage that DTM offers is that it directly optimizes intermediate training states xt,rather than necessarily requiring a fresh, online rollout for every iteration. Consequently, a single rollout and reward pair (x1, r (x1)) can be recycled many times, as many dis-tinct training states xt’s can be produced per x1 via the stochastic interpolant (9). We therefore maintain a replay buffer of terminal samples and their rewards. To form each minibatch, we first sample 
+
+x1 from the buffer and then construct fresh intermediate states xt via the interpolant, which requires no additional neural network calls . The buffer is refreshed periodically with newly generated rollouts. This design substantially amortizes the cost of expensive online rollouts. 
+
+4.2. Maze Planning 
+
+We first study DTM on a synthetic maze-planning task, which provides a controlled and visualizable setting to ex-amine how the control variate c and annealing step size h
+
+affect reward, validity, and solution diversity. We find that both materially affect training: using the control variate to-gether with a smaller annealing step improves stability and preserves diverse high-reward solutions, whereas removing the control variate or taking overly aggressive tilting steps leads to visible mode collapse. 
+
+Task. At a high level, an MDM is given the start and goal co-ordinates in a fixed maze (see Fig. 7) and is tasked with gen-erating a valid path connecting them without hitting walls. Concretely, a prompt has the format (s, g, SEP , m, . . . , m),where SEP , s, and g denote the separation token, start and goal, respectively. The MDM then generates a sequence 
+
+(s, g, SEP , z 1, z 2, . . . , z n, PAD , . . . , PAD ), where PAD is a padding token and (z1, . . . , z n) corresponds to a path in the maze grid. 
+
+Setup. We start from a pretrained MDM that already solves the task well on a fixed 41 × 41 maze. We then further fine-tune this model using DTM with a task-specific reward. Concretely, we employ a stay-away-from-center reward, which assigns to each valid path the minimum Manhattan distance, over all cells along the path, to the center of the grid. A path is considered valid if it connects s and g
+
+without hitting walls or making jumps; invalid paths receive a negative penalty. To isolate the stability effects of our design choices, we ablate (i) the control variate c ∈ { 0, 1}
+
+in the c-DTM target, and (ii) the annealing step size h ∈{2.5, 7.5}, holding all else fixed and scaling the number of steps per h-phase so each setting uses the same compute. We defer more details to App. D.1. 
+
+Result. Figure 2 and Figure 5 show that the annealing step size and control variate can materially affect the training 6Discrete Tilt Matching                                                                         
+
+> Table 1. Model performance on four reasoning benchmarks. The best results are bolded and the second best are underlined.
+> MATH500 (0-SHOT )COUNTDOWN (0-SHOT )SUDOKU (3-SHOT )GSM8K(0-SHOT )MODEL / S EQ LEN 256 512 256 512 256 512 256 512
+> LL ADA-8B-I NST .32.4 34.6 16.8 16.8 27.7 26.2 77.2 79.8 LL ADA-1.5 32.2 35.8 21.1 21.5 26.9 29.0 80.5 81.9 D1 36.0 39.4 30.9 34.4 32.5 29.3 80.6 81.3 WD1 37.4 39.0 52.3 50.8 32.1 22.5 81.5 80.3 UNI GRPO 37.4 39.4 43.0 57.0 67.0 62.9 82.5 82.7 SPG 40.0 41.8 70.7 70.3 94.0 93.1 86.1 84.5
+> DTM (O URS )36.0 40.2 81.6 76.6 99.2 99.4 81.6 83.2
+
+quality: using the control variate ( c = 1 ) with a smaller step size yields higher reward and validity while maintaining substantially better coverage, whereas either removing the control variate ( c = 0 ) or taking overly aggressive annealing steps (large h) leads to a visually apparent mode collapse (rollouts mostly concentrate on a few near-identical paths). This suggests that it is crucial in practice to balance the aggressiveness of the tilting step size against optimization stability: h should be large enough to make meaningful progress, but small enough—and paired with the control variate—to avoid collapse and preserve solution diversity. 
+
+4.3. Fine-tuning LLaDA-8B-Instruct 
+
+We now present results that demonstrate the performance of DTM at scale by fine-tuning LLaDA-8B-Instruct (Nie et al., 2025), which has been a common testbed for post-training algorithms for dLLMs. 
+
+Tasks and Baselines. Following prior protocols, we fo-cus on math reasoning and planning benchmarks; GSM8K (Cobbe et al., 2021), MATH500 (Lightman et al., 2024), Countdown (Pan et al., 2025), and Sudoku (Arel, 2025). For a fair comparison, we adapt the prompt formatting and training-test splitting from SPG (Wang et al., 2025a). All training and evaluation are conducted in the zero-shot set-ting, except for Sudoku where we use 3-shot prompts for both training and evaluation due to the base model’s diffi-culty with Sudoku. We benchmark against recent RL meth-ods for fine-tuning dLLMs, including LLaDA-1.5 (Zhu et al., 2025), d1 (Zhao et al., 2025), wd1 (Tang et al., 2025), Uni-GRPO (Yang et al., 2025), and SPG (Wang et al., 2025a). 
+
+Implementation details. Across all tasks, we fine-tune the model with Low-Rank Adaptation (LoRA) (Hu et al., 2022) under rank r = 128 and scaling factor α = 64 , following all of the baselines. During the training rollout, we adopt SAR sampling with generation length 256 and block size 32 and train with the SAR-aligned DTM objective (34) . We decode 
+
+2 tokens per step for a total of T = 128 steps. These are all standard design choices aligned with all our baselines. For all four tasks, we use confidence-based within-block up-dates (selecting the to-be-revealed positions by the model’s confidence in the sampled token). We use sampling tem-perature 1.0 for GSM8K, MATH500, and Countdown to encourage diverse rollouts, and 0.0 for Sudoku as it has a single correct completion per prompt. Finally, for all tasks we use the c-DTM objective with control variate c = 1 and set the annealing step size to h = 2 .5 for Sudoku, h = 6 for Countdown, and h = 1 for GSM8K and MATH500. At evaluation, aligned with all baselines, we by default employ a confidence-based and semi-autoregressive strategy with block size 32 at temperature τ = 0 .0.
+
+Results. The complete results on the performance of DTM are summarized in Table 1, in comparison with the base model and other baselines. DTM delivers strong gains over the base LLaDA-8B-Instruct on planning benchmarks, and is particularly effective on Sudoku: with the same evaluation protocol and SAR decoding as prior work, DTM reaches 
+
+99.2% accuracy at length 256 (and 99.4% at length 512), substantially improving over the base model (27.7/26.2) and surpassing the strongest prior baselines (e.g., SPG at 94.0/93.1). On Countdown, DTM also achieves the best performance at both length 256 ( 81.6% ) and length 512 (76.6% ). 
+
+4.4. Additional Qualitative Analysis and Ablation Local posterior matching and reasoning. On MATH500 and GSM8K, DTM improves upon the base model but is less competitive than the top-performing baselines. We hy-pothesize that this reflects a difference between improving 
+
+state-level local predictions and achieving globally coherent long-horizon reasoning : DTM trains directly on local un-masking posteriors at intermediate denoising states, which can improve local reasoning consistency, but harder math-ematical reasoning problems place stronger demands on maintaining coherent reasoning over longer and more di-verse decoding trajectories. In such settings, better state-level posterior prediction may translate less directly into final-answer accuracy. Still, DTM improves substantially with additional decoding budget on MATH500 and GSM8K, 7Discrete Tilt Matching       
+
+> Figure 3. Ablation on annealing step size hon Countdown. Left figure shows the correct fraction on the evaluation set of the model checkpoints. Right figure shows the training reward trajectory. A moderate step size h= 6 achieves the best result.
+
+rising from 36.0 and 81.6 at generation length 256 to 40.2 and 83.2 at length 512, which is consistent with the view that stronger local predictions can be converted into better long-horizon reasoning when given more inference steps. To further support the claim that DTM’s direct state-level training improves reasoning consistency, we provide addi-tional qualitative evidence from Countdown, where reason-ing is more structured and easier to inspect. As shown in Fig. 6, DTM produces a more stable effective generation length than sequence-level RL baselines, suggesting less reward hacking and more stable intermediate reasoning. 
+
+Wallclock Comparison. On the tasks where DTM out-performs the strongest RL baselines, we show that DTM achieves higher rewards more efficiently. Under the same training setup on 8 H100 GPUs, we compared DTM to SPG on the Sudoku dataset. As shown in Figure 4, DTM converges more quickly and to a higher reward. 
+
+Ablation on h. We ablate on the annealing step size and per-form training on Countdown with h ∈ { 1.5, 3, 6, 12 }, while matching the overall compute budget and keeping the re-maining hyperparameters fixed. As shown in Fig. 3, the best performance is attained with h = 6 , while DTM remains competitive across other choices of h, which indicates that the method is reasonably robust to the choice of h. We did not observe instability caused by the importance weighting in these runs. Empirically, the main effect of h appears to be the expected tradeoff: when h is too small, each phase makes only a limited update to the policy, and errors due to insufficient minimization in each phase accumulate; when 
+
+h is too large, each phase tilts toward a target that is farther away and optimization becomes less effective, with a greater risk of mode collapse (also consistent with (Guo et al., 2025) and our Fig. 2 ablation). A moderate value ( h = 6 ) provides the best balance between these two effects, achieving high convergence without mode collapse: Countdown questions naturally have two modes: ones solvable with addition/-subtraction and ones requiring multiplication/division; the second mode is tiny with base LLaDA achieving only 1.95% accuracy, yet our h = 6 fine-tuned model is able to preserve the mode and improve it to 2.78% accuracy, whereas this mode collapsed (0%) in the SPG fine-tuned model.               
+
+> Figure 4. Wallclock comparison for DTM and SPG on Sudoku, both trained on 8 H100 GPUs. DTM attains a higher reward and is more efficient. Since DTM reward is evaluated for frozen model
+> πawithin each a7→a+hphase, the reward is roughly constant per phase, and jumps at the phase boundary when the model πa
+> is updated to πθ≈πa+has in Algorithm 1. The SPG reward is evaluated on the training batch, thus showing a continual increase.
+
+# 5. Related Work 
+
+Reinforcement Learning for Fine-tuning Masked Diffu-sion LLMs. A rapidly growing line of work adapts online RL and preference optimization to dLLMs, but faces a cen-tral obstacle: policy-optimization objectives require (explic-itly or implicitly) evaluating likelihood ratios or sequence-level likelihood surrogates. Early approaches such as Zhao et al. (2025) introduce diffusion-compatible variants of group-based policy optimization by leveraging tractable lo-
+
+8Discrete Tilt Matching 
+
+cal unmasking quantities, and subsequent works explore al-ternative estimators and objectives to reduce the bias and/or variance induced by the inherent likelihood intractability, in-cluding weighted policy-optimization objectives (Tang et al., 2025), masking-structure-based likelihood/trajectory esti-mators (Wang et al., 2025b), variance-reduced ELBO-based preference optimization (Zhu et al., 2025), lower-variance ELBO approximations for group objectives (Rojas et al., 2025), and bound-sandwiching strategies to mitigate ELBO-induced bias (Wang et al., 2025a). Relatedly, Luo et al. (2025) proposes a direct group-preference optimization ob-jective that avoids a policy-gradient likelihood-ratio form, enabling efficient deterministic samplers in some diffusion settings. As we noted in the introduction, our approach is orthogonal: rather than improving or approximating marginal-likelihood surrogates, DTM derives a local projection objective with theoretical guarantee of the ground-truth minimizer for the incremental update πa 7 → πa+h that bypasses likelihood evaluation altogether, while still supporting practical infer-ence procedures (including semi-autoregressive variants). 
+
+Tilt Matching for Continuous Diffusion Our work builds most directly on Tilt Matching (TM), which studies expo-nential reward tilting for continuous-space diffusion/flow models by viewing fine-tuning as an a-indexed evolution 
+
+of intermediate targets ρ1,a ∝ ρ1ear and learning update rules that move from a to a+h rather than attempting a one-shot tilt (Potaptchik et al., 2026). TM derives conditional (Esscher) relations that express tilted dynamics using ex-pectations under the current model, motivating incremental annealing in a, practical objectives, and variance-reduction strategies. While DTM borrows this core incremental tilting philoso-phy, our contribution is not a routine translation to a new set-ting: the discrete CTMC / masked-diffusion domain changes the object being learned and forces a different set of techni-cal and practical resolutions. In particular, discrete MDMs are naturally specified by a CTMC generator whose learn-able component is a local unmasking posterior ; connecting this to the interpolant-induced marginal path yields a con-crete rate factorization and lets us derive a cross-entropy 
+
+fine-tuning objective that is aligned with base MDMs pre-training and the discrete space geometry while still provid-ing a principled control of the induced terminal distribution (via a KL bound tied to the loss). Moreover, because state-of-the-art dLLMs commonly rely on semi-autoregressive decoding at inference, we show how to modify the inter-polant and time-weighting so that training matches the same 
+
+family of partially-masked states encountered at test time, improving train-test alignment without changing the popu-lation optimum. Finally, we validate these discrete-specific design choices at scale by fine-tuning LLaDA-8B-Instruct and demonstrating that DTM remains effective in the large-model regime where practical stability and decoding align-ment matter most. 
+
+# 6. Conclusion 
+
+In this paper, we introduce Discrete Tilt Matching (DTM). DTM views reward fine-tuning as progressive distribution tilting and leverages the continuous-time Markov chain structure of masked diffusion language models. DTM by-passes intractable likelihood issues of masked diffusions, but also is provably minimized at the desired tilted unmask-ing posterior. 
+
+Broader viewpoint. The success of RL-style post-training for autoregressive language models has led to an implicit premise that similar techniques should extend seamlessly to diffusion language models. Broadly speaking, our work questions this; the likelihood-based RL-style post-training may not be the ideal framework in the setup of MDMs. Viewed this way, DTM represents a step that opens the door 
+
+to alternative post-training paradigms that are better aligned with the structure of diffusion-based language models. 
+
+# Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. 
+
+# Acknowledgement 
+
+YC and SW contributed equally to this work and agree that the order of their names may be exchanged as useful to high-light their contributions in individual professional pursuits. PP is supported by the EPSRC CDT in Modern Statistics and Statistical Machine Learning [EP/S023151/1], a Google PhD Fellowship, and an NSERC Postgraduate Scholarship (PGS D). MSA is supported by a Junior Fellowship at the Harvard Society of Fellows as well as the National Science Foundation under Cooperative Agreement PHY-2019786 (The NSF AI Institute for Artificial Intelligence and Funda-mental Interactions 2 ). This work has been made possible in part by a gift from the Chan Zuckerberg Initiative Foun-dation to establish the Kempner Institute for the Study of Natural and Artificial Intelligence. 
+
+# References 
+
+Arel. Arel’s sudoku generator, 2025. URL 
+
+https://www.ocf.berkeley.edu/˜arel/ 
+
+> 2http://iaifi.org
+
+9Discrete Tilt Matching 
+
+sudoku/main.html .Arriola, M., Gokaslan, A., Chiu, J. T., Yang, Z., Qi, Z., Han, J., Sahoo, S. S., and Kuleshov, V. Block diffusion: Interpolating between autoregressive and diffusion lan-guage models, 2025. URL https://arxiv.org/ abs/2503.09573 .Bie, T., Cao, M., Chen, K., Du, L., Gong, M., Gong, Z., Gu, Y., Hu, J., Huang, Z., Lan, Z., Li, C., Li, C., Li, J., Li, Z., Liu, H., Liu, L., Lu, G., Lu, X., Ma, Y., Tan, J., Wei, L., Wen, J.-R., Xing, Y., Zhang, X., Zhao, J., Zheng, D., Zhou, J., Zhou, J., Zhou, Z., Zhu, L., and Zhuang, Y. Llada2.0: Scaling up diffusion language models to 100b, 2025. URL https://arxiv.org/ abs/2512.15745 .Campbell, A., Yim, J., Barzilay, R., Rainforth, T., and Jaakkola, T. Generative flows on discrete state-spaces: Enabling multimodal flows with applica-tions to protein co-design. In Proceedings of the 41st International Conference on Machine Learning (ICML 2024) , volume 235 of Proceedings of Machine Learning Research , pp. 5453–5512, Vienna, Austria, 2024. PMLR. URL https://proceedings.mlr. press/v235/campbell24a.html . Poster. Chang, H., Zhang, H., Jiang, L., Liu, C., and Freeman, W. T. Maskgit: Masked generative image transformer, 2022. URL https://arxiv.org/abs/2202.04200 .Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., et al. Training verifiers to solve math word problems. 
+
+arXiv preprint arXiv:2110.14168 , 2021. Dettmers, T., Pagnoni, A., Holtzman, A., and Zettlemoyer, L. QLoRA: Efficient finetuning of quantized LLMs. In Advances in Neural Information Processing Systems (NeurIPS 2023) , 2023. Fan, C., Heng, W., Li, B., Liu, S., Song, Y., Su, J., Qu, X., Shen, K., and Wei, W. Stable-diffcoder: Pushing the frontier of code diffusion large language model, 2026. URL https://arxiv.org/abs/2601.15892 .Gat, I., Remez, T., Shaul, N., Kreuk, F., Chen, R. T. Q., Synnaeve, G., Adi, Y., and Lipman, Y. Discrete flow matching, 2024. URL https://arxiv.org/abs/ 2407.15595 .Gong, S., Zhang, R., Zheng, H., Gu, J., Jaitly, N., Kong, L., and Zhang, Y. Diffucoder: Understanding and improving masked diffusion models for code generation. arXiv preprint arXiv:2506.20639 , 2025. Guo, W., Choi, J., Zhu, Y., Tao, M., and Chen, Y. Proximal diffusion neural sampler, 2025. arXiv:2510.03824v1. Han, X., Kumar, S., and Tsvetkov, Y. Ssd-lm: Semi-autoregressive simplex-based diffusion language model for text generation and modular control. In Proceed-ings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 11575–11596, Toronto, Canada, July 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023. acl-long.647. URL https://aclanthology.org/ 2023.acl-long.647/ .Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., and Chen, W. Lora: Low-rank adaptation of large language models. In International Conference on Learn-ing Representations (ICLR 2022) , 2022. URL https: //openreview.net/forum?id=nZeVKeeFYf9 .Kim, J., Lee, C.-K., Domingo-Enrich, C., Du, Y., Kakade, S., Ngotiaoco, T., Chen, S., and Albergo, M. Any-order flexible length masked diffusion, 2025a. URL https: //arxiv.org/abs/2509.01025 .Kim, J., Shah, K., Kontonis, V., Kakade, S. M., and Chen, S. Train for the worst, plan for the best: Un-derstanding token ordering in masked diffusions. In 
+
+Proceedings of the 42nd International Conference on Machine Learning (ICML 2025) , volume 267 of Proceed-ings of Machine Learning Research , Vancouver, Canada, 2025b. URL https://openreview.net/forum? id=DjJmre5IkP . Oral. Lightman, H., Kosaraju, V., Burda, Y., Edwards, H., Baker, B., Lee, T., Leike, J., Schulman, J., Sutskever, I., and Cobbe, K. Let’s verify step by step. In The Twelfth International Conference on Learning Representations (ICLR 2024) , 2024. URL https://openreview. net/forum?id=v8L0pN6EOi . Poster. Loshchilov, I. and Hutter, F. Decoupled weight decay regularization. In International Conference on Learn-ing Representations (ICLR 2019) , 2019. URL https: //openreview.net/forum?id=Bkg6RiCqY7 .Luo, Y., Hu, T., and Tang, J. Reinforcing diffusion models by direct group preference optimization, 2025. URL 
+
+https://arxiv.org/abs/2510.08425 .Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen, J.-R., and Li, C. Large language diffusion models. In Advances in Neu-ral Information Processing Systems (NeurIPS 2025) ,2025. URL https://openreview.net/forum? id=KnqiC0znVF . Oral. Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C. L., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P., Leike, 10 Discrete Tilt Matching 
+
+J., and Lowe, R. Training language models to follow instructions with human feedback, 2022. URL https: //arxiv.org/abs/2203.02155 .Pan, J., Zhang, J., Wang, X., and Yuan, L. Tinyzero: Minimal reproduction of deepseek r1-zero, 2025. URL 
+
+https://github.com/Jiayi-Pan/TinyZero .Accessed: 2025-01-24. Potaptchik, P., Lee, C.-K., and Albergo, M. S. Tilt match-ing for scalable sampling and fine-tuning, 2026. URL 
+
+https://arxiv.org/abs/2512.21829 .Rafailov, R., Sharma, A., Mitchell, E., Ermon, S., Manning, C. D., and Finn, C. Direct preference optimization: Your language model is secretly a reward model, 2024. URL 
+
+https://arxiv.org/abs/2305.18290 .Rojas, K., Lin, J., Rasul, K., Schneider, A., Nevmyvaka, Y., Tao, M., and Deng, W. Improving reasoning for diffusion language models via group diffusion policy optimiza-tion, 2025. URL https://arxiv.org/abs/2510. 08554 .Sahoo, S. S., Arriola, M., Schiff, Y., Gokaslan, A., Marro-quin, E., Chiu, J. T., Rush, A., and Kuleshov, V. Simple and effective masked diffusion language models, 2024. URL https://arxiv.org/abs/2406.07524 .Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal policy optimization algo-rithms, 2017. URL https://arxiv.org/abs/ 1707.06347 .Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Zhang, M., Li, Y. K., Wu, Y., and Guo, D. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 , 2024. URL 
+
+https://arxiv.org/abs/2402.03300 .Shaul, N., Gat, I., Havasi, M., Severo, D., Sriram, A., Holderrieth, P., Karrer, B., Lipman, Y., and Chen, R. T. Q. Flow matching with general discrete paths: A kinetic-optimal perspective. In International Con-ference on Learning Representations (ICLR 2025) ,2025. URL https://openreview.net/forum? id=tcvMzR2NrP . Oral. Shi, J., Han, K., Wang, Z., Doucet, A., and Titsias, M. K. Simplified and generalized masked diffusion for discrete data, 2024. URL https://arxiv.org/abs/2406. 04329 .Tang, X., Dolga, R., Yoon, S., and Bogunovic, I. wd1: Weighted policy optimization for reasoning in diffusion language models, 2025. URL https://arxiv.org/ abs/2507.08838 .Wang, C., Rashidinejad, P., Su, D., Jiang, S., Wang, S., Zhao, S., Zhou, C., Shen, S. Z., Chen, F., Jaakkola, T., Tian, Y., and Liu, B. Spg: Sandwiched policy gradient for masked diffusion language models, 2025a. URL https: //arxiv.org/abs/2510.09541 .Wang, G., Schiff, Y., Turok, G., and Kuleshov, V. d2: Improved techniques for training reasoning diffusion lan-guage models, 2025b. URL https://arxiv.org/ abs/2509.21474 .Xie, Z., Ye, J., Zheng, L., Gao, J., Dong, J., Wu, Z., Zhao, X., Gong, S., Jiang, X., Li, Z., et al. Dream-coder 7b: An open diffusion language model for code. arXiv preprint arXiv:2509.01142 , 2025. Yang, L., Tian, Y., Li, B., Zhang, X., Shen, K., Tong, Y., and Wang, M. Mmada: Multimodal large diffusion language models. In Advances in Neu-ral Information Processing Systems (NeurIPS 2025) ,2025. URL https://openreview.net/forum? id=wczmXLuLGd . Poster. Zhao, S., Gupta, D., Zheng, Q., and Grover, A. d1: Scaling reasoning in diffusion large language mod-els via reinforcement learning. In Advances in Neu-ral Information Processing Systems (NeurIPS 2025) ,2025. URL https://openreview.net/forum? id=7ZVRlBFuEv . Spotlight. Zhu, F., Wang, R., Nie, S., Zhang, X., Wu, C., Hu, J., Zhou, J., Chen, J., Lin, Y., Wen, J.-R., and Li, C. Llada 1.5: Variance-reduced preference optimiza-tion for large language diffusion models, 2025. URL 
+
+https://arxiv.org/abs/2505.19223 .11 Discrete Tilt Matching 
+
+Algorithm 1 DTM Training 
+
+Require: Unmasking posterior π0(· | x, i ) of base model, annealing step size h, terminal reward multiplier A, reward function r : VL → R, control variate c, learning rate η, batch size s, replay buffer size N , buffer refresh interval K 
+
+> 1:
+
+Initialize a ← 0 and πθ ← π0 
+
+> 2:
+
+while a < A do  
+
+> 3:
+
+Initialize step ← 0 
+
+> 4:
+
+while not converged do  
+
+> 5:
+
+if step mod K = 0 then  
+
+> 6:
+
+D ← BUILD BUFFER (πa, r, N ) 
+
+> 7:
+
+end if  
+
+> 8:
+
+Draw minibatch B ∼ SAMPLE (D, s ) 
+
+> 9:
+
+For each clean sample x1 in B, independently draw a random time t ∈ [0 , 1] and create partially masked sequence 
+
+xt according to (3)  
+
+> 10:
+
+Compute loss L in (16) by empirical mean of the minibatch  
+
+> 11:
+
+Gradient descent on model θ ← θ − η∇θ L 
+
+> 12:
+
+step ← step +1  
+
+> 13:
+
+end while  
+
+> 14:
+
+Update πa+h ← πθ 
+
+> 15:
+
+Update a ← a + h 
+
+> 16:
+
+end while  
+
+> 17:
+
+return πθ
+
+Algorithm 2 BUILD BUFFER : Roll out SAR sampling 
+
+Require: Unmasking posterior πa, reward r, buffer size N , total denoising steps T , block size B 
+
+> 1:
+
+D ← ∅  
+
+> 2:
+
+for n = 1 , . . . , N do  
+
+> 3:
+
+X ← mL {fully masked length-L sequence (optionally prepend a prompt) } 
+
+> 4:
+
+M ← L/B {# blocks; assume B|M for ease } 
+
+> 5:
+
+S ← T /M {steps per block; assume M |T } 
+
+> 6:
+
+for b = 0 , . . . , M − 1 do  
+
+> 7:
+
+J ← { bB + 1 , . . . , (b + 1) B} { current block indices } 
+
+> 8:
+
+for s = 1 , . . . , S do  
+
+> 9:
+
+U ← { i ∈ J : Xi = m} { masked positions in current block } 
+
+> 10:
+
+I ← sample B/S indices uniformly from U {random order within block } 
+
+> 11:
+
+P ← πa(· | X) {one NN call, L-by-|V| matrix } 
+
+> 12:
+
+for each i ∈ I do  
+
+> 13:
+
+sample v ∼ P [i, ·]; set Xi ← v 
+
+> 14:
+
+end for  
+
+> 15:
+
+end for  
+
+> 16:
+
+end for  
+
+> 17:
+
+D ← D ∪ { (X, r (X)) } 
+
+> 18:
+
+end for  
+
+> 19:
+
+return D
+
+12 Discrete Tilt Matching 
+
+# A. General Esscher Transform 
+
+This appendix presents a general change-of-measure identity generalizing the derivation in the main text. At a high level, our discrete Esscher reweighting (Section 3.1) is an instance of the classical Esscher transform (exponential tilting), together with a standard fact that minimizing a weighted Bregman divergence reduces to a conditional expectation under the tilted measure. 
+
+A.1. Classical Esscher transform (exponential tilting) 
+
+Let Z be a real-valued random variable on a probability space (Ω , F, P) such that E[ehZ ] < ∞ for a given h ∈ R. The (classical) Esscher transform with parameter h defines a new probability measure P(h) via the Radon–Nikodym derivative 
+
+dP(h)
+
+dP = ehZ 
+
+E[ehZ ] .
+
+Equivalently, expectations under P(h) are given by E(h)[f ] = E[ehZ f ]  
+
+> E[ehZ ]
+
+for any integrable f . This transform goes back to Esscher (1932). 
+
+A.2. A conditional Esscher transform 
+
+We now state the conditional identity we repeatedly exploit. Let (Ω , F, P) be a probability space. Let X : Ω → X be a random variable taking values in a space X , and let U : Ω → U 
+
+and T : Ω → T be arbitrary random variables (possibly dependent on X) taking values in U and Y, respectively. Let 
+
+w : U → R be a measurable function such that E[w(U )] < ∞.
+
+Definition A.1 (Exponential tilt / Esscher-tilted measure) . Define the tilted measure P′ by 
+
+dP′
+
+dP = w
+
+E[w] . (20) We write E (resp. E′) for expectation taken under P (resp. P′). 
+
+Lemma A.2 (Conditional reweighting) . For any integrable f : X × U × T → R,
+
+E′[f (X, U, T ) | X] = E[w f (X, U, T ) | X]
+
+E[w | X] .
+
+Proof. This is the standard conditional change-of-measure identity: 
+
+E′[f | X] = Ef dP′ 
+
+> dP
+
+| X
+
+E dP′ 
+
+> dP
+
+| X = E[wf | X]
+
+E[w | X] ,
+
+where we substituted (20) and canceled the (deterministic) constant E[w].
+
+A.3. Tilted Bregman regression 
+
+Let Φ : Rd → R be strictly convex and twice continuously differentiable. Its associated Bregman divergence is 
+
+DΦ(y∥z) := Φ( y) − Φ( z) − ⟨∇ Φ( z), y − z⟩.
+
+Consider functions f : X → Rd and the weighted objective 
+
+L(f ) := E[w D Φ(T ∥f (X))] . (21) 
+
+Proposition A.3 (Tilted regression lemma) . The unique minimizer f ⋆ of (21) over measurable f is 
+
+f ⋆(x) = E′[T | X = x] = E[wT | X = x]
+
+E[w | X = x] . (22) 13 Discrete Tilt Matching 
+
+Proof. Fix x and define Fx(z) := E[w D Φ(T ∥z) | X = x]. Using ∇z DΦ(y∥z) = ∇2Φ( z) ( z − y), we obtain 
+
+∇Fx(z) = E[w ∇2Φ( z)( z − T ) | X = x] = ∇2Φ( z)
+
+
+
+z E[w | X = x] − E[wT | X = x]
+
+
+
+.
+
+Since ∇2Φ( z) is positive definite and Fx is strictly convex in z, the unique minimizer satisfies z E[w | X = x] = E[wT |
+
+X = x], i.e. z = f ⋆(x) as in (22). The equality to E′[T | X = x] follows from Lemma A.2. 
+
+A.4. A control variate that preserves the minimizer 
+
+The lemma above remains valid if we replace T by any random target Tc satisfying E[wT c | X] = E[wT | X]. A simple construction yields a family of such targets. Let μ(X) := E[T | X]. For any measurable c : X → R, define 
+
+Tc := T + c(X)
+
+w
+
+ μ(X) − T .
+
+In particular, Tc recovers T with c ≡ 0. Then, conditioning on X,
+
+E[wT c | X] = E[wT | X] + c(X) μ(X) − E[T | X] = E[wT | X].
+
+Therefore replacing T with Tc in (21) yields the same minimizer: 
+
+Corollary A.4 (Control variate preserves the tilted minimizer) . Let 
+
+Lc(f ) := E[w D Φ(Tc∥f (X))] 
+
+Then arg min f Lc(f ) = arg min f L(f ) and the unique minimizer is still f ⋆(x) = Ea+h[T | X = x].
+
+A.5. Recovering the identities used in the main text 
+
+Our discrete Esscher identities (Section 3) are obtained by instantiating the above with: • X = xt (the partially masked state), U = x1 (the terminal clean sequence), and w = ehr (U );• T chosen as a one-hot indicator 1{xi 
+
+> 1
+
+= v} or the target with control variate (17) , and Φ chosen to be the negative Shannon entropy so that DΦ is the KL divergence, which up to an additive constant corresponds to the per-token training loss. In particular, Lemma A.2 specializes exactly to the conditional reweighting formula Ea+h[· | xt] = Ea[w(·) | xt]/Ea[w | xt]
+
+used to derive (13) in the main text. 
+
+# B. Proofs 
+
+Proposition 3.2 (c-DTM objective) . Assume (15) holds for all (t, x, i ). Then the unique minimizer of 
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) = 
+
+Z 10
+
+˙α(t)1 − α(t) Ea
+
+h X
+
+> i∈[L], x it=m
+
+ehr (x1) · CE  Tc(· | xt, i, x 1)∥πθ (· | xt, i )i
+
+dt. (16) 
+
+is the ground-truth tilted unmasking posterior πa+h, i.e. 
+
+πθ∗ (· | xt, i ) = πa+h(· | xt, i ).
+
+(Back to Proposition 3.2 in the main text.) 
+
+Proof. We work in the nonparametric setting (equivalently assume sufficient network capacity) where we may choose an arbitrary measurable family π(· | xt, i ) ∈ ∆( V) for each (t, x t, i ) with xit = m.14 Discrete Tilt Matching 
+
+Step 1: Reduce the random target to a deterministic conditional objective. Fix any (t, x t, i ) with xit = m. For any candidate conditional distribution π(· | xt, i ), define the conditional loss given xt:
+
+Lt,i 
+
+ π; xt
+
+ := Ea
+
+h
+
+ehr (x1) CE  Tc(· | xt, i, x 1) π(· | xt, i ) | xt
+
+i
+
+. (23) Using the definition CE( p∥q) = − P 
+
+> v∈V
+
+p(v) log q(v) and pulling log π(· | xt, i ) outside the conditional expectation, 
+
+Lt,i 
+
+ π; xt
+
+ = − X
+
+> v∈V
+
+Ea
+
+h
+
+ehr (x1) Tc(v | xt, i, x 1) | xt
+
+i
+
+log π(v | xt, i ).
+
+Plugging in the defining unbiasedness property (15), we get 
+
+Lt,i 
+
+ π; xt
+
+ = − X
+
+> v∈V
+
+Ea
+
+h
+
+ehr (x1) 1{xi 
+
+> 1
+
+= v} | xt
+
+i
+
+log π(v | xt, i )= Ea[ehr (x1) | xt] CE  πa+h(· | xt, i ) ∥ π(· | xt, i ). (24) where the last line uses the conditional Esscher identity (13), i.e. 
+
+πa+h(v | xt, i ) = Ea+h[1{xi 
+
+> 1
+
+= v} | xt] = Ea[ehr (x1)1{xi 
+
+> 1
+
+= v} | xt]
+
+Ea[ehr (x1) | xt] .
+
+Step 2: Pointwise minimization and uniqueness. Fix (t, x t, i ). Because the factor Ea[ehr (x1) | xt] in (24) is positive and CE( p∥q) is strictly convex in q over the simplex whenever p is not degenerate, the unique minimizer of (23) over 
+
+π(· | xt, i ) ∈ ∆( V) is 
+
+π⋆(· | xt, i ) = πa+h(· | xt, i ).
+
+Step 3: Lift pointwise optimality to the global c-DTM objective. The full objective (16) is an integral over t of the pointwise loss Lt,i (π; xt) multiplied by the nonnegative weight ˙α(t)/(1 − α(t)) . Since all prefactors are nonnegative and the dependence on π separates across (t, x t, i ), the unique global minimizer is obtained by choosing the unique pointwise minimizer for every (t, x t, i ) with xit = m, namely π⋆(· | xt, i ) = πa+h(· | xt, i ).
+
+Proposition 3.3. For sufficiently small h > 0,
+
+Var[ ∇L 0-DTM 
+
+> a→a+h
+
+(θ)] ≥ Var[ ∇L 1-DTM 
+
+> a→a+h
+
+(θ)] . (18) (Back to Proposition 3.3 in the main text.) 
+
+Proof. Fix a time t ∈ [0 , 1] , a partially masked state xt and a masked position i with xit = m. Write w := ehr (x1) and define the score-vector 
+
+ϕ(v) := ∇θ log πθ (v | xt, i ) ∈ Rd, μ(xt, i ) := X
+
+> v∈V
+
+πa(v | xt, i ) ϕ(v) = Ea[ϕ(xi
+
+> 1
+
+) | xt, i ].
+
+Consider the per-sample (single (t, i )) contribution to the weighted DTM objective 
+
+ℓc(θ) := w · CE  Tc(· | xt, i, x 1) ∥ πθ (· | xt, i ) = −w X
+
+> v∈V
+
+Tc(v | xt, i, x 1) log πθ (v | xt, i ).
+
+Since ∇θ CE( q∥pθ ) = − P 
+
+> v
+
+q(v) ∇θ log pθ (v), we have 
+
+∇θ ℓc(θ) = −w X
+
+> v∈V
+
+Tc(v | xt, i, x 1) ϕ(v).
+
+For our concrete Tc in (17), 
+
+Tc(· | xt, i, x 1) = c π a(· | xt, i ) + w − cw 1{ · = xi 
+
+> 1
+
+},
+
+15 Discrete Tilt Matching 
+
+hence 
+
+∇θ ℓc(θ) = −w
+
+
+
+c X
+
+> v
+
+πa(v | xt, i )ϕ(v) + w − cw ϕ(xi
+
+> 1
+
+)
+
+
+
+= −
+
+
+
+c w μ (xt, i ) + ( w − c) ϕ(xi
+
+> 1
+
+)
+
+
+
+.
+
+Therefore (ignoring the overall minus sign, which does not affect variance), the single-sample gradient estimators for c = 0 
+
+and c = 1 are 
+
+G0 := w ϕ (xi
+
+> 1
+
+), G1 := w μ (xt, i ) + ( w − 1) ϕ(xi
+
+> 1
+
+).
+
+We compare Var( G0) and Var( G1) under the joint sampling of (x1, x t) from Pa. For small h > 0, using the expansion 
+
+w = ehr (x1) = 1 + hr (x1) + O(h2), we obtain 
+
+G0 = ϕ(xi
+
+> 1
+
+) + hr (x1)ϕ(xi
+
+> 1
+
+) + O(h2), G1 = μ(xt, i ) + hr (x1) μ(xt, i ) + ϕ(xi
+
+> 1
+
+) + O(h2),
+
+where the O(h2) terms are in L2 provided r and ϕ have finite second moments. At h = 0 , we have G0|h=0 = ϕ(xi
+
+> 1
+
+) and G1|h=0 = μ(xt, i ) = Ea[ϕ(xi
+
+> 1
+
+) | xt, i ]. By the law of total variance, 
+
+Var( ϕ(xi
+
+> 1
+
+)) = Var  Ea[ϕ(xi
+
+> 1
+
+) | xt, i ] + EVar( ϕ(xi
+
+> 1
+
+) | xt, i ) > Var( μ(xt, i )) ,
+
+so Var( G0) > Var( G1) holds at h = 0 . Since G0 and G1 depend smoothly on h through w = ehr (x1) and both admit L2
+
+Taylor expansions around h = 0 , their variances are continuous in h near 0. Therefore, the inequality Var( G0) > Var( G1)
+
+persists for all sufficiently small h > 0. Averaging over the random choice of (t, i ) and integrating against the schedule weight (as in the full DTM loss) preserves the inequality, completing the proof. This argument mirrors the control-variate variance comparison in Tilt Matching (Potaptchik et al., 2026) (Proposition 7 and its proof), adapted here to the discrete DTM cross-entropy gradient estimator. In order to prove Proposition 3.4, we first introduce the following lemma that expresses the KL divergence between two CTMC path measures. 
+
+Lemma B.1 (CTMC path–KL for masked diffusion rates) . Let P and bP be path measures on a continuous-time Markov chain {Xt}t∈[0 ,1] with the same initial distribution and (possibly time-inhomogeneous) rate matrices Rt and bRt. Assume 
+
+bRt is absolutely continuous with respect to Rt, i.e. Rt(x, y ) > 0 ⇒ bRt(x, y ) > 0. Then the path-space KL admits the standard expansion 
+
+KL( P ∥ bP ) = EP
+
+h Z 10
+
+ Rt(Xt, X t) − bRt(Xt, X t) dt + X  
+
+> t:Xt̸=Xt−
+
+log Rt(Xt− , X t)
+
+bRt(Xt− , X t)
+
+i
+
+. (25) 
+
+Moreover, suppose Rt and bRt are masked diffusion rates of the form 
+
+Rt(x, x [xi ← v]) = λ(t) 1{xi = m} π(v | x, i ), bRt(x, x [xi ← v]) = λ(t) 1{xi = m} bπ(v | x, i ),
+
+for λ(t) = ˙α(t)1−α(t) and some posteriors π(· | x, i ), bπ(· | x, i ) on V, where x[xi ← v] denotes the partially masked sequence 
+
+x with i-th token replaced by v. Then 
+
+KL( P ∥ bP ) = 
+
+Z 10
+
+λ(t) EP
+
+h X  
+
+> i:Xit=m
+
+KL  π(· | Xt, i ) ∥ bπ(· | Xt, i )i
+
+dt. (26) 
+
+Proof. Equation (25) is the standard Radon–Nikodym / Girsanov formula for CTMCs. See Kim et al. (2025a) Proposition 5, Shaul et al. (2025) Appendix D. See also Campbell et al. (2024) Appendix C.1 for a more comprehensive treatment. We now specialize (25) to the masked diffusion rates. For any state x, the total exit rate under Rt is 
+
+X 
+
+> y̸=x
+
+Rt(x, y ) = X 
+
+> i:xi=m
+
+X
+
+> v∈V
+
+λ(t)π(v | x, i ) = λ(t) · #{i : xi = m}.
+
+16 Discrete Tilt Matching 
+
+The same holds for bRt because P 
+
+> v
+
+bπ(v | x, i ) = 1 :
+
+X 
+
+> y̸=x
+
+bRt(x, y ) = λ(t) · #{i : xi = m}.
+
+Hence the diagonal terms coincide: 
+
+Rt(x, x ) = − X 
+
+> y̸=x
+
+Rt(x, y ) = −λ(t)# {i : xi = m} = bRt(x, x ),
+
+so the integral term in (25) vanishes identically. Next, any jump Xt− → Xt must be of the form Xt = Xt− [Xit− ← v] for a unique masked coordinate i. For such a jump, 
+
+log Rt(Xt− , X t)
+
+bRt(Xt− , X t) = log λ(t)π(v | Xt− , i )
+
+λ(t)bπ(v | Xt− , i ) = log π(v | Xt− , i )
+
+bπ(v | Xt− , i ) .
+
+Plugging this into (25) , conditioning on Xt (equivalently Xt− a.s. for CTMCs), and using that under P the revealed token at a masked position has law π(· | Xt, i ), the expected jump contribution at time t becomes λ(t) P   
+
+> i:Xit=m
+
+KL( π(· | 
+
+Xt, i )∥bπ(· | Xt, i )) . Integrating over t yields (26). 
+
+Proposition 3.4. Let ρθ be the terminal marginal distribution on VL induced by the parametric model’s unmasking posterior 
+
+πθ . Then 
+
+KL( ρ1,a +h∥ρθ ) ≤ 1
+
+Z
+
+
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) − L c-DTM 
+
+> a→a+h
+
+(θ∗)
+
+
+
+, (19) 
+
+where Z = Ea[ehr (x1)].
+
+(Back to Proposition 3.4 in the main text.) 
+
+Proof. As shown in the main text, the c-DTM objective employs a tractable random target as an unbiased estimate of the intractable πa+h. Thus for theoretical analysis on ρ1,a +h, it would be helpful to reduce to the ideal loss. 
+
+Step 1: Replace the random target. First, we reduce the random target Tc to the true posterior πa+h. By (24) , the c-DTM objective (16) becomes 
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) = 
+
+Z 10
+
+˙α(t)1 − α(t) Ea
+
+h X 
+
+> i:xit=m
+
+Ea
+
+h
+
+ehr (x1) | xt
+
+i
+
+CE  πa+h(· | xt, i ) | πθ (· | xt, i )i
+
+dt. (27) 
+
+Step 2: Change measure from Pa to Pa+h. Define the “ideal” (but still trajectory-based) cross-entropy functional 
+
+eLa+h(θ) := 
+
+Z 10
+
+˙α(t)1 − α(t) Ea+h
+
+h X 
+
+> i:xit=m
+
+CE  πa+h(· | xt, i ) πθ (· | xt, i )i
+
+dt. 
+
+Applying the change-of-measure (12) with 
+
+φ =
+
+Z 10
+
+˙α(t)1 − α(t)
+
+X 
+
+> i:xit=m
+
+CE( πa+h(· | xt, i )∥πθ (· | xt, i )) dt 
+
+and comparing with (27), we obtain the relation 
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) = Z · eLa+h(θ). (28) In particular, if θ⋆ is the optimizer such that πθ⋆ = πa+h, then eLa+h(θ⋆) = min θ eLa+h(θ) and 
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) − L c-DTM 
+
+> a→a+h
+
+(θ⋆) = Z eLa+h(θ) − eLa+h(θ⋆).
+
+17 Discrete Tilt Matching 
+
+Step 3: Excess cross-entropy equals a path KL, which upper-bounds the terminal KL. Let Pa+h denote the true path measure under tilt a + h, and let Pθ denote the path measure induced by running the CTMC with the same interpolant but using the learned posterior πθ . It remains to express the difference eLa+h(θ) − eLa+h(θ⋆) in terms of the KL divergence between the two path measures. Recall from Section 2.3 that the discrete stochastic interpolant, or intuitively the unmasking-event mechanism, is itself independent of θ or the tilt. So the likelihood ratio between Pa+h and Pθ depends on θ only through the product of the local choice probabilities πθ (· | xt, i ) at unmasking events. Consequently, by Lemma B.1 with π = πa+h and bπ = πθ , expanding the KL divergence between path measures gives 
+
+KL( Pa+h∥Pθ ) = 
+
+Z 10
+
+˙α(t)1 − α(t) Ea+h
+
+h X  
+
+> i:Xit=m
+
+KL  πa+h(· | Xt, i ) ∥ πθ (· | Xt, i )i
+
+dt. (29) On the other hand, 
+
+CE( πa+h∥πθ ) − CE( πa+h∥πa+h) = KL( πa+h∥πθ ),
+
+so by definition of eLa+h and (29), 
+
+eLa+h(θ) − eLa+h(θ⋆) = KL( Pa+h∥Pθ ). (30) Finally, the terminal marginal x1 is a measurable function of the full trajectory, so by the data processing inequality, 
+
+KL( ρ1,a +h∥ρθ ) ≤ KL( Pa+h∥Pθ ). (31) Combining (28), (30), and (31) yields 
+
+KL( ρ1,a +h∥ρθ ) ≤ eLa+h(θ) − eLa+h(θ⋆) = 1
+
+Z
+
+
+
+Lc-DTM 
+
+> a→a+h
+
+(θ) − Lc-DTM 
+
+> a→a+h
+
+(θ⋆)
+
+
+
+,
+
+which is exactly (19). 
+
+# C. DTM with semi-autoregressive (SAR) decoding 
+
+We formalize how to align DTM training with semi-autoregressive (SAR) / block-diffusion decoding. The main text notes that DTM is minimized pointwise in (t, x t, i ) and therefore adapts to alternative decoding constraints by (i) changing the distribution of conditioning states xt to those reachable under SAR and (ii) restricting eligible update indices to the currently active block. Here we specify a SAR-compatible stochastic interpolant, derive the corresponding hazard/time-weighting factor, and state the resulting SAR-aligned c-DTM objective. 
+
+C.1. SAR Stochastic Interpolant 
+
+Fix a sequence length L and block size B, and let M := L/B (assume B|L for simplicity). Define blocks Jb := 
+
+{bB + 1 , . . . , (b + 1) B} for b ∈ { 0, . . . , M − 1}. We partition global time t ∈ [0 , 1] into M block-intervals by defining the active block index 
+
+b(t) := ⌊M t ⌋ ∈ { 0, . . . , M − 1}, u(t) := M t − b(t) ∈ [0 , 1) ,
+
+where u(t) is the rescaled (within-block) time. Let α : [0 , 1] → [0 , 1] be a smooth increasing schedule with α(0) = 0 and α(1) = 1 . Given a clean terminal sequence 
+
+x1 ∼ ρ1,a , sample i.i.d. reveal times {T i}i∈[L] with CDF P[T i < t ] = α(t). Define the SAR-masked state xSAR 
+
+> t,a
+
+coordinate-wise by 
+
+xSAR ,i t,a := 
+
+
+
+xi
+
+> 1
+
+, i ∈ S 
+
+> b′<b (t)
+
+Jb′ (past blocks fully revealed) ,xi
+
+> 1
+
+, i ∈ J b(t) and u(t) ≥ T i (revealed within current block) ,
+
+m, i ∈ J b(t) and u(t) < T i (still masked within current block) ,
+
+m, i ∈ S 
+
+> b′>b (t)
+
+Jb′ (future blocks fully masked) .
+
+(32) Let ρSAR  
+
+> t,a
+
+:= Law( xSAR  
+
+> t,a
+
+) denote the induced marginal distribution. 18 Discrete Tilt Matching 
+
+Eligible indices. Under (32), only masked positions in the current block are eligible for an update at time t:
+
+I(t, x t) := { i ∈ J b(t) : xit = m }.
+
+C.2. Hazard Factor under the SAR Interpolant 
+
+For a token in the active block, the event “still masked at local time u” has probability 1 − α(u), and the conditional reveal probability in [u, u + du ] is the hazard 
+
+λ(u) du with λ(u) = α′(u)1 − α(u) .
+
+Because u(t) = M t − b(t), we have du = M dt on each block interval, hence the global-time hazard is 
+
+λSAR (t) = M · α′(u(t)) 1 − α(u(t)) . (33) This is the analogue of the factor α′(t)/(1 − α(t)) that appears in Proposition 3.4 for the any-order interpolant, with an additional time-change due to the blockwise parametrization. 
+
+Simplified choice. If desired, one may adopt α(u) = u (uniform reveal times within each block), in which case 
+
+λSAR (t) = M 
+
+> 1−u(t)
+
+and the weighting is fully explicit. 
+
+C.3. SAR-aligned c-DTM Objective 
+
+Let PSAR  
+
+> a
+
+denote the path measure induced by the SAR interpolant (32) (with terminal x1 ∼ ρ1,a ), and write ESAR  
+
+> a
+
+[·] for expectation under this measure. Define the (tilted) unmasking posterior under SAR as 
+
+πSAR  
+
+> a
+
+(v | xt, i ) := PSAR  
+
+> a
+
+[xi 
+
+> 1
+
+= v | xt], v ∈ V .
+
+Then the SAR-aligned c-DTM objective is 
+
+LSAR 
+
+> c-DTM
+
+(θ) = 
+
+Z 10
+
+λSAR (t) ESAR 
+
+> a
+
+h X
+
+> i∈I (t,x t)
+
+ehr (x1) CE  Tc(· | xt, i, x 1) πθ (· | xt, i )i
+
+dt, (34) where I(t, x t) = {i ∈ J b(t) : xit = m} and Tc is defined as in (17). 
+
+C.4. Why SAR Preserves Exactness 
+
+The Esscher change-of-measure arguments in Section 3 depend only on (i) the terminal tilt ρ1,a +h(x) ∝ ρ1,a (x)ehr (x) and (ii) the fact that the conditional law of xt given x1 is independent of the tilt parameter a. Both properties remain true for the SAR interpolant (32) , since the masking schedule and block structure do not depend on a. Therefore Proposition 3.1 (conditional tilting) and Proposition 3.2 (pointwise minimizer of c-DTM) carry over verbatim with PSAR  
+
+> a
+
+in place of Pa.Finally, Proposition 3.4’s KL control argument extends by replacing the any-order hazard α′(t)/(1 − α(t)) with the SAR hazard (33), yielding the weighting in (34). 
+
+# D. Experimental Details 
+
+D.1. Datasets and Reward Functions 
+
+We summarize the datasets and reward shaping used for DTM fine-tuning. 
+
+Maze Planning We fix a randomly generated 41-by-41 maze with door fraction 0.4 (see Fig. 7), and train an 8.9M base model on it using the standard ELBO-based variational loss (5) . For two cells z = ( x, y ) and z′ = ( x′, y ′) for some integers 
+
+x, x ′, y, y ′ ∈ [0 , 40] , we define the Manhattan distance 
+
+d(z, z ′) := |x − x′| + |y − y′|,
+
+19 Discrete Tilt Matching 
+
+(a) Proportions of valid paths against the degrees of tilt (b) Mean reward of paths against degrees of tilt 
+
+(c) Diversity of paths measured by coverage ratio, which is the ratio between the total number of cells that paths cover and number of cells the longest path covers. 
+
+Figure 5. Proportion of valid paths ( a) mean rewards ( b), and diversity of paths ( c) against degrees of tilt a. Our model is trained on three sets of control variate c and annealing steps h. Small step size and control variate 1 has higher path diversity, validity and rewards. 
+
+(a) Effective generation length of DTM on Countdown (b) d1 (light green), WD1 (red), Uni-GRPO (dark green), SPG (blue) (from Fig. 9 in Wang et al. (2025a)) 
+
+Figure 6. Effective generation length of DTM versus RL baselines. With direct training on state-level posteriors, DTM achieves stable reasoning. 
+
+20 Discrete Tilt Matching  
+
+> Figure 7. The fixed 41-by-41 maze with door fraction 0.4.
+
+i.e. the L1-distance. For each completion of the form z = ( s, g, SEP , z 1, z 2, ..., z n, PAD , ..., PAD ), we say the path is valid if z1 = s, zn = g, all zi’s are non-wall cells in the maze, and all consecutive cells (zi, z i+1 ) are direct neighbors in the maze (i.e. with Manhattan distance 1). The base model produces valid paths with probability 0.313 under sampling temperature 1.0. We define the stay-away-from-center reward by 
+
+rstay-away-from-center (z) = 
+
+( 120 min i∈[n] d(zi, center ), if z is valid 
+
+−0.4, otherwise where center = (20 , 20) is the center of the maze, and we divide by 20 to signify the distance relative to the maximum attainable distance from the center. 
+
+MATH500 We use the pre-defined train split of the MATH500 dataset 3 for rollouts during training, and evaluate model performance on the test split. Same as in the baselines, the prompts we used are the same during training and evaluation, as shown in Figure 8. For the reward functions, we follow SPG but slightly adjust the scale, combining a correctness term with a piecewise format score: • Correctness reward: +1 .0 if the expression inside \boxed{...} matches the correct answer; −1.0 otherwise. • Format reward: assign 
+
+rfmt =
+
+
+
+0.375 , if <answer>...</answer> is present and contains \boxed ,
+
+0.25 , if answer tags are present but no \boxed ,
+
+0.125 , if no answer tags but \boxed is present ,
+
+0.0, if neither answer tags nor \boxed is present .
+
+The training reward is just the sum of the correctness and format rewards. 
+
+Countdown We follow all the baselines exactly: for training rollouts, we use the train split of the Countdown dataset 4
+
+and restrict to instances that use only three numbers; for evaluation, we evaluate on 256 synthetically generated countdown questions with 3 numbers. The same prompts are used for training and evaluation, as shown in Figure 9. The reward consists of a soft correctness score based on whether the produced expression (i) uses exactly the provided numbers and (ii) reaches the target: 
+
+r =
+
+
+
+1.0, if the expression hits the target and uses only the provided numbers ,
+
+0.1, if it uses the correct numbers but does not reach the target ,
+
+0.0, otherwise .
+
+> 3https://huggingface.co/datasets/ankner/math-500
+> 4https://huggingface.co/datasets/Jiayi-Pan/Countdown-Tasks-3to4
+
+21 Discrete Tilt Matching                                                                                                                         
+
+> You are amath expert. You will be given aquestion to solve. Solve it step by step. Wrap the final answer in a\boxed {} .Respond in the following format:
+> <reasoning >
+> Your reasoning here
+> </reasoning ><answer >
+> \boxed {... }
+> </answer >
+> {Actual problem statement inserted here verbatim }
+> Figure 8. Prompt used for MATH500 and GSM8K. The problem statement is appended directly after the template.
+> Respond in the following format:
+> <reasoning >
+> ...
+> </reasoning ><answer >
+> ...
+> </answer >
+> Using only the numbers [38, 92, 52] create an arithmetic expression that evaluates to exactly 78. You must use all numbers from the list, and each number must be used exactly once. You may use the operations +, -, *, and /as needed. After reasoning, provide only your final expression inside <answer >< /answer >tags without including an equals sign or the target number. For example, if the numbers are [2, 3, 4] and the target is 5, avalid answer is:
+> <answer >
+> 2*4-3
+> </answer >
+> Figure 9. Prompt used for Countdown. In each instance, the list [38, 92, 52] is replaced by the provided numbers in the actual question and 78 is replaced by the actual target value.
+
+Sudoku We experiment on the 4 ×4 Sudoku dataset 5. We adopted SPG’s modification on the original split to avoid train-test leakage: the dataset contains 1M puzzles spanning all 288 possible completed 4 ×4 solution grids. They randomly selected 200 solutions and included all puzzles whose ground-truth completion is one of these solutions in the training set (694,006 puzzles). For evaluation, they sampled 2-3 puzzles from each of the remaining 88 solutions, forming a 256-instance test set. We use the same prompt format for training and evaluation as shown in Figure 10; we also follow SPG and use their 3-shot prompts for Sudoku (inserting three fixed puzzle/solution exemplars) because the base model performs poorly in the zero-shot setting. It is ensured that (i) the solutions shown in the 3-shot exemplars do not appear among the test-set solutions, and (ii) there is no puzzle overlap between train and test. The reward is given by 4 times the fraction of correctly filled cells in each puzzle. 
+
+GSM8K We use the train split of the GSM8K dataset (Cobbe et al., 2021) with the same prompt as MATH500 as in Figure 8. Our reward is slightly shifted compared to SPG. We also removed the soft and strict format reward since they are mostly zero in the training of DTM and SPG. Our reward function consists of: • Correctness reward: +2 .0 if the expression inside \boxed{...} matches the correct answer. • XML structure reward: +0 .125 for correct formatting tag, with small penalties for contents after the closing tag. • Integer answer reward: −0.5 penalty if the answer is not an integer. 
+
+> 5https://github.com/Black-Phoenix/4x4-Sudoku-Dataset
+
+22 Discrete Tilt Matching                                                                              
+
+> Please solve the following 4x4 Sudoku puzzle. The puzzle is provided as a16-character string reading left-to-right, top-to-bottom, where ‘0’ represents empty cells. Rules: -Fill empty cells with digits 1-4 -Each row/column must contain digits 1-4 exactly once -Each 2x2 box must contain digits 1-4 exactly once Important: Your solution must be a COMPLETE 16-character string with only digits 1-4. Respond in this exact format:
+> <reasoning >
+> Your step-by-step solving process
+> </reasoning ><answer >
+> [16-character solution string, digits 1--4 only]
+> </answer >
+> {3-SHOT EXAMPLES INSERTED HERE }
+> Question: Solve the following Sudoku puzzle: {ACTUAL PUZZLE HERE }
+> Answer:
+> Figure 10. Sudoku prompt template. We use 3-shot prompting: three solved puzzle exemplars are inserted; the evaluation set uses disjoint underlying solutions from the exemplars. To avoid repetition, we refer to Appendix D.3 of Wang et al. (2025a) for the 3 exemplars.
+
+D.2. Hyperparameters and Implementation Details 
+
+Following the baselines, we employ LoRA with a rank of r = 128 and scaling factor α = 64 , 4-bit quantization (Dettmers et al., 2023), and use the AdamW optimizer(Loshchilov & Hutter, 2019), with β1 = 0 .9, β2 = 0 .99 , and weight decay of 0.1. We conducted training on 8 NVIDIA H100-80G GPU, with the following hyperparameters: For MATH500, we trained with a per-gpu buffer of 60 distinct prompts with 8 completions per prompt, and refresh a quarter every 50 steps. We use an annealing step size h = 1 , performing 400 gradient update steps per h phase with per-gpu batch size 72. We use a learning rate of 1 × 10 −5, with gradient clip at 1.0. For Sudoku, we trained with a per-gpu buffer of 80 distinct prompts with 1 completion per prompt, and refresh a quarter every 32 steps. We use an annealing step size h = 2 .5, performing 256 gradient update steps per h phase with per-gpu batch size 64. We use a learning rate of 3 × 10 −6, with gradient clip at 2.0. For Countdown, we trained with a per-gpu buffer of 80 distinct prompts with 6 completions per prompt, and refresh a quarter every 25 steps. We use an annealing step size h = 6 , performing 800 gradient update steps per h phase with per-gpu batch size 96. We use a learning rate of 4 × 10 −6, with gradient clip at 2.0. For GSM8K, we trained with a per-gpu buffer of 80 distinct prompts with 6 completions per prompt, and refresh a quarter every 50 steps. We use an annealing step size h = 1 , performing 800 gradient update steps per h phase with per-gpu batch size 96. We use a learning rate of 5 × 10 −5, with gradient clip at 2.0. 
+
+D.3. Ablation on using SAR-aligned objective 
+
+We perform an ablation on Countdown comparing training with the default random interpolant as in (9) and (16) against SAR-aligned DTM as in (32) and (34) , while fixing all other hyperparameters. As shown in Figure 11, SAR-aligned DTM reaches 81% accuracy versus 67% for the random-interpolant version. This shows that if training optimizes over arbitrary masked states that never arise at inference, compute is wasted on irrelevant trajectories. By aligning DTM with the SAR interpolant used at test time, we concentrate training on the states that actually matter for inference while preserving the same theoretical target. Such flexibility of being aligned with SAR sampling is a practical advantage of the DTM framework. 23 Discrete Tilt Matching 
+
+Figure 11. Comparison of performance on Countdown for DTM with random interpolant versus SAR-aligned interpolant. 
+
+24

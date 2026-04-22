@@ -1,0 +1,93 @@
+{
+  "label": "2026-04-22",
+  "date": "2026-04-22",
+  "generated_at": "2026-04-22T20:23:51",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202604/22/2604.16514v2-bard-bridging-autoregressive-and-diffusion-vision-language-models-via-highly-efficient-progressive-block-merging-and-stage-wise-distillation",
+      "section": "deep",
+      "title_en": "BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation",
+      "authors": "Baoyou Chen, Hanchen Xia, Peng Tu, Haojun Shi, Shan Mu, Weihao Yuan, Siyu Zhu",
+      "date": "2026-04-15",
+      "pdf": "https://arxiv.org/pdf/2604.16514v2",
+      "score": "9.0",
+      "evidence": "桥接自回归与扩散视觉语言模型",
+      "tldr": "针对自回归视觉语言模型推理速度慢的问题，本文提出BARD框架，通过渐进式块合并和阶段式扩散蒸馏，将预训练的自回归模型转换为高效的扩散模型。该方法在保持多模态能力的同时，显著提升了解码速度，在4B和8B规模上达到了开源扩散视觉语言模型的领先水平，并实现最高3倍的吞吐量提升。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive vision-language models (VLMs) deliver strong multimodal capability, but their token-by-token decoding imposes a fundamental inference bottleneck. Diffusion VLMs offer a more parallel decoding paradigm, yet directly converting a pretrained autoregressive VLM into a large-block diffusion VLM (dVLM) often leads to substantial quality degradation. In this work, we present BARD, a simple and effective bridging framework that converts a pretrained autoregressive VLM into a same-architecture, decoding-efficient dVLM. Our approach combines progressive supervised block merging, which gradually enlarges the decoding block size, with stage-wise intra-dVLM distillation from a fixed small-block diffusion anchor to recover performance lost at larger blocks. We further incorporate a mixed noise scheduler to improve robustness and token revision during denoising, and memory-friendly training to enable efficient training on long multimodal sequences. A key empirical finding is that direct autoregressive-to-diffusion distillation is poorly aligned and can even hurt performance, whereas distillation within the diffusion regime is consistently effective. Experimental results show that, with $\\leq 4.4M$ data, BARD-VL transfers strong multimodal capability from Qwen3-VL to a large-block dVLM. Remarkably, BARD-VL establishes a new SOTA among comparable-scale open dVLMs on our evaluation suite at both 4B and 8B scales. At the same time, BARD-VL achieves up to \\textbf{3$\\times$} decoding throughput speedup compared to the source model.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/22/2604.15750v1-depcap-adaptive-block-wise-parallel-decoding-for-efficient-diffusion-lm-inference",
+      "section": "deep",
+      "title_en": "DepCap: Adaptive Block-Wise Parallel Decoding for Efficient Diffusion LM Inference",
+      "authors": "Xiang Xia, Wuyang Zhang, Jiazheng Liu, Cheng Yan, Yanyong Zhang",
+      "date": "2026-04-17",
+      "pdf": "https://arxiv.org/pdf/2604.15750v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为自回归生成的替代方案",
+      "tldr": "扩散语言模型（DLM）在并行解码方面具有潜力，但现有分块解码方法受限于固定调度或局部信号。本文提出 DepCap，一个无需训练的自适应分块并行解码框架。它利用跨步信号动态确定块边界，并识别无冲突令牌子集进行安全并行解码。DepCap 在保持生成质量的同时，显著提升了推理速度，在多个基准测试中实现了高达 5.63 倍的加速。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) have emerged as a promising alternative to autoregressive language generation due to their potential for parallel decoding and global refinement of the entire sequence. To unlock this potential, DLM inference must carefully balance generation quality and decoding speed. Recent block-wise DLM decoding methods improve this trade-off by performing diffusion-based decoding sequentially in blocks. However, existing methods typically rely on fixed block schedules or current-step local signals to determine block boundaries, and use conservative confidence-based parallel decoding to avoid conflicts, limiting the quality-speed trade-off. In this paper, we argue that block-wise DLM inference requires more suitable signals for its two core decisions: cross-step signals for determining block boundaries, and token-level conflict signals for parallel decoding. Based on this view, we propose DepCap, a training-free framework for efficient block-wise DLM inference. Specifically, DepCap instantiates the cross-step signal as the influence of the last decoded block and uses it to adaptively determine how far the next block should extend, while identifying a conflict-free subset of tokens for safe parallel decoding within each block, enabling substantial inference acceleration with negligible quality degradation. DepCap is a plug-and-play method applicable to various DLMs, and compatible with existing KV-cache strategies for block-wise DLM. An information-theoretic analysis further suggests that the cumulative last-block influence on a candidate block is approximately additive across tokens, supporting the proposed block-partitioning criterion. Experimental results show that DepCap achieves favorable speed-quality trade-offs across multiple DLM backbones and reasoning and coding benchmarks, with up to 5.63$\\times$ speedup without significant performance degradation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/22/2604.18739v1-discrete-tilt-matching",
+      "section": "deep",
+      "title_en": "Discrete Tilt Matching",
+      "authors": "Yuyuan Chen, Shiyi Wang, Peter Potaptchik, Jaeyeon Kim, Michael S. Albergo",
+      "date": "2026-04-20",
+      "pdf": "https://arxiv.org/pdf/2604.18739v1",
+      "score": "8.0",
+      "evidence": "掩码扩散作为自回归生成的替代方案",
+      "tldr": "本研究针对掩码扩散大语言模型（dLLM）在强化学习微调中面临的序列级边际似然计算难题，提出了Discrete Tilt Matching (DTM) 方法。DTM通过将微调任务转化为奖励倾斜下的局部去掩码后验状态级匹配，采用加权交叉熵目标函数并引入控制变量以提升训练稳定性。实验表明，该方法在数独、Countdown及数学推理任务中表现出色，能有效防止模式崩溃并提升模型性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion large language models (dLLMs) are a promising alternative to autoregressive generation. While reinforcement learning (RL) methods have recently been adapted to dLLM fine-tuning, their objectives typically depend on sequence-level marginal likelihoods, which are intractable for masked diffusion models. To address this, we derive Discrete Tilt Matching (DTM), a likelihood-free method that recasts dLLM fine-tuning as state-level matching of local unmasking posteriors under reward tilting. DTM takes the form of a weighted cross-entropy objective with explicit minimizer, and admits control variates that improve training stability. On a synthetic maze-planning task, we analyze how DTM's annealing schedule and control variates affect training stability and prevent mode collapse. At scale, fine-tuning LLaDA-8B-Instruct with DTM yields strong gains on Sudoku and Countdown while remaining competitive on MATH500 and GSM8K.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/22/2604.18995v1-r2-dllm-accelerating-diffusion-large-language-models-via-spatio-temporal-redundancy-reduction",
+      "section": "deep",
+      "title_en": "$R^2$-dLLM: Accelerating Diffusion Large Language Models via Spatio-Temporal Redundancy Reduction",
+      "authors": "Zhenbang Du, Kejing Xia, Xinrui Zhong, Yonggan Fu, Nicolai Oswald, Binfei Ji, Brucek Khailany, Pavlo Molchanov, Yingyan Lin",
+      "date": "2026-04-21",
+      "pdf": "https://arxiv.org/pdf/2604.18995v1",
+      "score": "8.0",
+      "evidence": "讨论扩散大语言模型 (dLLMs) 作为自回归生成的替代方案",
+      "tldr": "扩散大语言模型（dLLMs）虽支持并行生成，但推理延迟高。本文发现其低效源于空间（置信度簇）和时间（稳定预测的重复掩码）冗余。为此提出 $R^2$-dLLM 框架，在推理端引入聚合局部置信度与固定稳定标记的策略，在训练端通过冗余感知微调优化解码轨迹。实验显示该方法在保持生成质量的同时，将解码步数减少了高达 75%，显著提升了推理效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Large Language Models (dLLMs) have emerged as a promising alternative to autoregressive generation by enabling parallel token prediction. However, practical dLLM decoding still suffers from high inference latency, which limits deployment. In this work, we observe that a substantial part of this inefficiency comes from recurring redundancy in the decoding process, including spatial redundancy caused by confidence clusters and positional ambiguity, and temporal redundancy caused by repeatedly remasking predictions that have already stabilized. Motivated by these patterns, we propose $R^2$-dLLM, a unified framework for reducing decoding redundancy from both inference and training perspectives. At inference time, we introduce training-free decoding rules that aggregate local confidence and token predictions, and finalize temporally stable tokens to avoid redundant decoding steps. We further propose a redundancy-aware supervised fine-tuning pipeline that aligns the model with efficient decoding trajectories and reduces reliance on manually tuned thresholds. Experiments demonstrate that $R^2$-dLLM consistently reduces the number of decoding steps by up to 75% compared to existing decoding strategies, while maintaining competitive generation quality across different models and tasks. These results validate that decoding redundancy is a central bottleneck in dLLMs, and that explicitly reducing it yields substantial practical efficiency gains.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/22/2604.12932v1-turbulent-pair-dispersion-with-stochastic-generative-diffusion-models",
+      "section": "quick",
+      "title_en": "Turbulent pair dispersion with Stochastic Generative Diffusion Models",
+      "authors": "Andrei Pantea, Luca Biferale, Michele Buzzicotti, Guillaume Charpiat, Sergio Chibbaro, Tianyi Li",
+      "date": "2026-04-14",
+      "pdf": "https://arxiv.org/pdf/2604.12932v1",
+      "score": "6.0",
+      "evidence": "使用扩散模型生成拉格朗日速度轨迹",
+      "tldr": "本研究利用随机生成扩散模型探讨湍流中的粒子对扩散问题。通过扩展现有方法，实现了拉格朗日速度轨迹对的联合生成，构建了完全数据驱动的湍流对扩散模型。该模型不仅能准确捕捉粒子对间距随时间的演化，包括对经典理查森缩放定律的偏离，还能保持单粒子的关键统计特性。这一进展证明了扩散模型在模拟高维、多尺度复杂湍流动力学方面的巨大潜力，为地球物理和天体物理等领域的科学建模提供了新工具。",
+      "tags": "query:diffpl",
+      "abstract_en": "Recent advances in data-driven modeling have shown that diffusion models can successfully generate synthetic Lagrangian trajectories in turbulent flows. Building on this progress, we extend the method to the joint generation of pairs of Lagrangian velocity trajectories, enabling a fully data-driven representation of turbulent pair dispersion, a long-standing fundamental problem with broad relevance in fluid dynamics. We demonstrate that diffusion models accurately reproduce the evolution of particle-pair separation, including deviations from Richardson's classical scaling law, while simultaneously preserving all key single-particle statistical properties reported in previous studies. These findings underscore the potential of diffusion-based generative models to emulate high-dimensional, multi-scale turbulent dynamics, further establishing them as a powerful tool for scientific modeling and for future geophysical and astrophysical applications.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/22/2604.17736v1-increfa-breaking-the-static-wall-of-generative-model-attribution",
+      "section": "quick",
+      "title_en": "IncreFA: Breaking the Static Wall of Generative Model Attribution",
+      "authors": "Haotian Qin, Dongliang Chang, Yueying Gao, Lei Chen, Zhanyu Ma",
+      "date": "2026-04-20",
+      "pdf": "https://arxiv.org/pdf/2604.17736v1",
+      "score": "6.0",
+      "evidence": "扩散和自回归生成器的归属识别",
+      "tldr": "针对生成式模型快速迭代导致归因方法失效的问题，本文提出IncreFA框架。该框架将图像归因定义为结构化增量学习任务，通过层级约束解耦模型家族与特定特征，并利用潜空间记忆库稳定表征漂移。在包含28个最新模型的IABench基准上，IncreFA实现了领先的归因精度和极高的未知模型检测率，有效解决了生成模型归因的动态适应难题。",
+      "tags": "query:ardm",
+      "abstract_en": "As AI generative models evolve at unprecedented speed, image attribution has become a moving target. New diffusion, adversarial and autoregressive generators appear almost monthly, making existing watermark, classifier and inversion methods obsolete upon release. The core problem lies not in model recognition, but in the inability to adapt attribution itself. We introduce IncreFA, a framework that redefines attribution as a structured incremental learning problem, allowing the system to learn continuously as new generative models emerge. IncreFA departs from conventional incremental learning by exploiting the hierarchical relationships among generative architectures and coupling them with continual adaptation. It integrates two mutually reinforcing mechanisms: (1) Hierarchical Constraints, which encode architectural hierarchies through learnable orthogonal priors to disentangle family-level invariants from model-specific idiosyncrasies; and (2) a Latent Memory Bank, which replays compact latent exemplars and mixes them to generate pseudo-unseen samples, stabilising representation drift and enhancing open-set awareness. On the newly constructed Incremental Attribution Benchmark (IABench) covering 28 generative models released between 2022 and 2025, IncreFA achieves state-of-the-art attribution accuracy and 98.93% unseen detection under a temporally ordered open-set protocol. Code will be available at https://github.com/Ant0ny44/IncreFA.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
