@@ -1,0 +1,263 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-23T20:45:48.629325+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2604.16514v3",
+      "title": "BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation",
+      "abstract": "Autoregressive vision-language models (VLMs) deliver strong multimodal capability, but their token-by-token decoding imposes a fundamental inference bottleneck. Diffusion VLMs offer a more parallel decoding paradigm, yet directly converting a pretrained autoregressive VLM into a large-block diffusion VLM (dVLM) often leads to substantial quality degradation. In this work, we present BARD, a simple and effective bridging framework that converts a pretrained autoregressive VLM into a same-architecture, decoding-efficient dVLM. Our approach combines progressive supervised block merging, which gradually enlarges the decoding block size, with stage-wise intra-dVLM distillation from a fixed small-block diffusion anchor to recover performance lost at larger blocks. We further incorporate a mixed noise scheduler to improve robustness and token revision during denoising, and memory-friendly training to enable efficient training on long multimodal sequences. A key empirical finding is that direct autoregressive-to-diffusion distillation is poorly aligned and can even hurt performance, whereas distillation within the diffusion regime is consistently effective. Experimental results show that, with $\\leq$ 4.4M data, BARD-VL transfers strong multimodal capability from Qwen3-VL to a large-block dVLM. Remarkably, BARD-VL establishes a new SOTA among comparable-scale open dVLMs on our evaluation suite at both 4B and 8B scales. At the same time, BARD-VL achieves up to 3$\\times$ decoding throughput speedup compared to the source model. Code is available at: $\\href{https://github.com/fudan-generative-vision/Bard-VL}{this~https~URL}$.",
+      "authors": [
+        "Baoyou Chen",
+        "Hanchen Xia",
+        "Peng Tu",
+        "Haojun Shi",
+        "Shan Mu",
+        "Weihao Yuan",
+        "Siyu Zhu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-04-15T09:17:38+00:00",
+      "link": "https://arxiv.org/pdf/2604.16514v3",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "converts pretrained autoregressive VLM into diffusion VLM",
+      "llm_evidence_cn": "将预训练的自回归VLM转换为扩散VLM",
+      "llm_evidence": "将预训练的自回归VLM转换为扩散VLM",
+      "canonical_evidence": "将预训练的自回归VLM转换为扩散VLM",
+      "llm_tldr_en": "BARD bridges autoregressive and diffusion models to improve vision-language model decoding efficiency.",
+      "llm_tldr_cn": "BARD桥接了自回归和扩散模型，提高了视觉语言模型的解码效率。",
+      "llm_tldr": "BARD桥接了自回归和扩散模型，提高了视觉语言模型的解码效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.20289v1",
+      "title": "X-Cache: Cross-Chunk Block Caching for Few-Step Autoregressive World Models Inference",
+      "abstract": "Real-time world simulation is becoming a key infrastructure for scalable evaluation and online reinforcement learning of autonomous driving systems. Recent driving world models built on autoregressive video diffusion achieve high-fidelity, controllable multi-camera generation, but their inference cost remains a bottleneck for interactive deployment. However, existing diffusion caching methods are designed for offline video generation with multiple denoising steps, and do not transfer to this scenario. Few-step distilled models have no inter-step redundancy left for these methods to reuse, and sequence-level parallelization techniques require future conditioning that closed-loop interactive generation does not provide. We present X-Cache, a training-free acceleration method that caches along a different axis: across consecutive generation chunks rather than across denoising steps. X-Cache maintains per-block residual caches that persist across chunks, and applies a dual-metric gating mechanism over a structure- and action-aware block-input fingerprint to independently decide whether each block should recompute or reuse its cached residual. To prevent approximation errors from permanently contaminating the autoregressive KV cache, X-Cache identifies KV update chunks (the forward passes that write clean keys and values into the persistent cache) and unconditionally forces full computation on these chunks, cutting off error propagation. We implement X-Cache on X-world, a production multi-camera action-conditioned driving world model built on multi-block causal DiT with few-step denoising and rolling KV cache. X-Cache achieves 71% block skip rate with 2.6x wall-clock speedup while maintaining minimum degradation.",
+      "authors": [
+        "Yixiao Zeng",
+        "Jianlei Zheng",
+        "Chaoda Zheng",
+        "Shijia Chen",
+        "Mingdian Liu",
+        "Tongping Liu",
+        "Tengwei Luo",
+        "Yu Zhang",
+        "Boyang Wang",
+        "Linkun Xu",
+        "Siyuan Lu",
+        "Bo Tian",
+        "Xianming Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-22T07:36:59+00:00",
+      "link": "https://arxiv.org/pdf/2604.20289v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Autoregressive video diffusion for autonomous driving world models",
+      "llm_evidence_cn": "用于自动驾驶世界模型的自回归视频扩散",
+      "llm_evidence": "用于自动驾驶世界模型的自回归视频扩散",
+      "canonical_evidence": "用于自动驾驶世界模型的自回归视频扩散",
+      "llm_tldr_en": "X-Cache accelerates autoregressive video diffusion for real-time autonomous driving world simulation.",
+      "llm_tldr_cn": "X-Cache通过跨块缓存加速了用于自动驾驶实时模拟的自回归视频扩散推理。",
+      "llm_tldr": "X-Cache通过跨块缓存加速了用于自动驾驶实时模拟的自回归视频扩散推理。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.20041v1",
+      "title": "Normalizing Flows with Iterative Denoising",
+      "abstract": "Normalizing Flows (NFs) are a classical family of likelihood-based methods that have received revived attention. Recent efforts such as TARFlow have shown that   NFs are capable of achieving promising performance on image modeling tasks, making them viable alternatives to other methods such as diffusion models.   In this work, we further advance the state of Normalizing Flow generative models by introducing iterative TARFlow (iTARFlow). Unlike diffusion models, iTARFlow maintains a fully end-to-end, likelihood-based objective during training. During sampling, it performs autoregressive generation followed by an iterative denoising procedure inspired by diffusion-style methods. Through extensive experiments, we show that iTARFlow achieves competitive performance across ImageNet resolutions of 64, 128, and 256 pixels, demonstrating its potential as a strong generative model and advancing the frontier of Normalizing Flows. In addition, we analyze the characteristic artifacts produced by iTARFlow, offering insights that may shed light on future improvements. Code is available at https://github.com/apple/ml-itarflow.",
+      "authors": [
+        "Tianrong Chen",
+        "Jiatao Gu",
+        "David Berthelot",
+        "Joshua Susskind",
+        "Shuangfei Zhai"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-04-21T22:52:26+00:00",
+      "link": "https://arxiv.org/pdf/2604.20041v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "autoregressive generation followed by iterative denoising",
+      "llm_evidence_cn": "自回归生成后接迭代去噪过程",
+      "llm_evidence": "自回归生成后接迭代去噪过程",
+      "canonical_evidence": "自回归生成后接迭代去噪过程",
+      "llm_tldr_en": "Introduces iTARFlow, combining autoregressive generation with diffusion-style iterative denoising.",
+      "llm_tldr_cn": "引入 iTARFlow，将自回归生成与扩散式迭代去噪相结合。",
+      "llm_tldr": "引入 iTARFlow，将自回归生成与扩散式迭代去噪相结合。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.18839v1",
+      "title": "One Step Forward and K Steps Back: Better Reasoning with Denoising Recursion Models",
+      "abstract": "Looped transformers scale computational depth without increasing parameter count by repeatedly applying a shared transformer block and can be used for iterative refinement, where each loop rewrites a full fixed-size prediction in parallel. On difficult problems, such as those that require search-like computation, reaching a highly structured solution starting from noise can require long refinement trajectories. Learning such trajectories is challenging when training specifies only the target solution and provides no supervision over the intermediate refinement path. Diffusion models tackle this issue by corrupting data with varying magnitudes of noise and training the model to reverse it in a \\textit{single step}. However, this process misaligns training and testing behaviour. We introduce Denoising Recursion Models, a method that similarly corrupts data with noise but trains the model to reverse the corruption over \\textit{multiple} recursive steps. This strategy provides a tractable curriculum of intermediate states, while better aligning training with testing and incentivizing non-greedy, forward-looking generation. Through extensive experiments, we show this approach outperforms the Tiny Recursion Model (TRM) on ARC-AGI, where it recently achieved breakthrough performance.",
+      "authors": [
+        "Chris Cameron",
+        "Wangzheng Wang",
+        "Nikita Ivanov",
+        "Ashmita Bhattacharyya",
+        "Didier Chételat",
+        "Yingxue Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-20T21:06:12+00:00",
+      "link": "https://arxiv.org/pdf/2604.18839v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Iterative refinement and denoising recursion for structured sequence generation",
+      "llm_evidence_cn": "用于结构化序列生成的迭代细化和去噪递归模型",
+      "llm_evidence": "用于结构化序列生成的迭代细化和去噪递归模型",
+      "canonical_evidence": "用于结构化序列生成的迭代细化和去噪递归模型",
+      "llm_tldr_en": "Proposes Denoising Recursion Models to improve reasoning and sequence generation through iterative refinement.",
+      "llm_tldr_cn": "提出去噪递归模型，通过迭代细化改进推理和序列生成能力。",
+      "llm_tldr": "提出去噪递归模型，通过迭代细化改进推理和序列生成能力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.19902v1",
+      "title": "MMCORE: MultiModal COnnection with Representation Aligned Latent Embeddings",
+      "abstract": "We present MMCORE, a unified framework designed for multimodal image generation and editing. MMCORE leverages a pre-trained Vision-Language Model (VLM) to predict semantic visual embeddings via learnable query tokens, which subsequently serve as conditioning signals for a diffusion model. This streamlined design effectively transfers the rich understanding and reasoning capabilities of VLMs into the visual generation process. By obviating the need for deep fusion between autoregressive and diffusion models or training from scratch, MMCORE significantly reduces computational overhead while maintaining high-fidelity synthesis.   MMCORE seamlessly integrates text-to-image synthesis with interleaved image generation, demonstrating robust multimodal comprehension in complex scenarios such as spatial reasoning and visual grounding. Comprehensive evaluations indicate that MMCORE consistently outperforms state-of-the-art baselines across a broad spectrum of text-to-image and single/multi-image editing benchmarks.",
+      "authors": [
+        "Zijie Li",
+        "Yichun Shi",
+        "Jingxiang Sun",
+        "Ye Wang",
+        "Yixuan Huang",
+        "Zhiyao Guo",
+        "Xiaochen Lian",
+        "Peihao Zhu",
+        "Yu Tian",
+        "Zhonghua Zhai",
+        "Peng Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-21T18:25:25+00:00",
+      "link": "https://arxiv.org/pdf/2604.19902v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "obviating deep fusion between autoregressive and diffusion models",
+      "llm_evidence_cn": "消除自回归与扩散模型之间的深度融合需求",
+      "llm_evidence": "消除自回归与扩散模型之间的深度融合需求",
+      "canonical_evidence": "消除自回归与扩散模型之间的深度融合需求",
+      "llm_tldr_en": "Uses VLM embeddings to condition diffusion models, avoiding complex autoregressive-diffusion fusion.",
+      "llm_tldr_cn": "利用 VLM 嵌入作为扩散模型的条件，避免了复杂的自回归与扩散融合。",
+      "llm_tldr": "利用 VLM 嵌入作为扩散模型的条件，避免了复杂的自回归与扩散融合。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2604.20079v1",
+      "title": "On the Quantization Robustness of Diffusion Language Models in Coding Benchmarks",
+      "abstract": "Auto-regressive Large Language Models (LLMs) achieve strong performance on coding tasks, but incur high memory and inference costs. Diffusion-based language models (d-LLMs) offer bounded inference cost via iterative denoising, but their behavior under post-training quantization (PTQ) has been sparsely explored. We investigate the application and robustness of PTQ techniques, specifically GPTQ and a modified Hessian-Aware Quantization (HAWQ) algorithm, on a diffusion-based coding LLM (CoDA) and observe that these methods applied to CoDA exhibit greater robustness at low bitwidths compared to Qwen3-1.7B, its auto-regressive counterpart, under a standardized evaluation pipeline. We find that in our setup, CoDA exhibits greater robustness at low bitwidths (2-4 bits), with smaller accuracy degradation across HumanEval and MBPP benchmarks. Additionally, mixed-precision configurations derived from HAWQ provide smooth trade-offs across accuracy, latency, and memory. The results suggest that diffusion LLMs may offer advantages for efficient deployment due to more quantization-resilience.",
+      "authors": [
+        "Aarav Gupta",
+        "Gururaj Deshpande",
+        "Chandreyi Chakraborty"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-04-22T00:53:43+00:00",
+      "link": "https://arxiv.org/pdf/2604.20079v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Compares diffusion-based language models with autoregressive counterparts",
+      "llm_evidence_cn": "对比扩散语言模型与自回归对应模型的量化鲁棒性",
+      "llm_evidence": "对比扩散语言模型与自回归对应模型的量化鲁棒性",
+      "canonical_evidence": "对比扩散语言模型与自回归对应模型的量化鲁棒性",
+      "llm_tldr_en": "Investigates quantization robustness of diffusion-based coding LLMs compared to autoregressive models.",
+      "llm_tldr_cn": "研究了扩散编程大模型在量化后的鲁棒性，并与自回归模型进行了对比。",
+      "llm_tldr": "研究了扩散编程大模型在量化后的鲁棒性，并与自回归模型进行了对比。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

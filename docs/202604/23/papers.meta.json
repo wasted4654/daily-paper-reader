@@ -1,0 +1,93 @@
+{
+  "label": "2026-04-23",
+  "date": "2026-04-23",
+  "generated_at": "2026-04-23T20:46:54",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202604/23/2604.16514v3-bard-bridging-autoregressive-and-diffusion-vision-language-models-via-highly-efficient-progressive-block-merging-and-stage-wise-distillation",
+      "section": "deep",
+      "title_en": "BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation",
+      "authors": "Baoyou Chen, Hanchen Xia, Peng Tu, Haojun Shi, Shan Mu, Weihao Yuan, Siyu Zhu",
+      "date": "2026-04-15",
+      "pdf": "https://arxiv.org/pdf/2604.16514v3",
+      "score": "10.0",
+      "evidence": "将预训练的自回归VLM转换为扩散VLM",
+      "tldr": "针对自回归多模态模型推理速度慢的问题，本文提出BARD框架，通过渐进式块合并和阶段式扩散蒸馏，将预训练的自回归模型高效转换为同架构的扩散式模型。该方法利用扩散域内的蒸馏克服了直接转换带来的性能损失，在保持强大性能的同时实现了高达3倍的推理加速，在4B和8B规模上均达到开源扩散多模态模型的领先水平。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive vision-language models (VLMs) deliver strong multimodal capability, but their token-by-token decoding imposes a fundamental inference bottleneck. Diffusion VLMs offer a more parallel decoding paradigm, yet directly converting a pretrained autoregressive VLM into a large-block diffusion VLM (dVLM) often leads to substantial quality degradation. In this work, we present BARD, a simple and effective bridging framework that converts a pretrained autoregressive VLM into a same-architecture, decoding-efficient dVLM. Our approach combines progressive supervised block merging, which gradually enlarges the decoding block size, with stage-wise intra-dVLM distillation from a fixed small-block diffusion anchor to recover performance lost at larger blocks. We further incorporate a mixed noise scheduler to improve robustness and token revision during denoising, and memory-friendly training to enable efficient training on long multimodal sequences. A key empirical finding is that direct autoregressive-to-diffusion distillation is poorly aligned and can even hurt performance, whereas distillation within the diffusion regime is consistently effective. Experimental results show that, with $\\leq$ 4.4M data, BARD-VL transfers strong multimodal capability from Qwen3-VL to a large-block dVLM. Remarkably, BARD-VL establishes a new SOTA among comparable-scale open dVLMs on our evaluation suite at both 4B and 8B scales. At the same time, BARD-VL achieves up to 3$\\times$ decoding throughput speedup compared to the source model. Code is available at: $\\href{https://github.com/fudan-generative-vision/Bard-VL}{this~https~URL}$.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/23/2604.20289v1-x-cache-cross-chunk-block-caching-for-few-step-autoregressive-world-models-inference",
+      "section": "deep",
+      "title_en": "X-Cache: Cross-Chunk Block Caching for Few-Step Autoregressive World Models Inference",
+      "authors": "Yixiao Zeng, Jianlei Zheng, Chaoda Zheng, Shijia Chen, Mingdian Liu, Tongping Liu, Tengwei Luo, Yu Zhang, Boyang Wang, Linkun Xu, Siyuan Lu, Bo Tian, Xianming Liu",
+      "date": "2026-04-22",
+      "pdf": "https://arxiv.org/pdf/2604.20289v1",
+      "score": "9.0",
+      "evidence": "用于自动驾驶世界模型的自回归视频扩散",
+      "tldr": "针对自动驾驶世界模型推理成本高的问题，本文提出 X-Cache，一种无需训练的跨块（Cross-Chunk）缓存加速方法。不同于传统的跨去噪步缓存，X-Cache 利用连续生成块之间的冗余，通过结构和动作感知的双指标门控机制决定模块复用。同时，它通过强制全量计算 KV 更新块来防止误差累积。在 X-world 模型上实现了 2.6 倍加速，且几乎不损失生成质量。",
+      "tags": "query:genad",
+      "abstract_en": "Real-time world simulation is becoming a key infrastructure for scalable evaluation and online reinforcement learning of autonomous driving systems. Recent driving world models built on autoregressive video diffusion achieve high-fidelity, controllable multi-camera generation, but their inference cost remains a bottleneck for interactive deployment. However, existing diffusion caching methods are designed for offline video generation with multiple denoising steps, and do not transfer to this scenario. Few-step distilled models have no inter-step redundancy left for these methods to reuse, and sequence-level parallelization techniques require future conditioning that closed-loop interactive generation does not provide. We present X-Cache, a training-free acceleration method that caches along a different axis: across consecutive generation chunks rather than across denoising steps. X-Cache maintains per-block residual caches that persist across chunks, and applies a dual-metric gating mechanism over a structure- and action-aware block-input fingerprint to independently decide whether each block should recompute or reuse its cached residual. To prevent approximation errors from permanently contaminating the autoregressive KV cache, X-Cache identifies KV update chunks (the forward passes that write clean keys and values into the persistent cache) and unconditionally forces full computation on these chunks, cutting off error propagation. We implement X-Cache on X-world, a production multi-camera action-conditioned driving world model built on multi-block causal DiT with few-step denoising and rolling KV cache. X-Cache achieves 71% block skip rate with 2.6x wall-clock speedup while maintaining minimum degradation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/23/2604.20041v1-normalizing-flows-with-iterative-denoising",
+      "section": "deep",
+      "title_en": "Normalizing Flows with Iterative Denoising",
+      "authors": "Tianrong Chen, Jiatao Gu, David Berthelot, Joshua Susskind, Shuangfei Zhai",
+      "date": "2026-04-21",
+      "pdf": "https://arxiv.org/pdf/2604.20041v1",
+      "score": "8.0",
+      "evidence": "自回归生成后接迭代去噪过程",
+      "tldr": "本研究提出了iTARFlow，旨在提升标准化流（NF）在图像生成任务中的表现。不同于扩散模型，iTARFlow在训练时保持端到端的似然目标，而在采样阶段结合了自回归生成与受扩散模型启发的迭代去噪过程。实验证明，该方法在ImageNet不同分辨率（64到256像素）上均取得了极具竞争力的性能，为标准化流作为强大的生成模型提供了新的可能，并深入分析了其生成的伪影。",
+      "tags": "query:ardm",
+      "abstract_en": "Normalizing Flows (NFs) are a classical family of likelihood-based methods that have received revived attention. Recent efforts such as TARFlow have shown that   NFs are capable of achieving promising performance on image modeling tasks, making them viable alternatives to other methods such as diffusion models.   In this work, we further advance the state of Normalizing Flow generative models by introducing iterative TARFlow (iTARFlow). Unlike diffusion models, iTARFlow maintains a fully end-to-end, likelihood-based objective during training. During sampling, it performs autoregressive generation followed by an iterative denoising procedure inspired by diffusion-style methods. Through extensive experiments, we show that iTARFlow achieves competitive performance across ImageNet resolutions of 64, 128, and 256 pixels, demonstrating its potential as a strong generative model and advancing the frontier of Normalizing Flows. In addition, we analyze the characteristic artifacts produced by iTARFlow, offering insights that may shed light on future improvements. Code is available at https://github.com/apple/ml-itarflow.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/23/2604.18839v1-one-step-forward-and-k-steps-back-better-reasoning-with-denoising-recursion-models",
+      "section": "quick",
+      "title_en": "One Step Forward and K Steps Back: Better Reasoning with Denoising Recursion Models",
+      "authors": "Chris Cameron, Wangzheng Wang, Nikita Ivanov, Ashmita Bhattacharyya, Didier Chételat, Yingxue Zhang",
+      "date": "2026-04-20",
+      "pdf": "https://arxiv.org/pdf/2604.18839v1",
+      "score": "7.0",
+      "evidence": "用于结构化序列生成的迭代细化和去噪递归模型",
+      "tldr": "针对循环Transformer在处理复杂推理任务时难以学习长路径细化过程的问题，本文提出了去噪递归模型（DRM）。该方法借鉴扩散模型思路，通过向数据添加噪声并训练模型在多个递归步骤中逐步逆转损坏，从而提供可处理的中间状态课程。相比于单步去噪，DRM更好地对齐了训练与测试行为，鼓励非贪婪的生成，在ARC-AGI基准测试中超越了现有的TRM模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Looped transformers scale computational depth without increasing parameter count by repeatedly applying a shared transformer block and can be used for iterative refinement, where each loop rewrites a full fixed-size prediction in parallel. On difficult problems, such as those that require search-like computation, reaching a highly structured solution starting from noise can require long refinement trajectories. Learning such trajectories is challenging when training specifies only the target solution and provides no supervision over the intermediate refinement path. Diffusion models tackle this issue by corrupting data with varying magnitudes of noise and training the model to reverse it in a \\textit{single step}. However, this process misaligns training and testing behaviour. We introduce Denoising Recursion Models, a method that similarly corrupts data with noise but trains the model to reverse the corruption over \\textit{multiple} recursive steps. This strategy provides a tractable curriculum of intermediate states, while better aligning training with testing and incentivizing non-greedy, forward-looking generation. Through extensive experiments, we show this approach outperforms the Tiny Recursion Model (TRM) on ARC-AGI, where it recently achieved breakthrough performance.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/23/2604.20079v1-on-the-quantization-robustness-of-diffusion-language-models-in-coding-benchmarks",
+      "section": "quick",
+      "title_en": "On the Quantization Robustness of Diffusion Language Models in Coding Benchmarks",
+      "authors": "Aarav Gupta, Gururaj Deshpande, Chandreyi Chakraborty",
+      "date": "2026-04-22",
+      "pdf": "https://arxiv.org/pdf/2604.20079v1",
+      "score": "7.0",
+      "evidence": "对比扩散语言模型与自回归对应模型的量化鲁棒性",
+      "tldr": "本研究探讨了扩散语言模型（d-LLMs）在量化后的鲁棒性，特别是针对代码生成任务。研究者在CoDA模型上应用了GPTQ和改进的HAWQ量化技术，并与自回归模型Qwen3-1.7B进行对比。结果表明，CoDA在2-4位低比特量化下表现出更强的鲁棒性，在HumanEval和MBPP基准测试中准确率下降更小，为高效部署提供了新思路。",
+      "tags": "query:ardm",
+      "abstract_en": "Auto-regressive Large Language Models (LLMs) achieve strong performance on coding tasks, but incur high memory and inference costs. Diffusion-based language models (d-LLMs) offer bounded inference cost via iterative denoising, but their behavior under post-training quantization (PTQ) has been sparsely explored. We investigate the application and robustness of PTQ techniques, specifically GPTQ and a modified Hessian-Aware Quantization (HAWQ) algorithm, on a diffusion-based coding LLM (CoDA) and observe that these methods applied to CoDA exhibit greater robustness at low bitwidths compared to Qwen3-1.7B, its auto-regressive counterpart, under a standardized evaluation pipeline. We find that in our setup, CoDA exhibits greater robustness at low bitwidths (2-4 bits), with smaller accuracy degradation across HumanEval and MBPP benchmarks. Additionally, mixed-precision configurations derived from HAWQ provide smooth trade-offs across accuracy, latency, and memory. The results suggest that diffusion LLMs may offer advantages for efficient deployment due to more quantization-resilience.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/23/2604.19902v1-mmcore-multimodal-connection-with-representation-aligned-latent-embeddings",
+      "section": "quick",
+      "title_en": "MMCORE: MultiModal COnnection with Representation Aligned Latent Embeddings",
+      "authors": "Zijie Li, Yichun Shi, Jingxiang Sun, Ye Wang, Yixuan Huang, Zhiyao Guo, Xiaochen Lian, Peihao Zhu, Yu Tian, Zhonghua Zhai, Peng Wang",
+      "date": "2026-04-21",
+      "pdf": "https://arxiv.org/pdf/2604.19902v1",
+      "score": "6.0",
+      "evidence": "消除自回归与扩散模型之间的深度融合需求",
+      "tldr": "MMCORE是一个统一的多模态图像生成与编辑框架，通过可学习的查询令牌利用预训练视觉语言模型（VLM）预测语义视觉嵌入，并将其作为扩散模型的条件信号。该设计将VLM的理解与推理能力引入生成过程，无需深度融合或从头训练，显著降低了计算开销。实验证明，MMCORE在文本生成图像、交错图像生成及多图像编辑等任务中表现优异，超越了现有基准。",
+      "tags": "query:ardm",
+      "abstract_en": "We present MMCORE, a unified framework designed for multimodal image generation and editing. MMCORE leverages a pre-trained Vision-Language Model (VLM) to predict semantic visual embeddings via learnable query tokens, which subsequently serve as conditioning signals for a diffusion model. This streamlined design effectively transfers the rich understanding and reasoning capabilities of VLMs into the visual generation process. By obviating the need for deep fusion between autoregressive and diffusion models or training from scratch, MMCORE significantly reduces computational overhead while maintaining high-fidelity synthesis.   MMCORE seamlessly integrates text-to-image synthesis with interleaved image generation, demonstrating robust multimodal comprehension in complex scenarios such as spatial reasoning and visual grounding. Comprehensive evaluations indicate that MMCORE consistently outperforms state-of-the-art baselines across a broad spectrum of text-to-image and single/multi-image editing benchmarks.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
