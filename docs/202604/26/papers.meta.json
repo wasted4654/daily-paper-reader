@@ -1,0 +1,51 @@
+{
+  "label": "2026-04-26",
+  "date": "2026-04-26",
+  "generated_at": "2026-04-26T20:03:14",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202604/26/2604.21221v1-sparse-forcing-native-trainable-sparse-attention-for-real-time-autoregressive-diffusion-video-generation",
+      "section": "deep",
+      "title_en": "Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation",
+      "authors": "Boxun Xu, Yuming Du, Zichang Liu, Siyu Yang, Ziyang Jiang, Siqi Yan, Rajasi Saha, Albert Pumarola, Wenchen Wang, Peng Li",
+      "date": "2026-04-23",
+      "pdf": "https://arxiv.org/pdf/2604.21221v1",
+      "score": "10.0",
+      "evidence": "为自回归扩散视频生成提出稀疏注意力机制",
+      "tldr": "针对自回归视频扩散模型在长视频生成中的质量与延迟挑战，本文提出 Sparse Forcing 范式。该方法基于注意力集中于持久显著块的观察，设计了可训练的原生稀疏机制来动态压缩和更新 KV 缓存，并结合高效的 PBSA GPU 内核。实验证明，该方法在显著提升长视频生成质量的同时，大幅降低了显存占用并加快了推理速度，为实时长视频生成提供了高效方案。",
+      "tags": "query:ardm",
+      "abstract_en": "We introduce Sparse Forcing, a training-and-inference paradigm for autoregressive video diffusion models that improves long-horizon generation quality while reducing decoding latency. Sparse Forcing is motivated by an empirical observation in autoregressive diffusion rollouts: attention concentrates on a persistent subset of salient visual blocks, forming an implicit spatiotemporal memory in the KV cache, and exhibits a locally structured block-sparse pattern within sliding windows. Building on this observation, we propose a trainable native sparsity mechanism that learns to compress, preserve, and update these persistent blocks while restricting computation within each local window to a dynamically selected local neighborhood. To make the approach practical at scale for both training and inference, we further propose Persistent Block-Sparse Attention (PBSA), an efficient GPU kernel that accelerates sparse attention and memory updates for low-latency, memory-efficient decoding. Experiments show that Sparse Forcing improves the VBench score by +0.26 over Self-Forcing on 5-second text-to-video generation while delivering a 1.11-1.17x decoding speedup and 42% lower peak KV-cache footprint. The gains are more pronounced on longer-horizon rollouts, delivering improved visual quality with +0.68 and +2.74 VBench improvements, and 1.22x and 1.27x speedups on 20-second and 1-minute generations, respectively.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/26/2604.17656v2-video-robin-autoregressive-diffusion-planning-for-intent-grounded-video-to-music-generation",
+      "section": "deep",
+      "title_en": "Video-Robin: Autoregressive Diffusion Planning for Intent-Grounded Video-to-Music Generation",
+      "authors": "Vaibhavi Lokegaonkar, Aryan Vijay Bhosale, Vishnu Raj, Gouthaman KV, Ramani Duraiswami, Lie Lu, Sreyan Ghosh, Dinesh Manocha",
+      "date": "2026-04-19",
+      "pdf": "https://arxiv.org/pdf/2604.17656v2",
+      "score": "9.0",
+      "evidence": "将自回归规划与基于扩散的合成相结合",
+      "tldr": "Video-Robin 是一款文本增强的视频转音乐生成模型，旨在解决现有模型缺乏语义控制的问题。它创新性地结合了自回归规划与扩散合成技术：通过自回归模块对视觉和文本输入进行语义对齐，生成高层音乐潜变量，再利用扩散 Transformer 细化为高质量音频。该模型在保持音频真实感的同时，实现了精细的创作者控制，且推理速度比现有最先进模型快 2.21 倍。",
+      "tags": "query:ardm",
+      "abstract_en": "Video-to-music (V2M) is the fundamental task of creating background music for an input video. Recent V2M models achieve audiovisual alignment by typically relying on visual conditioning alone and provide limited semantic and stylistic controllability to the end user. In this paper, we present Video-Robin, a novel text-conditioned video-to-music generation model that enables fast, high-quality, semantically aligned music generation for video content. To balance musical fidelity and semantic understanding, Video-Robin integrates autoregressive planning with diffusion-based synthesis. Specifically, an autoregressive module models global structure by semantically aligning visual and textual inputs to produce high-level music latents. These latents are subsequently refined into coherent, high-fidelity music using local Diffusion Transformers. By factoring semantically driven planning into diffusion-based synthesis, Video-Robin enables fine-grained creator control without sacrificing audio realism. Our proposed model outperforms baselines that solely accept video input and additional feature conditioned baselines on both in-distribution and out-of-distribution benchmarks with a 2.21x speed in inference compared to SOTA. We will open-source everything upon paper acceptance.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/26/2604.17068v1-stability-weighted-decoding-for-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Stability-Weighted Decoding for Diffusion Language Models",
+      "authors": "Yue Wu, Jian Huang",
+      "date": "2026-04-18",
+      "pdf": "https://arxiv.org/pdf/2604.17068v1",
+      "score": "7.0",
+      "evidence": "用于并行文本生成的扩散语言模型",
+      "tldr": "针对扩散语言模型（dLLM）在并行生成中因忽略时间历史而导致过早取消掩码不稳定标记的问题，本文提出了一种名为稳定性加权解码（SWD）的即插即用策略。该方法基于理论证明，即标记的时间不稳定性（连续预测分布间的KL散度）与其与剩余上下文的互信息相关。SWD通过将时间稳定性融入标记评分，显著提升了代码生成和数学推理任务的准确性与鲁棒性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) enable parallel text generation by iteratively denoising a fully masked sequence, unmasking a subset of masked tokens at each step. Existing decoding strategies rely on static confidence metrics computed at a single denoising step, ignoring temporal history and often leading to premature unmasking of unstable tokens. In this work, we theoretically establish that a token's temporal instability, quantified by the KL divergence between consecutive prediction distributions, provides a strict lower bound on its mutual information with the remaining masked context, indicating that temporally unstable tokens are inherently unsafe to unmask. Based on this insight, we propose Stability-Weighted Decoding (SWD), a training-free, plug-and-play strategy that incorporates temporal stability into token scoring and acts as a universal modulator for arbitrary score-based decoding policies. Experiments on code generation and mathematical reasoning benchmarks demonstrate that SWD consistently improves generation accuracy across representative scoring metrics and selection policies, and exhibits exceptional robustness, maintaining a significant performance lead over standard baselines across varying acceleration ratios.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

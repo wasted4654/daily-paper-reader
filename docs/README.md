@@ -6,40 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-23
-- 运行时间：2026-04-23 20:46:46 UTC
+- 最新运行日期：2026-04-26
+- 运行时间：2026-04-26 20:03:05 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：3
-- 速读区：3
+- 本次总论文数：3
+- 精读区：2
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦视觉语言模型架构融合与世界模型推理加速，深度解析 6 篇前沿论文。
-重点关注 BARD 如何通过渐进式块合并桥接自回归与扩散模型，以及 X-Cache 在世界模型推理中实现的跨块缓存突破。
-建议优先研读满分论文 BARD 的蒸馏策略，探索多模态架构融合与高效推理的最新工程实践。
-- 详情：[/202604/23/README](/202604/23/README)
+今日深度解析自回归扩散模型在实时视频生成与音视频协同领域的最新进展。
+满分论文 Sparse Forcing 实现了原生可训练的实时视频生成，而 Video-Robin 则通过扩散规划完成了精准的视频配乐。
+推荐关注自回归架构在多模态生成中的效率优化，探索高保真音视频同步的创作新范式。
+- 详情：[/202604/26/README](/202604/26/README)
 
 ### 精读区论文标签
-1. [BARD: Bridging AutoRegressive and Diffusion Vision-Language Models Via Highly Efficient Progressive Block Merging and Stage-Wise Distillation](/202604/23/2604.16514v3-bard-bridging-autoregressive-and-diffusion-vision-language-models-via-highly-efficient-progressive-block-merging-and-stage-wise-distillation)  
+1. [Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation](/202604/26/2604.21221v1-sparse-forcing-native-trainable-sparse-attention-for-real-time-autoregressive-diffusion-video-generation)  
    标签：评分：10.0/10、query:ardm
-   evidence：将预训练的自回归VLM转换为扩散VLM
-2. [X-Cache: Cross-Chunk Block Caching for Few-Step Autoregressive World Models Inference](/202604/23/2604.20289v1-x-cache-cross-chunk-block-caching-for-few-step-autoregressive-world-models-inference)  
-   标签：评分：9.0/10、query:genad
-   evidence：用于自动驾驶世界模型的自回归视频扩散
-3. [Normalizing Flows with Iterative Denoising](/202604/23/2604.20041v1-normalizing-flows-with-iterative-denoising)  
-   标签：评分：8.0/10、query:ardm
-   evidence：自回归生成后接迭代去噪过程
+   evidence：为自回归扩散视频生成提出稀疏注意力机制
+2. [Video-Robin: Autoregressive Diffusion Planning for Intent-Grounded Video-to-Music Generation](/202604/26/2604.17656v2-video-robin-autoregressive-diffusion-planning-for-intent-grounded-video-to-music-generation)  
+   标签：评分：9.0/10、query:ardm
+   evidence：将自回归规划与基于扩散的合成相结合
 
 ### 速读区论文标签
-1. [One Step Forward and K Steps Back: Better Reasoning with Denoising Recursion Models](/202604/23/2604.18839v1-one-step-forward-and-k-steps-back-better-reasoning-with-denoising-recursion-models)  
+1. [Stability-Weighted Decoding for Diffusion Language Models](/202604/26/2604.17068v1-stability-weighted-decoding-for-diffusion-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：用于结构化序列生成的迭代细化和去噪递归模型
-2. [On the Quantization Robustness of Diffusion Language Models in Coding Benchmarks](/202604/23/2604.20079v1-on-the-quantization-robustness-of-diffusion-language-models-in-coding-benchmarks)  
-   标签：评分：7.0/10、query:ardm
-   evidence：对比扩散语言模型与自回归对应模型的量化鲁棒性
-3. [MMCORE: MultiModal COnnection with Representation Aligned Latent Embeddings](/202604/23/2604.19902v1-mmcore-multimodal-connection-with-representation-aligned-latent-embeddings)  
-   标签：评分：6.0/10、query:ardm
-   evidence：消除自回归与扩散模型之间的深度融合需求
+   evidence：用于并行文本生成的扩散语言模型
 
 
 <div class="dpr-home-promo-card">
