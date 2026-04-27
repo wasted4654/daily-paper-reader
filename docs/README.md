@@ -6,31 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-26
-- 运行时间：2026-04-26 20:03:05 UTC
+- 最新运行日期：2026-04-27
+- 运行时间：2026-04-27 20:30:01 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：2
+- 本次总论文数：1
+- 精读区：0
 - 速读区：1
 
 ### 今日简报（AI）
-今日深度解析自回归扩散模型在实时视频生成与音视频协同领域的最新进展。
-满分论文 Sparse Forcing 实现了原生可训练的实时视频生成，而 Video-Robin 则通过扩散规划完成了精准的视频配乐。
-推荐关注自回归架构在多模态生成中的效率优化，探索高保真音视频同步的创作新范式。
-- 详情：[/202604/26/README](/202604/26/README)
+今日聚焦受限扩散模型，探索在复杂非凸等式与不等式约束下的高效生成新路径。
+重点关注 Landing 方法，它为扩散模型在严苛几何约束下的采样效率提供了关键的算法支撑。
+推荐对受限生成或物理一致性建模感兴趣的读者快速浏览，掌握处理非凸约束的最新技巧。
+- 详情：[/202604/27/README](/202604/27/README)
 
 ### 精读区论文标签
-1. [Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation](/202604/26/2604.21221v1-sparse-forcing-native-trainable-sparse-attention-for-real-time-autoregressive-diffusion-video-generation)  
-   标签：评分：10.0/10、query:ardm
-   evidence：为自回归扩散视频生成提出稀疏注意力机制
-2. [Video-Robin: Autoregressive Diffusion Planning for Intent-Grounded Video-to-Music Generation](/202604/26/2604.17656v2-video-robin-autoregressive-diffusion-planning-for-intent-grounded-video-to-music-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：将自回归规划与基于扩散的合成相结合
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Stability-Weighted Decoding for Diffusion Language Models](/202604/26/2604.17068v1-stability-weighted-decoding-for-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于并行文本生成的扩散语言模型
+1. [Efficient Diffusion Models under Nonconvex Equality and Inequality constraints via Landing](/202604/27/2604.17838v1-efficient-diffusion-models-under-nonconvex-equality-and-inequality-constraints-via-landing)  
+   标签：评分：6.0/10、query:diffpl
+   evidence：用于机器人和规划的受限扩散模型
 
 
 <div class="dpr-home-promo-card">

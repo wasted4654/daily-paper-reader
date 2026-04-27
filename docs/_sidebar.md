@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-04-27 <!--dpr-date:20260427-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/27/2604.17838v1-efficient-diffusion-models-under-nonconvex-equality-and-inequality-constraints-via-landing" data-sidebar-item="{&quot;title&quot;: &quot;Efficient Diffusion Models under Nonconvex Equality and Inequality constraints via Landing&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.17838v1-efficient-diffusion-models-under-nonconvex-equality-and-inequality-constraints-via-landing&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;diffpl&quot;}], &quot;evidence&quot;: &quot;用于机器人和规划的受限扩散模型&quot;}">Efficient Diffusion Models under Nonconvex Equality and Inequality constraints via Landing</a>
   * 2026-04-26 <!--dpr-date:20260426-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202604/26/2604.21221v1-sparse-forcing-native-trainable-sparse-attention-for-real-time-autoregressive-diffusion-video-generation" data-sidebar-item="{&quot;title&quot;: &quot;Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2604.21221v1-sparse-forcing-native-trainable-sparse-attention-for-real-time-autoregressive-diffusion-video-generation&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;为自回归扩散视频生成提出稀疏注意力机制&quot;}">Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation</a>
