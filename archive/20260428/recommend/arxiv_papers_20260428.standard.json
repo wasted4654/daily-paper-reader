@@ -1,0 +1,259 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-28T21:02:34.389867+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2604.23586v1",
+      "title": "Talker-T2AV: Joint Talking Audio-Video Generation with Autoregressive Diffusion Modeling",
+      "abstract": "Joint audio-video generation models have shown that unified generation yields stronger cross-modal coherence than cascaded approaches. However, existing models couple modalities throughout denoising via pervasive attention, treating high-level semantics and low-level details in a fully entangled manner. This is suboptimal for talking head synthesis: while audio and facial motion are semantically correlated, their low-level realizations (acoustic signals and visual textures) follow distinct rendering processes. Enforcing joint modeling across all levels causes unnecessary entanglement and reduces efficiency. We propose Talker-T2AV, an autoregressive diffusion framework where high-level cross-modal modeling occurs in a shared backbone, while low-level refinement uses modality-specific decoders. A shared autoregressive language model jointly reasons over audio and video in a unified patch-level token space. Two lightweight diffusion transformer heads decode the hidden states into frame-level audio and video latents. Experiments on talking portrait benchmarks show Talker-T2AV outperforms dual-branch baselines in lip-sync accuracy, video quality, and audio quality, achieving stronger cross-modal consistency than cascaded pipelines.",
+      "authors": [
+        "Zhen Ye",
+        "Xu Tan",
+        "Aoxiong Yin",
+        "Hongzhan Lin",
+        "Guangyan Zhang",
+        "Peiwen Sun",
+        "Yiming Li",
+        "Chi-Min Chan",
+        "Wei Ye",
+        "Shikun Zhang",
+        "Wei Xue"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL",
+        "cs.MM",
+        "cs.SD",
+        "eess.AS"
+      ],
+      "published": "2026-04-26T07:48:47+00:00",
+      "link": "https://arxiv.org/pdf/2604.23586v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive diffusion framework for joint audio-video generation",
+      "llm_evidence_cn": "用于音视频联合生成的自回归扩散框架",
+      "llm_evidence": "用于音视频联合生成的自回归扩散框架",
+      "canonical_evidence": "用于音视频联合生成的自回归扩散框架",
+      "llm_tldr_en": "Talker-T2AV uses an autoregressive diffusion framework to improve cross-modal coherence in talking head synthesis.",
+      "llm_tldr_cn": "Talker-T2AV使用自回归扩散框架来提高说话人头像合成中的跨模态一致性。",
+      "llm_tldr": "Talker-T2AV使用自回归扩散框架来提高说话人头像合成中的跨模态一致性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.23994v1",
+      "title": "When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models",
+      "abstract": "Discrete diffusion language models (dLLMs) enable parallel token updates with bidirectional attention, yet practical generation typically adopts blockwise semi-autoregressive decoding. This switch creates a training-inference mismatch: training denoises with full-sequence context, while inference commits tokens within a bounded block without future context. Therefore, decoding with fixed-size or heuristic-based blocks can lead to premature token commitments, as decisions are made without full access to future context that could alter those choices. Motivated by this, we propose self-containedness as a principled criterion for block commitment. A block is self-contained if its predictions remain consistent with Future-Aware (FA) or without No-Future (NF) access to future context, reframing block boundary selection as a test of self-containedness rather than a heuristic choice. Based on this principle, we introduce Variable-size Self-contained Blocks (VSB) for dLLMs. VSB scores and selects block boundaries using the divergence between token-level predictive distributions under NF and FA conditioning, which quantifies how predictions would change if future context were revealed. We provide theoretical justification linking self-containedness to predictive consistency, and extensive experiments validate VSB's efficacy over fixed-size and heuristic blockwise decoding.",
+      "authors": [
+        "Danny Wang",
+        "Ruihong Qiu",
+        "Zi Huang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-04-27T03:21:07+00:00",
+      "link": "https://arxiv.org/pdf/2604.23994v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "blockwise semi-autoregressive decoding for discrete diffusion",
+      "llm_evidence_cn": "离散扩散模型的块状半自回归解码",
+      "llm_evidence": "离散扩散模型的块状半自回归解码",
+      "canonical_evidence": "离散扩散模型的块状半自回归解码",
+      "llm_tldr_en": "Proposes self-contained blocks for semi-autoregressive decoding in discrete diffusion language models.",
+      "llm_tldr_cn": "为离散扩散语言模型的半自回归解码提出自包含块准则。",
+      "llm_tldr": "为离散扩散语言模型的半自回归解码提出自包含块准则。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.24416v1",
+      "title": "Scaling Properties of Continuous Diffusion Spoken Language Models",
+      "abstract": "Speech-only spoken language models (SLMs) lag behind text and text-speech models in performance, with recent discrete autoregressive (AR) SLMs indicating significant computational and data demands to match text models. Since discretizing continuous speech for AR creates bottlenecks, we explore whether continuous diffusion (CD) SLM is more viable. To quantify the SLMs linguistic quality, we introduce the phoneme Jensen-Shannon divergence (pJSD) metric. Our analysis reveals CD SLMs, mirroring AR behavior, exhibit scaling laws for validation loss and pJSD, and show optimal token-to-parameter ratios decreasing as compute scales. However, for the latter, loss becomes insensitive to choice of data and model sizes, showing potential for fast inference. Scaling CD SLMs to 16B parameters with tens of millions of hours of conversational data enables generation of emotive, prosodic, multi-speaker, multilingual speech, though achieving long-form coherence remains a significant challenge.",
+      "authors": [
+        "Jason Ramapuram",
+        "Eeshan Gunesh Dhekane",
+        "Amitis Shidani",
+        "Dan Busbridge",
+        "Bogdan Mazoure",
+        "Zijin Gu",
+        "Russ Webb",
+        "Tatiana Likhomanenko",
+        "Navdeep Jaitly"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-27T12:45:18+00:00",
+      "link": "https://arxiv.org/pdf/2604.24416v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "continuous diffusion vs discrete autoregressive spoken language models",
+      "llm_evidence_cn": "连续扩散与离散自回归口语语言模型的对比",
+      "llm_evidence": "连续扩散与离散自回归口语语言模型的对比",
+      "canonical_evidence": "连续扩散与离散自回归口语语言模型的对比",
+      "llm_tldr_en": "Explores scaling laws and viability of continuous diffusion models as an alternative to autoregressive SLMs.",
+      "llm_tldr_cn": "探讨了连续扩散模型作为自回归口语语言模型替代方案的缩放法则和可行性。",
+      "llm_tldr": "探讨了连续扩散模型作为自回归口语语言模型替代方案的缩放法则和可行性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.18471v2",
+      "title": "NI Sampling: Accelerating Discrete Diffusion Sampling by Token Order Optimization",
+      "abstract": "Discrete diffusion language models (dLLMs) have recently emerged as a promising alternative to traditional autoregressive approaches, offering the flexibility to generate tokens in arbitrary orders and the potential of parallel decoding. However, existing heuristic sampling strategies remain inefficient: they choose only a small part of tokens to sample at each step, leaving substantial room for improvement. In this work, we study the problem of token sampling order optimization and demonstrate its significant potential for acceleration. Specifically, we find that fully leveraging correct predictions at each step can reduce the number of sampling iterations by an order of magnitude without compromising accuracy. Based on this, we propose Neural Indicator Sampling (NI Sampling), a general sampling order optimization framework that utilize a neural indicator to decide which tokens should be sampled at each step. We further propose a novel trajectory-preserving objective to train the indicator. Experiments on LLaDA and Dream models across multiple benchmarks show that our method achieves up to 14.3$\\times$ acceleration over full-step sampling with negligible performance drop, and consistently outperforms confidence threshold sampling in the accuracy-step trade-off. Code is available at https://github.com/imagination-research/NI-Sampling.",
+      "authors": [
+        "Enshu Liu",
+        "Xuefei Ning",
+        "Yu Wang",
+        "Zinan Lin"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-04-20T16:22:59+00:00",
+      "link": "https://arxiv.org/pdf/2604.18471v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "discrete diffusion language models as alternative to autoregressive approaches",
+      "llm_evidence_cn": "离散扩散语言模型作为自回归方法的替代方案",
+      "llm_evidence": "离散扩散语言模型作为自回归方法的替代方案",
+      "canonical_evidence": "离散扩散语言模型作为自回归方法的替代方案",
+      "llm_tldr_en": "NI Sampling accelerates discrete diffusion language models by optimizing token sampling order.",
+      "llm_tldr_cn": "NI Sampling通过优化标记采样顺序来加速离散扩散语言模型。",
+      "llm_tldr": "NI Sampling通过优化标记采样顺序来加速离散扩散语言模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.24104v1",
+      "title": "Factual and Edit-Sensitive Graph-to-Sequence Generation via Graph-Aware Adaptive Noising",
+      "abstract": "Fine-tuned autoregressive models for graph-to-sequence generation (G2S) often struggle with factual grounding and edit sensitivity. To tackle these issues, we propose a non-autoregressive diffusion framework that generates text by iterative refinement conditioned on an input graph, named as Diffusion Language Model for Graphs (DLM4G). By aligning graph components (entities/relations) with their corresponding sequence tokens, DLM4G employs an adaptive noising strategy. The proposed strategy uses per-token denoising error as a signal to adaptively modulate noise on entity and relation tokens, improving preservation of graph structure and enabling localized updates under graph edits. Evaluated on three datasets, DLM4G consistently outperforms competitive G2S diffusion baselines trained on identical splits across both surface-form and embedding-based metrics. DLM4G further exceeds fine-tuned autoregressive baselines up to 12x larger (e.g., T5-Large) and is competitive with zero-shot LLM transfer baselines up to 127x larger. Relative to the strongest fine-tuned PLM baseline, DLM4G improves factual grounding (FGT@0.5) by +5.16% and edit sensitivity (ESR) by +7.9%; compared to the best diffusion baseline, it yields gains of +3.75% in FGT@0.5 and +23.6% in ESR. We additionally demonstrate applicability beyond textual graphs through experiments on molecule captioning, indicating the method's generality for scientific G2S generation.",
+      "authors": [
+        "Aditya Hemant Shahane",
+        "Anuj Kumar Sirohi",
+        "Tanmoy Chakraborty",
+        "Prathosh A P",
+        "Sandeep Kumar"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-04-27T06:52:09+00:00",
+      "link": "https://arxiv.org/pdf/2604.24104v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "diffusion framework for graph-to-sequence generation as alternative to autoregressive",
+      "llm_evidence_cn": "用于图到序列生成的扩散框架，作为自回归的替代方案",
+      "llm_evidence": "用于图到序列生成的扩散框架，作为自回归的替代方案",
+      "canonical_evidence": "用于图到序列生成的扩散框架，作为自回归的替代方案",
+      "llm_tldr_en": "DLM4G uses a non-autoregressive diffusion framework for graph-to-sequence generation to improve factual grounding.",
+      "llm_tldr_cn": "DLM4G采用非自回归扩散框架进行图到序列生成，以提高事实准确性。",
+      "llm_tldr": "DLM4G采用非自回归扩散框架进行图到序列生成，以提高事实准确性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.24357v1",
+      "title": "DPRM: A Plug-in Doob h transform-induced Token-Ordering Module for Diffusion Language Models",
+      "abstract": "Diffusion language models generate without a fixed left-to-right order, making token ordering a central algorithmic choice: which tokens should be revealed, retained, revised or verified at each step? Existing systems mainly use random masking or confidence-driven ordering. Random masking creates train--test mismatch, while confidence-only rules are efficient but can be myopic and suppress useful exploration.   We introduce DPRM (Doob h-transform Process Reward Model), a plug-in token-ordering module for diffusion language models. DPRM keeps the host architecture, denoising objective and supervision unchanged, and changes only the ordering policy. It starts from confidence-driven progressive ordering and gradually shifts to Doob h transform Process Reward guided ordering through online estimates.   We characterize the exact DPRM policy as a reward-tilted Gibbs reveal law, prove O(1/N) convergence of the stagewise Soft-BoN approximation, and show that the online bucketized controller tracks the exact DPRM score at empirical-Bernstein rates. Under tractable optimization assumptions, DPRM also yields a sample-complexity advantage over random and confidence-only ordering.   DPRM improves over confidence-based baselines in pretraining, post-training, test-time scaling, and single-cell masked diffusion, with particularly strong gains on harder reasoning subsets. In protein, molecular generation and DNA design, the effect is more multi-objective: ordering-aware variants significantly improve selected structural or fragment-constrained metrics while not uniformly dominating the host baseline on every quality metric. These results identify token ordering as a fundamental control axis in diffusion language models and establish DPRM as a general-purpose module for improving it. Code is available at https://github.com/DakeBU/DPRM-DLLM.",
+      "authors": [
+        "Dake Bu",
+        "Wei Huang",
+        "Andi Han",
+        "Hau-San Wong",
+        "Qingfu Zhang",
+        "Taiji Suzuki",
+        "Atsushi Nitanda"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-27T11:50:26+00:00",
+      "link": "https://arxiv.org/pdf/2604.24357v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "token-ordering module for diffusion language models",
+      "llm_evidence_cn": "扩散语言模型的令牌排序模块",
+      "llm_evidence": "扩散语言模型的令牌排序模块",
+      "canonical_evidence": "扩散语言模型的令牌排序模块",
+      "llm_tldr_en": "Introduces DPRM, a plug-in module for optimizing token ordering in diffusion-based language generation.",
+      "llm_tldr_cn": "引入DPRM插件模块，优化基于扩散的语言生成中的令牌排序。",
+      "llm_tldr": "引入DPRM插件模块，优化基于扩散的语言生成中的令牌排序。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

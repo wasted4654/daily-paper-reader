@@ -1,0 +1,1416 @@
+Title: When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2604.23994v1
+
+Published Time: Tue, 28 Apr 2026 01:40:38 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models 
+
+Danny Wang 1 Ruihong Qiu 1 Zi Huang 11The University of Queensland 
+
+Abstract 
+
+Discrete diffusion language models (dLLMs) enable parallel token updates with bidirec-tional attention, yet practical generation typi-cally adopts blockwise semi-autoregressive de-coding. This switch creates a training-inference mismatch: training denoises with full-sequence 
+
+context, while inference commits tokens within a 
+
+bounded block without future context . There-fore, decoding with fixed-size or heuristic-based blocks can lead to premature token commitments, as decisions are made without full access to future context that could alter those choices. Motivated by this, we propose self-containedness as a prin-cipled criterion for block commitment. A block is self-contained if its predictions remain consistent with Future-Aware (FA) or without No-Future (NF) access to future context, reframing block boundary selection as a test of self-containedness rather than a heuristic choice. Based on this prin-ciple, we introduce Variable-size Self-contained Blocks (VSB) for dLLMs. VSB scores and selects block boundaries using the divergence between token-level predictive distributions under NF and FA conditioning, which quantifies how pre-dictions would change if future context were re-vealed. We provide theoretical justification link-ing self-containedness to predictive consistency, and extensive experiments validate VSB’s efficacy over fixed-size and heuristic blockwise decoding. 
+
+1. Introduction 
+
+Recent progress in discrete diffusion language models (dLLM) enable parallel token generation with global bidi-rectional attention, breaking the serial dependency of autore-gression (Nie et al., 2025; Ye et al., 2025; Li et al., 2025b; Liu et al., 2025a; Ni et al., 2025). In practice, many dLLMs are decoded blockwise in a semi-autoregressive manner: 
+
+Preprint. Under review. Future -dependent Commitment                           
+
+> Fixed Size Boundaries (e.g., 3tokens ):
+> …[at] [the] [bank ][depositing ][the] [cash ]…
+> [mooring ][his] [boat ]…
+> [locker ][,] [stowing ]…
+> Financial?
+> Riverbank?
+> Collection?
+> Heuristic Boundaries (punctuation ):
+> …[answer] [is] [x][=] [1] [
+
+.] [But] [x] [≠] [1] [is] [required] … 
+
+> X≠1?
+
+Self -contained Commitment                   
+
+> …[at] [the] [bank ][depositing ][the] [cash ]…
+> …[x][=] [-1][since] [x] [≠][1] [is] [required] …
+> Blocks are:
+> Variable -size
+> Self -contained
+
+Figure 1. Future-dependent vs. self-contained commitments in dLLMs. Fixed or heuristic boundaries can commit tokens whose meaning rely on future context, while self-contained commitment preserves semantic coherence and reduces future dependence. 
+
+the model denoises a block of B tokens in parallel and then often irreversibly commits the block to the prefix, meaning the committed tokens cannot be changed later when future context becomes available, before moving on to generate the next block. (Arriola et al., 2025; Chen et al., 2025; Wu et al., 2025b). This strategy balances parallel efficiency with autoregressive style coherence, however, it raises a central but under-explored question: 
+
+When can a block be safely committed such that its tokens remain consistent when future context is revealed? 
+
+Existing blockwise decoding typically decides when to com-mit simply by choosing block boundary with either fixed block size or surface heuristics (e.g., punctuation). These rules can commit tokens whose predictions would change once later tokens are generated, yielding future-dependent 
+
+commitments and unstable conditioning for subsequent blocks. (Lu et al., 2025; Li et al., 2025a; Yang et al., 2025). This typical blockwise schema exposes two coupled issues: 
+
+(1) Fundamental training-inference mismatch. Standard dLLMs are typically trained to denoise under full-sequence 
+
+(x1: full ) bidirectional context: when predicting a token, the model can condition on both its left prefix and right suf-fix (Hersche et al., 2025; Nie et al., 2025; Zhu et al., 2025; Sahoo et al., 2024). This training setup is natural for full-1
+
+> arXiv:2604.23994v1 [cs.LG] 27 Apr 2026 VSB
+
+length bidirectional decoding, as it encourages the model to use information from the entire sequence for making predictions. During typical blockwise semi-AR decoding, by contrast, committing a block is often irreversible : once tokens are committed, they cannot be revised using later con-text (Wu et al., 2025b; Arriola et al., 2025; Lu et al., 2025). If the model would substantially change its predictions for tokens in the current block after seeing future tokens, the block is not self-contained and should not be committed. 
+
+(2) Heuristic block boundaries. Most methods either fix the block size B (e.g., 32 tokens) or align boundaries with surface cues such as punctuation (Lu et al., 2025; Xiong et al., 2025; Arriola et al., 2025). Neither choice ensures that the committed block is semantically complete or in-dependent of future context. As illustrated in Figure 1, a fixed-size boundary can cut through an important semantic unit, and punctuation cue (e.g., a full stop) does not imply that the preceding phrase is resolved without the following clause. Both cases lead to future-dependent commitments that can propagate errors to subsequent blocks. Recent work has started to reduce this mismatch with blockwise-aligned training objectives, but boundary selection typically remains heuristic, without an explicit principled notion of when a block is ready to be committed (Sun et al., 2025; Chen et al., 2025; Wu et al., 2025a). In light of these challenges, we propose self-containedness 
+
+as the criterion for placing block boundaries in semi-AR decoding. A candidate block is self-contained if the model’s predictive distributions for tokens inside the block remain consistent when future context is revealed. This directly matches the irreversibility of commitment: we should com-mit tokens only when their predictions no longer rely on future information beyond the boundary. 
+
+However, self-containedness is inherently counterfactual because future tokens are unavailable at inference time. We resolve this by comparing two predictive distributions un-der the same prefix within a fixed block budget of length 
+
+W : (i) Future-Aware (FA) predictions, where the model conditions on the entire budgeted block, and (ii) No-Future (NF) predictions, where the model conditions only up to candidate boundary b. If the predictive distributions for the tokens to be committed are consistent between FA and NF, then committing up to b is self-contained ; if the distributions diverge, the boundary is premature. This motivates quantifying self-containedness by measuring the divergence between conditioning with and without future in-formation (NF-FA), enabling self-contained variable-size blocks without fixed lengths or punctuation heuristics. We introduce Variable-Size Self-Contained Blocks (VSB) 
+
+to realise this principle. VSB (i) aligns training with block-wise inference by training under the same No-Future trunca-tion used at commitment time, and (ii) dynamically selects self-contained block boundaries by scoring candidate cut-offs via NF-FA divergence. Our contributions are: •Principle: We formalise Self-Containedness as a criterion for determining block boundaries in blockwise semi-AR decoding. A block is committed only when revealing future tokens does not largely alter its predictive distributions. •Method: We propose VSB , a self-containedness-governed training and decoding framework that aligns training with inference via No-Future truncation and se-lects variable-size blocks using Future-Aware & No-Future 
+
+divergence. •Theoretical: We relate NF-FA divergence to predictive consistency within committed blocks, providing intuition for why enforcing self-containedness mitigates errors from premature commitment. 
+
+2. Preliminaries 
+
+We first define terminology used throughout the paper. Let 
+
+x1: L denote a length-L token sequence. 1. Prefix and commitment. During block decoding, the model maintains a committed prefix x1: p, ending at posi-tion p. Committing means appending the newly generated block of tokens to this prefix. Once committed, these tokens are treated as fixed context and non-revisable. 2. Block budget and candidate boundary. We restrict the size of a block to a fixed block budget of length W (e.g., 
+
+64 tokens). We refer to (p : q] as the budgeted block where q = min( p + W, L ). b ∈ (p : q] is a candidate block boundary within the budgeted block. 
+
+2.1. Discrete Masked Diffusion Discrete masked diffusion training on the full token se-quence for text. Let V be the vocabulary. Given an input token sequence x1: L ∈ V L of length L and diffusion step 
+
+t ∈ { 1, . . . , T }, a masked corruption process produces a noisy sequence as: xt ∼ qt(· | x), where some positions are replaced by a special [MASK] token M based on a masking schedule (Nie et al., 2025; Sahoo et al., 2024). A discrete dLLM parameterised by θ outputs per-position logits ℓθ,i (xt, t ) ∈ R|V| and categorical distributions: 
+
+pθ (xi | xt, t ) = softmax  ℓθ,i (xt, t )[xi]. (1) The standard masked diffusion objective trains on full se-quences (Nie et al., 2025; Ye et al., 2025; Li et al., 2025b), so the denoiser can attend to all unmasked tokens in xt
+
+> 1: L
+
+when reconstructing masked positions: 
+
+LD = −E(x,t,x t)
+
+"
+
+1
+
+t
+
+> L
+
+X
+
+> i=1
+
+1[xti = M] log pθ (xi | xt)
+
+#
+
+. (2) 
+
+Blockwise semi-autoregressive decoding. Standard blockwise decoding partitions generation into fixed-size 2VSB 
+
+blocks (Arriola et al., 2025; Wu et al., 2025a; Li et al., 2025a; Nie et al., 2025; Liu et al., 2025b; Song et al., 2025). Following the introduced notation, at each step, given a committed prefix ending at position p, the model allocates a fixed block budget of length W and decodes the entire bud-geted block, commits them to the prefix, and then advances. 
+
+2.2. Training-Inference Mismatch 
+
+A central difficulty in blockwise decoding for discrete diffu-sion language models is a mismatch between how the model is trained and how it is used at inference time. 
+
+Full-sequence training. Under the standard masked dif-fusion objective in Eq. (2) , a dLLM is trained on complete token sequences of length L. At each diffusion step t, pre-dictions at every position are conditioned bidirectionally on the entire noisy sequence ˜xt
+
+> 1: L
+
+, obtained by corrupting the clean input x1: L (Nie et al., 2025; Ye et al., 2025). For analysing blockwise generation, it is helpful to partition the sequence into three contiguous regions: the committed pre-fix x1: p, a candidate next block xp+1: q , and the remaining suffix xq+1: L (corresponds to unavailable future tokens for inference time) (Arriola et al., 2025). During full-sequence training, predictions for tokens in xp+1: q can condition on 
+
+both the prefix and the suffix, whereas during blockwise inference the suffix becomes unavailable. 
+
+Blockwise inference. In contrast, blockwise decoding commits tokens incrementally: a boundary position q deter-mines the next committed block (p : q]. When committing this block, the model conditions only on information up to 
+
+q, since tokens beyond q have not been generated. 
+
+Resulting mismatch. As a result, the conditional distribu-tions learned during training differ from those used during inference (Sun et al., 2025). Intuitively, a token may appear easy to denoise during training because the model can rely on future context from the suffix, but the same token may become ambiguous or unstable when that future informa-tion is removed at inference time (Figure 1). Formally, for a token position i ∈ [p + 1 : q] with corresponding masked se-quence ˜x, training uses full-sequence conditionals whereas blockwise decoding uses truncated conditionals: 
+
+pθ (xi | ˜xt
+
+> 1: L
+
+, t )
+
+| {z }
+
+> full-sequence masked training
+
+, pθ (xi | ˜xt 
+
+> 1: q
+
+, t )
+
+| {z }
+
+> blockwise decoding
+
+, (3) leading to the mismatch: 
+
+pθ (xi | ˜xt
+
+> 1: L
+
+, t )̸ = pθ (xi | ˜xt 
+
+> 1: q
+
+, t ). (4) 
+
+Relation to prior blockwise training methods. Recent fixed-block alignment approaches (Sun et al., 2025; Chen et al., 2025; Wu et al., 2025a; Arriola et al., 2025; Wang et al., 2025; Zhong et al., 2026) also restrict future context during training to better match blockwise inference. How-ever, these methods rely on predefined block boundaries, for example fixed block sizes or punctuation and line breaks. In contrast, our work establishes a self-containedness princi-ple and focuses on decoding a block that is self-contained, enabling variable block sizes determined by the model’s sen-sitivity to future context. A detailed comparison is provided in Section 6 and Appendix C. 
+
+3. Motivation: From Self-containedness to Dynamic Block Boundary 
+
+Following the twin issues of training-inference mismatch and heuristic block boundaries, a natural question arises: 
+
+Given a budgeted block, which part of the tokens are ready to be committed without relying on future tokens to resolve? 
+
+We argue that self-containedness should govern block com-mitment: a block is self-contained if committing it does not change the model’s predictive distributions when future context is revealed .
+
+3.1. Formalising Self-containedness 
+
+Following the defined notations in Section 2. Let p denote the end position of the committed prefix. Fix a block bud-get of length W and let q = min( p + W, L ) be the end position of the budgeted block (p : q]. Within this budget, we consider committing a shorter candidate block (p : b]
+
+at b ∈ (p, q ], leaving the remaining tokens (b : q] as the 
+
+within-block future :
+
+Block( p, b ) = ( p : b], Future( b) = ( b : q]. (5) A candidate block ending at b is self-contained only if pre-dictions for tokens in Block( p, b ) remain consistent when the future Future( b) is revealed. We formalise this using two conditioning semantics. 
+
+Definition 3.1 (No-Future and Future-Aware conditionals) .
+
+Let p be the end of the committed prefix and let q = min( p+
+
+W, L ) denote the end of the block budget of length W .For any candidate boundary b with p < b ≤ q and any 
+
+i ∈ (p : b], define: 
+
+1. No-Future (NF). The model predicts xi using context only up to b (no access to tokens beyond b): 
+
+P NF  
+
+> θ,i
+
+(p, b ) = pθ (xi | x1: b), i ∈ (p : b]. (6) 
+
+2. Future-Aware (FA). The model predicts xi with access to the full budgeted block x1: q (including the future xb+1: q ): 
+
+P FA  
+
+> θ,i
+
+(p, b, q ) = pθ (xi | x1: q ), i ∈ (p : b]. (7) 3VSB Step 3 . The total number of items sold in Ma y is                                            
+
+> 48+24=72.Thus ,th e
+> total number of items sold in March an dMa yis12
+> 0
+> Fixed -size
+> block end
+> +72=192.Given this …
+> Self -contained cut -off
+> Future tokens
+> S(p, 𝑏 ⋆)=0.2 0𝒃 ⋆
+> p+1
+> S(p, w)=0.38
+> 𝒘
+> Figure 2. Self-containedness guided block selection. Fixed-size blocks can cut off mid-number with high future dependence, while VSB selects a boundary that is more semantically complete.
+
+Self-containedness Divergence. Let D denote a diver-gence between categorical distributions, such as the KL divergence. We define the self-containedness of a block with a candidate boundary b as the average per-token diver-gence between these predictive distributions: 
+
+S(p, b ) = 1
+
+b − p
+
+Xbi=p+1 D P NF  
+
+> θ,i
+
+P FA 
+
+> θ,i
+
+ , (8) which tells on average how strongly predictions for tokens 
+
+xp+1: b depend on future context beyond b. Intuitively, the lower the divergence, the more self-contained the block is. 
+
+Definition 3.2 (ε-self-contained block) . A block 
+
+Block( p, b ) is ε-self-contained if S(p, b ) ≤ ε.
+
+Implications. Since S(p, b ) measures the average NF-FA divergence within a block, Definition 3.2 implies that future tokens add little information for predicting tokens in (p : b].Figure 2 shows that self-containedness prefers semantically complete boundaries over fixed-size blocks, while Section 5 Figure 6 compares their distributions. 
+
+3.2. Self-containedness and Predictive Consistency 
+
+Committing a block at boundary b is problematic when pre-dictions under No-Future and Future-Aware conditioning diverge, as this indicates that the model’s decisions for to-kens in (p : b] still depend on the future context (b : q].The self-containedness divergence S(p, b ) quantifies this consistency by measuring the average discrepancy between NF and FA predictive distributions. When S(p, b ) is small, the model’s predictions for tokens in (p : b] remain stable even when future tokens are revealed, as formalised below. 
+
+Theorem 3.3 (Predictive consistency under self-contained-ness) . Let Block( p, b ⋆) be an ε-self-contained block, where 
+
+P NF and P FA denote the predictive distributions under No-Future (NF) and Future-Aware (FA) conditioning, re-spectively. Assume that the divergence D upper-bounds total variation distance δTV (P, Q ) up to a constant. Then the average NF-FA predictive discrepancy within the block, measured in total variation is bounded by: 
+
+1
+
+b⋆ − p
+
+Xb⋆ 
+
+> i=p+1
+
+δTV 
+
+ P NF  
+
+> i
+
+, P FA 
+
+> i
+
+ ≤ O (√ε).
+
+Equivalently, revealing future context alters token probabili-ties within the block by at most O(√ε) on average. 
+
+Interpretation. Theorem 3.3 implies that when the self-containedness divergence S(p, b ) is small, revealing future context induces only a small change in the model’s predic-tive distributions within the block, on average. The proof is provided in Appendix B.1. 
+
+3.3. Why Fixed Block Size Is Structurally Limiting 
+
+Under the self-containedness principle, whether a block can be committed depends on how strongly its predictions rely on future context. As a result, the commit length that satisfies S(p, b ) ≤ ε can vary substantially across prefixes: some regions admit long self-contained blocks, while others require shorter commits. A fixed-size decoding strategy, however, commits a con-stant block size W regardless of content. Whenever this fixed length exceeds what self-containedness permits at a given prefix, the committed block violates S(p, b ) ≤ ε and becomes future-dependent. Formally: 
+
+Proposition 3.4 (Characterisation of fixed-size self-con-tainedness) . Fix a block size W > 0. A fixed-size commit-ment strategy with block size W satisfies S(p, b ) ≤ ε for all committed blocks if and only if: S(p, p + W ) ≤ ε for every prefix position p at which a block of size W is committed. 
+
+Interpretation. Proposition 3.4 shows why fixed-size commitment is restrictive under self-containedness: since the same W is applied everywhere, self-containedness must hold uniformly across all prefixes. When future depen-dence varies across the sequence, no single fixed block size can satisfy this condition consistently, motivating adaptive boundary selection within a fixed block budget (p : q]. The proof is in Appendix B.2. 
+
+4. Method: Variable-size Self-contained Blocks 
+
+We now present Variable-size Self-contained Blocks (VSB), a training and decoding framework that operationalises the self-containedness principle for blockwise generation in dis-crete dLLMs. At each step, VSB selects a commitment boundary within a fixed block budget by explicitly mea-suring how sensitive the block’s predictions are to future context. We first describe the core components shared by training and inference , and then give phase-specific de-tails . Figure 3 provides an overview. 
+
+4.1. Primary Mechanisms of VSB 4.1.1. Block construction. We follow the terminology in Section 2: given a committed prefix ending at p, we define a budgeted block (p, q ] of length W ending at q =min( p + W, L ). Our goal is to select boundary b ∈ (p, q ].
+
+4.1.2. Hypothesis construction for boundary scoring. 
+
+Self-containedness compares the model’s predictions for 4VSB M M M                                                                                 
+
+> TRAINING: Learning Variable -size Self -contained Blocks ( VSB)
+> Prefix [1,𝑝 ]
+> MMMMM
+> Budgeted Block (𝑝 ,𝑤 ]Future >𝑤
+> Input: Prefix boundary 𝑝 ,block budget 𝑤 , diffusion step 𝜏 𝜏
+> 1. Hypothesis Construction for Boundary Scoring
+> MMMMM
+> Window (𝑝 ,𝑤 ]Model Hypothesis *𝑥
+> 2. Self -contained Boundary Selection
+> 3. No -Future (NF) Diffusion Training
+> 𝒃 ⋆Unseen Future >𝑏 ⋆
+> Future -Aware (FA)
+> 𝒃 ⋆=argmax log 𝑏 −𝑝 −
+> 𝑏 −𝑝 𝑆 (𝑝 ,𝑏 )
+> 𝑺 𝒑 ,𝒃 =avg KL (p𝒑 #𝟏 :𝒃
+> 𝒛 𝑵𝑭 @p𝒑 #𝟏 :𝒃
+> 𝒛 𝑭𝑨 )i) Measure self -containedness divergence
+> INFERENCE: Iterative Diffusion Decoding with VSB
+> Committed Prefix
+> Denoise Current block
+> Self -contained Block Selection
+> Commit Variable -size Self -contained Block
+> 𝑺 𝒑 ,𝒃
+> 𝑈 (𝑏 )𝒃 ⋆𝑤
+> 𝑈 (𝑏 )
+> ii) Prefer long but self -contained blocks
+> Maximal Self -contained
+> 𝑝 𝑏 ⋆
+> …
+> MM…M……
+> (𝑝 ,𝑤 ]
+> …
+> 𝑝 ←𝑏 ⋆
+> p𝒛 𝑭𝑨 =𝑓 ((D𝒙 ):𝒘 )𝑤
+> …
+> Training matches
+> inference semantics
+> …FA NF
+> 𝑏
+> p𝒛 𝑭𝑨 =𝑓 ((D𝒙 )
+> p𝒛 𝑵𝑭 =𝑓 ((D𝒙 ):𝒃 )
+> No -Future (NF)
+> 𝑏 p𝒛 𝑵𝑭 =𝑓 ((D𝒙 ):𝒃 )
+
+Figure 3. Overview of VSB. During training, candidate boundaries in the budgeted block are scored by self-containedness using No-Future 
+
+and Future-Aware conditionals to encourage long, self-contained blocks. At inference, diffusion decoding commits the block that best balances length and self-containedness, yielding adaptive, semantically aligned blocks. 
+
+tokens (p, b ] with and without access to future tokens (b, q ]
+
+(Definition 3.1). Since the true future tokens are unavailable at inference time, VSB performs this comparison on a fixed model-generated hypothesis ˆx1: q , i.e., the model’s current token estimate over the budgeted block (p, q ]. All NF and FA distributions are computed on the same hypothesis. This hypothesis serves two purposes: it matches the model’s decoding time prediction conditioning and ensures that dif-ferences in self-containedness across boundaries arise only from access to future tokens, not changes in decoding state. Formally, given a committed prefix x1: p and window end q,the hypothesis ˆx1: q is obtained by (partially) resolving the masked window (p, q ] conditioned on x1: p:
+
+Training. The prefix x1: p is taken from the ground-truth sequence, and the hypothesis is constructed by refining the masked positions in the active budgeted block using the model’s predictions: 
+
+ˆxp+1: q = arg max pθ (· | x1: p, Mp+1: q ). (9) 
+
+Inference. The prefix consists of previously committed tokens x1: p, and the hypothesis is taken from an intermediate snapshot of the diffusion process: 
+
+ˆxp+1: q = ˜ x thyp  
+
+> p+1: q
+
+, (10) where ˜x thyp is the partially decoded sequence at the hypoth-esis step thyp used for boundary scoring (e.g., final step). Figure 3 illustrates this construction. 
+
+4.1.3. Length-aware self-contained boundary selection. 
+
+Given a hypothesis ˆx1: q , VSB measures how strongly pre-dictions in a candidate block depend on future context. For a candidate boundary b ∈ B (p, q ), let pFA and pNF denote the FA and NF predictive distributions from Definition 3.1. The self-containedness divergence of (p, b ] can be obtained via Eq. (8) . A natural idea is to commit the longest block 
+
+that satisfies an explicit self-containedness threshold: 
+
+max  
+
+> b
+
+b − p s.t. p < b ≤ q, S(p, b ) ≤ ε. (11) In practice, this hard constraint in Eq. (11) can be brittle: small fluctuations in S(p, b ) may cause abrupt changes in the selected boundary, or yield no valid b given the choice of ε. Hence, to obtain a smoother decision rule without thresholds , we relax Eq. (11) by trading-off block length against a length-aware self-containedness divergence SL-A ,and select the boundary that maximises this trade-off: 
+
+SL-A = log( b − p) − (b − p) S(p, b ),b⋆ = arg max 
+
+> b∈B (p,q )
+
+h
+
+SL-A 
+
+i
+
+, (12) where B(p, q ) = {b | p < b ≤ q} denotes the candidate boundaries within the block budget. 
+
+Intuition. Since S(p, b ) is an average per-token future sensitivity inside (p, b ], multiplying by (b − p) yields the 
+
+total future-dependence mass of the block. This matches the commitment risk: once committed, all tokens in the block are frozen, so we penalise how much future-dependent con-tent we are locking in, not merely whether the average token is stable. Intuitively , the first term favors longer commits (diminishing returns via log ), while the second discourages committing blocks whose total future dependence is large. A detailed illustration of the relationship between b, S and 
+
+SL-A is provided in Figure 4. 5VSB 
+
+4.2. VSB Training with No-Future Alignment Training mirrors inference: for each example, we sample a prefix end position p uniformly, define the block budget end q = min( p + W, L ) with length W , construct the hy-pothesis ˆx1: q (Eq. (9) ), and select the optimal boundary b⋆
+
+via Eq. (12) . We then apply No-Future diffusion training as: • Tokens (p, b ⋆] are masked according to the standard diffusion schedule. • Truncate the model input to length b⋆ to match the inference-time absence of tokens beyond b⋆.Let M ⊆ [p + 1 : b⋆] denote the masked positions inside the committed block at step t of the noisy sequence ˜x, and 
+
+α(p, b ⋆) = b⋆−pw be a length-dependent weighting factor that discourages degenerate short blocks (e.g., 1 token). The 
+
+No-Future diffusion loss is defined as: 
+
+LNF = α(p, b ⋆) · 1
+
+|M| 
+
+X
+
+> i∈M
+
+− log pθ (xi | ˜xt 
+
+> 1: b⋆
+
+). (13) The training process is shown in Algorithm 1 in Appendix F. 
+
+4.3. VSB Inference Procedure 
+
+At inference time, VSB alternates between diffusion denois-ing within a budgeted block and selecting a self-contained commitment boundary, as shown in Algorithm 2. Given a committed prefix x1: p, after denoising the budgeted block 
+
+(p, q ], a hypothesis ˆx1: q is constructed following Section 4.1. The optimal block Block( p, b ⋆) is then selected via Eq. (12) and committed to the prefix: 
+
+x1: p ← ˆx1: b⋆ , p ← b⋆.
+
+The budgeted block is then advanced and the procedure repeats until generation completes. Since the same training and inference conditioning and hypothesis construction are used, VSB introduces no training-inference mismatch .
+
+4.4. Boundary Search Acceleration 
+
+VSB’s boundary selection (Algorithm 2) can be imple-mented as a full scan over the W candidate boundaries. While this is conceptually simple, it is inefficient in practice. We accelerate boundary selection using a coarse-to-fine search (Algorithm 3): a coarse pass evaluates boundaries at a stride sc to locate a high-scoring region under Eq. (12) ,and a fine pass then refines the choice within a local neigh-borhood at stride sf . This preserves self-containedness 
+
+while reducing boundary evaluation from O(W ) to: 
+
+O
+
+ Wsc
+
++ sc
+
+sf
+
+
+
+. (14) 
+
+Practical impact. Table 3 shows this acceleration preserves accuracy while providing consistent speedups, making self-contained boundary selection practical at inference. 
+
+5. Experiments 
+
+Datasets and Evaluation. We evaluate on standard LLM benchmarks spanning mathematical & scientific reason-ing (GSM8K (Cobbe et al., 2021), MATH500 (Light-man et al., 2024), GPQA-Diamond (Rein et al., 2023)), code generation (HumanEval (Chen et al., 2021), MBPP (Austin et al., 2021b)), and general knowl-edge (MMLU Generative (Hendrycks et al., 2021b), Hel-laSwag (Zellers et al., 2019)). We report accuracy/pass@1 (%), with more details provided in Appendix D. 
+
+Baselines. We compare VSB against blockwise-training and semi-AR decoding methods: (1) fixed-size block decod-ing of LLaDA backbones ( LLaDA-8B-Instruct (short for LLaDA-8B) (Nie et al., 2025) and LLaDA-1.5 (Zhu et al., 2025)); (2) dLLM-Var (Yang et al., 2025) with na-tive variable-length generation via [EOS] prediction; (3) 
+
+Blockwise-SFT (Sun et al., 2025) aligns supervised fine-tuning with fixed blockwise-decoding; (4) D2F (Wang et al., 2025) distills a student dLLM with blockwise causal atten-tion; and adaptive block methods (5) AdaBlock (Lu et al., 2025) and (6) DAEDAL (Li et al., 2025a). 
+
+Implementations. We use LLaDA-8B-Instruct as the backbone for all training-based and post-hoc baselines, and report VSB results with both LLaDA-1.5 and LLaDA-8B-Instruct. Dataset-specific token budgets, block lengths, and few-shot counts follow standard settings from prior work (Zhou et al., 2025; Nie et al., 2025; Lu et al., 2025) and are listed in Table 1. We sweep the block budget length 
+
+W ∈ { 32 , 64 , 96 } (default W = 96 ) during training. For fair comparison, we match the inference-time budget W to the fixed block length used by each baseline. We use the training split of openai/gsm8k (Cobbe et al., 2021) for supervised fine-tuning. Full details are in Appendix E. 
+
+5.1. Overall Performance VSB consistently improves over its backbones and is competitive with prior blockwise decoding and train-ing approaches. Table 1 shows that on mathematical and scientific reasoning tasks, VSB achieves the strongest or tied-best results among the base methods, suggesting that self-contained boundary selection reduces premature deci-sions in multi-step reasoning. On code generation, VSB yields larger gains (6.0% to 10.0% over corresponding back-bones on HumanEval) – despite not involving code-specific training – consistent with the need for variable-length se-mantic units in code as shown in other variable block-length methods like AdaBlock and DAEDAL. And on general knowledge tasks, improvements are smaller but consistent, indicating that VSB does not trade off broad language mod-elling capability. We provide a qualitative case study com-paring VSB to fixed-size decoding in Appendix G. 6VSB Method                                                                                
+
+> Math & Science Code General Knowledge
+> GSM8K MATH500 GPQA-Diamond HumanEval MBPP MMLU Gen HellaSwag
+> (512, 0) (512, 4) (64, 0) (512, 0) (256, 3) (3, 0) (10, 0) LLaDA-8B 76.64 35.80 26.52 37.20 35.20 62.49 72.74 dLLM-Var 73.92 34.00 23.73 34.76 40.20 61.71 71.48 Blockwise-SFT 75.06 37.80 26.26 37.20 35.60 62.81 73.10 D2F 74.90 36.00 20.20 40.24 34.60 62.71 73.33 AdaBlock 75.66 38.20 28.79 45.12 37.60 62.98 73.94 DAEDAL 80.74 38.60 28.28 39.02 36.00 62.58 75.60
+> VSB w/ LLaDA-8B 81.12 +4 .48% 39.00 +3 .20% 28.79 +2 .27% 43.29 +6 .09% 38.60 +3 .40% 63.11 +0 .62% 76.68 +3 .94%
+> LLaDA-1.5 79.38 37.00 27.78 36.59 35.60 62.52 72.34
+> VSB w/ LLaDA-1.5 83.40 +4 .02% 39.60 +2 .60% 28.28 +0 .5% 46.95 +10 .36% 39.80 +4 .20% 62.94 +0 .42% 76.93 +4 .59%
+
+Table 1. Overall performance of VSB against baselines across diverse benchmarks. Scores are reported as Accuracy/Pass@1 (%) .Numbers in parentheses denote token budget and number of shots . For fair comparison, best among the LLaDA-8B-Instruct based methods are bolded and Runnerups are underlined , respectively. The relative improvements of VSB against the backbone are labelled. 
+
+5.2. Effective Boundary Selection via Self-Containedness VSB selects block boundaries where the decoded text is self-contained and semantically complete, rather than at fixed positions or heuristic cutoffs. Figure 4 shows how self-containedness is used to select a block boundary for a fixed prefix ending at position p (here p=994 ). We evaluate candidate boundaries b ∈ (p, p +W ] within a fixed budget W =64 , where each point in the top panels corre-sponds to committing the tokens xp+1: b. The bottom panel displays the decoded tokens. The selected cutoff b∗ aligns with a semantically complete and self-contained text span. This boundary follows directly from the statistics above. In Figure 4b), b∗ is the maximum of the length aware trade off, indicating the point where the block is long enough to be meaningful while its predictions are already stable without future context. Tokens beyond b∗ show higher di-vergence, meaning their content still depends on additional continuation from the next block, clearly reflected from the incomplete equation in the decoded tokens. We highlight that using the raw self-containedness divergence (Figure 4c) alone is not sufficient. Simply choosing its minimum may result in very short blocks, often collapsing to a single to-ken. The length aware objective avoids this by balancing divergence and block length, allowing VSB to select coher-ent boundaries without extra thresholds (Figure 4a). A full decoded token case study is provided in Appendix H. 
+
+5.3. VSB Decoding vs. Fixed-size Block Decoding 
+
+Beyond training, VSB can be applied as a post-hoc de-coding strategy , enabling direct comparison with fixed-size block decoding on pretrained backbones. Replacing fixed-size commitment with VSB yields consistent gains. As shown in Figure 5, on Math500 and MBPP, applying VSB decoding instead of fixed-size decoding (block length 64) consistently improves accuracy, with gains ranging from 1.4% to 4.4%. Since each pair of bars differs only in the decoding strategy, these improvements directly indicate the {:\[z ^2 = \frac{ -1 + i\sqrt{ 3}}{ 2} \quad \text{or} \quad z^ 2 = \frac{ -1 -            
+
+> i\sqrt{ 3}}{ 2}.\]
+> These are the roots of the original equation \(z^ 4+}
+> Optimal self -contained cutoff 𝒃 ⋆
+
+(a ) (b) (c) 
+
+Figure 4. S(p, b ) vs. length-aware SL−A(p, b ) across a budgeted block (block 13 w/ length W = 64 ) starting at prefix p = 994 .
+
+Figure 5. Fixed-size (block length = 64 ) vs. VSB decoding. 
+
+efficacy of our self-contained boundary selection. The re-sults suggest that committing an entire fixed-length block can be suboptimal, while committing the self-contained prefixes yields more reliable conditioning. 
+
+VSB decoding shifts commitment toward blocks with weaker dependence on future context. Figure 6 shows the distribution of self-containedness divergence S(p, b ) for committed blocks under different decoding strategies. On GSM8K, fixed-size decoding yields a broad distribution with higher divergence, while VSB concentrates at lower 
+
+S(p, b ) values. This is consistent with our objective to com-mit only when predictions are less sensitive to future con-text. On HumanEval, applying VSB decoding to the LLaDA backbone similarly shifts the distribution toward lower di-vergence and improves accuracy. This corroborates the performance increase in Figure 5, demonstrating VSB as an effective decoding strategy beyond its training benefits. 7VSB 
+
+Figure 6. Self-containedness divergence distribution comparison.                                 
+
+> Method GSM8K GPQA-Diamond HellaSwag
+> Acc. Speedup Acc. Speedup Acc. Speedup LLaDA-8B 76.64 –26.52 –72.74 –VSB 81.12 1.0 ×28.79 1.0 ×76.68 1.0 ×
+> w/ Cache 80.36 1.2 ×28.28 1.2 ×75.23 1.3 ×
+> w/ Conf. Thresh. 77.48 2.7 ×27.27 2.5 ×75.97 2.2 ×
+
+Table 2. VSB speedups with caching and confidence threshold. 
+
+5.4. Confidence Threshold Decoding and Cache VSB is compatible with confidence-threshold decod-ing and caching. As shown in Table 2, VSB supports confidence-threshold decoding for speedups (Wu et al., 2025b; Yu et al., 2025b), allowing denoising to stop once a confidence threshold (e.g., τconf = 0 .9) is reached instead of using a fixed schedule. Additionally, VSB can cache generated hidden states to reduce redundant computation. However, in the current LLaDA implementation, KV prefix caching can introduce a causal attention bias that affects NF/FA comparisons (Wu et al., 2025b). To preserve cor-rect semantics of self-containedness scoring, we compute 
+
+Future-Aware and No-Future distributions without caching, and instead reuse intermediate hidden states from the Future-Aware forward with our coarse-to-fine search to accelerate boundary scoring. See Appendix A for details. 
+
+5.5. Hyperparameter Sensitivity 
+
+VSB introduces a small number of hyperparameters, includ-ing the block budget W . Shown in Figure 7, VSB consis-tently outperforms fixed-size decoding across all W on GSM8K and HumanEval, with the largest gains at small to medium block sizes. Although larger blocks provide more context, committing long blocks can cause unstable predic-tions. In contrast, VSB commits only self-contained tokens, resulting in shorter and variable average block lengths (as annotated). This indicates that the improvements stem from boundary selection rather than increased within-block con-text, avoiding accumulation of future-dependent tokens. 
+
+Coarse-to-fine boundary search preserves accuracy while speeding up decoding. Shown in Table 3, on MBPP, HellaSwag, and GPQA-Diamond, moderate stride settings maintain accuracy while reducing boundary evaluations and provide speedups by up to 1.6×. This indicates that VSB does not require an exhaustive scan over all boundaries in the budgeted block: approximate search recovers high-quality commitments without affecting self-containedness. 
+
+Figure 7. Accuracy vs. block window on GSM8K and HumanEval. The average block size of VSB is annotated in red.                                    
+
+> Metric MBPP (64) HellaSwag (10) GPQA-Diamond (64)
+> Full (8 ,2) (16 ,4) (32 ,8) Full (5 ,2) Full (8 ,2) (16 ,4)
+> Acc. 39.00 38.80 38.60 38.60 76.90 76.68 28.79 28.79 28.79 Speedup 1.0 ×1.5 ×1.6 ×1.6 ×1.0 ×1.2 ×1.0 ×1.4 ×1.5 ×
+
+Table 3. Ablation of coarse-to-fine boundary search strides (sc, s f )
+
+for VSB decoding. Speedup is measured relative to the full bound-ary scan per dataset. Block budget is given in parenthesis. 
+
+6. Related Work 
+
+Our work relates to four research areas: (1) Discrete dif-fusion language models denoise masked sequences under bidirectional attention, offering an alternative to AR gen-eration. Representative models include LLaDA (Nie et al., 2025; Zhu et al., 2025) and Dream (Ye et al., 2025). (2) 
+
+Blockwise semi-AR decoding enables practical inference by committing tokens in semi-AR blocks rather than full-context parallel updates (Arriola et al., 2025; Wu et al., 2025a). (3) Blockwise training alignment (e.g., Blockwise-SFT) reduces the training-inference mismatch by aligning supervision with fixed-size block commitment (Sun et al., 2025; Chen et al., 2025). (4) Heuristic block selection 
+
+chooses block boundaries using fixed sizes, punctuation, or other heuristic/learned cues (Li et al., 2025a; Lu et al., 2025). VSB differs from prior heuristic boundary schemes by in-troducing an explicit self-containedness criterion (Eq. (12) )that selects variable-size blocks based on predictive stabil-ity with and without future context. A detailed review is provided in Appendix C. 
+
+7. Conclusion 
+
+We introduced self-containedness as a principled criterion for deciding when a block is safe to commit in blockwise decoding of discrete diffusion language models. Variable-size Self-contained Blocks (VSB) replaces fixed or heuristic boundaries with content-dependent decisions by measuring how predictions change when future context is revealed. VSB also aligns training and inference by training under the same No-Future conditioning used at commitment time. Across reasoning, coding, and general knowledge bench-marks, VSB delivers consistent improvements over fixed-size and heuristic blockwise decoding. We hope to inspire future work on principled variable size block decoding. 8VSB 
+
+8. Impact Statement 
+
+As a foundational study on discrete diffusion language mod-els, we do not identify any direct negative societal impacts. Our research relies on publicly available datasets and mod-els, all of which are properly acknowledged and pose no risks requiring safeguards. While potential societal impli-cations may exist, none warrant specific emphasis in this study. 
+
+9. Acknowledgment 
+
+This research has been supported by Australian Research Council Discovery Projects (CE200100025, DP230101196 and DE250100919). 
+
+References 
+
+Arriola, M., Gokaslan, A., Chiu, J. T., Yang, Z., Qi, Z., Han, J., Sahoo, S. S., and Kuleshov, V. Block diffusion: Inter-polating between autoregressive and diffusion language models. In ICLR , 2025. Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and van den Berg, R. Structured denoising diffusion models in discrete state-spaces. In NeurIPS , 2021a. Austin, J., Odena, A., Nye, M. I., Bosma, M., Michalewski, H., Dohan, D., Jiang, E., Cai, C. J., Terry, M., Le, Q. V., and Sutton, C. Program synthesis with large language models. CoRR , 2021b. URL https://arxiv.org/ abs/2108.07732 .Biderman, D., Portes, J. P., Ortiz, J. J. G., Paul, M., Green-gard, P., Jennings, C., King, D., Havens, S., Chiley, V., Frankle, J., Blakeney, C., and Cunningham, J. P. Lora learns less and forgets less. TMLR , 2024. Bie, T., Cao, M., Chen, K., Du, L., Gong, M., Gong, Z., Gu, Y., Hu, J., Huang, Z., Lan, Z., Li, C., Li, C., Li, J., Li, Z., Liu, H., Liu, L., Lu, G., Lu, X., Ma, Y., Tan, J., Wei, L., Wen, J.-R., Xing, Y., Zhang, X., Zhao, J., Zheng, D., Zhou, J., Zhou, J., Zhou, Z., Zhu, L., and Zhuang, Y. Llada2.0: Scaling up diffusion language models to 100b, 2025. URL https://arxiv.org/ abs/2512.15745 .Chen, M., Tworek, J., Jun, H., Yuan, Q., de Oliveira Pinto, H. P., Kaplan, J., Edwards, H., Burda, Y., Joseph, N., Brockman, G., Ray, A., Puri, R., Krueger, G., Petrov, M., Khlaaf, H., Sastry, G., Mishkin, P., Chan, B., Gray, S., Ryder, N., Pavlov, M., Power, A., Kaiser, L., Bavar-ian, M., Winter, C., Tillet, P., Such, F. P., Cummings, D., Plappert, M., Chantzis, F., Barnes, E., Herbert-Voss, A., Guss, W. H., Nichol, A., Paino, A., Tezak, N., Tang, J., Babuschkin, I., Balaji, S., Jain, S., Saun-ders, W., Hesse, C., Carr, A. N., Leike, J., Achiam, J., Misra, V., Morikawa, E., Radford, A., Knight, M., Brundage, M., Murati, M., Mayer, K., Welinder, P., Mc-Grew, B., Amodei, D., McCandlish, S., Sutskever, I., and Zaremba, W. Evaluating large language models trained on code. CoRR , 2021. URL https://arxiv.org/ abs/2107.03374 .Chen, Z., Fang, G., Ma, X., Yu, R., and Wang, X. dparallel: Learnable parallel decoding for dllms. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2509.26488 .Cheng, S., Bian, Y., Liu, D., Zhang, L., Yao, Q., Tian, Z., Wang, W., Guo, Q., Chen, K., Qi, B., and Zhou, B. SDAR: A synergistic diffusion-autoregression paradigm for scal-able sequence generation. CoRR , 2025. URL https: //doi.org/10.48550/arXiv.2510.06303 .Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., and Schulman, J. Training verifiers to solve math word problems. CoRR , 2021. URL https: //arxiv.org/abs/2110.14168 .Fu, Y., Whalen, L., Ye, Z., Dong, X., Diao, S., Liu, J., Wu, C., Zhang, H., Xie, E., Han, S., Khadkevich, M., Kautz, J., Lin, Y. C., and Molchanov, P. Efficient-dlm: From autoregressive to diffusion language models, and beyond in speed, 2025. URL https://arxiv.org/abs/ 2512.14067 .He, Z., Sun, T., Tang, Q., Wang, K., Huang, X., and Qiu, X. Diffusionbert: Improving generative masked language models with diffusion models. In ACL , 2023. Hendrycks, D., Burns, C., Basart, S., Critch, A., Li, J., Song, D., and Steinhardt, J. Aligning AI with shared human values. In ICLR , 2021a. Hendrycks, D., Burns, C., Basart, S., Zou, A., Mazeika, M., Song, D., and Steinhardt, J. Measuring massive multitask language understanding. ICLR , 2021b. Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E., Song, D., and Steinhardt, J. Measuring mathematical problem solving with the MATH dataset. In NeurIPS Datasets and Benchmarks , 2021c. Hersche, M., Moor-Smith, S., Hofmann, T., and Rahimi, A. Soft-masked diffusion language models. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2510.17206 .Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and Chen, W. Lora: Low-rank adaptation of large language models. In ICLR , 2022. 9VSB 
+
+Kim, J., Lee, C. K., Domingo-Enrich, C., Du, Y., Kakade, S. M., Ngotiaoco, T., Chen, S., and Albergo, M. S. Any-order flexible length masked diffusion. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2509.01025 .Li, J., Dong, X., Zang, Y., Cao, Y., Wang, J., and Lin, D. Beyond fixed: Training-free variable-length denoising for diffusion large language mod-els. CoRR , 2025a. URL https://doi.org/10. 48550/arXiv.2508.00819 .Li, T., Chen, M., Guo, B., and Shen, Z. A survey on dif-fusion language models. CoRR , 2025b. URL https: //doi.org/10.48550/arXiv.2508.10875 .Li, X. L., Thickstun, J., Gulrajani, I., Liang, P., and Hashimoto, T. B. Diffusion-lm improves controllable text generation. In NeurIPS , 2022. Lightman, H., Kosaraju, V., Burda, Y., Edwards, H., Baker, B., Lee, T., Leike, J., Schulman, J., Sutskever, I., and Cobbe, K. Let’s verify step by step. In ICLR , 2024. Liu, A., He, M., Zeng, S., Zhang, L., Wu, C., Jia, W., Liu, Y., Yu, Y., Zhou, X., and Zhou, J. Wedlm: Reconciling diffu-sion language models with standard causal attention for fast inference. arXiv preprint arXiv:2512.22737 , 2025a. Liu, Z., Yang, Y., Zhang, Y., Chen, J., Zou, C., Wei, Q., Wang, S., and Zhang, L. dllm-cache: Acceler-ating diffusion large language models with adaptive caching. CoRR , 2025b. URL https://doi.org/ 10.48550/arXiv.2506.06295 .Loshchilov, I. and Hutter, F. Decoupled weight decay regu-larization. In ICLR , 2019. Lu, G., Chen, H. M., Karashima, Y., Wang, Z., Fu-jiki, D., and Fan, H. Adablock-dllm: Semantic-aware diffusion LLM inference via adaptive block size. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2509.26432 .Ni, J., Liu, Q., Dou, L., Du, C., Wang, Z., Yan, H., Pang, T., and Shieh, M. Q. Diffusion language models are super data learners. CoRR , 2025. URL https://doi.org/ 10.48550/arXiv.2511.03276 .Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen, J., and Li, C. Large language diffusion models. In NeurIPS , 2025. Rein, D., Hou, B. L., Stickland, A. C., Petty, J., Pang, R. Y., Dirani, J., Michael, J., and Bowman, S. R. GPQA: A graduate-level google-proof q&a benchmark. 
+
+CoRR , 2023. URL https://doi.org/10.48550/ arXiv.2311.12022 .Sahoo, S. S., Arriola, M., Schiff, Y., Gokaslan, A., Marro-quin, E., Chiu, J. T., Rush, A., and Kuleshov, V. Sim-ple and effective masked diffusion language models. In Globersons, A., Mackey, L., Belgrave, D., Fan, A., Pa-quet, U., Tomczak, J. M., and Zhang, C. (eds.), NeurIPS ,2024. Song, Y., Zhang, Z., Luo, C., Gao, P., Xia, F., Luo, H., Li, Z., Yang, Y., Yu, H., Qu, X., Fu, Y., Su, J., Zhang, G., Huang, W., Wang, M., Yan, L., Jia, X., Liu, J., Ma, W., Zhang, Y., Wu, Y., and Zhou, H. Seed diffusion: A large-scale diffusion language model with high-speed inference. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2508.02193 .Stern, M., Shazeer, N., and Uszkoreit, J. Blockwise parallel decoding for deep autoregressive models. In Bengio, S., Wallach, H. M., Larochelle, H., Grauman, K., Cesa-Bianchi, N., and Garnett, R. (eds.), NeurIPS , 2018. Sun, B., Cai, Y., Yang, M., and Wang, Y. Block-wise SFT for diffusion language models: Reconcil-ing bidirectional attention and autoregressive decoding. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2508.19529 .Tian, Y., Liang, Y., Sun, J., Zhang, S., Yang, G., Shu, Y., Fang, S., Guo, T., Han, K., Xu, C., Chen, H., Chen, X., and Wang, Y. From next-token to next-block: A principled adaptation path for diffusion llms, 2025. URL 
+
+https://arxiv.org/abs/2512.06776 .Wang, C., Zhang, J., and Chen, H. Semi-autoregressive neural machine translation. In Riloff, E., Chiang, D., Hockenmaier, J., and Tsujii, J. (eds.), EMNLP , 2018. Wang, X., Xu, C., Jin, Y., Jin, J., Zhang, H., and Deng, Z. Diffusion llms can do faster-than-ar inference via discrete diffusion forcing. CoRR , 2025. URL https: //doi.org/10.48550/arXiv.2508.09192 .Wu, C., Zhang, H., Xue, S., Diao, S., Fu, Y., Liu, Z., Molchanov, P. O., Luo, P., Han, S., and Xie, E. Fast-dllm v2: Efficient block-diffusion LLM. CoRR , 2025a. URL https://doi.org/10. 48550/arXiv.2509.26328 .Wu, C., Zhang, H., Xue, S., Liu, Z., Diao, S., Zhu, L., Luo, P., Han, S., and Xie, E. Fast-dllm: Training-free acceleration of diffusion LLM by enabling KV cache and parallel decoding. CoRR , 2025b. URL https: //doi.org/10.48550/arXiv.2505.22618 .Xiong, W., Zhao, W., Yuan, W., Golovneva, O., Zhang, T., Weston, J., and Sukhbaatar, S. Step-wiser: Stepwise generative judges for wiser reasoning. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2508.19229 .10 VSB 
+
+Yang, Y., Wang, C., Wang, S., Wen, Z., Qi, B., Xu, H., and Zhang, L. Diffusion LLM with native vari-able generation lengths: Let [EOS] lead the way. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2510.24605 .Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li, Z., and Kong, L. Dream 7b: Diffusion large language models. CoRR , 2025. URL https://doi.org/10. 48550/arXiv.2508.15487 .Yu, R., Li, Q., and Wang, X. Discrete diffusion in large language and multimodal models: A sur-vey. CoRR , 2025a. URL https://doi.org/10. 48550/arXiv.2506.13759 .Yu, R., Ma, X., and Wang, X. Dimple: Discrete diffusion multimodal large language model with parallel decod-ing. CoRR , 2025b. URL https://doi.org/10. 48550/arXiv.2505.16990 .Zellers, R., Holtzman, A., Bisk, Y., Farhadi, A., and Choi, Y. Hellaswag: Can a machine really finish your sentence? In Korhonen, A., Traum, D. R., and M `arquez, L. (eds.), 
+
+ACL , 2019. Zheng, H., Liu, X., Kong, C. X., Jiang, N., Hu, Z., Luo, W., Deng, W., and Lin, G. Ultra-fast language generation via discrete diffusion divergence instruct. 
+
+CoRR , 2025. URL https://doi.org/10.48550/ arXiv.2509.25035 .Zhong, L., Wu, L., Fang, B., Feng, T., Jing, C., Wang, W., Zhang, J., Chen, H., and Shen, C. Beyond hard masks: Progressive token evolution for diffusion language mod-els. arXiv preprint arXiv:2601.07351 , 2026. Zhou, Z., Chen, L., Tong, H., and Song, D. dllm: Sim-ple diffusion language modeling. https://github. com/ZHZisZZ/dllm , 2025. Zhu, F., Wang, R., Nie, S., Zhang, X., Wu, C., Hu, J., Zhou, J., Chen, J., Lin, Y., Wen, J., and Li, C. Llada 1.5: Variance-reduced preference optimization for large language diffusion models. CoRR , 2025. URL https: //doi.org/10.48550/arXiv.2505.19223 .11 VSB 
+
+Appendix A. Potential Limitations 
+
+The current study focuses on discrete diffusion language models with native global bidirectional attention, where the 
+
+No-Future and Future-Aware conditionals can be queried directly within a unified architecture. Extending VSB to hybrid designs that combine an AR backbone with diffusion-style refinement (e.g., AR-initialised diffusion models) is not explored in this work. Such models introduce additional interfaces between the AR proposal and bidirectional denoising that may alter the interpretation of self-containedness and the design of NF/FA probes. Adapting VSB to these settings (e.g., Dream (Ye et al., 2025), LLaDA 2.0 (Bie et al., 2025), FastdLLM v2 (Wu et al., 2025a), SDAR (Cheng et al., 2025), NBDiff (Tian et al., 2025) WeDLM (Liu et al., 2025a)-style pipelines) is left for future work. As described in main text, our formulation provides a clean reference implementation of self-contained decoding without complex engineering optimisations. While introducing a novel self-contained variable-size block method with great performance, it indeed comes with additional computational cost. In particular, VSB (Algorithm 1) introduces an explicit boundary selection step: for each block, candidate boundaries within a lookahead window are scored via NF/FA divergence, and the best boundary is selected by maximising the boundary selection objective Eq. (12) . When implemented as an exhaustive scan, this procedure evaluates all candidate boundaries within the window, which becomes costly when the block length is large. Nonetheless, we have made the effort to provide a coarse-to-fine boundary search strategy that first evaluates a sparse subset of boundaries and then refines the search locally around the most promising candidates, reducing the number of NF evaluations in practice while preserving most of the adaptivity benefits. The corresponding computational complexity improvement is provided in Section 4.4 Moreover, although prefix KV caching can improve efficiency in blockwise decoding, its implementation is less straight-forward and partially applicable in the current VSB formulation. VSB explicitly compares No-Future and Future-Aware 
+
+conditionals at multiple candidate boundaries, which requires evaluating the model under varying context truncations and can therefore limit cache reuse. In addition, under globally bidirectional attention, standard KV caching may alter the effective conditioning by freezing intermediate representations of previously processed tokens, potentially compromising the fidelity of NF/FA comparisons. Nevertheless, we have made our best effort to adopt a future-aware activation caching strategy that reuses intermediate hidden states from a full-context forward and recomputes only a small number of upper layers under masked attention. This approach preserves the semantics of self-containedness while providing meaningful speedups for boundary selection. Extending KV caching to support future-aware self-containedness tests is left as an engineering problem for future work. 
+
+B. Proof of Technical Insights 
+
+B.1. Proof of Theorem 3.3 
+
+Proof. For each position i ∈ (p, b ⋆], let P NF  
+
+> i
+
+and P FA  
+
+> i
+
+denote the predictive distributions under No-Future (NF) and Future-Aware (FA) conditioning. We seek to bound their average discrepancy within the block. Consider the choice D(P, Q ) = DKL (P ∥Q), by Pinsker’s inequality: 
+
+δTV 
+
+ P NF  
+
+> i
+
+, P FA 
+
+> i
+
+ ≤
+
+q 12 DKL 
+
+ P NF  
+
+> i
+
+∥P FA 
+
+> i
+
+.
+
+Given that the square-root √. function is concave, applying the Jensen’s inequality and averaging over positions i =
+
+p + 1 , . . . , b ⋆, we have: 
+
+1
+
+b⋆ − p
+
+> b⋆
+
+X
+
+> i=p+1
+
+δTV 
+
+ P NF  
+
+> i
+
+, P FA 
+
+> i
+
+ ≤
+
+vuut 12( b⋆ − p)
+
+> b⋆
+
+X
+
+> i=p+1
+
+DKL 
+
+ P NF  
+
+> i
+
+∥P FA 
+
+> i
+
+.
+
+By definition of ε-self-containedness: 
+
+1
+
+b⋆ − p
+
+> b⋆
+
+X
+
+> i=p+1
+
+DKL 
+
+ P NF  
+
+> i
+
+∥P FA 
+
+> i
+
+ ≤ ε. 
+
+12 VSB 
+
+Substituting this bound gives: 
+
+1
+
+b⋆ − p
+
+> b⋆
+
+X
+
+> i=p+1
+
+δTV 
+
+ P NF  
+
+> i
+
+, P FA 
+
+> i
+
+ ≤
+
+q ε 
+
+> 2
+
+= O(√ε).
+
+Thus, when a block is ε-self-contained, revealing future context would only change the model’s token-level predictive distributions within that block by at most O(√ε) on average. This formalises the notion that self-contained blocks are approximately future-independent. 
+
+B.2. Proof of Proposition 3.4 
+
+Proof. Given a fixed-size block commitment with length W > 0. ( ⇒) If all committed blocks satisfy S(p, b ) ≤ ε, then in particular each committed block (p, p + W ] satisfies S(p, p + W ) ≤ ε.(⇐) If S(p, p + W ) ≤ ε holds for every committed block (p, p + W ], then the strategy satisfies the condition for all committed blocks. 
+
+C. Extended Related Work 
+
+Discrete diffusion language models. Diffusion-based language modeling presents a promising alternative to the left-to-right token generation with an iterative denoising process that predicts masked tokens under bidirectional attention (Li et al., 2025b; Nie et al., 2025). This paradigm enables parallel token updates, arbitrary-order refinement, and natural support for infilling. Early work such as Diffusion-LM studied continuous or discrete diffusion for controllable text generation (Li et al., 2022; Austin et al., 2021a; He et al., 2023; Sahoo et al., 2024), motivating subsequent scaling of diffusion objectives to large Transformer backbones. Recent discrete dLLMs, notably LLaDA (Nie et al., 2025) and Dream (Ye et al., 2025), demonstrate that masked discrete diffusion training can reach competitive capability at the multi-billion scale compare to auto-regressive models (Liu et al., 2025a; Bie et al., 2025). A key practical issue is efficiency and length control. Standard diffusion decoding typically requires many denoising iterations and often assumes a fixed generation length. Several lines of work address these constraints (Yu et al., 2025a; Song et al., 2025; Liu et al., 2025b; Zhong et al., 2026). DAEDAL proposes a training-free strategy that expands length by inserting mask tokens when the current allocation appears insufficient, reducing wasted computation from overly long allocations while avoiding truncation from short ones (Li et al., 2025a). dLLM-Var instead modifies training to predict [EOS] so that variable-length generation is native to the model, while still supporting blockwise diffusion-style inference (Yang et al., 2025). On acceleration, D2F converts a pretrained dLLM into an AR-diffusion hybrid through a teacher-student distillation process that distill the teacher full bidirectional attention predictions into a student model with blockwise causal attention. (Wang et al., 2025), while DiDi-Instruct distills a pretrained masked dLLM into a faster student with substantially fewer denoising steps (Zheng et al., 2025). Our focus is orthogonal to these methods by target the training-inference mismatch created by combining bidirectional diffusion training with blockwise semi-AR commitment, and this is achieved by making block boundaries variable under our proposed self-containedness principle. 
+
+Blockwise semi-autoregressive decoding. In practice, many dLLMs decode using a blockwise semi-autoregressive procedure: tokens are denoised in parallel within a window, then a prefix block is committed and the window shifts forward (Arriola et al., 2025; Fu et al., 2025; Wu et al., 2025a). This pattern benefits from KV caching and provides a favorable trade-off between latency and quality, but it introduces an additional design choice: where to place boundaries (Wu et al., 2025b; Lu et al., 2025; Liu et al., 2025b). Historically, blockwise and semi-autoregressive decoding has been studied for autoregressive models and sequence-to-sequence generation like Blockwise parallel decoding and SAT (Stern et al., 2018; Wang et al., 2018). For dLLMs, the boundary choice interacts strongly with bidirectional attention: tokens inside a block can exploit within-block context during denoising, but committed tokens become immutable and must remain consistent with later context. Fixed-size blocks, punctuation heuristics, or other surface rules can therefore commit tokens that would have been revised once future context becomes visible, propagating inconsistencies across future blocks (Chen et al., 2025; Sun et al., 2025). Our method formalises this risk through an explicit self-containedness commitment criterion (Eq. (8) ), and selects variable-size blocks by trading off commit length against self-containedness. This differs from the fixed-size blocks or heuristic boundaries approach, where our the goal is to ensure that committed content are self-contained under the semantics available at commitment time without needing future available context to be refined. 
+
+Blockwise training alignment. A central challenge is that conventional diffusion training and SFT mask tokens across the whole input response, whereas blockwise semi-AR inference commits blocks without seeing the future (Arriola et al., 2025). 13 VSB 
+
+This discrepancy can yield a mismatch in conditioning semantics: training gradients may encourage token predictions that implicitly depend on future tokens that will not be available when the block is committed (Wu et al., 2025a; Sun et al., 2025; Chen et al., 2025; Zhong et al., 2026). Blockwise SFT targets this mismatch by aligning fine-tuning with fixed-size blockwise decoding through training on a selected active block while masking all future tokens (Sun et al., 2025). This directly matches the inference-time information pattern for a chosen block size. While VSB shares the objective of aligning training to blockwise inference, it differs in how the blocks were principally chosen. Rather than assuming a fixed block length, we introduce an explicit self-containedness criterion that guides variable-size blocks. Concretely, we evaluate candidate boundaries by comparing predictions for the current decoding region under future-aware versus no-future 
+
+conditioning. Training then applies supervision under the same no-future truncation semantics implied by the selected boundary, reducing mismatch not just for a single fixed block size but for a content-dependent boundary policy. In this sense, our method can be viewed as complementing Blockwise SFT, where we aim for an effective boundary selection driven by 
+
+self-containedness .
+
+Semantic-aware block generation. Recent work has challenged the fixed block size assumption and proposed semantic-aware methods to guide generation (Li et al., 2025a; Yang et al., 2025; Kim et al., 2025; Xiong et al., 2025). AdaBlock-dLLM presents a training-free approach that uses confidence dynamics of semantic-associated tokens like punctuations during denoising to adjust block size and better align boundaries with local semantic structure (Lu et al., 2025). Related ideas also appear in multimodal discrete diffusion models, where Dimple provides a “confident decoding” strategy that unmasks tokens when confidence exceeds a threshold, reducing the number of iterations needed in practice (Yu et al., 2025b). While these methods adapt decoding based on confidence heuristics, they typically do not directly enforce that a committed block would remain resolved once future context is revealed. Our method is aligned with the broader motivation of semantic coherence, but provides a different mechanism. Instead of defining steps by prompts, punctuation, or confidence-only rules, we test self-containedness via predictive consistency with and without future context. This yields a principled boundary signal that can be used both at inference time for variable-size commitment and at training time for alignment under the same no-future semantics. 
+
+D. Extended Dataset Description 
+
+GSM8K (Cobbe et al., 2021) GSM8K is a benchmark of grade-school level math word problems created to test multi-step reasoning and arithmetic skills in language models. It contains a total of approximately 8,500 problems with human-written solutions requiring elementary calculation steps to reach a numerical answer. The test split consists of 1,319 test examples. We evaluate under the 0-shot scenario. 
+
+MATH500 (Lightman et al., 2024) MATH-500 is a curated subset of 500 competition-style math problems drawn from the broader MATH benchmark (Hendrycks et al., 2021c) that was used in OpenAI’s work (Lightman et al., 2024). Each problem is intended to challenge models’ mathematical reasoning by requiring multi-step solution strategies that go beyond simple arithmetic. We evaluate under the 4-shot scenario. 
+
+MMLU G ENERATIVE (Hendrycks et al., 2021b;a) MMLU generative is the generative adaptation of the Massive Multitask Language Understanding (MMLU) benchmark, which spans a wide range of academic subjects across STEM, humanities, and social sciences. The underlying benchmark consists of multiple-choice questions across 57 subjects. The generative is a generation variant where the model is asked to generate the answer letter. We evaluate under the 0-shot scenario. 
+
+HUMAN EVAL (Chen et al., 2021) HumanEval is a code generation benchmark designed to evaluate Python function synthesis from docstrings. It contains 164 programming problems, each with a natural language “docstring” specification and accompanying unit tests. The test set consists of 164 questions, with correctness determined by executing generated code against the groundtruth. We evaluate under the 0-shot scenario. 
+
+MBPP (Austin et al., 2021b) MBPP (Mostly Basic Programming Problems) is a coding dataset of Python programming questions aimed at assessing fundamental coding abilities. The testset includes 500 short programming tasks. We use the instruction following variant of this dataset with 3-shot for evaluation. 14 VSB 
+
+GPQA-D IAMOND (Rein et al., 2023) GPQA-Diamond is a difficult subset of the Graduate-Level Google-Proof Q&A (GPQA) benchmark that focuses on expert-validated, high-difficulty multiple-choice science questions. The Diamond subset contains 198 questions, representing the hardest portion of the larger GPQA set. We evaluate under the 0-shot scenario. 
+
+HELLA SWAG (Zellers et al., 2019) HellaSwag is a commonsense reasoning benchmark that asks models to select the most suitable followup given a narrative context. The dataset is structured for multiple-choice evaluation and contains 10,042 test examples. We evaluate under the 0-shot scenario. 
+
+E. Implementation Details 
+
+We use the lm-evaluation-harness framework (v0.4.10.dev0 ) 1 for an unified evaluation of publicly available datasets. Experiments were conducted using Python 3.12.11, PyTorch 2.7.0+gitf717b2a (ROCm compatible) and ROCm v6.4.3 with AMD Instinct MI300X GPUs. LLaDA-8B-Instruct (Nie et al., 2025) is used as the primary pretrained backbone for all training or post-hoc baselines. For VSB, we additionally report results on both LLaDA-1.5 (Zhu et al., 2025). Dataset-specific token budgets, block sizes, and few-shot settings follow standard settings adopted in prior work (Zhou et al., 2025; Nie et al., 2025; Lu et al., 2025; Arriola et al., 2025) and are reported in Table 1. During training, we sweep the block length W ∈ { 32 , 64 , 96 } with default W = 96 . To ensure fair comparison, the block length W at inference time is matched to the block size used by the baselines. The coarse and fine strides are set to sc = min( token budget, 16) , and 
+
+sf = 4 , respectively. We use the medium step to construct the hypothesis (e.g., thyp = ⌊T / 2⌋). For models that require supervised fine-tuning, we use the training split of the openai/gsm8k dataset. We apply LoRA fine-tuning for training based methods under standard configuration presented in prior works (Sun et al., 2025; Hu et al., 2022; Biderman et al., 2024). VSB is trained with the AdamW optimiser (Loshchilov & Hutter, 2019) and cosine learning-rate schedule, using bf16 precision. Inconsistencies of results with the original reported statistics may stem from dataset configuration, software environment differences, and unavailable hyperparameters. We have reproduced the results to the best of our ability while maintaining a consistent evaluation configuration across the methods. 
+
+F. Algorithms 
+
+To facilitate understanding of VSB, several algorithms are presented. Algorithm 1 shows the No-Future alignment training process of VSB, which aligns the global bidirectional attention training with block-wise semi-AR inference conditioning. Algorithm 2 demonstrates the inference of VSB (non-accelerated full boundary scan version), while Algorithm 3 illustrates the boundary selection optimised coarse-to-fine search. 
+
+Algorithm 3 VSB Boundary Selection via Coarse-to-Fine Search  
+
+> 1:
+
+Input: Prefix end p, window end w, coarse stride sc, fine stride sf 
+
+> 2:
+
+1. Coarse search sparsely scans the window to locate a promising boundary region  
+
+> 3:
+
+Construct coarse candidate set Bc ← { p + 1 + sc, p + 1 + 2 sc, . . . , w } 
+
+> 4:
+
+for each b ∈ B c do  
+
+> 5:
+
+Compute self-containedness S(p, b ) ← Eq. (8)  
+
+> 6:
+
+end for  
+
+> 7:
+
+Select coarse optimum ˜b from Bc by Eq. (12)  
+
+> 8: 9:
+
+2. Fine search refines the boundary choice around the best coarse candidate  
+
+> 10:
+
+Define fine neighborhood Bf ← [˜b − sc, ˜b + sc] ∩ (p, w ] with stride sf 
+
+> 11:
+
+for each b ∈ B f do  
+
+> 12:
+
+Compute self-containedness S(p, b ) ← Eq. (8)  
+
+> 13:
+
+end for  
+
+> 14:
+
+Select final boundary b⋆ by Eq. (12)  
+
+> 15:
+
+return b⋆
+
+> 1https://github.com/EleutherAI/lm-evaluation-harness/tree/main
+
+15 VSB 
+
+Algorithm 1 VSB Training with No-Future Alignment  
+
+> 1:
+
+Input: Input sequences x, dLLM pθ , diffusion steps 
+
+t ∈ { 1, . . . , T }, block length W 
+
+> 2:
+
+while not converged do  
+
+> 3:
+
+Sample prefix end p ∼ Unif {1, . . . , L − 1} 
+
+> 4:
+
+Set window end w ← min( p + W, L ) 
+
+> 5:
+
+Define candidate boundaries B = {b | p < b ≤ w} 
+
+> 6:
+
+(A) Construct scoring hypotheses  
+
+> 7:
+
+Set ˆx1: p ← x1: p 
+
+> 8:
+
+Initialise ˆxp+1: w ← Masked  
+
+> 9:
+
+Construct window hypotheses: ˆxp+1: w ← Eq. (9)  
+
+> 10:
+
+(B) Compute Future-Aware prediction  
+
+> 11:
+
+f FA  
+
+> i
+
+← pθ (· | ˆx1: w) for all i ∈ (p, w ] 
+
+> 12:
+
+(C) Boundary scoring  
+
+> 13:
+
+for each b ∈ B do  
+
+> 14:
+
+f NF  
+
+> i
+
+(b) ← pθ (· | ˆx1: b) for i ∈ (p, b ] 
+
+> 15:
+
+S(p, b ) ← Eq. (8)  
+
+> 16:
+
+end for  
+
+> 17:
+
+Select boundary b⋆ ← Eq. (12)  
+
+> 18:
+
+(D) No-Future diffusion training  
+
+> 19:
+
+Corrupt tokens in (p, b ⋆] to obtain ˜xt 
+
+> 1: b⋆
+> 20:
+
+Compute No-Future loss: LNF ← Eq. (13)  
+
+> 21:
+
+Update parameters: θ ← θ − η∇θ LNF  
+
+> 22:
+
+end while Algorithm 2 VSB Inference  
+
+> 1:
+
+Input: Prompt x1: p, dLLM pθ , denoising steps t ∈{T, . . . , 1}, block length W , hypothesis step thyp  
+
+> 2:
+
+Initialise p ← ℓprompt  
+
+> 3:
+
+while p < L do  
+
+> 4:
+
+Set w ← min( p + W, L ) 
+
+> 5:
+
+Initialise (p, w ] as masked  
+
+> 6:
+
+Run diffusion from timestep t = T to t = 1 to obtain 
+
+ˆx1: w and cache hypothesis ˆxthyp  
+
+> 1: w
+
+at step thyp  
+
+> 7:
+
+Compute FA logits on (p, w ] using ˆxthyp  
+
+> 1: w
+> 8: 9:
+
+# Boundary Selection  
+
+> 10:
+
+for each b ∈ B (p, w ) do  
+
+> 11:
+
+Compute NF logits by truncation to b 
+
+> 12:
+
+Compute S(p, b ) ← Eq. (8)  
+
+> 13:
+
+end for  
+
+> 14:
+
+Select b⋆ by Eq. (12)  
+
+> 15:
+
+Commit ˆxp+1: b⋆ 
+
+> 16:
+
+Update p ← b⋆ 
+
+> 17:
+
+end while  
+
+> 18:
+
+return generated sequence 
+
+G. Case Study 1: VSB vs. Fixed-size block Baseline 
+
+We provide a case study in Figure 8 comparing the generation output and quality between our VSB and Fixed-size block decoding. Below is a detailed step by step analysis of the outputs with respect to a given question in GSM8K test set: 
+
+Question: According to its nutritional info, a bag of chips has 250 calories per serving. If a 300g bag has 5 servings, how many grams can you eat if your daily calorie target is 2000 and you have already consumed 1800 calories? 
+
+Problem structure and sensitivity to segmentation. The question involves a short chain of dependent steps. First, the total calories in the bag are computed from the number of servings and calories per serving. Next, the remaining daily calorie budget is obtained from the target and the calories already consumed. Finally, this remaining budget is converted into a fraction of the bag and then into grams using the bag weight. The full reasoning chain can be seen as: 
+
+5 × 250 = 1250 , 2000 − 1800 = 200 , 200 1250 × 300 = 48 ,
+
+where each intermediate result is needed by the next step. If numbers, units, or equations are broken across blocks, the error can easily propagate to the final answer. This makes the example highly sensitive to how decoding blocks are segmented. 
+
+VSB decoding behavior. With VSB decoding, block boundaries are chosen based on semantic and logical completeness. In this case, each block ends after a complete clause or a finished calculation. For instance, illustrated in top panel of Figure 8, the remaining calorie computation, 2000 − 1800 = 200 , appears entirely within a single block (Block 6). Likewise, the fraction: 200 1250 and its simplified form: 425 are kept intact before converting to grams. Because equations and explanations are not split mid-way, each block remains easy to interpret on its own. This allows the final conversion 425 × 300 = 48 to be carried out correctly. 
+
+Numerical and unit consistency under VSB. VSB also preserves correct associations between numbers and their meanings. Calories per serving, total bag calories, remaining calories, and bag weight remain clearly separated. In particular, 16 VSB 
+
+the 300 grams value is correctly treated as the weight of the whole bag, not a serving. This behavior is consistent with the low average self-containedness divergence observed for VSB, 
+
+Avg S(p, b ⋆) = 0 .055 ,
+
+indicating that blocks can be understood without relying on future context. 
+
+Fixed-size decoding and fragmentation effects. In contrast, fixed-size decoding with a 64 -token budget places boundaries without considering semantic structure. Shown in the bottom panel of Figure 8, blocks break in the middle of equations and sentences. One boundary interrupts the computation (Block 2-3): 
+
+5 × 250 = 1250 ,
+
+while another splits an explanatory sentence into incomplete parts (Block 4-5). These fragmented blocks are harder to interpret and depend on later tokens to recover meaning. This is reflected in a higher self-containedness divergence, 
+
+Avg S(p, b ) = 0 .25 .
+
+The fragmentation leads to a clear error later in the reasoning. The model incorrectly treats 300 grams as the weight of a serving rather than the whole bag. This unit confusion directly affects the grams conversion and produces an incorrect final answer. 
+
+H. Case Study 2: Self-containedness Guided Block Selection 
+
+Figures 9, 10, and 11 provide a full decoded-token trace showing how VSB repeatedly applies the self-contained boundary rule across an entire solution. At each prefix position p, VSB evaluates candidate cutoffs b ∈ (p, p + W ] (here with a fixed window budget W = 64 ), scores each candidate by self-containedness, and then selects the boundary b⋆ using a length-aware trade-off rather than the raw minimum of the divergence. Figures 9 provides an overview of case study 2’s question and VSB’s response annotated in blocks, as well as the overall self-containedness divergence across all blocks. 
+
+Overall pattern: boundaries align with semantic completion. Shown Figures 10 and 11 , across Blocks 0-20, the selected cutoffs repeatedly coincide with visually complete units in the decoded tokens. When the text forms a complete thought (e.g., finishing a sentence, closing an equation, completing an assignment like “ a=1 ”), the divergence for candidates ending at that point is low, and SL-A (p, b ) peaks there. When the text is mid-construction (e.g., an unfinished math environment or an incomplete formula), S(p, b ) rises for longer candidates, and the trade-off selects an earlier cutoff that avoids committing future-dependent content. A key qualitative observation across the blocks in Figures 10 and 11 is that spikes in S(p, b ) coincide with tokens that clearly require continuation (unfinished equations, half-open LaTeX structures, or phrases that introduce content not yet stated). VSB responds by placing the boundary just before those unstable regions, so the next block can incorporate the missing future context before committing. 
+
+Where VSB looks strongest in this example. 
+
+1. It separates stable prose from unstable math. Early blocks show VSB committing short-to-medium spans that finish a statement, then opening the next block for the upcoming construction (Blocks 0-2). This matches the intended behavior: prose clauses are often self-contained, while upcoming math (definitions, substitutions, quadratic-formula expansions) creates future dependence until the expression is closed. 2. It avoids committing incomplete equations. Throughout Blocks 3-14, the decoded content alternates between explana-tory text and symbolic expansions. Candidate boundaries that would cut inside a formula tend to have higher divergence, while candidates that end at a natural closure (end of a displayed equation, after the full numerator/denominator is formed, after “Thus,” when the next line provides the result) yield lower divergence and therefore higher SL-A (p, b ).This is precisely the behavior described in the main text: tokens beyond b⋆ are unstable because their meaning depends on the continuation from the next block. 17 VSB 
+
+3. It remains consistent across the whole generation. In Blocks 15-20, the same pattern continues: VSB commits a self-contained definition of “roots of unity”, then postpones the claim about “6th roots” until the supporting context is in place. The final block includes the concluding sentence and answer, which is naturally self-contained and corresponds to low divergence near the end. 
+
+Failure mode analysis (constructively). The main weakness appeared with VSB in the trace is that some blocks are still very short (e.g., 3-9 tokens in several places). Importantly, these short blocks are not arbitrary: they occur at positions where the decoded tokens themselves are genuinely small self-contained units, such as •local parameter assignments or short enumerations (e.g., “ b=1 ”, “ c=1 ”); • LaTeX control-sequence glue where committing a longer span would cross into a future-dependent region (opening a fraction/sqrt that will only be completed by later tokens); • short connective phrases that immediately precede a construction with high divergence (where longer candidates incur a large (b − p)S(p, b ) penalty). So, even when a block is short, it is typically still self-contained : committing it does not freeze an interpretation that depends on unseen continuation. That said, short blocks do have a practical cost : they reduce parallelism and therefore limit speedups in exactly the regions where the model is most “structure-sensitive” (dense math or heavy formatting). In this case study, the shortest blocks appear clustered around the most syntactically constrained parts of the solution (quadratic formula expansion, nested radicals/fractions, and equation delimiters). This suggests a principled explanation: when the generation enters a highly future-dependent micro-region, the length-aware objective prefers to commit only the stable prefix of that region, rather than forcing a longer but unstable commitment. This issue can be potentially resolved by defining a “minimum commit” value, nonetheless, we leave this as future practical tips instead of a fundamental analysis on the benefit of self-containedness. 18 VSB Question : According to its nutritional info, a bag of chips has 250 calories per serving . If a 300 g bag has 5 servings, how many 
+
+grams can you eat if your daily calorie target is 2000 and you have already consumed 1800 calories ?
+
+[Block 0]{ To determine how many grams of chips you can eat, we need to follow these steps :
+
+1. Calculate the total number of calories in the bag of chips .} 33 tokens 
+
+[Block 1]{ 2. Determine how many calories you can consume without exceeding your daily calorie target .} 17 tokens 
+
+[Block 2]{ 3. Calculate how many grams of chips you can eat based on the remaining calories. 
+
+** Step 1: Calculate the total number of calories in the } 33 tokens 
+
+[Block 3]{ bag of chips.** 
+
+The bag of chips has 5 servings, and each serving contains 250 calories .} 25 tokens 
+
+[Block 4]{ Therefore , the total number of calories in the bag is: 
+
+\[ 5 \text{ servings} \times 250 \text{ calories/serving} = 1250 \text{ calories} \]
+
+** Step 2} 53 tokens 
+
+[Block 5]{ : Determine how many calories you can consume without exceeding your daily calorie target.** 
+
+Your daily calorie target is 2000 } 27 tokens 
+
+[Block 6]{ calories , and you have already consumed 1800 calories. Therefore, the remaining calories you can consume are: 
+
+\[ 2000 \text{ calories} - 1800 \text{ calories} = 200 \text{ calories} \]
+
+**Step } 64 tokens 
+
+[Block 7]{ 3: Calculate how many grams of chips you can eat based on } 13 tokens 
+
+[Block 8]{ the remaining calories.** 
+
+Since the bag of chips contains 1250 calories, you can eat: 
+
+\[ \frac{200 \text{ calories}}{1250 \text{ calories/bag}} =} 48 tokens 
+
+[Block 9{ \frac{2}{12.5} = \frac{4}{25} \text{ of the bag} \]
+
+The bag of chips weighs 300 grams ,} 39 tokens 
+
+[Block 10]{ so you can eat: 
+
+\[ \frac{4}{25} \times 300 \text{ grams} = \frac{4 \times 300}{25} = \frac{1200}{25} = 48 \text{ grams }} 61 tokens 
+
+[Block 11]{ \]
+
+Therefore , you can eat \boxed{48} grams of chip s. } 18 tokens 
+
+## VSB 
+
+Break on independent clause 
+
+Avg S( P,b *)= 0.055 [Block 0]{ To determine how many grams of chips you can eat without exceeding your daily calorie target, we need to follow 
+
+these steps: 
+
+1. Calculate the total number of servings in the bag. 
+
+2. Determine the total calories in the bag. 
+
+3. Subtract the calories already consumed from the daily calorie target to find }
+
+[Block 1]{ the remaining calorie limit. 
+
+4. Calculate the number of servings you can eat within the remaining calorie limit. 
+
+5. Convert the number of servings to grams. 
+
+Let's go through each step in detail: 
+
+**Step 1: Calculate the total number of servings in the bag.** 
+
+The bag }
+
+[Block 2]{ has 5 servings. 
+
+**Step 2: Determine the total calories in the bag.** 
+
+Each serving in the bag contains 250 calories. Therefore, the total calories in the bag is: 
+
+\[ 5 \times 250 \text{ calories per serving} = 1}
+
+[Block 3]{ 250 \text{ calories} \]
+
+**Step 3: Subtract the calories already consumed from the daily calorie target.** 
+
+The daily calorie target is 2000 calories, and you have already consumed 1800 calories. Therefore, the remaining calorie is: 
+
+\[ 2 }
+
+[Block 4]{ 000 \text{ calories} - 1800 \text{ calories} = 200 \text{ calories} \]
+
+**Step 4: Calculate the number of servings you can eat within the remaining calorie limit.** 
+
+Since each serving contains 250 calories, the }
+
+[Block 5]{ number of servings you can eat within the remaining calorie limit is: 
+
+\[ \frac{200 \text{ calories}}{250 \text{ calories/serving}} = 0.8 \text{ servings} \]
+
+**Step 5: Convert the number of servings to }
+
+[Block 6]{ grams.** 
+
+Since each serving is 300 grams, the number of grams you can eat is: 
+
+\[ 0.8 \text{ servings} \times 300 \text{ grams/serving} = 240 \text{ grams} \]
+
+Therefore, you can eat \boxed{2 }
+
+[Block 7]{ 40} grams of chips . [padding eot tokens] }
+
+Fixed Size (64 tokens) 
+
+Error appears! 
+
+Break on number 
+
+Break in semantic 
+
+Avg S( P,b ) = 0.25 
+
+Figure 8. Case study of VSB vs. Fixed-size block baseline (64-tokens). VSB produces lower self-containedness divergence with more semantically coherent blocks at various sizes. Fixed-size blocks results in larger self-containedness divergence and blocks breaks on key number, semantics with errors in the final result. 
+
+19 VSB Problem : What is the smallest positive integer $n$ such that all the roots of $z^ 4 + z^ 2 + 1 = 0$ are 
+
+$n^{ \text{ th }} $ roots of unity? 
+
+[Block 0]{ To find the smallest positive integer \( n \) such that all the roots of \(}
+
+[Block 1]{ z^4 + z^2 + 1 }
+
+[Block 2]{ = 0 \) are \( n^{ \text{ th }} \) roots of unity, we start by solving the equation \( z^4 + z^2 + 1 = 0 \). }
+
+First, we rewrite the equation in a more convenient form. }
+
+[Block 3]{ Let \( w = z^2 \). Then the equation becomes: 
+
+\[ w^2 + w + 1 = 0. \] }
+
+[Block 4]{ This is a quadratic equation in \( w \). We can solve it using the quadratic formula }
+
+[Block 5]{ \( w = \frac{ -b \pm }
+
+[Block 6]{ \sqrt{b^2 - 4ac}} }
+
+[Block 7]{ {2a} \), where \( a = 1 \), \(}
+
+[Block 8]{ b = 1 }
+
+[Block 9]{ \), and \(}
+
+[Block 10]{ c = 1 \): 
+
+\[ w = \frac{ -1 \pm }
+
+[Block 11]{ \sqrt{1 - 4}}{2} = \frac{ -1 \pm i\sqrt{3}}{2}. \]
+
+Thus, }
+
+[Block 12]{ the solutions for \( w \) are: 
+
+\[ w = \frac{ -1 + i\sqrt{3}}{2} \quad \text{and} \quad w = \frac{ -1 - i\sqrt{3}}{2}. \]
+
+Since \( w = z^2 \), we have: }
+
+[Block 13]{ \[ z^2 = \frac{ -1 + i\sqrt{3}}{2} \quad \text{or} \quad z^2 = \frac{ -1 - i\sqrt{3}}{2}. \] }
+
+[Block 14]{ These are the roots of the original equation \( z^4 + z^2 + 1 = 0 \). We need to find the smallest positive 
+
+integer \( n \) such that these roots are }
+
+[Block 15]{ \( n^{ \text{ th }} \) roots of unity. 
+
+The roots of unity are the solutions to the equation \( z^n = 1 \). The roots of unity are given by: 
+
+\[ z = e^{2 \pi i k / n} }
+
+[Block 16]{ \quad \text{for} \quad }
+
+[Block 17]{ k = 0, 1, 2, }
+
+[Block 18]{ \ldots , n -1. \]
+
+We observe that the roots }
+
+[Block 19]{ of \( z^4 + }
+
+[Block 20]{ z^2 + 1 = 0 \) are exactly the 6th roots of unity. Therefore, the smallest positive integer \( n \) that satisfies 
+
+the condition is \( n = 6 \). 
+
+The answer is: \(\boxed{6} \)}
+
+(a) VSB response - all blocks 
+
+(b) Self-containedness across all blocks 
+
+Figure 9. Case study 2 Overview 
+
+20 VSB [Block 0]{To find the smallest positive integer \( n \) such that all the 
+
+roots of \( z^ 4 + z^ 2 + 1 = 0 \) are \( n^{ \text{ th }} \) roots of unity, 
+
+we start by solving the equation \( z^ 4 + z^ 2 + 1 = 0 \).} 16 tokens 𝒃 ⋆
+
+[Block 1]{z^4 + z^2 + 1 = 0 \) are \( n^{ \text{ th }} \) roots of unity, we 
+
+start by solving the equation \( z^4 + z^2 + 1 = 0 \). 
+
+First, we rewrite the equation in a more convenient form . Let } 9 tokens 
+
+𝒃 ⋆
+
+[Block 2] {=0 \)are \( n^{ \text{ th }} \) roots of unity, we start by solving 
+
+the equation \( z^4 + z^2 + 1 = 0 \). 
+
+First, we rewrite the equation in a more convenient form . Let \( w = 
+
+z^2 \). Then the equation becomes } 51 tokens 
+
+𝒃 ⋆
+
+(a) Block 0-2 [Block 3]{Let \( w = z^2 \). Then the equation becomes: \[ w^2 + w + 1 
+
+= 0. \] This is a quadratic equation in \( w \). We can solve it using the 
+
+quadratic formula \( w = \frac{ -b \pm \sqrt{b^2 – 4a} 32 tokens 
+
+𝒃 ⋆
+
+[Block 4] {This is a quadratic equation in \( w \). We can solve it using 
+
+the quadratic formula \( w = \frac{ -b \pm \sqrt{b^2 - 4ac}}{2a} \), 
+
+where \( a = 1 \), \( b = 1 \), and \( c = 1 \): \[ w } 18 tokens 𝒃 ⋆
+
+[Block 5]{ \( w = \frac{ -b \pm \sqrt{b^2 - 4ac}}{2a} \), where \( a = 1 
+
+\), \( b = 1 \), and \( c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}} } 11 tokens 
+
+𝒃 ⋆
+
+(b) Block 3-5 [Block 6] {\sqrt{b^2 - 4ac}} {2a} \), where \( a = 1 \), \( b = 1 \), and \(
+
+c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}}{2} = \frac{ -1 \pm i} 9 tokens 
+
+𝒃 ⋆
+
+[Block 7]{{2a} \), where \( a = 1 \), \( b = 1 \), and \( c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}}{2} = \frac{ -1 \pm i\sqrt{3}}{2}. } 13 
+
+tokens 𝒃 ⋆
+
+[Block 8]{ b = 1 \), and \( c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}}{2} = \frac{ -1 \pm i\sqrt{3}}{2}. Thus, 
+
+the solutions for \( w \) are: } 3 tokens 
+
+𝒃 ⋆ (c) Block 6-8 [Block 9]{ \), and \( c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}}{2} = \frac{ -1 \pm i\sqrt{3}}{2}. Thus, 
+
+the solutions for \( w \) are: \[ w } 4 tokens 
+
+𝒃 ⋆
+
+[Block 10]{ c = 1 \): 
+
+\[ w = \frac{ -1 \pm \sqrt{1 - 4}} {2} = \frac{ -1 \pm i\sqrt{3}}{2}. Thus, 
+
+the solutions for \( w \) are: \[ w \frac{ -} 17 tokens 
+
+𝒃 ⋆
+
+[Block 11]{ \sqrt{1 - 4}} {2} = \frac{ -1 \pm i\sqrt{3}}{2}. Thus, the 
+
+solutions for \( w \) are: \[ w \frac{ -1 + i\sqrt{3}}{2} \quad \text{and} 
+
+\quad w = } 29 tokens 𝒃 ⋆
+
+(d) Block 9-11 [Block 12]{ the solutions for \( w \) are: \[ w = \frac{ -1 + i\sqrt{3}}{2} 
+
+\quad \text{and} \quad w = \frac{ -1 - i\sqrt{3}}{2}. \] Since \( w = z^2 
+
+\), we have : \[} 62 tokens 𝒃 ⋆
+
+[Block 13 ]{ : \[ z^2 = \frac{ -1 + i\sqrt{3}}{2} \quad \text{or} \quad z^2 
+
+= \frac{ -1 - i\sqrt{3}}{2}. \]
+
+These are the roots of the original equation \( z^4 + z^2 } 45 tokens 
+
+𝒃 ⋆
+
+[Block 14 ]{ These are the roots of the original equation \( z^4 + z^2 + 1 
+
+= 0 \). We need to find the smallest positive integer \( n \) such that 
+
+these roots are \( n^{ \text{ th }} \) roots of unity. The roots of unity } 45 
+
+tokens 𝒃 ⋆ (e) Block 12-14 
+
+Figure 10. Self-containedness divergence and corresponding decoded tokens with self-contained boundary highlighted. 
+
+21 VSB [Block 15]{ \( n^{ \text{ th }} \) roots of unity. 
+
+The roots of unity are the solutions to the equation \( z^n = 1 \). The roots of 
+
+unity are given by: \[ z = e^{2 \pi i k / n} \quad \text } 60 tokens 
+
+𝒃 ⋆
+
+[Block 16 ]{ \quad \text{for} \quad k = 0, 1, 2, \ldots , n -1 . \] We need to 
+
+check if the roots of \( z^4 + z^2 + 1 = 0 \) can be expressed in this 
+
+form . Notice that the } 9 tokens 𝒃 ⋆
+
+[Block 17 ]{ k = 0, 1, 2, \ldots , n -1 . \] We need to check if the roots of 
+
+\( z^4 + z^2 + 1 = 0 \) can be expressed in this form . Notice that the 
+
+roots of \( z^4 + z^ } 8 tokens 
+
+𝒃 ⋆
+
+(a) Block 15-17 [Block 18]{ \ldots , n -1. \] We observe that the roots of the equation \( z ^ 4 + 
+
+z ^ 2 + 1 = 0 \) correspond to the 6 th roots of unity . The smallest positive 
+
+integer \( n \) that satisfies } 14 tokens 𝒃 ⋆
+
+[Block 19] {of \( z^4 + z^2 + 1 = 0 \) are exactly the 6th roots of unity. 
+
+Therefore, the smallest positive integer \( n \) that satisfies the 
+
+condition is \( n = 6 \). } 6 tokens 
+
+𝒃 ⋆
+
+[Block 20]{ z^ 2 + 1 = 0 \) are exactly the 6 th roots of unity . Therefore 
+
+, the smallest positive integer \( n \) that satisfies the condition is \( n 
+
+= 6 \ ). The answer is : \(\ boxed { 6 } \ ) [EOT Paddin g]} 55 tokens (b) Block 18-20 
+
+Figure 11. Self-containedness divergence and corresponding decoded tokens with self-contained boundary highlighted - Continuation. 
+
+22

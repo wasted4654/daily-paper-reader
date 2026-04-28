@@ -1,0 +1,93 @@
+{
+  "label": "2026-04-28",
+  "date": "2026-04-28",
+  "generated_at": "2026-04-28T21:05:07",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202604/28/2604.23586v1-talker-t2av-joint-talking-audio-video-generation-with-autoregressive-diffusion-modeling",
+      "section": "deep",
+      "title_en": "Talker-T2AV: Joint Talking Audio-Video Generation with Autoregressive Diffusion Modeling",
+      "authors": "Zhen Ye, Xu Tan, Aoxiong Yin, Hongzhan Lin, Guangyan Zhang, Peiwen Sun, Yiming Li, Chi-Min Chan, Wei Ye, Shikun Zhang, Wei Xue",
+      "date": "2026-04-26",
+      "pdf": "https://arxiv.org/pdf/2604.23586v1",
+      "score": "9.0",
+      "evidence": "用于音视频联合生成的自回归扩散框架",
+      "tldr": "针对现有联合音视频生成模型在处理说话人头像时存在的语义与细节过度耦合、效率低下的问题，本文提出了Talker-T2AV框架。该框架采用自回归扩散建模，通过共享的语言模型骨干网络在统一的补丁级Token空间内进行高层跨模态推理，并利用两个轻量化扩散Transformer头分别进行模态特定的低层细节解码。实验证明，该方法在口型同步、音视频质量及跨模态一致性上均优于现有基准。",
+      "tags": "query:ardm",
+      "abstract_en": "Joint audio-video generation models have shown that unified generation yields stronger cross-modal coherence than cascaded approaches. However, existing models couple modalities throughout denoising via pervasive attention, treating high-level semantics and low-level details in a fully entangled manner. This is suboptimal for talking head synthesis: while audio and facial motion are semantically correlated, their low-level realizations (acoustic signals and visual textures) follow distinct rendering processes. Enforcing joint modeling across all levels causes unnecessary entanglement and reduces efficiency. We propose Talker-T2AV, an autoregressive diffusion framework where high-level cross-modal modeling occurs in a shared backbone, while low-level refinement uses modality-specific decoders. A shared autoregressive language model jointly reasons over audio and video in a unified patch-level token space. Two lightweight diffusion transformer heads decode the hidden states into frame-level audio and video latents. Experiments on talking portrait benchmarks show Talker-T2AV outperforms dual-branch baselines in lip-sync accuracy, video quality, and audio quality, achieving stronger cross-modal consistency than cascaded pipelines.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/28/2604.23994v1-when-to-commit-towards-variable-size-self-contained-blocks-for-discrete-diffusion-language-models",
+      "section": "deep",
+      "title_en": "When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models",
+      "authors": "Danny Wang, Ruihong Qiu, Zi Huang",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.23994v1",
+      "score": "8.0",
+      "evidence": "离散扩散模型的块状半自回归解码",
+      "tldr": "离散扩散语言模型在推理时常采用半自回归的分块解码，但这导致了训练（全上下文）与推理（局部上下文）之间的不匹配。本文提出了“自包含性”作为分块提交的原则，即当块内预测在有无未来上下文的情况下保持一致时才进行提交。基于此，作者开发了变长自包含分块（VSB）方法，利用预测分布的散度动态选择分块边界。实验表明，VSB 显著优于固定大小或启发式的解码策略。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion language models (dLLMs) enable parallel token updates with bidirectional attention, yet practical generation typically adopts blockwise semi-autoregressive decoding. This switch creates a training-inference mismatch: training denoises with full-sequence context, while inference commits tokens within a bounded block without future context. Therefore, decoding with fixed-size or heuristic-based blocks can lead to premature token commitments, as decisions are made without full access to future context that could alter those choices. Motivated by this, we propose self-containedness as a principled criterion for block commitment. A block is self-contained if its predictions remain consistent with Future-Aware (FA) or without No-Future (NF) access to future context, reframing block boundary selection as a test of self-containedness rather than a heuristic choice. Based on this principle, we introduce Variable-size Self-contained Blocks (VSB) for dLLMs. VSB scores and selects block boundaries using the divergence between token-level predictive distributions under NF and FA conditioning, which quantifies how predictions would change if future context were revealed. We provide theoretical justification linking self-containedness to predictive consistency, and extensive experiments validate VSB's efficacy over fixed-size and heuristic blockwise decoding.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/28/2604.24416v1-scaling-properties-of-continuous-diffusion-spoken-language-models",
+      "section": "deep",
+      "title_en": "Scaling Properties of Continuous Diffusion Spoken Language Models",
+      "authors": "Jason Ramapuram, Eeshan Gunesh Dhekane, Amitis Shidani, Dan Busbridge, Bogdan Mazoure, Zijin Gu, Russ Webb, Tatiana Likhomanenko, Navdeep Jaitly",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.24416v1",
+      "score": "8.0",
+      "evidence": "连续扩散与离散自回归口语语言模型的对比",
+      "tldr": "本研究探讨了连续扩散语音语言模型（CD SLM）的扩展特性，旨在解决离散自回归模型在处理连续语音时的瓶颈。通过引入音素JSD指标评估语言质量，研究发现CD SLM在验证损失和语言质量上遵循缩放法则。实验将模型扩展至160亿参数并使用千万小时数据，实现了高质量的多语种、多情感语音生成，尽管长文本连贯性仍具挑战。",
+      "tags": "query:ardm",
+      "abstract_en": "Speech-only spoken language models (SLMs) lag behind text and text-speech models in performance, with recent discrete autoregressive (AR) SLMs indicating significant computational and data demands to match text models. Since discretizing continuous speech for AR creates bottlenecks, we explore whether continuous diffusion (CD) SLM is more viable. To quantify the SLMs linguistic quality, we introduce the phoneme Jensen-Shannon divergence (pJSD) metric. Our analysis reveals CD SLMs, mirroring AR behavior, exhibit scaling laws for validation loss and pJSD, and show optimal token-to-parameter ratios decreasing as compute scales. However, for the latter, loss becomes insensitive to choice of data and model sizes, showing potential for fast inference. Scaling CD SLMs to 16B parameters with tens of millions of hours of conversational data enables generation of emotive, prosodic, multi-speaker, multilingual speech, though achieving long-form coherence remains a significant challenge.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/28/2604.18471v2-ni-sampling-accelerating-discrete-diffusion-sampling-by-token-order-optimization",
+      "section": "quick",
+      "title_en": "NI Sampling: Accelerating Discrete Diffusion Sampling by Token Order Optimization",
+      "authors": "Enshu Liu, Xuefei Ning, Yu Wang, Zinan Lin",
+      "date": "2026-04-20",
+      "pdf": "https://arxiv.org/pdf/2604.18471v2",
+      "score": "7.0",
+      "evidence": "离散扩散语言模型作为自回归方法的替代方案",
+      "tldr": "离散扩散语言模型（dLLM）支持并行解码，但现有的启发式采样策略效率较低。本文研究了令牌采样顺序优化问题，提出神经指示器采样（NI Sampling）框架。该方法利用神经指示器动态决定每步采样的令牌，并结合轨迹保持目标进行训练。实验表明，NI Sampling 在 LLaDA 和 Dream 模型上实现了高达 14.3 倍的加速，且几乎不损失性能，显著优于传统的置信度阈值采样。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion language models (dLLMs) have recently emerged as a promising alternative to traditional autoregressive approaches, offering the flexibility to generate tokens in arbitrary orders and the potential of parallel decoding. However, existing heuristic sampling strategies remain inefficient: they choose only a small part of tokens to sample at each step, leaving substantial room for improvement. In this work, we study the problem of token sampling order optimization and demonstrate its significant potential for acceleration. Specifically, we find that fully leveraging correct predictions at each step can reduce the number of sampling iterations by an order of magnitude without compromising accuracy. Based on this, we propose Neural Indicator Sampling (NI Sampling), a general sampling order optimization framework that utilize a neural indicator to decide which tokens should be sampled at each step. We further propose a novel trajectory-preserving objective to train the indicator. Experiments on LLaDA and Dream models across multiple benchmarks show that our method achieves up to 14.3$\\times$ acceleration over full-step sampling with negligible performance drop, and consistently outperforms confidence threshold sampling in the accuracy-step trade-off. Code is available at https://github.com/imagination-research/NI-Sampling.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/28/2604.24104v1-factual-and-edit-sensitive-graph-to-sequence-generation-via-graph-aware-adaptive-noising",
+      "section": "quick",
+      "title_en": "Factual and Edit-Sensitive Graph-to-Sequence Generation via Graph-Aware Adaptive Noising",
+      "authors": "Aditya Hemant Shahane, Anuj Kumar Sirohi, Tanmoy Chakraborty, Prathosh A P, Sandeep Kumar",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.24104v1",
+      "score": "7.0",
+      "evidence": "用于图到序列生成的扩散框架，作为自回归的替代方案",
+      "tldr": "针对图到序列（G2S）生成中自回归模型事实性差和编辑敏感度低的问题，本文提出了一种名为DLM4G的非自回归扩散语言模型。该模型通过将图组件与序列标记对齐，并采用基于去噪误差的自适应加噪策略，有效保留了图结构并实现了局部更新。实验表明，DLM4G在事实性、编辑敏感度及生成质量上均优于多种基线模型，且在分子描述生成等科学任务中展现了良好的通用性。",
+      "tags": "query:ardm",
+      "abstract_en": "Fine-tuned autoregressive models for graph-to-sequence generation (G2S) often struggle with factual grounding and edit sensitivity. To tackle these issues, we propose a non-autoregressive diffusion framework that generates text by iterative refinement conditioned on an input graph, named as Diffusion Language Model for Graphs (DLM4G). By aligning graph components (entities/relations) with their corresponding sequence tokens, DLM4G employs an adaptive noising strategy. The proposed strategy uses per-token denoising error as a signal to adaptively modulate noise on entity and relation tokens, improving preservation of graph structure and enabling localized updates under graph edits. Evaluated on three datasets, DLM4G consistently outperforms competitive G2S diffusion baselines trained on identical splits across both surface-form and embedding-based metrics. DLM4G further exceeds fine-tuned autoregressive baselines up to 12x larger (e.g., T5-Large) and is competitive with zero-shot LLM transfer baselines up to 127x larger. Relative to the strongest fine-tuned PLM baseline, DLM4G improves factual grounding (FGT@0.5) by +5.16% and edit sensitivity (ESR) by +7.9%; compared to the best diffusion baseline, it yields gains of +3.75% in FGT@0.5 and +23.6% in ESR. We additionally demonstrate applicability beyond textual graphs through experiments on molecule captioning, indicating the method's generality for scientific G2S generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/28/2604.24357v1-dprm-a-plug-in-doob-h-transform-induced-token-ordering-module-for-diffusion-language-models",
+      "section": "quick",
+      "title_en": "DPRM: A Plug-in Doob h transform-induced Token-Ordering Module for Diffusion Language Models",
+      "authors": "Dake Bu, Wei Huang, Andi Han, Hau-San Wong, Qingfu Zhang, Taiji Suzuki, Atsushi Nitanda",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.24357v1",
+      "score": "7.0",
+      "evidence": "扩散语言模型的令牌排序模块",
+      "tldr": "引入DPRM插件模块，优化基于扩散的语言生成中的令牌排序。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models generate without a fixed left-to-right order, making token ordering a central algorithmic choice: which tokens should be revealed, retained, revised or verified at each step? Existing systems mainly use random masking or confidence-driven ordering. Random masking creates train--test mismatch, while confidence-only rules are efficient but can be myopic and suppress useful exploration.   We introduce DPRM (Doob h-transform Process Reward Model), a plug-in token-ordering module for diffusion language models. DPRM keeps the host architecture, denoising objective and supervision unchanged, and changes only the ordering policy. It starts from confidence-driven progressive ordering and gradually shifts to Doob h transform Process Reward guided ordering through online estimates.   We characterize the exact DPRM policy as a reward-tilted Gibbs reveal law, prove O(1/N) convergence of the stagewise Soft-BoN approximation, and show that the online bucketized controller tracks the exact DPRM score at empirical-Bernstein rates. Under tractable optimization assumptions, DPRM also yields a sample-complexity advantage over random and confidence-only ordering.   DPRM improves over confidence-based baselines in pretraining, post-training, test-time scaling, and single-cell masked diffusion, with particularly strong gains on harder reasoning subsets. In protein, molecular generation and DNA design, the effect is more multi-objective: ordering-aware variants significantly improve selected structural or fragment-constrained metrics while not uniformly dominating the host baseline on every quality metric. These results identify token ordering as a fundamental control axis in diffusion language models and establish DPRM as a general-purpose module for improving it. Code is available at https://github.com/DakeBU/DPRM-DLLM.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

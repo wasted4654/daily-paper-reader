@@ -1,0 +1,563 @@
+Title: Scaling Properties of Continuous Diffusion Spoken Language Models
+
+URL Source: https://arxiv.org/pdf/2604.24416v1
+
+Published Time: Tue, 28 Apr 2026 01:55:44 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Scaling Properties of Continuous Diffusion Spoken Language Models 
+
+Jason Ramapuram ∗† , Eeshan Gunesh Dhekane ∗ , Amitis Shidani ∗ , Dan Busbridge , Bogdan Mazoure † , Zijin Gu ,
+
+Russ Webb , Tatiana Likhomanenko ★, Navdeep Jaitly †★
+
+Apple 
+
+> ∗
+
+Core contributor , ★Core advising , †Work done while at Apple 
+
+Speech-only spoken language models (SLMs) lag behind text and text-speech models in performance, with recent dis-crete autoregressive (AR) SLMs indicating significant computational and data demands to match text models. Since dis-cretizing continuous speech for AR creates bottlenecks, we explore whether continuous diffusion (CD) SLM is more viable. To quantify the SLMs linguistic quality, we introduce the phoneme Jensen-Shannon divergence (pJSD) metric. Our anal-ysis reveals CD SLMs, mirroring AR behavior, exhibit scaling laws for validation loss and pJSD, and show optimal token-to-parameter ratios decreasing as compute scales. However, for the latter, loss becomes insensitive to choice of data and model sizes, showing potential for fast inference. Scaling CD SLMs to 16B parameters with tens of millions of hours of con-versational data enables generation of emotive, prosodic, multi-speaker, multilingual speech, though achieving long-form coherence remains a significant challenge. 
+
+Correspondence: Jason Ramapuram (jason@ramapuram.net); Eeshan Gunesh Dhekane (eeshan@apple.com); Amitis Shidani (ami-tis_shidani@apple.com); Tatiana Likhomanenko (antares@apple.com) 
+
+## 1 Introduction 10 10 10 11 10 12              
+
+> Dataset Size ( D)
+> 10 2
+> 6 × 10 3
+> 7 × 10 3
+> 8 × 10 3
+> 9 × 10 3
+> Validation Loss ( L)
+> L= 0.0055 + (0.0638
+> N0.3995 +29.7667
+> D0.5644 )0.7051
+> Train MRE: 0.49%
+> Test MRE: 0.80%
+> 10 18
+> 10 19
+> 10 20
+> 10 21
+> FLOPs ( C)10 26
+> 10 25
+> 10 24
+> 10 12
+> 10 13
+> D
+
+D   
+
+> 10 18 10 19 10 20 10 21
+
+Compute FLOPs ( C)
+
+> 10 9
+> 10 10
+> N
+
+N
+
+D, N at = 0.001, and vs. C
+
+Figure 1 (Left) Scaling law fit for validation loss. Training ( •) and testing ( ×) points are shown alongside compute-optimal points ( ★). (Right) The curvature 𝜅 of isoFLOPs at their optima decreases as compute increases: flattening corresponds to approximately 2
+
+orders of magnitude expansion in the range of model ( Δ𝑁 ) and dataset ( Δ𝐷 ) sizes yielding a loss within 𝜖 of the optimum 𝐿 ∗. Thus, higher computes allow near-optimal performance across a much wider variety of parameter-to-data allocations, opening up an efficient inference frontier. 
+
+Building on recent advancements in self-supervised learning (SSL) for speech processing [1] and the emergence of phonetic structure within these learned representations [2; 3], the research community has advanced textless NLP ,1
+
+> arXiv:2604.24416v1 [cs.CL] 27 Apr 2026
+
+a field aimed at training spoken language models (SLMs) directly from speech without textual supervision. 1 The prevailing methodology involves discretizing SSL representations into speech tokens and training autoregressive (AR) models on them. While recent works have demonstrated significant progress using this paradigm [5; 6; 7; 8; 4], current performance remains comparable to the linguistic proficiency of a three- to four-year-old child (according to metrics measuring lexical, syntactic and semantic proficiency), placing SLMs significantly behind the capabilities of state-of-the-art text-based and speech-text systems [8; 9; 10]. Bridging this performance gap requires addressing two fundamental challenges: determining optimal speech repre-sentations [10] and identifying the most effective modeling paradigm. The latter is particularly pressing as recent SLM scaling laws suggest that achieving LLM-level linguistic proficiency via AR modeling on discrete speech tokens 
+
+could require orders of magnitude more compute [8]. 2 This steep computational burden is likely compounded by the inherent challenges of raw speech: low information density, high acoustic and speaker variability, and a lack of se-mantically dense, curated data comparable to rich datasets like Wikipedia in text generative modeling. Consequently, extracting general knowledge from speech remains highly resource-intensive. Inspired by recent successes of diffusion models in vision [13; 14; 15; 16] and text-speech AR models with speech continuous representations [17; 18], we investigate continuous diffusion (CD) models as a potential alternative to discrete AR modeling for SLMs. Moreover, speech signals are continuous, even if the language they convey is discrete, thus looking beyond AR modeling on discrete tokens for SLMs is natural. The potential of a modeling paradigm is defined by its scaling behavior. Given that “languageness”, the ability to generate long-form coherent language, is the key metric in SLMs, we study how it behaves under scaling in CD SLMs. However, measuring languageness poses a challenge: unlike AR models, computing exact sequence log-likelihoods in continuous diffusion models is computationally prohibitive. To address this, we first propose to use the phoneme Jensen-Shannon divergence (pJSD) metric (Section 3.4): it quantifies the model’s “languageness” by computing the divergence between the phoneme 𝑛 -grams distributions of generated and real speech. We then analyze the scaling behavior of CD SLMs, demonstrating that they exhibit trends similar to those of discrete AR SLMs [8], and do not fundamentally alter the scaling trajectory, though exhibit some new practical scaling behavior not observed in prior work (Section 4) . Our results show that: 
+
+• (Known trend) Validation loss follows scaling laws (Figure 1 (top) and Section 4.2). 
+
+• (Known trend) The optimal token-to-parameter ratio is compute dependent, decreasing as the compute budget scales (Figure 1 (bottom) and Section 4.2). 
+
+• (New trend) Higher computes allow near-optimal performance across a much wider variety of parameter-to-data allocations (Figure 1 (bottom) and Section 4.2), opening up possibility for fast inference. 
+
+• (Known trend) The pJSD metric demonstrates that learned “languageness” follows scaling laws, mirroring dis-crete AR models (sBLIMP [6], sStoryCloze [19]) (Section 4.3). Thus, pJSD provides a viable sampling-based evaluation tool for generative models that do not offer the easily factorized likelihoods of autoregressive archi-tectures. 
+
+• (New trend) Unlike prior work on AR SLMs [8], we also analyze standard perceptual quality metrics. We find they do not exhibit scaling laws (this behavior is aligned with their poor correlation to human mean opinion scores [20]). However, two out of four Meta Audiobox Aesthetics [21] components (content enjoyment and content understanding) do scale predictably (Section 4.3). 
+
+• (New trend) Metrics without scaling laws generally saturate near their real-data baselines. In contrast, for certain metrics, our best scaling fits suggest that real-data baselines remain unreachable at any compute budget (Section 4.3). Finally, we scale CD SLMs to a 16B parameter model trained on tens of millions of hours of conversational speech (Section 6). While at that scale our model generates multi-speaker multilingual conversations with rich emotions and prosody, achieving long-form linguistic coherence remains a significant challenge. This shortfall suggests that 
+
+> 1Referred to as “pure speech language models” in [4].
+> 2Since [8] fixed hyperparameters across all compute budgets, a practice known to scale suboptimally [11; 12], these computational requirements may be overestimated.
+
+2given current compute budgets and available speech data, further scaling of SLMs is impractical unless a new speech representation or modeling paradigm emerge, or we pivot to text-speech models [9; 4] .3
+
+## 2 Related Work 
+
+Speech Representations Since the inception of SLMs [5], speech generative modeling has largely converged on AR modeling of discrete speech tokens [22; 4], a paradigm favored for its compatibility with pretrained text LLMs. To mitigate bottlenecks arisen from discretization of continuous speech signals, recent works have explored AR modeling on continuous representations for both text-to-speech [17] (log-mel filterbanks) and text-speech LLMs [18]. Yet, these approaches often face training convergence issues, necessitating auxiliary loss functions or variational components. Instead we apply continuous diffusion directly to log-mel filterbanks: a native fit for continuous data. 
+
+Diffusion Models Diffusion models [23; 24; 25] have emerged as a dominant generative paradigm, achieving state-of-the-art results in image [26; 16; 15; 27] and video [28; 29; 30] generation, and approaching AR models in language [31; 32]. Recently, diffusion models have been applied to audio and music generation [33; 34]. In speech domain, diffusion was first applied to neural vocoders [35], showing competitive quality with AR and GAN-based models. Subsequent work extended diffusion to text-to-speech (TTS) [36; 37; 38; 39; 40; 41], achieving near-human quality by operating in latent codec spaces with classifier-free guidance [42]. E2 TTS [43] further simplified the pipeline by directly generating mel-spectrograms from text in a fully end-to-end diffusion framework. Recently, [44] introduced DIFFA, the first diffusion-based speech LLM designed to perform spoken language understanding, building on top of a frozen discrete diffusion-based LM. However, all of these approaches rely on explicit text conditioning or text-pretrained models. To the best of our knowledge, our work is the first to apply continuous diffusion models to SLM without any text supervision , investigating their scaling properties. 
+
+Scaling Laws The systematic study of neural scaling laws was initiated by [45], showing the cross-entropy loss of AR LMs follows power-law relationships with respect to model size, data size, and training compute budget, holding over several orders of magnitude. [46] refined these findings by showing that prior work had significantly undertrained or overtrained models relative to their size: for a fixed compute budget, model parameters and training tokens should be scaled in roughly equal proportion, a result that shifted practical training recipes toward compute optimal. Beyond LM training, [47] established scaling laws for knowledge distillation, and [48] – for vision transformers on classifica-tion tasks. For multimodal models, [49] observed scaling behavior of CLIP-style contrastive learning [50], and [51] further investigated causal masked multimodal models, finding that jointly training on text and images, or text and speech improves scaling efficiency for both modalities. For masked discrete diffusion models, [52] studied the scaling behavior of LMs, finding they follow similar loss scaling trends as AR models but with a constant efficiency gap. [53] provided the first scaling laws for multimodal (image, audio and text) case and showed the token-per-parameter ratio decreases as compute grows. For speech, [8] established the first scaling laws for SLMs using AR modeling on discrete tokens, while [9] extended this analysis to interleaved text-speech models. Our work complements these efforts by providing the first scaling law analysis for continuous diffusion SLMs .
+
+## 3 Continuous Diffusion SLMs 
+
+3.1 Data 
+
+We use a large-scale conversational speech dataset, dubbed SpeechCrawl, collected from publicly accessible sources. This dataset was specifically curated to be diverse, conversational, multilingual, and multi-speaker. Audio samples average approximately 30 minutes in duration, with roughly 60% consisting of English speech. As SpeechCrawl lacks metadata, we employ the WhisperX [54] pipeline, utilizing Whisper large-v3 multilingual model [55], to determine the percentage of English speech in each sample. Subsequently, we filter the dataset to retain only those audio samples exceeding 5 minutes in duration where English comprises at least 99% of the speech content. The resulting filtered dataset has 7 million hours of speech. 
+
+> 3We focus exclusively on pretraining, where foundational representations emerge. While post-training is highly effective for steering and refining behavior, there is no evidence it can instill basic linguistic coherence if the base model lacks it.
+
+3Linear  MMDiT 
+
+Block(xL)  Linear 
+
+> timestep
+
++ +RoPE 
+
+ℝT×80 ↦ ℝT/k×80 k
+
+Linear 
+
+ℝT′×80  ctx Figure 2 Continuous diffusion SLM architecture. 
+
+3.2 Speech Representation 
+
+We construct our diffusion SLMs using log-mel filterbanks, a choice motivated by their distinct advantages over data-driven approaches [56]. Unlike neural-based representations, which often introduce compression artifacts and limit generalization, log-mel filterbanks provide a physics-based, interpretable representation that preserves both semantic and acoustic details with minimal information loss. Additionally, this representation is model-agnostic, decoupling the generation process from specific encoder-decoder architectures and allowing for waveform reconstruction via any compatible vocoder. Finally, log-mel filterbanks offer proven reliability and domain agnostic performance across diverse acoustic environments [57]. We resample all SpeechCrawl audio to 24kHz and extract 80-dimensional log-mel filterbanks (50ms window, 12.5ms hop), resulting in an 80 Hz frame rate. To contextualize this density, consider standard heuristics: text-based LLMs typically average four tokens per three words, while conversational speech averages about three words per second. Consequently, one second of speech corresponds to four text tokens versus 80 spectral frames. This represents a 20 ×
+
+increase in sequence length (or token number) for equivalent semantic content. 
+
+3.3 Continuous Diffusion (CD) Model 
+
+Continuous diffusion models [23; 24; 25] define a generative process by learning to reverse a fixed forward noising process. Given a data sample 𝑥 0 ∼ 𝑝 data , the forward process produces a sequence of increasingly noisy latents {𝑥 𝑡 }𝑇 𝑡 =0
+
+according to 
+
+𝑞 (𝑥 𝑡 |𝑥 0) = N ( 𝑥 𝑡 ; √ ¯𝛼 𝑡 𝑥 0, (1 − ¯𝛼 𝑡 )I), (3.1) where ¯𝛼 𝑡 = Î𝑡 𝑠 =1 𝛼 𝑠 defines the cumulative noise schedule and 𝛼 𝑡 = 1 − 𝛽 𝑡 with 𝛽 𝑡 controlling the noise added at each step. As 𝑡 → 𝑇 , the distribution 𝑞 (𝑥 𝑇 ) approaches an isotropic Gaussian prior N ( 0, I). The reverse process learns to denoise by parameterizing a neural network 𝜖 𝜃 (𝑥 𝑡 , 𝑡 ) to predict the noise 𝜖 added to form 𝑥 𝑡 . Following [58; 59], we instead parameterize a neural network 𝑣 𝜃 (𝑥 𝑡 , 𝑡 ) to predict the velocity 𝑣 𝑡 = √ ¯𝛼 𝑡 𝜖 − √1 − ¯𝛼 𝑡 𝑥 0, which interpolates between predicting noise and signal. We minimize a min-SNR [60] weighted denoising loss 
+
+L = E𝑥 0,𝜖,𝑡 
+
+min (SNR (𝑡 ),𝜓 ) · ∥ 𝑣 𝜃 (𝑥 𝑡 , 𝑡 ) − 𝑣 𝑡 ∥2 , (3.2) where SNR (𝑡 ) = ¯𝛼 𝑡 /( 1 − ¯𝛼 𝑡 ) is the signal-to-noise ratio at timestep 𝑡 and 𝜓 is a truncation constant. This reweighting addresses the imbalanced loss contributions across timesteps, improving training efficiency [60]. We adopt the multimodal diffusion transformer (MM-DiT) architecture [27]. MM-DiT extends the standard diffu-sion transformers (DiT) [39] framework, generalizing it from class-conditional image generation to support variable-length text conditioning. For our CD SLM, we adapt MM-DiT by replacing the original text and image streams with two streams of log-mel filterbanks: one representing the audio context and the other representing the target continuation to be generated. Given an original mono audio waveform, 𝑥 ∈ R𝑆 ×1, we convert the signal to 80 log-mel filterbanks, 𝑚 ∈ R𝑆 ′ ×80 .We chunk 𝑚 into two segments: the context 𝑚 ctx ∈ R𝑇 ′ ×80 and the signal we want to generate (the continuation), 
+
+𝑚 gen ∈ R𝑇 ×80 . Our model, highlighted in Figure 2, then proceeds to add Gaussian noise to 𝑚 gen and project both signals to 𝑑 emb , the model embedding dimension, before relaying the signals to the underlying MM-DiT model. MM-DiT ensures that both streams (context and continuation) have independent pathways for all components such as AdaLN-zero [39] normalization layers, MLPs, projections, etc. in the transformer. The only interaction between the context and continuation streams takes place inside attention, where 𝑄 , 𝐾 , and 𝑉 for each stream are concatenated and passed into a full bidirectional self-attention layer. This process is repeated for 𝐿 layers and the final data stream 4from continuation plus noise stream is extracted and passed into a diffusion loss. In Section 4, we use 10s for 𝑚 ctx 
+
+and 30s for 𝑚 gen , and scale the model size by keeping 𝑑 emb /𝐿 = 128 [47]. 
+
+Classifier-Free Guidance (CFG) [42] strengthens conditioning without a separate classifier. Standard CFG ran-domly drops the conditioning signal during training to jointly learn conditional and unconditional models. We found that this explicit dropping is unnecessary, and avoiding unconditional training steps saves substantial FLOPs, dedi-cating the full computational budget to the challenging conditional distribution [61]. At inference, we encode a signal of zeros to represent audio silence. This naturally serves as the unconditional signal 
+
+𝑣 𝜃 (𝑥 𝑡 , 𝑡, ∅) . This approach aligns with projective composition [62], where evaluating score combinations against an empty background effectively isolates conditional features. Our zeroed speech signal provides this exact empty background, allowing the guidance equation to cleanly amplify the conditional score delta. The guided prediction is 
+
+˜𝑣 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 ) = 𝑣 𝜃 (𝑥 𝑡 , 𝑡, ∅) + 𝑤 · ( 𝑣 𝜃 (𝑥 𝑡 , 𝑡, 𝑐 ) − 𝑣 𝜃 (𝑥 𝑡 , 𝑡, ∅)) , (3.3) where 𝑤 > 1 amplifies the conditioning signal. Since unguided generation ( 𝑤 = 1) produced poor samples, we explore weak (𝑤 = 2) and strong (𝑤 = 4) CFG scales. 
+
+3.4 Languageness Metric: Phoneme Jensen-Shannon Divergence (pJSD) 
+
+Prior work on SLMs [5; 6; 7; 63; 10] assesses linguistic capabilities by computing the sWUGGY [6] (lexical), sBLIMP [6] (syntactic), and sStoryCloze [19] (semantic) metrics. Fundamentally, these metrics evaluate whether the model as-signs a higher probability to a linguistically correct sequence of discrete speech tokens compared to an incorrect counterpart (e.g., comparing the probability of a grammatically correct sentence against the same sentence contain-ing a grammatical error). These evaluations rely on carefully curated datasets of paired words or sentences. Since diffusion models lack easy access to the probability density of a data sample, we instead propose to measure the difference between empirical distributions of phoneme 𝑛 −grams of real data and generated data. In order to get generated data, we first sample log-mel filterbanks from the diffusion model and then synthesize raw speech by passing these log-mel filterbanks through a vocoder. 4 Then, given a waveform 𝑥 (real or generated), we extract a phoneme token sequence using a universal phoneme recognizer [65; 66]. Let this sequence be denoted as 𝜋 (𝑥 ) =
+
+(𝑝 1, 𝑝 2, . . . , 𝑝 𝐿 ). For an integer 𝑛 ≥ 1, define the 𝑖 -th contiguous phoneme 𝑛 -gram as 
+
+𝑔 (𝑛 ) 
+
+> 𝑖
+
+(𝑥 ) := (𝑝 𝑖 , 𝑝 𝑖 +1, . . . , 𝑝 𝑖 +𝑛 −1), 𝑖 = 1, . . . , 𝐿 − 𝑛 + 1. (3.4) Let 𝐶 (𝑛 )S (𝑔 ) denote the total number of occurrences of 𝑛 -gram 𝑔 aggregated over a corpus S. Let Ω(𝑛 ) be the union support of 𝑛 -grams observed in the generated set G or real data set R. We then compute empirical distribution of the n-grams 𝑔 ∈ Ω(𝑛 ) as 
+
+𝑝 (𝑛 )S (𝑔 ) := 𝐶 (𝑛 )S (𝑔 )
+
+𝑍 (𝑛 )S
+
+, 𝑍 (𝑛 )S :=∑︁ 
+
+> 𝑔 ∈Ω(𝑛 )
+
+𝐶 (𝑛 )S (𝑔 ). (3.5) Let 𝑚 (𝑛 ) := 12 (𝑝 (𝑛 )G + 𝑝 (𝑛 )R ). We report the phoneme Jensen-Shannon divergence (pJSD) [67], defined as pJSD 𝑛 (G , R) := 12 KLD 
+
+
+
+𝑝 (𝑛 )G ∥ 𝑚 (𝑛 ) 
+
++ 12 KLD 
+
+
+
+𝑝 (𝑛 )R ∥ 𝑚 (𝑛 ) 
+
+.
+
+(3.6) Lower values indicate closer agreement between empirical distributions of phoneme 𝑛 -grams. 5
+
+An advanced approach to capture the “languageness” learned in a model would be to measure the perplexity of the generated language by passing the audios synthesized by that model through an automatic speech recognition (ASR) system and a strong language model (LM). However, given that current SLMs perform at the level of a three- to   
+
+> 4For simplicity we use of-the-shelf HifiGAN [64] vocoder https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/hifigan. v1.yaml .
+> 5pJSD evaluates how closely the empirical distributions of phoneme 𝑛 −grams match between real and generated data, though its accuracy is bounded by the finite size of the sampled data. Conversely, sWUGGY, sBLIMP, and sStoryCloze are not distributional metrics (nor are they a subset of pJSD); they are discriminative tasks limited strictly to pairwise comparisons of carefully curated correct and incorrect sequences.
+
+5four-year-old child, transcribing such language is challenging for ASR models, yielding a metric with high variance. As SLMs progress and learn to generate long-form, coherent language, this cascaded evaluation method—which is standard in other speech domains—should be adopted in the future instead of pJSD. 
+
+3.5 Automatic Speech Perceptual Quality Metrics 
+
+Most prior work on SLMs [5; 6; 7; 63; 10] focuses only on measuring linguistic capabilities, neglecting non-linguistic or paralinguistic dimensions. One of the contributions of our work is to assess generated speech not only for linguistic capabilities but also for perceptual quality. We analyze automatic mean opinion scores (MOS) and Meta Audiobox Aesthetics [68]. DNSMOS P.808 [69] is a non-intrusive neural MOS predictor. The P.808 variant is designed to match ratings collected under an ITU-T P.808-style crowdsourcing protocol [70]. DNSMOS overall (P.835) [71] predicts perceptual quality dimensions aligned with ITU-T P.835 [71; 72]. NISQA MOS [73] is a non-intrusive speech quality assessment model trained to predict MOS and related dimensions. Meta AudioBox Aesthetics provide learned no-reference predictors 𝑓 𝑘 (𝑥 ) for subjective axes 𝑘 such as content enjoyment, content understanding, production quality, and production complexity. For all predictors we report the mean score. We exclude other non-linguistic or paralinguistic evaluations, as we posit these attributes are better evaluated after the post-training stage rather than at the pretraining stage, as they may be task-dependent. 
+
+## 4 Scaling Laws for Continuous Diffusion SLMs 
+
+Neural scaling laws characterize predictable performance improvements with respect to model size 𝑁 , dataset size 𝐷 ,and compute 𝐶 [45]. For a fixed compute budget 𝐶 , there exists an optimal allocation (𝑁 ★, 𝐷 ★) that minimizes loss [46]. Following [45; 74], we formalize this using the parametric scaling surface 
+
+𝐿 (𝑁 , 𝐷 ) = 𝐸 +
+
+ 𝐴 𝑁 𝛼 + 𝐵 𝐷 𝛽 
+
+𝛾 
+
+, (4.1) where 𝐸 represents the irreducible entropy of the data, and the subsequent terms model approximation and estimation errors. While many empirical studies simplify this by setting 𝛾 = 1 [46; 75; 76], we retain the outer 𝛾 exponent for our CD SLMs as it significantly improves empirical stability [47]. To identify compute-optimal configurations, we employ the IsoFLOP methodology [45; 46], sweeping (𝑁 , 𝐷 ) pairs under the constraint 𝐶 ≈ 6𝑁 𝐷 . Valid scaling dictates what we term expected isoFLOP behavior : curves must exhibit a clear optimum ( ∪-shaped for loss, ∩-shaped for quality metrics) alongside monotonic improvement as total compute increases. Translating these loss-based scaling laws to downstream task metrics poses a distinct challenge. In our initial trials, direct-fitting approaches [77; 78] that bypass the loss entirely yielded poor mean relative error (MRE). Conversely, standard two-stage pipelines (fitting the loss, then mapping to the metric 6) suffer from error accumulation [79; 80], leading to poor MRE. To resolve this, we introduce a fused two-stage approach , jointly optimizing the parameters of both the scaling law and the downstream metric mapping, as detailed in Section 4.3. We analyze scaling behavior across ten compute budgets 
+
+𝐶 ∈ { 10 18 , 3 · 10 18 , 6 · 10 18 , 10 19 , 3 · 10 19 , 6 · 10 19 , 10 20 , 3 · 10 20 , 6 · 10 20 , 10 21 }, and model sizes ranging from ∼0.6M ( 1
+
+layer) to ∼11 .5B ( 27 layers) parameters. Throughout the paper we report mean and standard deviation 𝜎 for losses and evaluation metrics from Sections 3.4 and 3.5 across at least three training seeds. All our model-training runs utilize scaled values of relevant hyperparameters as guided by muP [11] and completeP [12] methods. For this, we first perform hyperparameter tuning on a moderately sized base model of ∼ 36 M (4 layers) parameters, which is trained sufficiently for approximately 20k steps. We tune learning rate in {1e −4, 3e −4, 4e −4, 1e −3, 3e −3, 1e −2} and weight decay in {0.001 , 0.003 , 0.007 , 0.01 , 0.03 , 0.07 , 0.1, 0.2} as these two are found to be the crucial hyperparameters. 7
+
+The best combination of learning rate 0.001 and weight decay 0.03 for the base model is used along with muP and completeP scaling to set hyperparameters across all our runs. 
+
+4.1 IsoFLOP Analysis 
+
+We analyze isoFLOP curves for validation loss and all evaluation metrics by plotting a curve of a particular metric versus the dataset size ( 𝐷 ) for each compute level. The key takeaways are:   
+
+> 6In the infinite data regime, training loss ≈validation loss.
+> 7The number of inference steps and the noise scheduler type is fixed due to compute limitations.
+
+610 7 10 8 10 9 10 10         
+
+> Model Parameters ( N)
+> 6.2 × 10 3
+> 6.4 × 10 3
+> 6.6 × 10 3
+> 6.8 × 10 3
+> 7 × 10 3
+> 7.2 × 10 3
+> 7.4 × 10 3
+> 7.6 × 10 3
+> Validation loss
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(a) Validation loss. 10 7 10 8 10 9 10 10       
+
+> Model Parameters ( N)
+> 10 1
+> 6 × 10 2
+> 2 × 10 1
+> 3 × 10 1
+> 4 × 10 1
+> 1 gram pJSD
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(b) 1−gram pJSD. 10 7 10 8 10 9 10 10     
+
+> Model Parameters ( N)
+> 7 × 10 1
+> 8 × 10 1
+> 9 × 10 1
+> 5 gram pJSD
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(c) 5-gram pJSD. 10 7 10 8 10 9 10 10 
+
+> Model Parameters ( N)
+> 3 × 10 0
+> 4 × 10 0
+> 6 × 10 0
+> Content understanding
+> Baseline: 6.266 ± 0.752
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(d) Content Understanding. 10 7 10 8 10 9 10 10  
+
+> Model Parameters ( N)
+> 10 0
+> 2 × 10 0
+> 3 × 10 0
+> Production complexity
+> Baseline: 2.127 ± 1.189
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(e) Production Complexity. 10 7 10 8 10 9 10 10  
+
+> Model Parameters ( N)
+> 3 × 10 0
+> 4 × 10 0
+> P808-MOS
+> Baseline: 3.692 ± 0.451
+> 10 19
+> 10 20
+> FLOPs ( C)
+
+(f) P808-MOS. 
+
+Figure 3 IsoFLOP curves at weak CFG level. (a-c) Validation loss, 1-gram pJSD, and 5-gram pJSD (lower-is-better) exhibit expected isoFLOP scaling, a trend consistent across all 𝑛 -grams and CFG levels. (d) The content understanding (CU) component of Meta Audiobox Aesthetics (higher-is-better) also scales predictably, alongside content enjoyment. (e-f) In contrast, production quality and production complexity components of Meta Audiobox Aesthetics, alongside all automatic MOS do not show expected scaling. Instead, they quickly saturate within the ±𝜎 range of the real-data baseline (indicated by the black line and gray fill). 
+
+1. Validation loss exhibits the expected isoFLOP behavior ; see Figure 3(a). This result complements similar findings of prior work on diffusion transformers [81], discrete diffusion models [52], and AR SLMs [8]. 2. pJSD for 𝑛 ∈ { 1, . . . , 5} shows the expected isoFLOP behavior at both weak and strong CFG levels. For brevity, we only show the isoFLOPs for 1-gram and 5-gram pJSD at weak CFG level in Figure 3(b, c). Similar behavior was shown for sBLIMP and sStoryCloze metrics for AR SLMs in [8]. 3. None of the MOS metrics show expected isoFLOP behavior ; see P808-MOS at weak CFG in Figure 3(f). Only two of the four Meta Audiobox Aesthetics components, content enjoyment (CE) and content understanding (CU), show expected isoFLOP behavior, whereas production complexity (PC) and production quality (PQ) do not ; see Figure 3(d, e). The perceptual quality metrics that do not exhibit expected isoFLOP behavior saturate quickly to within the standard deviation of real-data baselines (Figure 3(e, f)), suggesting that models efficiently learn to quickly produce reasonable audio quality output with minimal compute. Given expected isoFLOP behavior for validation loss, pJSD, CE and CU components of Meta Audiobox Aesthetics, we can expect that they all scale with compute and there is a predictive scaling law fit for all of them. 
+
+4.2 Scaling Law for Validation Loss 
+
+We start with fitting a scaling law to the validation loss. For each (𝑁 , 𝐷 ) setting, the average validation loss of all the seeds is used as the representative validation loss. To find the optimal parameters 𝐸, 𝐴, 𝐵, 𝛼, 𝛽, 𝛾 of the scaling law expression of Equation (4.1), we use Huber loss as the learning objective. For optimization, we use the basin-hopping algorithm [82; 83] with the L-BFGS-B method [84] and 2k iterations. The key takeaways are: 1. Including the overall power 𝛾 during optimization is necessary to achieve a scaling law fit with under 5% MRE. 
+
+The best scaling law fit we found, shown in Figure 1(a), yields the coefficients 𝐸 = 0.0055 , 𝐴 = 0.0638 , 𝐵 =
+
+29 .7667 , 𝛼 = 0.3995 , 𝛽 = 0.5644 , 𝛾 = 0.7051 .2. Using these coefficients, we compute several quantitative details of the isoFLOPs: the optimal model size 𝑁 ∗ (𝐶 )
+
+and the corresponding optimal dataset size 𝐷 ∗ (𝐶 ) needed for any compute budget 𝐶 . As shown in Figure 4, the optimal tokens-per-parameter ratio 𝑟 ∗ (𝐶 ) = 𝐷 ∗/𝑁 ∗ decreases with compute budget 𝐶 . This behavior makes CD 710 16 10 17 10 18 10 19 10 20 10 21 10 22 10 23             
+
+> FLOPs ( C)
+> 10 2
+> 10 3
+> r
+> r*= 400
+> C= 5.64 e+ 19
+> N= 1.53 e+ 08
+> D= 6.13 e+ 10
+> r*vs CFigure 4
+
+Dependence between optimal tokens-per-parameter ratio 𝑟 ∗ = 𝐷 ∗/𝑁 ∗ and compute budget 𝐶 . When 𝐶 > 𝐶 ‡ = 5.64 · 10 19 ,we observe 𝑟 ∗ < 400 .
+
+SLMs an increasingly efficient option at higher compute levels. This contrasts with AR SLMs using 25Hz SSL tokenization, where 𝑟 ∗ (𝐶 ) was shown to increase with compute [8]. 8 We note that for any optimal tokens-per-parameter ratio 𝑟 ∗, there is an equivalent text-tokens-per-parameter ratio 𝑟 ∗ 
+
+> text
+
+which is approximately 𝑟 ∗/20 
+
+based on our estimations in Section 3.2. Given 𝑟 ∗ = 245 at 𝐶 = 10 21 , the equivalent text-tokens-per-parameter ratio is 𝑟 ∗ 
+
+> text
+
+≈ 12 .25 . This is lower than the compute-optimal ratio for text AR LMs, which is reported to be around 20 [46] (occurring at 𝑟 ∗ = 400 in our setup). This indicates that by a compute budget of 10 21 FLOPs, CD SLMs utilize compute more efficiently than both text AR and AR SLMs. 
+
+3. The isoFLOPs tend to get flatter as the compute budget increases , see Figure 1(a). We quantify this behavior in two ways. Firstly, we compute the curvature of the isoFLOP at its optimum, denoted by 𝜅 , using the scaling law fit. Secondly, we consider for each compute budget 𝐶 the loss value of 𝐿 ∗ + 𝜖 , where 𝐿 ∗ represents the optimal loss obtained at the compute budget 𝐶 and 𝜖 represents the “tolerated precision” in loss. The isoFLOP shape dictates that there will be a range of model sizes, denoted by Δ𝑁 , and a range of dataset sizes, denoted by Δ𝐷 , such that for any pair (𝑁 ′, 𝐷 ′) of model size and dataset size in that range (while keeping compute budget fixed to 𝐶 ) the validation loss will be in range 𝐿 ′ ∈ [ 𝐿 ∗, 𝐿 ∗ + 𝜖 ], which we consider to be equivalent from the point of picking the compute optimal 𝑁 and 𝐷 . We set 𝜖 = 1e −3 for the sake of illustration 9. As isoFLOPs get flatter, the Δ𝑁 
+
+and Δ𝐷 get larger. Figure 1(b) summarizes that as compute budget increases, isoFLOP curvature at the optimum point decreases over multiple order of magnitudes . Consequently, as compute budget increases, the range of model sizes and dataset sizes, where validation loss stays optimal within the predefined tolerant precision 𝜖 , increases by approximately two orders of magnitude . This behavior converts to efficient recipe in practice: at higher computes, we either can use significantly less data or significantly smaller model to achieve loss close enough to the optimum loss. 
+
+4.3 Scaling Laws for Evaluation Metrics 
+
+We fit scaling laws for downstream metrics that demonstrate expected isoFLOP behavior using a fused two-stage approach. By plotting the evaluation metrics against validation loss, we realize that the meaningful metrics must saturate in the extremes, i.e. approaching random performance for poorly trained models and optimal values for well-trained ones. Therefore, a sigmoid-like functional form provides a natural mapping from loss to metric. Confirming our hypothesis, we observe that different metrics exhibit behavior consistent with a sigmoid-like mapping from loss, suggesting that a generalized sigmoid may capture the overall relationship 
+
+𝑀 = sigmoid (𝐿 ) = ℓ + ℎ − ℓ
+
+1 + exp (− 𝑘 · ( 𝐿 − 𝐿 0)) , (4.2) where ℓ and ℎ are the lower and higher metric limits, 𝐿 0 the sigmoid midpoint, and 𝑘 the sharpness. Substituting Equa-         
+
+> 8For lower frame rate tokenization, 𝑟 ∗(𝐶 )in AR SLMs decreased with compute, behaving similarly to our CD SLMs.
+> 9Note that this choice of 𝜖 =1e −3also mimics the precision to which one usually tracks the losses, which helps in getting a better idea of the isoFLOP curvature.
+
+810 10 10 11 10 12  
+
+> Dataset Size ( D)
+> 10 1
+> 1 gram pJSD ( M)
+
+M = 0.1307 + 0.7935 ( 0.1307) 1 + exp ( 68.1680 (0.0108 + (3.9848     
+
+> N0.3640 +20378.3789
+> D0.6449 )0.9146 0.0356 ))
+> Train MRE: 4.22%
+> Test MRE: 8.21%
+> 10 18
+> 10 19
+> 10 20
+> 10 21
+> FLOPs ( C)
+
+(a) 10 10 10 11 10 12    
+
+> Dataset Size ( D)
+> 10 0
+> 7 × 10 1
+> 8 × 10 1
+> 9 × 10 1
+> 5 gram pJSD ( M)
+
+M = 0.0007 + 1.1254 ( 0.0007) 1 + exp ( 26.8503 (0.0041 + (0.2600      
+
+> N0.3729 +131.5721
+> D0.5499 )0.3387 0.0459 ))
+> Train MRE: 0.71%
+> Test MRE: 1.04%
+> 10 18
+> 10 19
+> 10 20
+> 10 21
+> FLOPs ( C)
+
+(b) 10 10 10 11 10 12 
+
+> Dataset Size ( D)
+> 4 × 10 0
+> 5 × 10 0
+> 6 × 10 0
+> 7 × 10 0
+> Content Understanding ( M)
+
+M = 3.3781 + 8.3059 3.3781 1 + exp (34.7788 (0.0304 + (9.0327     
+
+> N0.2993 +25350.1426
+> D0.5719 )1.3624 0.0196 ))
+> Train MRE: 1.15%
+> Test MRE: 0.47%
+> Baseline: 6.266 ± 0.752
+> 10 18
+> 10 19
+> 10 20
+> 10 21
+> FLOPs ( C)
+
+(c) 10 18 10 20 10 22 10 24 10 26 10 28 10 30 10 32 
+
+FLOPs ( C)
+
+> 3.5
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> 6.0
+> 6.5
+> 7.0
+> Content Understanding ( M * )
+
+M * vs. C Extrapolation and Comparison with Baseline 
+
+Baseline: 6.266 ± 0.752 (d) 
+
+Figure 5 (a, b) Fused two-stage scaling law fits for 1-gram and 5-gram pJSD metrics. Higher 𝑛 -grams consistently yield better fits with lower mean relative error (MRE). (c) Analogous scaling law fit for the content understanding component of the Meta Audiobox Aesthetics metric. (d) Extrapolated optimal content understanding 𝑀 ∗ versus compute budget 𝐶 ∗ at weak CFG level. Assuming the functional form holds, models may not reach real data quality (within the ±𝜎 region) strictly through compute scaling. This saturation trend remains consistent across all other admissible Meta Audiobox Aesthetics components. 
+
+tion (4.1) for 𝐿 results in the following full downstream scaling law 
+
+𝑀 = ℓ + ℎ − ℓ
+
+1 + exp 
+
+
+
+−𝑘 ·
+
+
+
+𝐸 +
+
+ 𝐴 𝑁 𝛼 + 𝐵 𝐷 𝛽 
+
+𝛾 
+
+− 𝐿 0
+
+ . (4.3) All parameters ( ℓ, ℎ, 𝐿 0, 𝑘, 𝐸, 𝐴, 𝐵, 𝛼, 𝛽, 𝛾 ) are optimized jointly. The key takeaways are following: 1. For 𝑛 -gram pJSD, scaling law fits improve with increasing 𝑛 : the 5-gram fit achieves ∼1% test MRE versus ∼4.5% 
+
+for 1-gram, see Figure 5(a,b). This is intuitive, as higher-order 𝑛 -grams capture more structured phonotactic patterns that correlate more tightly with the training loss. Moreover, we observe that the base scaling law coefficients obtained from these downstream fits do not exactly match those of the validation loss fit, indicating that either the sigmoid mapping or the joint optimization introduces bias. Improving the functional form, the optimization strategy, or exploring direct fitting approaches remain promising directions. 2. Content enjoyment (CE) and content understanding (CU) components of Meta Audiobox Aesthetics also exhibit scaling laws with low MRE fits. Figure 5(c) shows the representative fit for CU at weak CFG level. 3. Since Meta Audiobox Aesthetics components have real-data baselines including mean and standard deviation of metric values on real speech, we can extrapolate the optimal metric value as a function of compute and 9assess whether models can approach real-data quality, see Figure 5(d). We find that optimal values saturate and do not reach the ±𝜎 baseline region , suggesting that certain features required to match real-data quality may not be learnable by our CD SLMs regardless of compute budget (we may also loose some model quality due to reconstruction error of the vocoder). This conclusion raises two caveats: (i) it assumes the functional form is correct and the optimization is suf-ficient – experimenting at wider compute ranges or with alternative functional forms may result in different conclusions; (ii) if it does hold, it implies that CD SLMs have inherent representational limitations, potentially necessitating stronger inductive biases, richer data representations, or text-based conditioning to bridge the gap. 
+
+## 5 Continuous Diffusion SLM Ablations  
+
+> Figure 6 Cross-ablation comparison showing metric distributions across all studies. Noise schedule choice exhibits the largest impact on perceptual quality, while the duration exhibits the largest impact on languageness.
+
+To understand the sensitivity of our CD SLM to different design choices, we conduct a systematic ablation study across four axes: 
+
+• Training duration measures the cumulative hours of audio the model is trained on. It spans from 0.25M to 1.5M hours in increments of 0.25M hours. 
+
+• Temporal patch size 𝑘 (analogous to spatial patching in vision transformers) folds the temporal dimension by a factor of 𝑘 while proportionally expanding the channel dimension. This reduces sequence length and computational cost but potentially sacrifices fine-grained temporal resolution. Patch sizes span from 1 to 6 in increments of 1. 
+
+• Noise schedule determines how the signal-to-noise ratio (SNR) changes over diffusion timesteps, and thus which noise levels dominate the learning problem and the denoising trajectory at sampling time. We evaluate three schedules (linear, cosine, exponential), each with and without zero terminal SNR (enforcing complete signal destruction at 𝑡 = 𝑇 ) [85]. 
+
+• Number of diffusion timesteps 𝑇 determines the granularity of the noise level discretization during training. Finer discretization (larger 𝑇 ) provides more precise noise level targets but increases the complexity of the learning problem. We train multiple models with 𝑇 ∈ { 100 , 500 , 1000 , 2000 , 4000 } and evaluate them using 100 
+
+steps at generation time. Each ablation isolates a single variable while holding others fixed at default values. To assess the interaction with inference-time guidance, we report results for both weak and strong CFG scales. For all ablations, we train a model 10 with 𝑑 emb = 1024 and 8 layers for 512,000 hrs using 100 inference NFE steps. We tune the base model hyperparameters using a sweep over learning rate, weight decay, and Adam parameters 𝛽 1, 𝛽 2, and 𝜖 . Figure 6 synthesizes results across all ablation studies, plotting the distribution of each evaluation metric by ablation type. 
+
+General Takeaways Figure 6 shows that the choice of noise schedule has the largest impact on perceptual quality. This is expected, given that perceptual quality measures signal fidelity, while the noise schedule directly dictates the noise levels in the audio. Conversely, training duration exhibits the largest impact on languageness, as well as on the content enjoyment and understanding metrics of Meta Audiobox Aesthetics. The latter is consistent with the results in Section 4 on scaling laws. 
+
+Patch Size Takeaways A consistent pattern emerges: as patch size increases (reducing temporal resolution), all metrics degrade. This demonstrates that temporal resolution is critical for high-fidelity and intelligent audio gener-ation. While larger patch sizes offer computational savings, the resulting quality degradation may be unacceptable for applications requiring natural prosody and fine temporal detail. 
+
+Noise Schedule Takeaways First, the cosine schedule is consistently uncompetitive, trailing linear and exponential alternatives on perceptual quality metrics. Second, zero terminal SNR is most beneficial when combined with the linear schedule, suggesting that explicitly training for complete signal destruction improves robustness at the high-noise end of the trajectory. 
+
+## 6 Scaling Continuous Diffusion SLMs to 16B Parameters Whisper   
+
+> Encoder MMDiT
+> Block(xL) Linear
+> timestep
+
++ +RoPE Linear    
+
+> ctx Perceiver
+> {K,V}
+> Figure 7 Whisper conditioned CD SLM architecture.
+
+The scaling law established in Section 4 estimates an irreducible loss 𝐸 (Equation (4.1)), which is the asymptotic minimum as 𝑁 and 𝐷 approach infinity. Because scaling coefficients depend on architecture and data representation [45], our base MM-DiT model’s finite-context log-mel filterbanks impose a structural lower bound on performance. Recent findings demonstrate that richer, superposition-exhibiting data representations yield sharper, more robust scaling [86]. Therefore, we hypothesize that information dense conditioning can improve the scaling trajectory and lower this bound empirically. We introduce a modified architecture (Figure 7) integrating auxiliary conditioning from a frozen pretrained Whisper-large-v3 encoder [55] to provide a higher level speech context. While Whisper is trained on speech-text pairs, we use it strictly as a frozen feature extractor to assess whether richer representations improve scaling, independent of their training origin. To manage the expanded input of 300s of context generating a 60s continuation, we employ a Perceiver [87] for learned temporal downsampling to a deterministic 4096 tokens. Scaling this architecture to 16B parameters, we train on tens of millions of hours of unfiltered conversational speech from SpeechCrawl. Crucially, this model achieves a validation loss below the irreducible loss 𝐸 estimated for our base architecture, as summarized in Table 1. This confirms that the lower bound is representation and model dependent rather than a fundamental limit of the data distribution. While the model produces emotive, prosodic, and multilingual speech with improved lexical word 𝑛 -grams (see supplementary material for several examples of generated speech), long-form linguistic coherence remains elusive. These findings indicate that advancing SLMs requires a systematic exploration of novel architectures, data representations, and conditioning strategies to catalyze the emergence of linguistic structure. 
+
+11 Table 1 16B CD SLM vs. best run from the scaling law trials.                                             
+
+> C=10 21
+> CFG =2
+> C=10 21
+> CFG =416 BCFG =216 BCFG =4
+> loss 0.0061 0.0061 0.0047 0.0047 CE 4.5767 4.5545 4.7207 4.7712 CU 5.1093 5.0746 5.4809 5.2965 PQ 5.6893 5.6356 5.9278 5.7659 col 3.5597 3.5511 3.5674 3.5349 dis 3.9680 3.9571 4.1632 3.9617 loud 3.5468 3.5312 3.8542 3.4789 pJSD 0.2253 0.2096 0.1811 0.1770
+
+## 7 Conclusion 
+
+We present the first scaling law analysis for continuous diffusion spoken language models trained without text super-vision. Validation loss and our proposed pJSD metric for “languageness” both follow power-law behavior, mirroring AR SLM trends. The optimal token-to-parameter ratio decreases with compute, indicating improved data efficiency at scale. Moreover, higher computes allow near-optimal performance across a much wider variety of parameter-to-data allocations, opening up possibility for fast inference. Most perceptual quality metrics saturate near real-data baselines and lack scaling laws; for the Meta Audiobox Aesthetics components that our fused two-stage scaling law fits suggests baseline performance may remain unreachable through scaling alone. Ablations show data scale drives linguistic quality while noise schedule governs perceptual fidelity. Scaling to 16B parameters produces emo-tive, multi-speaker, multilingual speech, yet long-form coherence remains elusive, suggesting that closing the gap with text-based models requires advances in speech representations or joint text-speech modeling rather than further scaling. 
+
+## 8 Generative AI Use Disclosure 
+
+Generative AI tools were used for language editing and polishing the manuscript text. AI tools were also used to clean-up, document, and type-annotate hand-written scripts used in generation of results that are added to the paper. Scientific content, experimental design and results, analysis, implementation, or conclusions are the sole work of the authors. All authors take full responsibility for the content of the manuscript. 
+
+## 9 Acknowledgment 
+
+We thank Pierre Ablin, Zak Aldeneh, Richard He Bai, Samy Bengio, Kari Nouriy, Timea Kutasi, Barry Theobald, Ruixiang Zhang for helpful discussions; Vivek Kumar, Sanskruti Shah, Shaoen Qin for help with data. Names are in alphabetical order by last name within the group. 
+
+## References 
+
+[1] Abdelrahman Mohamed, Hung-yi Lee, Lasse Borgholt, Jakob D Havtorn, Joakim Edin, Christian Igel, Katrin Kirchhoff, Shang-Wen Li, Karen Livescu, Lars Maaløe, et al. Self-supervised speech representation learning: A review. IEEE Journal of Selected Topics in Signal Processing , 16(6):1179–1210, 2022. [2] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and Michael Auli. wav2vec 2.0: A framework for self-supervised learning of speech representations. Advances in neural information processing systems , 33:12449–12460, 2020. [3] Kwanghee Choi, Ankita Pasad, Tomohiko Nakamura, Satoru Fukayama, Karen Livescu, and Shinji Watanabe. Self-supervised speech representations are more phonetic than semantic. In Proc. Interspeech , pages 4578–4582, 2024. [4] Siddhant Arora, Kai-Wei Chang, Chung-Ming Chien, Yifan Peng, Haibin Wu, Yossi Adi, Emmanuel Dupoux, Hung yi Lee, Karen Livescu, and Shinji Watanabe. On the landscape of spoken language models: A comprehensive survey. Transactions on Machine Learning Research , 2025. ISSN 2835-8856. [5] Kushal Lakhotia, Eugene Kharitonov, Wei-Ning Hsu, Yossi Adi, Adam Polyak, Benjamin Bolte, Tu-Anh Nguyen, Jade Copet, Alexei Baevski, Abdelrahman Mohamed, et al. On generative spoken language modeling from raw audio. Transactions of the Association for Computational Linguistics , 9:1336–1354, 2021. 
+
+12 [6] Ewan Dunbar, Mathieu Bernard, Nicolas Hamilakis, Tu Anh Nguyen, Maureen de Seyssel, Patricia Rozé, Morgane Rivière, Eu-gene Kharitonov, and Emmanuel Dupoux. The zero resource speech challenge 2021: Spoken language modelling. Interspeech 2021 , 2021. [7] Eugene Kharitonov, Ann Lee, Adam Polyak, Yossi Adi, Jade Copet, Kushal Lakhotia, Tu-Anh Nguyen, Morgane Riviere, Abdelrahman Mohamed, Emmanuel Dupoux, et al. Text-free prosody-aware generative spoken language modeling. In 
+
+Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 8666– 8681, 2022. [8] Santiago Cuervo and Ricard Marxer. Scaling properties of speech language models. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 351–361, 2024. [9] Gallil Maimon, Michael Hassid, Amit Roth, and Yossi Adi. Scaling analysis of interleaved speech-text language models. In 
+
+Second Conference on Language Modeling , 2025. [10] Maxime Poli, Mahi Luthra, Youssef Benchekroun, Yosuke Higuchi, Martin Gleize, Jiayi Shen, Robin Algayres, Yu-An Chung, Mido Assran, Juan Pino, and Emmanuel Dupoux. Spidr: Learning fast and stable linguistic units for spoken language models without supervision. Transactions on Machine Learning Research , 2025. ISSN 2835-8856. [11] Greg Yang and Edward J Hu. Tensor programs iv: Feature learning in infinite-width neural networks. In International Conference on Machine Learning , pages 11727–11737. PMLR, 2021. [12] Nolan Simran Dey, Bin Claire Zhang, Lorenzo Noci, Mufan Li, Blake Bordelon, Shane Bergsma, Cengiz Pehlevan, Boris Hanin, and Joel Hestness. Don’t be lazy: Completep enables compute-efficient deep transformers. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. [13] Pedro Vélez, Luisa F Polanía, Yi Yang, Chuhan Zhang, Rishabh Kabra, Anurag Arnab, and Mehdi SM Sajjadi. From image to video: An empirical study of diffusion representations. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 16948–16958, 2025. [14] Florinel-Alin Croitoru, Vlad Hondru, Radu Tudor Ionescu, and Mubarak Shah. Diffusion models in vision: A survey. IEEE transactions on pattern analysis and machine intelligence , 45(9):10850–10869, 2023. [15] Chitwan Saharia, William Chan, Saurabh Saxena, Lala Li, Jay Whang, Emily L Denton, Kamyar Ghasemipour, Raphael Gontijo Lopes, Burcu Karagol Ayan, Tim Salimans, et al. Photorealistic text-to-image diffusion models with deep language understanding. Advances in neural information processing systems , 35:36479–36494, 2022. [16] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 10684–10695, 2022. [17] Lingwei Meng, Long Zhou, Shujie Liu, Sanyuan Chen, Bing Han, Shujie Hu, Yanqing Liu, Jinyu Li, Sheng Zhao, Xixin Wu, et al. Autoregressive speech synthesis without vector quantization. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 1287–1300, 2025. [18] Simon Rouard, Manu Orsini, Axel Roebel, Neil Zeghidour, and Alexandre Défossez. Continuous audio language models. 
+
+arXiv preprint arXiv:2509.06926 , 2025. [19] Michael Hassid, Tal Remez, Tu Anh Nguyen, Itai Gat, Alexis Conneau, Felix Kreuk, Jade Copet, Alexandre Defossez, Gabriel Synnaeve, Emmanuel Dupoux, et al. Textually pretrained speech language models. Advances in Neural Information Processing Systems , 36:63483–63501, 2023. [20] Ruskin Raj Manku, Yuzhi Tang, Xingjian Shi, Mu Li, and Alex Smola. EmergentTTS-eval: Evaluating TTS models on complex prosodic, expressiveness, and linguistic challenges using model-as-a-judge. In The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track , 2025. [21] Andros Tjandra, Yi-Chiao Wu, Baishan Guo, John Hoffman, Brian Ellis, Apoorv Vyas, Bowen Shi, Sanyuan Chen, Matt Le, Nick Zacharov, et al. Meta audiobox aesthetics: Unified automatic quality assessment for speech, music, and sound. arXiv preprint arXiv:2502.05139 , 2025. [22] Pooneh Mousavi, Gallil Maimon, Adel Moumen, Darius Petermann, Jiatong Shi, Haibin Wu, Haici Yang, Anastasia Kuznetsova, Artem Ploujnikov, Ricard Marxer, Bhuvana Ramabhadran, Benjamin Elizalde, Loren Lugosch, Jinyu Li, Cem Subakan, Phil Woodland, Minje Kim, Hung yi Lee, Shinji Watanabe, Yossi Adi, and Mirco Ravanelli. Discrete audio tokens: More than a survey! Transactions on Machine Learning Research , 2025. ISSN 2835-8856. [23] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Advances in Neural Information Processing Systems , volume 33, pages 6840–6851, 2020. [24] Yang Song and Stefano Ermon. Generative modeling by estimating gradients of the data distribution. CoRR , abs/1907.05600, 2019. [25] Yang Song, Jascha Sohl-Dickstein, Diederik P. Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based gen-erative modeling through stochastic differential equations. In 9th International Conference on Learning Representations, ICLR 2021 , 2021. [26] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat GANs on image synthesis. In Advances in Neural Information Processing Systems , volume 34, 2021. [27] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, Dustin Podell, Tim Dockhorn, Zion English, and Robin Rombach. Scaling rectified flow transformers for high-resolution image synthesis. In Forty-first International Conference on Machine Learning, ICML 2024 , 2024. 
+
+13 [28] OpenAI. Video generation models as world simulators. https://openai.com/index/video-generation-models-as-world-simulators/ ,2024. [29] Xiangyu Peng, Zangwei Zheng, Chenhui Shen, Tom Young, Xinying Guo, Binluo Wang, Hang Xu, Hongxin Liu, Mingyan Jiang, Wenjun Li, et al. Open-sora 2.0: Training a commercial-level video generation model in 200 k. arXiv preprint arXiv:2503.09642 , 2025. [30] Adam Polyak, Amit Zohar, Andrew Brown, Andros Tjandra, Animesh Sinha, Ann Lee, Apoorv Vyas, Bowen Shi, Chih-Yao Ma, Ching-Yao Chuang, et al. Movie gen: A cast of media foundation models. arXiv preprint arXiv:2410.13720 , 2024. [31] Xiang Li, John Thickstun, Ishaan Gulrajani, Percy S Liang, and Tatsunori B Hashimoto. Diffusion-lm improves controllable text generation. Advances in neural information processing systems , 35:4328–4343, 2022. [32] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. CoRR , abs/2502.09992, 2025. [33] Zach Evans, CJ Carr, Josiah Taylor, Scott H. Hawley, and Jordi Pons. Fast timing-conditioned latent audio diffusion. In 
+
+Forty-first International Conference on Machine Learning, ICML 2024 , 2024. [34] Zach Evans, Julian D. Parker, CJ Carr, Zachary Zukowski, Josiah Taylor, and Jordi Pons. Long-form music generation with latent diffusion. In Proceedings of the 25th International Society for Music Information Retrieval Conference, ISMIR 2024, San Francisco, California, USA and Online, November 10-14 , pages 429–437, 2024. [35] Zhifeng Kong, Wei Ping, Jiaji Huang, Kexin Zhao, and Bryan Catanzaro. Diffwave: A versatile diffusion model for audio synthesis. In International Conference on Learning Representations , 2021. [36] Vadim Popov, Ivan Vovk, Vladimir Gogoryan, Tasnima Sadekova, and Mikhail Kudinov. Grad-tts: A diffusion probabilistic model for text-to-speech. In International conference on machine learning , pages 8599–8608. PMLR, 2021. [37] Myeonghun Jeong, Hyeongju Kim, Sung Jun Cheon, Byoung Jin Choi, and Nam Soo Kim. Diff-tts: A denoising diffusion model for text-to-speech. arXiv preprint arXiv:2104.01409 , 2021. [38] Rongjie Huang, Zhou Zhao, Huadai Liu, Jinglin Liu, Chenye Cui, and Yi Ren. Prodiff: Progressive fast diffusion model for high-quality text-to-speech. In Proceedings of the 30th ACM International Conference on Multimedia , pages 2595–2605, 2022. [39] William Peebles and Saining Xie. Scalable diffusion models with transformers. In IEEE/CVF International Conference on Computer Vision, ICCV 2023, Paris, France, October 1-6, 2023 , pages 4172–4182. IEEE, 2023. [40] Kai Shen, Zeqian Ju, Xu Tan, Yanqing Liu, Yichong Leng, Lei He, Tao Qin, Sheng Zhao, and Jiang Bian. Naturalspeech 2: Latent diffusion models are natural and zero-shot speech and singing synthesizers. arXiv preprint arXiv:2304.09116 , 2023. [41] Matthew Le, Apoorv Vyas, Bowen Shi, Brian Karrer, Leda Sari, Rashel Moritz, Mary Williamson, Vimal Manohar, Yossi Adi, Jay Mahadeokar, et al. Voicebox: Text-guided multilingual universal speech generation at scale. Advances in neural information processing systems , 36:14005–14034, 2023. [42] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. CoRR , abs/2207.12598, 2022. [43] Sefik Emre Eskimez, Xiaofei Wang, Manthan Thakker, Canrun Li, Chung-Hsien Tsai, Zhen Xiao, Hemin Yang, Zirun Zhu, Min Tang, Xu Tan, et al. E2 tts: Embarrassingly easy fully non-autoregressive zero-shot tts. In 2024 IEEE spoken language technology workshop (SLT) , pages 682–689. IEEE, 2024. [44] Jiaming Zhou, Hongjie Chen, Shiwan Zhao, Jian Kang, Jie Li, Enzhi Wang, Yujie Guo, Haoqin Sun, Hui Wang, Aobo Kong, et al. Diffa: Large language diffusion models can listen and understand. arXiv preprint arXiv:2507.18452 , 2025. [45] Jared Kaplan et al. Scaling laws for neural language models. CoRR , abs/2001.08361, 2020. [46] Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, Tom Hennigan, Eric Noland, Katie Millican, George van den Driessche, Bogdan Damoc, Aurelia Guy, Simon Osindero, Karen Simonyan, Erich Elsen, Jack W. Rae, Oriol Vinyals, and Laurent Sifre. Training compute-optimal large language models. CoRR , abs/2203.15556, 2022. [47] Dan Busbridge, Amitis Shidani, Floris Weers, Jason Ramapuram, Etai Littwin, and Russell Webb. Distillation scaling laws. In Forty-second International Conference on Machine Learning, ICML 2025 , volume 267 of Proceedings of Machine Learning Research , 2025. [48] Xiaohua Zhai, Alexander Kolesnikov, Neil Houlsby, and Lucas Beyer. Scaling vision transformers. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 12104–12113, 2022. [49] Mehdi Cherti, Romain Beaumont, Ross Wightman, Mitchell Wortsman, Gabriel Ilharco, Cade Gordon, Christoph Schuhmann, Ludwig Schmidt, and Jenia Jitsev. Reproducible scaling laws for contrastive language-image learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 2818–2829, 2023. [50] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning , pages 8748–8763. PMLR, 2021. [51] Armen Aghajanyan, Lili Yu, Alexis Conneau, Wei-Ning Hsu, Karen Hambardzumyan, Susan Zhang, Stephen Roller, Naman Goyal, Omer Levy, and Luke Zettlemoyer. Scaling laws for generative mixed-modal language models. In International Conference on Machine Learning , pages 265–279. PMLR, 2023. [52] Dimitri von Rütte, Janis Fluri, Omead Pooladzandi, Bernhard Schölkopf, Thomas Hofmann, and Antonio Orvieto. Scaling behavior of discrete diffusion language models. CoRR , abs/2512.10858, 2025. [53] Louis Bethune, Victor Turrisi, Bruno Kacper Mlodozeniec, Pau Rodriguez Lopez, Lokesh Boominathan, Nikhil Bhendawade, Amitis Shidani, Joris Pelemans, Theo X. Olausson, Devon Hjelm, Paul Dixon, Joao Monteiro, Pierre Ablin, Vishnu Banna, 
+
+14 Arno Blaas, Nick Henderson, Kari Noriy, Dan Busbridge, Josh Susskind, Marco Cuturi, Irina Belousova, Luca Zappella, Russ Webb, and Jason Ramapuram. The design space of tri-modal masked diffusion models, 2026. [54] Max Bain, Jaesung Huh, Tengda Han, and Andrew Zisserman. Whisperx: Time-accurate speech transcription of long-form audio. arXiv preprint arXiv:2303.00747 , 2023. [55] Alec Radford et al. Robust speech recognition via large-scale weak supervision. In ICML , pages 28492–28518. PMLR, 2023. [56] Richard He Bai, Tatiana Likhomanenko, Ruixiang Zhang, Zijin Gu, Zakaria Aldeneh, and Navdeep Jaitly. dmel: Speech tokenization made simple. arXiv preprint arXiv:2407.15835 , 2024. [57] Wei-Cheng Tseng and David Harwath. Probing the robustness properties of neural speech codecs. In Proc. Interspeech 2025 ,pages 5013–5017, 2025. [58] Tim Salimans and Jonathan Ho. Progressive distillation for fast sampling of diffusion models. In The Tenth International Conference on Learning Representations, ICLR , 2022. [59] Tianhong Li and Kaiming He. Back to basics: Let denoising generative models denoise. CoRR , abs/2511.13720, 2025. [60] Tiankai Hang, Shuyang Gu, Chen Li, Jianmin Bao, Dong Chen, Han Hu, Xin Geng, and Baining Guo. Efficient diffusion training via min-snr weighting strategy. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) ,2023. [61] Tero Karras, Miika Aittala, Tuomas Kynkäänniemi, Jaakko Lehtinen, Timo Aila, and Samuli Laine. Guiding a diffusion model with a bad version of itself. In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang, editors, Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 , 2024. [62] Arwen Bradley, Preetum Nakkiran, David Berthelot, James Thornton, and Joshua M. Susskind. Mechanisms of projective composition of diffusion models. In Aarti Singh, Maryam Fazel, Daniel Hsu, Simon Lacoste-Julien, Felix Berkenkamp, Tegan Maharaj, Kiri Wagstaff, and Jerry Zhu, editors, Forty-second International Conference on Machine Learning, ICML 2025 , volume 267 of Proceedings of Machine Learning Research . PMLR, 2025. [63] Zalán Borsos, Raphaël Marinier, Damien Vincent, Eugene Kharitonov, Olivier Pietquin, Matt Sharifi, Dominik Roblek, Olivier Teboul, David Grangier, Marco Tagliasacchi, and Neil Zeghidour. Audiolm: A language modeling approach to audio genera-tion. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 31:2523–2533, 2023. [64] Jungil Kong, Jaehyeon Kim, and Jaekyoung Bae. Hifi-gan: Generative adversarial networks for efficient and high fidelity speech synthesis. Advances in neural information processing systems , 33:17022–17033, 2020. [65] Xinjian Li et al. Universal phone recognition with a multilingual allophone system. In IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2020. [66] Xinjian Li. Allosaurus. GitHub repository, 2020. URL https://github.com/xinjli/allosaurus . Accessed 2026-01-27. [67] Jianhua Lin. Divergence measures based on the shannon entropy. IEEE Transactions on Information Theory , 37(1):145–151, 1991. [68] Andros Tjandra et al. Meta audiobox aesthetics. CoRR , abs/2502.05139, 2025. [69] Chandan K. A. Reddy, Vishak Gopal, and Ross Cutler. DNSMOS: A non-intrusive perceptual objective speech quality metric to evaluate noise suppressors. In IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2021. [70] Babak Naderi and Ross Cutler. An open source implementation of ITU-T recommendation P.808 with validation. CoRR ,abs/2005.08138, 2020. [71] Chandan K. A. Reddy, Vishak Gopal, and Ross Cutler. DNSMOS P.835: A non-intrusive perceptual objective speech quality metric to evaluate noise suppressors. In IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) ,2022. [72] Babak Naderi and Ross Cutler. Crowdsourcing subjective evaluation of noise suppression algorithms in speech using ITU-T P.835 with validation. CoRR , abs/2010.13200, 2020. [73] Anika Mittag, Babak Naderi, Assmaa Chehadi, and Sebastian Möller. NISQA: A deep CNN-self-attention model for multidi-mensional speech quality prediction with crowdsourced datasets. In Proc. Interspeech , 2021. [74] Mitchell A Gordon, Kevin Duh, and Jared Kaplan. Data and parameter scaling laws for neural machine translation. In ACL Rolling Review - May , 2021. [75] Niklas Muennighoff, Alexander Rush, Boaz Barak, Teven Le Scao, Nouamane Tazi, Aleksandra Piktus, Sampo Pyysalo, Thomas Wolf, and Colin A Raffel. Scaling data-constrained language models. Advances in Neural Information Processing Systems , 36:50358–50376, 2023. [76] Leshem Choshen, Yang Zhang, and Jacob Andreas. A hitchhiker’s guide to scaling law estimation. In Forty-second Interna-tional Conference on Machine Learning , 2025. [77] Berivan Isik, Natalia Ponomareva, Hussein Hazimeh, Dimitris Paparas, Sergei Vassilvitskii, and Sanmi Koyejo. Scaling laws for downstream task performance in machine translation. In The Thirteenth International Conference on Learning Represen-tations, ICLR 2025 , 2025. [78] Jakub Krajewski, Amitis Shidani, Dan Busbridge, Sam Wiseman, and Jason Ramapuram. Revisiting the scaling properties of downstream metrics in large language model training. CoRR , abs/2512.08894, 2025. [79] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Pondé de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavar-
+
+15 ian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Joshua Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code. CoRR ,abs/2107.03374, 2021. [80] Akshita Bhagia, Jiacheng Liu, Alexander Wettig, David Heineman, Oyvind Tafjord, Ananya Harsh Jha, Luca Soldaini, Noah A. Smith, Dirk Groeneveld, Pang Wei Koh, Jesse Dodge, and Hannaneh Hajishirzi. Establishing task scaling laws via compute-efficient model ladders. CoRR , abs/2412.04403, 2024. [81] Zhengyang Liang, Hao He, Ceyuan Yang, and Bo Dai. Scaling laws for diffusion transformers. CoRR , abs/2410.08184, 2024. [82] David J Wales and Jonathan PK Doye. Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms. The Journal of Physical Chemistry A , 101(28):5111–5116, 1997. [83] Zhenqin Li and Harold A Scheraga. Monte carlo-minimization approach to the multiple-minima problem in protein folding. 
+
+Proceedings of the National Academy of Sciences , 84(19):6611–6615, 1987. [84] Richard H Byrd, Peihuang Lu, Jorge Nocedal, and Ciyou Zhu. A limited memory algorithm for bound constrained optimiza-tion. SIAM Journal on scientific computing , 16(5):1190–1208, 1995. [85] Shanchuan Lin, Bingchen Liu, Jiashi Li, and Xiao Yang. Common diffusion noise schedules and sample steps are flawed. In 
+
+IEEE/CVF Winter Conference on Applications of Computer Vision, WACV 2024, Waikoloa, HI, USA, January 3-8, 2024 , pages 5392–5399. IEEE, 2024. [86] Yizhou Liu, Ziming Liu, and Jeff Gore. Superposition yields robust neural scaling. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. [87] Andrew Jaegle, Sebastian Borgeaud, Jean-Baptiste Alayrac, Carl Doersch, Catalin Ionescu, David Ding, Skanda Koppula, Daniel Zoran, Andrew Brock, Evan Shelhamer, Olivier J. Hénaff, Matthew M. Botvinick, Andrew Zisserman, Oriol Vinyals, and João Carreira. Perceiver IO: A general architecture for structured inputs & outputs. In The Tenth International Conference on Learning Representations, ICLR , 2022. 
+
+## 10 Contributions 
+
+• Implementation All code for model training is written by Jason Ramapuram. All code for model evaluation (including metrics implementation) is written by Eeshan Gunesh Dhekane in consultation with Russ Webb, Jason Ramapuram, Tatiana Likhomanenko, Navdeep Jaitly. 
+
+• Data All data are prepared by Tatiana Likhomanenko with help on data filtering and debugging from Zijin Gu. 
+
+• Model Design Model design is done by Jason Ramapuram in consultation with Navdeep Jaitly and Tatiana Likhomanenko. 
+
+• Training All models for scaling law fits are trained by Eeshan Gunesh Dhekane in consultation with Jason Ramapuram. 
+
+• Evaluation All model evaluation is executed by Eeshan Gunesh Dhekane. 
+
+• Scaling Law Scaling law analysis and fits are instrumented by Eeshan Gunesh Dhekane in consultation with Amitis Shidani, Tatiana Likhomanenko, Jason Ramapuram and Russ Webb. 
+
+• Phoneme Jensen-Shannon Divergence (pJSD) Metric pJSD is proposed during discussion between Navdeep Jaitly, Dan Busbridge, Tatiana Likhomanenko and Jason Ramapuram. 
+
+• Ablations All ablation models are designed and trained by Jason Ramapuram. 
+
+• Scaling to 16B models Scaling to 16B model including the model design is done by Jason Ramapuram. 
+
+• Classifier Guidance for ASR Investigations and code looking into classifier guidance using an ASR model as guidance were conducted by Zijin Gu, but was dropped for the final manuscript. 
+
+• RLAIF Investigations and code for RL with AI feedback were written by Bogdan Mazoure, but was dropped for final manuscript. 
+
+• Writing and Paper Preparation The manuscript was jointly written by Tatiana Likhomanenko, Jason Rama-puram, Amitis Shidani, and Eeshan Gunesh Dhekane. It was edited and reviewed by all other authors. 16 • Advising Navdeep Jaitly and Tatiana Likhomanenko advised other co-authors at every stage of the project. Navdeep Jaitly was the original project driver, while Tatiana Likhomanenko took over at later stages to help aggregate and execute results into the publication and frame the work. 17
