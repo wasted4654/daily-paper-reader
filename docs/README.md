@@ -6,41 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-28
-- 运行时间：2026-04-28 21:04:55 UTC
+- 最新运行日期：2026-04-29
+- 运行时间：2026-04-29 21:00:28 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：3
-- 速读区：3
+- 本次总论文数：1
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-- 今日共生成 6 篇推荐（精读 3 篇，速读 3 篇）
-- 精读：《Talker-T2AV: Joint Talking Audio-Video Generation with Autoregressive Diffusion Modeling》（9.0/10）, 《When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models》（8.0/10）
-- 速读：《NI Sampling: Accelerating Discrete Diffusion Sampling by Token Order Optimization》（7.0/10）, 《Factual and Edit-Sensitive Graph-to-Sequence Generation via Graph-Aware Adaptive Noising》（7.0/10）, 《DPRM: A Plug-in Doob h transform-induced Token-Ordering Module for Diffusion Language Models》（7.0/10）
-- 这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。
-- 详情：[/202604/28/README](/202604/28/README)
+今日聚焦多模态扩散潜空间，探索“会思考的像素”如何通过递归稀疏推理提升模型逻辑能力。
+该研究证明在扩散模型潜层引入递归机制可增强复杂任务表现，让生成模型不仅能“画图”更能“思考”。
+建议关注潜空间推理技术，这是让生成式 AI 从视觉呈现跨越到逻辑理解的关键前沿。
+- 详情：[/202604/29/README](/202604/29/README)
 
 ### 精读区论文标签
-1. [Talker-T2AV: Joint Talking Audio-Video Generation with Autoregressive Diffusion Modeling](/202604/28/2604.23586v1-talker-t2av-joint-talking-audio-video-generation-with-autoregressive-diffusion-modeling)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于音视频联合生成的自回归扩散框架
-2. [When to Commit? Towards Variable-Size Self-Contained Blocks for Discrete Diffusion Language Models](/202604/28/2604.23994v1-when-to-commit-towards-variable-size-self-contained-blocks-for-discrete-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：离散扩散模型的块状半自回归解码
-3. [Scaling Properties of Continuous Diffusion Spoken Language Models](/202604/28/2604.24416v1-scaling-properties-of-continuous-diffusion-spoken-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：连续扩散与离散自回归口语语言模型的对比
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [NI Sampling: Accelerating Discrete Diffusion Sampling by Token Order Optimization](/202604/28/2604.18471v2-ni-sampling-accelerating-discrete-diffusion-sampling-by-token-order-optimization)  
-   标签：评分：7.0/10、query:ardm
-   evidence：离散扩散语言模型作为自回归方法的替代方案
-2. [Factual and Edit-Sensitive Graph-to-Sequence Generation via Graph-Aware Adaptive Noising](/202604/28/2604.24104v1-factual-and-edit-sensitive-graph-to-sequence-generation-via-graph-aware-adaptive-noising)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于图到序列生成的扩散框架，作为自回归的替代方案
-3. [DPRM: A Plug-in Doob h transform-induced Token-Ordering Module for Diffusion Language Models](/202604/28/2604.24357v1-dprm-a-plug-in-doob-h-transform-induced-token-ordering-module-for-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型的令牌排序模块
+1. [The Thinking Pixel: Recursive Sparse Reasoning in Multimodal Diffusion Latents](/202604/29/2604.25299v1-the-thinking-pixel-recursive-sparse-reasoning-in-multimodal-diffusion-latents)  
+   标签：评分：6.0/10、query:ardm
+   evidence：受自回归推理启发的扩散潜空间递归细化方法
 
 
 <div class="dpr-home-promo-card">
