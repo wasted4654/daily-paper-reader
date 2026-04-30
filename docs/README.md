@@ -6,26 +6,27 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-29
-- 运行时间：2026-04-29 21:00:28 UTC
+- 最新运行日期：2026-04-30
+- 运行时间：2026-04-30 20:19:27 UTC
 - 运行状态：成功
-- 本次总论文数：1
-- 精读区：0
+- 本次总论文数：2
+- 精读区：1
 - 速读区：1
 
 ### 今日简报（AI）
-今日聚焦多模态扩散潜空间，探索“会思考的像素”如何通过递归稀疏推理提升模型逻辑能力。
-该研究证明在扩散模型潜层引入递归机制可增强复杂任务表现，让生成模型不仅能“画图”更能“思考”。
-建议关注潜空间推理技术，这是让生成式 AI 从视觉呈现跨越到逻辑理解的关键前沿。
-- 详情：[/202604/29/README](/202604/29/README)
+今日聚焦扩散模型在语言建模与分子科学领域的双重突破。
+重点推荐 9.0 分佳作，其通过块局部性（Blockwise Locality）显著提升
+- 详情：[/202604/30/README](/202604/30/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [On the Trainability of Masked Diffusion Language Models via Blockwise Locality](/202604/30/2604.24832v1-on-the-trainability-of-masked-diffusion-language-models-via-blockwise-locality)  
+   标签：评分：9.0/10、query:ardm
+   evidence：比较掩码扩散语言模型与自回归大语言模型
 
 ### 速读区论文标签
-1. [The Thinking Pixel: Recursive Sparse Reasoning in Multimodal Diffusion Latents](/202604/29/2604.25299v1-the-thinking-pixel-recursive-sparse-reasoning-in-multimodal-diffusion-latents)  
+1. [BiMol-Diff: A Unified Diffusion Framework for Molecular Generation and Captioning](/202604/30/2604.24089v1-bimol-diff-a-unified-diffusion-framework-for-molecular-generation-and-captioning)  
    标签：评分：6.0/10、query:ardm
-   evidence：受自回归推理启发的扩散潜空间递归细化方法
+   evidence：作为分子生成自回归模型替代方案的扩散框架
 
 
 <div class="dpr-home-promo-card">

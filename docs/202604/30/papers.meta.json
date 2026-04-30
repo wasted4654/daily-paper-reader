@@ -1,0 +1,37 @@
+{
+  "label": "2026-04-30",
+  "date": "2026-04-30",
+  "generated_at": "2026-04-30T20:19:38",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202604/30/2604.24832v1-on-the-trainability-of-masked-diffusion-language-models-via-blockwise-locality",
+      "section": "deep",
+      "title_en": "On the Trainability of Masked Diffusion Language Models via Blockwise Locality",
+      "authors": "Yuxiang Wang, Yu Xiang, Baojian Zhou, Qifang Zhao, Keyue Jiang, Yanghua Xiao, Xiaoxiao Xu",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.24832v1",
+      "score": "9.0",
+      "evidence": "比较掩码扩散语言模型与自回归大语言模型",
+      "tldr": "掩码扩散语言模型（MDM）虽具潜力但训练稳定性较差。本文通过线性回归、路径寻找和数独任务对比了分块MDM与自回归模型，发现标准随机掩码MDM在有序生成任务中表现不佳。为此，研究者提出了Jigsaw和Scatter两种具备局部感知能力的模型，通过在块内引入自回归偏置并保留块级迭代优化，显著提升了训练稳定性和生成性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion language models (MDMs) have recently emerged as a promising alternative to standard autoregressive large language models (AR-LLMs), yet their optimization can be substantially less stable. We study blockwise MDMs and compare them with AR-LLMs on three controlled tasks that stress different aspects of structured generation: in-context linear regression, graph path-finding, and Sudoku solving. We find that standard random-masking MDMs fail to reliably learn linear regression, exhibit high variance training dynamics on graph path-finding, while outperforming AR-LLMs on Sudoku. To mitigate these instabilities, we propose two locality aware blockwise models, namely Jigsaw and Scatter, that inject left-to-right inductive bias by enforcing autoregressive locality within blocks while preserving iterative refinement at the block level. Empirically, Jigsaw matches AR-LLM stability on linear regression and remains strong on Sudoku, while Scatter retains diffusion's planning advantage on path-finding. Our results indicate that standard random-masking MDMs, even with blockwise variants, may be a suboptimal instantiation of diffusion LMs for ordered generation, motivating models beyond random masking.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202604/30/2604.24089v1-bimol-diff-a-unified-diffusion-framework-for-molecular-generation-and-captioning",
+      "section": "quick",
+      "title_en": "BiMol-Diff: A Unified Diffusion Framework for Molecular Generation and Captioning",
+      "authors": "Aditya Hemant Shahane, Anuj Kumar Sirohi, Devansh Arora, Nitin Kumar, Prathosh A P, Sandeep Kumar",
+      "date": "2026-04-27",
+      "pdf": "https://arxiv.org/pdf/2604.24089v1",
+      "score": "6.0",
+      "evidence": "作为分子生成自回归模型替代方案的扩散框架",
+      "tldr": "本研究提出BiMol-Diff，一个统一的扩散框架，用于文本条件分子生成和分子描述。针对自回归模型长程依赖弱及标准扩散模型均匀加噪破坏结构的问题，引入了令牌感知噪声调度，根据恢复难度分配位置相关的腐蚀程度。在ChEBI-20等数据集上，该模型显著提升了分子重建准确率和描述质量，证明了令牌感知加噪在分子-语言建模中的有效性。",
+      "tags": "query:ardm",
+      "abstract_en": "Bridging molecular structures and natural language is essential for controllable design. Autoregressive models struggle with long-range dependencies, while standard diffusion processes apply uniform corruption across positions, which can distort structurally informative tokens. We present BiMol-Diff, a unified diffusion framework for the paired tasks of text-conditioned molecule generation and molecule captioning. Our key component is a token-aware noise schedule that assigns position-dependent corruption based on token recovery difficulty, preserving harder-to-recover substructures during the forward process. On ChEBI-20 and M3-20M, BiMol-Diff improves molecule reconstruction with a 15.4% relative gain in Exact Match and achieves strong captioning results, attaining best BLEU and BERTScore among compared baselines. These results indicate token-aware noising improves fidelity in molecular structure-language modelling.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

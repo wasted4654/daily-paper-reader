@@ -1,0 +1,791 @@
+Title: BiMol-Diff: A Unified Diffusion Framework for Molecular Generation and Captioning
+
+URL Source: https://arxiv.org/pdf/2604.24089v1
+
+Published Time: Tue, 28 Apr 2026 01:49:01 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# BiMol-Diff: A Unified Diffusion Framework for Molecular Generation and Captioning 
+
+Aditya Hemant Shahane 1* Anuj Kumar Sirohi 1* Devansh Arora 2
+
+Nitin Kumar 2 Prathosh A P 3,4 Sandeep Kumar 11Indian Institute of Technology Delhi, 2Indian Institute of Technology Ropar 
+
+> 3
+
+Indian Institute of Science Bengaluru, 4Latentforce.ai 
+
+Abstract 
+
+Bridging molecular structures and natural lan-guage is essential for controllable design. Au-toregressive models struggle with long-range dependencies, while standard diffusion pro-cesses apply uniform corruption across po-sitions, which can distort structurally infor-mative tokens. We present BiMol-Diff , a unified diffusion framework for the paired tasks of text-conditioned molecule generation and molecule captioning. Our key compo-nent is a Token-aware noise schedule that as-signs position-dependent corruption based on token recovery difficulty, preserving harder-to-recover substructures during the forward pro-cess. On ChEBI-20 and M3-20M, BiMol-Diff 
+
+improves molecule reconstruction with a 15.4% relative gain in Exact Match and achieves strong captioning results, attaining the best BLEU and BERTScore among compared base-lines. These results indicate token-aware nois-ing improves fidelity in molecular structure– language modeling. Code link GitHub. 
+
+1 Introduction 
+
+Designing molecules requires balancing two dis-tinct modalities: the molecular structure of atoms and bonds, and the linguistic descriptions of molec-ular properties (e.g., “a kinase inhibitor with good solubility”). Bridging this gap through cross-modal translation enables chemically grounded workflows where designs can be iteratively refined via natural language (Zheng et al., 2023; Fatemi et al., 2024). This motivates two complementary directions: (i) 
+
+molecule generation (text →molecule ) to material-ize descriptions into structures, and (ii) molecule captioning (molecule →text ) to explain molecular structure and properties via natural-language de-scriptions (Edwards et al., 2022; Zeng et al., 2024). However, despite their symmetry, these tasks are typically developed in isolation with separate mod-
+
+> *Equal contribution
+
+els and objectives, limiting consistency and reuse in iterative design loops. A common bridge between molecular structure and sequence models is the Simplified Molecular-Input Line-Entry System (SMILES) (Weininger, 1988; Weininger et al., 1989), which linearizes a molec-ular graph into a string. This linearization has en-abled a large family of sequence-based molecular methods, including (1) conditional SMILES gener-ation from text prompts (Bagal et al., 2022; Zhu-magambetov et al., 2021; Irwin et al., 2022), and (2) SMILES or structure-conditioned captioning that maps molecules to natural-language descrip-tions (Edwards et al., 2022; Zeng et al., 2024). Many of these systems rely on autoregressive 
+
+(AR) pretrained language models (PLMs) such as GPT (Brown et al., 2020), T5 (Raffel et al., 2020), and BART (Lewis et al., 2020), which generate to-kens sequentially by conditioning each next token on the prefix (Bagal et al., 2022; Zhumagambetov et al., 2021; Irwin et al., 2022). In this work, while we retain SMILES as the standard input/output in-terface, we explicitly project these molecules into a Knowledge Graph (KG) view represented as a se-rialized sequence of atom-bond-atom triplets to achieve better generalization and reduce depen-dency on specific SMILES syntax rules (e.g., ring number). While effective, autoregressive models are not al-ways well suited to SMILES-centric molecule– language modeling. First, decoding is inherently left-to-right, so early mistakes can propagate and are difficult to correct (Nie et al., 2025; Arriola et al., 2025). Second, SMILES encodes long-range syntactic and chemical dependencies (e.g., ring closures, branching, and valid substructures) that require coordinated decisions across distant posi-tions; locally plausible token choices can therefore cascade into globally invalid molecules. Third, many objectives are inherently structure-level such as scaffold preservation that are hard to enforce 
+
+> arXiv:2604.24089v1 [cs.CL] 27 Apr 2026
+
+under strict prefix conditioning. These limita-tions motivate non-autoregressive generation mech-anisms that can revise all positions jointly, raising a broader question: can we build models that gener-ate and explain molecules while explicitly preserv-ing global validity and structural controllability? 
+
+Diffusion language models offer a promising non-autoregressive alternative by iteratively denoising a corrupted representation, enabling holistic updates over all positions at each step and better coordina-tion of long-range dependencies (Li et al., 2022; Nie et al., 2025). However, standard diffusion ap-plies noise uniformly across tokens, which can cor-rupt chemically critical tokens (e.g., ring indices and branching markers) too early in the process and hinder recoverability. To address this, we propose BiMol-Diff , a unified diffusion framework that addresses the paired tasks of text →SMILES generation and SMILES →text 
+
+captioning under a common denoising formula-tion. Unlike standard diffusion, BiMol-Diff em-ploys a token-aware noising strategy that assigns token-dependent noise levels using the per-token training loss as a proxy for recovery difficulty. In-tuitively, tokens that are consistently harder to denoise receive a more conservative corruption schedule, improving recoverability. We apply this mechanism consistently across both directions: for 
+
+SMILES →text , it helps preserve semantic tokens during denoising, and for text →SMILES , it helps preserve chemically salient SMILES tokens during generation. 
+
+Contributions. We make three primary contribu-tions: (1) a token-aware noising strategy which pre-serves critical structural semantics during the dif-fusion process; (2) a unified framework that solves the bidirectional tasks of molecule generation and captioning, utilizing the same token-aware mecha-nism for both inverse problems; and (3) strong em-pirical performance across a wide range of metrics on both molecule generation and molecule caption-ing benchmarks. 
+
+2 Background and Preliminaries 
+
+2.1 Related Work Diffusion for Molecular Graphs (Unconditional / Property-based): Diffusion models are widely used for molecular graph generation, spanning unconditional sampling and property-conditioned design. Recent variants improve expressivity via transformer-style graph denoisers (Liu et al., 2024a), explore hierarchical/latent formulations for scalability and structure preservation (Bian et al., 2024), and study control mechanisms for property prediction and guidance (Zhang et al., 2025). 
+
+Text-guided Molecule Generation: Text-to-molecule generation is typically formulated as learning p( ˜G | S) (or p(SMILES | S)), where 
+
+S describes desired structure or function. Recent work adapts PLMs to chemical strings, enabling text ↔molecule translation with encoder–decoder pretraining (Edwards et al., 2022) and improved multi-task / chemistry-aware extensions (Kim et al., 2025b). In parallel, diffusion-based text condition-ing has emerged, including diffusion-LM style text-guided generation in discrete/embedded sequence spaces (Gong et al., 2024) and graph/latent dif-fusion variants that preserve molecular structure (Chang and Ye, 2025). 
+
+Molecule Captioning / Molecule-to-Text: Gen-erating faithful descriptions from molecules (G2S) has been explored via translation-style baselines (Edwards et al., 2022) and molecule captioning models that incorporate structural encoders to im-prove grounding (Liu et al., 2023b). More re-cent multimodal approaches further strengthen molecule–language alignment for captioning and related tasks. 
+
+Unifying / Bidirectional Molecule–Text Model-ing: While text-guided generation and caption-ing have progressed independently, fully bidirec-tional modeling that supports both p(S | ˜G) and 
+
+p( ˜G | S) within a single generation framework re-mains relatively limited. Translation-based PLM systems offer practical bidirectionality (Edwards et al., 2022), and recent foundation-model efforts move toward broader cross-modal generalization (Liu et al., 2023b), but diffusion-based approaches are typically developed for one direction (most of-ten S2G) and do not explicitly address token-level corruption heterogeneity. BiMol-Diff fills this gap by casting both directions under a unified condi-tional diffusion view and introducing a molecular graph-aware, token-dependent noising schedule to preserve chemically salient information during gen-eration (see Appendix A.1). 
+
+2.2 Preliminaries 2.2.1 Diffusion Models: Forward and Reverse Process 
+
+Denoising diffusion probabilistic models (DDPMs) are generative models that learn a data distribution, Figure 1: The BiMol-Diff Framework. (A) Molecules are represented through canonical SMILES, AIS-aware tokens, and serialized graph-triplet sequences. (B) Training: the model is trained with token-aware noising that preserves chemically salient tokens, optimizing denoising, consistency, and rounding objectives. (C) Inference: 
+
+starting from Gaussian noise, iterative denoising and rounding generate either a caption (G2S) or a serialized molecular graph sequence (S2G), which is then deterministically decoded into canonical SMILES. 
+
+often conditioned on some context c, p(z0 | c).They consist of a fixed forward process and a learned reverse process. 
+
+Forward process : A standard DDPM forward pro-cess corrupts clean data z0 through a Markov chain with noise-schedule coefficients {αt}Tt=1 control-ling signal decay. This yields the standard closed-form for sampling a noised state zt at timestep t:
+
+zt = √¯αt z0 + √1 − ¯αt ϵ, (1) with ¯αt = Qts=1 αs and ϵ ∼ N (0, I). Stan-dard diffusion models typically use a fixed, data-agnostic (isotropic) noise schedule. 
+
+Reverse process with Conditional Denoising :The reverse process learns to recover the clean data 
+
+z0 from pure noise zT ∼ N (0, I). It is defined as a Markov chain pθ(z0: T ) where each reverse tran-sition pθ(zt−1 | zt, c) is a Gaussian whose mean 
+
+μθ and variance Σθ are parameterized by a model 
+
+Mθ(zt, t, c). The model is trained to predict the mean of the true posterior q(zt−1 | zt, z0). The model parameters θ are optimized by maximizing the variational lower bound (VLB) on the condi-tional log-likelihood:                              
+
+> Lvlb =Eq
+> h
+> −log pθ(z0|z1,c)
+> |{z }
+> Reconstruction (L0)
+> +
+> TX
+> t=2
+> DKL
+>  q(zt−1|zt,z0)pθ(zt−1|zt,c)|{z }
+> Denoising Matching (Lt−1)
+> +DKL
+>  q(zT|z0)p(zT)|{z }
+> Prior Matching (LT)
+> i
+> .
+
+(2) While this formulation is tractable, direct optimiza-tion of the full VLB is often unstable. 
+
+2.2.2 Molecules as Graphs: 
+
+A molecule is represented as a graph G =(V, X, A, P), where V = {1, . . . , n } is the set of atoms (nodes) and |V| = n. The atom feature matrix X ∈ Rn×a contains an a-dimensional fea-ture vector for each atom. The adjacency tensor 
+
+A ∈ Rn×n×b encodes bond existence and bond types, where Aij : ∈ { 0, 1}b indicates the type of the bond between atoms i and j. The coordinate matrix P ∈ Rn×3 stores the 3D positions of atoms. Here, a is the atom feature dimension and b is the bond type. Depending on the task, subsets of these components may be used, e.g., (V, X, A) for 2D graphs or (V, X, P) for 3D conformations. 
+
+3 Methodology 
+
+3.1 Problem Statement 
+
+We use canonical SMILES as the standard molecule representation throughout BiMol-Diff .From this canonical string view, we derive two related representations. First, we denote by 
+
+G = {m1, . . . , m K } the Atoms-in-SMILES (AIS) (Ucak et al., 2023) token sequence, which provides a chemistry-aware alternative to character-level SMILES. Second, for graph-conditioned mod-eling, we denote by ˜G the serialized molecular graph obtained by writing the molecule as an edge-list sequence of atom–bond–atom triplets using spe-cial tokens [HEAD] , [REL] , [TAIL] , and [SEP] :
+
+˜G = [HEAD] hi [REL] rij [TAIL] tj [SEP] (i,j ),
+
+where (hi, r ij , t j ) denotes an atom-bond-atom triple. Let Stext = {s1, . . . , s N } be a textual de-scription. We study two conditional generation tasks: (i) molecule captioning ˜G → Stext , and (ii) molecule generation Stext → ˜G. Accordingly, we learn Mθ : ˜G → Stext and Mϕ : Stext → ˜G and maximize 
+
+max  
+
+> Θ
+
+log p(Stext | ˜G; θ) + log p( ˜G | Stext ; ϕ),
+
+where Θ = {θ, ϕ }. We next describe the molecule-side representation pipeline used to realize these two directions, starting from canonical SMILES and proceeding through AIS-aware tokens and se-rialized graph sequences. 
+
+3.2 The BiMol-Diff Framework Overview 
+
+We introduce BiMol-Diff , a unified diffusion framework that addresses molecular graph-to-sequence (G2S) and sequence-to-graph (S2G) generation under a single conditional model-ing view. Given paired data (A, B) ∈{(Stext , ˜G), ( ˜G, Stext )}, BiMol-Diff learns the conditional distribution p(A | B ), where B pro-vides the conditioning context and A is the target modality. 
+
+Molecule Representation Pipeline. We use canon-ical SMILES as the common molecule interface in both directions and convert it to its Atoms-in-SMILES representation G (Ucak et al., 2023). For graph-conditioned modeling, this molecule-side representation is deterministically mapped to the serialized graph sequence ˜G, where each bond is written as an atom-bond-atom triplet us-ing [HEAD]/[REL]/[TAIL] templates and [SEP] 
+
+delimiters. Thus, in the G2S direction, ˜G serves as the conditioning sequence for generating Stext .Conversely, in the S2G direction, Stext conditions prediction of ˜G, and the predicted ˜G is deterministi-cally mapped back through the same molecule-side representation pipeline into canonical SMILES for evaluation. Figure 2 summarizes this symmetric encoding/decoding view. 
+
+Conditional Diffusion. For either direction, we embed the target A into continuous “clean” latents 
+
+z0 = gΦ(A) and apply a conditional DDPM to ob-tain zt. The reverse processes denoise conditioned on the source modality: Mθ(zt, t, ˜G) for G2S and 
+
+Mϕ(zt, t, Stext ) for S2G, enabling a unified ob-jective across both directions. 
+
+Token-aware Noising. Unlike standard data-agnostic schedules that corrupt all tokens uni-formly, BiMol-Diff uses a token-aware, token-dependent noising strategy that preserves chem-ically salient tokens more conservatively. We de-tail the construction and use of this schedule in       
+
+> Figure 2: Molecule encoding and decoding in
+> BiMol-Diff .
+
+Sec 3.5. This improves recoverability in both direc-tions while keeping the same diffusion formulation across the unified framework. 
+
+3.3 Graph Encoding for BiMol-Diff 
+
+In Section 3.1, a molecular graph is a set of re-lational triplets ˜G = {(hi, r ij , t j )}. To integrate with transformer based encoder-decoder backbone, we serialize this set of triplets into a single token sequence. Following the PLM-based G2S conven-tion, each triplet is mapped to a short template 
+
+⟨[HEAD] hi [REL] rij [TAIL] tj ⟩, and all such segments are concatenated with a separator token 
+
+[SEP] :                 
+
+> ˜G=⟨[HEAD] hi1[REL] ri1j1[TAIL] tj1⟩[SEP]
+> · · · [SEP] ⟨[HEAD] hiM[REL] riMjM[TAIL] tjM⟩
+
+(3) where {(im, j m)}Mm=1 enumerates all bonds with 
+
+im < jm to avoid duplicates. This linearized sequence ˜G serves as the conditioning signal to 
+
+BiMol-Diff in the graph-to-sequence task. Fig-ure 2 (top) illustrates this encoding process. 
+
+Example (molecule KG → caption). Consider the molecule with SMILES string CCO (ethanol). Its molecular graph has three atoms h1 = C1,
+
+h2 = C2, h3 = O3 and two single bonds: (1 , 2) 
+
+and (2 , 3) . The corresponding KG triplets are 
+
+(C1, SINGLE , C2) and (C2, SINGLE , O3). Our seri-alized KG becomes 
+
+˜G = ⟨[HEAD] C 1 [REL] SINGLE [TAIL] C 2⟩ [SEP] 
+
+⟨[HEAD] C 2 [REL] SINGLE [TAIL] O 3⟩
+
+In the G2S setting, BiMol-Diff takes the graph-triplet representation ˜G as input and generates a natural-language caption Stext describing the molecule. The reverse realization path used in the S2G direction is described separately in Sec-tion 3.4. 
+
+3.4 Graph Decoding for BiMol-Diff 
+
+In the S2G direction, conditioned on Stext ,
+
+BiMol-Diff predicts the serialized molecular graph sequence ˜G. We decode this sequence by first parsing it into atom-bond-atom triplets 
+
+(hi, r ij , t j ), and then merging these triplets to re-cover the corresponding molecular graph. The re-covered graph is subsequently mapped to its AIS token representation G and canonicalized into a standard SMILES string for S2G evaluation. Fig-ure 2 (bottom) illustrates this decoding path. 
+
+Example (caption → molecule KG). Consider the textual description corresponding to ethanol. In the S2G direction, BiMol-Diff predicts the serialized graph sequence: 
+
+˜G = ⟨[HEAD] C 1 [REL] SINGLE [TAIL] C 2⟩ [SEP] 
+
+⟨[HEAD] C 2 [REL] SINGLE [TAIL] O 3⟩.
+
+(4) These triplets are merged to recover the molecu-lar graph with atoms C1, C 2, O 3 and bonds (1 , 2) 
+
+and (2 , 3) . The recovered graph is then mapped to its molecule-side representation and canonicalized into the SMILES string CCO .
+
+3.5 Token Aware Noising Motivation & Rationale: Standard diffusion mod-els rely on fixed, data-agnostic noising schedules that apply noise uniformly across all tokens. We argue this is suboptimal for molecular tasks because chemically salient tokens (e.g., functional groups, stereochemistry) typically carry higher in-formation density than structurally redundant or low-information tokens. Under uniform noising, chemically salient tokens and simple syntactic tokens are corrupted at the same rate, which can weaken molecular fidelity. To address this, we introduce a Token-aware noise schedule . We hypothesize that the model’s per-timestep reconstruction loss ℓit can serve as a useful proxy for token difficulty and importance. By learn-ing a mapping from ℓit to the corresponding token’s noise schedule, we preserve high information to-kens while allowing information-redundant tokens to tolerate higher noise levels. This re-parametrizes the denoising path, aiming to improve generation quality in both G2S and S2G tasks. 
+
+Noising Schedule : Following the rationale dis-cussed in Section 3.5, for the G2S setting, we pro-pose a token-dependent noising schedule, parame-terized by a vector ¯αit, new ∈ RN , unlike the uniform noising with baseline cumulative schedule ¯αt (for e.g.: sqrt ) used by standard diffusion models. This formulation has two stages summarized in Algo 1. 
+
+Stage 1: Estimating token-wise difficulty. For each token i and diffusion step t = 1 , . . . , T , we define the denoising difficulty as: 
+
+ℓ it = Ezt∼q(zt|z0) Mθ(zt, t, ˜G)(i) − z(i)0 
+
+> 2
+
+(5) Averaging over the training set yields a difficulty profile (ℓ i
+
+> 1
+
+, . . . , ℓ iT ) for each i. Empirically, ℓ it
+
+tends to increase with t (later steps are noisier), but the estimated profile is not strictly monotone. We also compute ℓ i 
+
+> min
+
+= min t ℓ it and ℓ i 
+
+> max
+
+= max t ℓ it
+
+to define the difficulty range for token i. In Stage 2 these profiles and their ranges are used to construct a token-wise cumulative schedule, and to obtain a monotonic difficulty profile for each token i.
+
+Stage 2: Token-aware schedule. Given (ℓ it )Tt=1 
+
+and the baseline cumulative schedule (¯ αt)Tt=1 , we construct an adaptive schedule (¯ α it, new )Tt=1 for each token i. Since this schedule controls noise applied at each step, we want to reallocate noise accord-ing to denoising difficulty. Hence, we define a piecewise-linear map Ψi : [ ℓ i
+
+> min
+
+, ℓ i
+
+> max
+
+] → (0 , 1) 
+
+that interpolates the baseline schedule as a function of loss: 
+
+Ψi(x) = ¯ αt−1 + ¯αt − ¯αt−1
+
+ℓ it − ℓ it−1
+
+ x − ℓ it−1
+
+, (6) with x ∈ [ℓ it−1, ℓ it ), t = 2 , . . . , T, Ψi(ℓ i
+
+> 1
+
+) = ¯ α1
+
+and Ψi(ℓ iT ) = ¯ αT . In case ℓ it = ℓ it−1, we add a tiny jitter ε to avoid division by zero. Empirically, 
+
+(ℓ it )Tt=1 is not strictly monotone in t, so instead of using its raw values we introduce a new linear ramp in difficulty space: 
+
+ℓ i, new  
+
+> t
+
+= ℓ i 
+
+> min
+
++ t − 1
+
+T − 1
+
+ ℓ i 
+
+> max
+
+− ℓ i
+
+> min
+
+ (7) with t = 1 , . . . , T . Substituting this ℓ i, new  
+
+> t
+
+into 
+
+Ψi(x) we get a new cumulative schedule ¯α it, new =Ψi
+
+ ℓ i, new 
+
+> t
+
+ for t = 1 , . . . , T . We clamp ¯α it, new to 
+
+(0 , 1) and apply a non-increasing isotonic projec-tion (refer Appendix A.3) over t to obtain the final schedule 0 < ¯α it+1 ,new ≤ ¯α it, new < 1 for all t.Method #P B CrF++ M B-F1 MVE Autoregressive Baselines                                                                    
+
+> MolT5-Base (Edwards et al., 2022) 220M 0.452 0.651 0.510 0.681 0.852 Text+Chem T5 (Christofidellis et al., 2023) 223M 0.542 0.701 0.648 0.728 0.866 MolCA (Liu et al., 2023b) 110M 0.531 0.665 0.651 0.709 0.815 GitMol (Liu et al., 2024b) 700M 0.475 0.680 0.532 0.751 0.875 GraphT5 (Kim et al., 2025a) 272M 0.481 0.692 0.545 0.810 0.913
+> Diffusion Baselines
+> Diffusion-LM (Li et al., 2022) 91M 0.512 0.702 0.602 0.783 0.861 DiffuSeq (Gong et al., 2023) 91M 0.532 0.708 0.601 0.812 0.887 TGM-DLM (Gong et al., 2024) 125M 0.467 0.689 0.589 0.779 0.856
+> BiMol-Diff (ours) 63M 0.567 0.734 0.626 0.843 0.925
+> %Gain (vs. Best AR) x3.5 ↓+4.6% +4.7% -3.8% +4.1% +1.3%
+> %Gain (vs. Best Diff) x1.4 ↓+6.6% +3.7% +4.2% +3.8% +4.3%
+
+Table 1: Molecule captioning performance on the M3-20M dataset. Benchmarking BiMol-Diff against SoTA Autoregressive (AR) and Diffusion models. BiMol-Diff achieves state-of-the-art results, surpassing the best diffusion and AR baselines by substantial margins across all metrics while using fewer parameters. 
+
+Algorithm 1 Token Aware Noise Schedule 
+
+Require: Baseline cumulative schedule {¯αt}Tt=1 ,update interval K
+
+Ensure: Schedules {¯α it, new }Tt=1 for all i
+
+1: if train_step % K == 0 then 
+
+2: for all i do 
+
+3: Estimate {ℓ it }Tt=1 via Eq. 5; compute 
+
+{ℓ i
+
+> min
+
+, ℓ i
+
+> max
+
+}.
+
+4: Define piecewise-linear map Ψi as in Eq. (6). 
+
+5: Construct difficulty ramp {ℓ i, new  
+
+> t
+
+}Tt=1 via Eq. (7). 
+
+6: Compute new schedule ˜α it = Ψ i(ℓ i, new  
+
+> t
+
+).
+
+7: Clamp ˜α it to (0 , 1) , apply a non-increasing isotonic projection to obtain 
+
+{¯α it, new }Tt=1 .
+
+8: end for 
+
+9: end if 
+
+10: return {¯α it, new } for all tokens i and steps t.
+
+3.6 Model Training and Inference Training : Our training objective is derived from the Variational Lower Bound (VLB) (Eq. 2) pre-sented in the preliminaries. While the full VLB optimization can be unstable (Ho et al., 2020), a common simplification is to train the model Mθ
+
+to predict the added noise ϵ. However, our frame-work adopts an alternative z0-prediction reparam-eterization, which trains the model to directly pre-dict the clean data z0 at every timestep t. A crit-ical component of this objective is the rounding term L0 = − log ˜ pΦ(Stext | z0), which handles the final step of converting the continuous latent variable z0 back into discrete tokens Stext . We define this as a trainable rounding distribution: 
+
+˜pΦ(Stext | z0) = QNi=1 ˜pΦ(si | z0,i ), where each token si is sampled from a softmax distribution over the vocabulary, using logits derived from the corresponding output embedding z0,i . By com-bining this rounding term (for t = 0 ) with the denoising matching terms (for t > 1) using our z0-prediction reparameterization, we arrive at our final, composite objective. (The full derivation from the VLB is in App A.2).                    
+
+> Le2e-simple (Stext ) = Eq
+> hTX
+> t=2
+> ∥M θ(zt, t, ˜G)−z0∥2
+> |{z }
+> Denoising
+> +
+> ∥gΦ(Stext )− M θ(z1,1,˜G)∥2
+> |{z }
+> Consistency
+> −log ˜ pΦ(Stext |z0)
+> |{z }
+> Rounding
+> i
+
+(8) The same objective is used in the S2G direction, with the target discrete sequence replaced by ˜G
+
+and the conditioning sequence replaced by Stext .This objective directly optimizes the most critical parts of the process: the denoising accuracy across all steps (Denoising), the consistency of the first denoising step with the true data embedding (Con-sistency), and the quality of the final conversion to discrete tokens (Rounding). 
+
+Inference-time schedule: The z0-prediction ob-jective (Eq: 8) trains the denoiser to explicitly pre-dict the clean latent at each step. At inference, given zt and conditioning context c, we compute 
+
+ˆz0 = Mθ(zt, t, c) (with c = ˜G for G2S and 
+
+c = Stext for S2G). We then use our learned token-wise cumulative schedule ¯α it, new in the re-verse sampling update, where ϵ ∼ N (0, I). To mitigate rounding errors (refer section 3.6), we ap-ply the clamping trick, which forces the predicted vector to commit to a word for intermediate diffu-sion steps:         
+
+> z(i)
+> t−1=
+> q
+> ¯αit−1,new Clamp
+> 
+> Mθ(zt, t, c)(i)
+> +
+> q
+> 1−¯αit−1,new ϵ(i),
+
+(9) where Clamp( ·) denotes nearest-neighbor projec-tion onto the embedding table. This strategy en-sures that the diffusion trajectory remains grounded in valid token embeddings during sampling. 
+
+4 Experiments 
+
+4.1 Experimental Setup Model Architecture. We implement BiMol-Diff 
+
+using two distinct encoder-decoder Transformer models tailored for each task utilizing GeLU ac-tivations. Crucially, both tasks are trained for 200,000 steps using our proposed Token-aware noise schedule (refer §3.5) over T = 2000 dif-fusion steps. We adapt the architecture for each task as follows: for Molecule Generation (S2G), we employ a 6-encoder/12-decoder configuration (dmodel = 1024 ; ≈ 180 M parameters). The encoder processes frozen SciBERT embeddings, while the decoder predicts the serialized molecular graph sequence ˜G. This predicted graph sequence is then deterministically mapped back into a canon-ical SMILES string for evaluation. This variant is trained with a batch size of 64 and a learning rate of 5 × 10 −5. Conversely, for Molecule Cap-tioning (G2S), we utilize a 6-encoder/9-decoder configuration ( dmodel = 512 ; ≈ 63 M parameters) with a peak learning rate of 10 −4. This model encodes serialized molecular structure using the AIS-based SMILES vocabulary augmented with learnable special tokens ( [HEAD] , [REL] , [TAIL] ,
+
+[SEP] ), while the decoder generates captions uti-lizing the bert-base-uncased vocabulary (Devlin et al., 2019). 
+
+Datasets. We evaluate our framework on two dis-tinct datasets tailored to each task. For Molecule Generation (S2G), we utilize the ChEBI-20 (Ed-wards et al., 2022) benchmark, comprising 33,010 molecules with SMILES strings restricted to a max-imum length of 256. This dataset is partitioned into an 80%/10%/10% split for training, validation, and testing, respectively. For Molecule Captioning (G2S), we employ a filtered subset of the M3-20M dataset (Guo et al., 2025b), containing approxi-mately 360,000 SMILES–description pairs. This subset, also divided into an 80%/10%/10% split, pairs molecular graphs with diverse textual descrip-tions derived from curated scientific literature or synthesized via GPT-3.5. 
+
+Baselines. We compare BiMol-Diff against state-of-the-art (SoTA) autoregressive and diffusion-based methods for each task. For Molecule Gener-ation (S2G), we benchmark against MolXPT (Liu et al., 2023a) as a competitive autoregressive SMILES generator, and leading diffusion baselines including 3M-Diffusion (Zhu et al., 2024) and UT-GDiff (Xiang et al., 2025). For Molecule Caption-ing (G2S), we compare against MolT5-Base (Ed-wards et al., 2022) as a standard SMILES →text sequence-to-sequence baseline, GraphT5 (Kim et al., 2025a) as a recent graph–text model, and DiffuSeq (Gong et al., 2023) as a representative diffusion-based sequence generator. 
+
+Evaluation Metrics. For Molecule Captioning (G2S), we evaluate the quality of generated text using both surface-level and semantic measures. We report standard n-gram overlap metrics in-cluding BLEU (Papineni et al., 2002), METEOR (Banerjee and Lavie, 2005), and ChrF++ (Popovi´ c, 2015), alongside embedding-based metrics such as BERTScore-F1 (Zhang* et al., 2020) and MAUVE (Pillutla et al., 2023) to assess semantic alignment and distributional divergence. For Molecule Gen-eration (S2G), we focus on structural fidelity and chemical plausibility. We report Exact Match ac-curacy to measure precise reconstruction of the ground-truth molecule. To assess the capture of chemical substructures, we compute structural over-lap using Tanimoto similarity on MACCS, RDKit, and Morgan fingerprints. Finally, we report chemi-cal validity to ensure the generated SMILES strings correspond to valid molecular graphs. 
+
+4.2 Experimental Results Molecule Captioning (G2S): Table 1 reports re-sults on M3-20M. BiMol-Diff achieves the best overall performance on BLEU and ChrF++, reach-ing 0.567 BLEU and 0.734 ChrF++, which im-proves over the best performing autoregressive baseline (Text+Chem T5) by 4.6% and 4.7% , re-spectively. On semantic metrics, our model attains 
+
+0.843 BERTScore-F1 and 0.925 MAUVE, outper-forming graph-aware baselines such as GraphT5, and consistently improving over diffusion mod-els (e.g., DiffuSeq) across all reported metrics. While MolCA achieves the highest METEOR score, BiMol-Diff remains competitive ( 0.626 )and offers a strong overall trade-off across sur-Method Type #P Exact MACCS RDK Morgan Valid Text-Based Autoregressive (SMILES)                                                                                                    
+
+> T5-Base (Raffel et al., 2020) AR 248M 0.069 0.731 0.605 0.545 0.660 MolT5-Base (Edwards et al., 2022) AR 248M 0.081 0.721 0.588 0.529 0.772 MolXPT (Liu et al., 2023a) AR 350M 0.215 0.859 0.757 0.667 0.983
+> T5 Enc + MolXPT MLP (Deng et al., 2025) Adapter 111M 0.227 0.820 0.713 0.636 0.980
+> Text-Based Autoregressive (SELFIES)
+> SciBERT + MolGen (Deng et al., 2025) Adapter 317M 0.083 0.680 0.526 0.422 0.995 Galactica-1.3B + MolGen (Fang et al., 2024) Adapter 1.5B 0.091 0.706 0.560 0.454 0.995 T5 Enc + MolGen (Deng et al., 2025) Adapter 317M 0.165 0.758 0.616 0.527 0.995
+> Graph & Diffusion Baselines
+> DiGress (sim. guidance) (Vignac et al., 2023) Diff 289M 0.014 0.577 0.389 0.288 0.854 3M-Diffusion (Zhu et al., 2024) Diff 162M 0.005 0.548 0.370 0.273 1.000
+> Graph-DiT (Liu et al., 2024a) Diff 162M 0.000 0.374 0.269 0.159 0.909 UTGDiff (w/o pretrain) (Xiang et al., 2025) Diff 125M 0.227 0.867 0.763 0.695 0.856
+> BiMol-Diff (ours) Diff 180M 0.262 0.894 0.791 0.762 0.901 %Gain (vs. Best AR) –x1.9 ↓+15.4% +4.1% +4.5% +14.2% -8.3% %Gain (vs. Best Diff) –x1 ↓+15.4% +3.1% +3.7% +9.6% +5.3%
+
+Table 2: Molecule generation performance on the ChEBI-20 test set. BiMol-Diff outperforms state-of-the-art Autoregressive and Diffusion baselines in structure reconstruction (Exact Match) and fingerprint similarity, validating the effectiveness of token-aware denoising. 
+
+face and embedding-based measures, supporting the benefit of token-aware noising. 
+
+Molecule Generation (S2G): Table 2 summarizes results on ChEBI-20. BiMol-Diff attains an Exact Match of 0.262 , improving over both the best au-toregressive adapter baseline (T5 Enc + MolXPT MLP) and the strongest diffusion baseline (UT-GDiff), each at 0.227 ( +15.4% relative). This gain is reflected in fingerprint similarities, achieving 
+
+0.894 (MACCS), 0.791 (RDKit), and 0.762 (Mor-gan), including a 14.2% improvement in Morgan similarity over the best autoregressive baseline. Fi-nally, BiMol-Diff maintains high chemical valid-ity ( 0.901 ) while prioritizing reconstruction accu-racy, whereas some baselines attain higher validity with weaker structural recovery. 
+
+4.3 Ablation 
+
+We analyze three aspects of BiMol-Diff : (i) the proposed token-aware noising strategy and its map-ping function, (ii) the effect of molecular tokeniza-tion, and (iii) decoding efficiency of BiMol-Diff .
+
+(i) Impact of noise schedule and choice of map-ping function. Table 3 (top) shows that replac-ing a uniform corruption schedule ( sqrt ) with our token-aware schedule yields a substantial im-provement (0.495 →0.567 BLEU; 0.682 →0.734 ChrF++; 0.531 →0.626 METEOR). Among map-ping choices, the linear mapping performs best, indicating that explicitly allocating lower corrup-tion to harder-to-recover tokens is beneficial for caption recovery. Figure 3 visualizes how token-aware schedules differ from a global sqrt schedule. Instead of applying the same noise profile to all po-sitions, we learn per-token schedules that modulate the corruption level according to token difficulty: positions with higher denoising loss receive more conservative corruption (lower noise at intermedi-ate timesteps), while easier positions can be noised more aggressively. This selective corruption bet-ter preserves content during the forward process and improves recoverability in the reverse process, which aligns with the gains observed in the main results (Table 1, 2). 
+
+Figure 3: Token-aware noising vs. uniform sqrt schedule (captioning). Left: the learned token-wise schedules ap-ply non-uniform corruption across positions compared to a global sqrt schedule. Right: token-wise difficulty profiles are used to construct schedules that apply more conservative corruption to harder-to-recover tokens. 
+
+(ii) Impact of molecular tokenization. Table 3 (bottom) applies the best noising configuration (token-aware + linear) with different molecular tokenizers. Our current framework uses an AIS-based SMILES tokenizer for a stable, determin-istic segmentation that preserves SMILES syntax (e.g., bracketed atoms and ring/branch symbols) and enables straightforward serialization, the tok-enizer is plug-and-play and can be swapped without changing the denoising objective or architecture. We observe a clear monotonic trend: regex-based Noise Schedule Mapping / Tokenizer B CrF++ M
+
+Impact of Noise Schedule & Mapping Function 
+
+Uniform Sqrt Schedule 0.495 0.682 0.531 Token-Aware Cosine Mapping 0.548 0.720 0.595 Token-Aware (Ours) Linear Mapping 0.567 0.734 0.626 
+
+Impact of Molecular Tokenization 
+
+Token-Aware (Linear) Regex-based 0.558 0.714 0.606 Token-Aware (Linear) Atom-level 0.563 0.722 0.613 Token-Aware (Linear) Atoms-in-SMILES (AIS) 0.567 0.734 0.626 
+
+Table 3: Ablation study on the M3-20M dataset. We analyze the impact of different ( Top ) Noise Schedules & Mapping Functions and ( Bottom ) Tokenization strategies on molecule captioning performance. BiMol-Diff 
+
+(Token-Aware + Linear) with Atoms-in-SMILES (AIS) tokenization yields the best results. 
+
+SMILES tokenization underperforms atom-level tokens, while Atoms-in-SMILES (AIS) yields the strongest performance across all reported metrics. 
+
+(iii) Decoding Efficiency. Given the iterative na-ture of diffusion models, we examine the trade-off between generation quality and inference latency. Reducing the number of reverse steps leads to sub-stantial speedups, albeit with a degradation in out-put fidelity. To focus on modeling performance, all primary results are reported with T =2000 steps. Table 4 presents the quality-latency trade-off for Graph-to-Sequence tasks. Within the diffusion fam-ily, BiMol-Diff exhibits markedly improved effi-ciency over DiffuSeq. At T =2000 , it achieves a BLEU score of 0.567 in 89 seconds per batch, yielding a 3.6× speedup over DiffuSeq (317 sec-onds), while also improving generation quality. When compared to Autoregressive (AR) baselines,                                           
+
+> Method Params Steps Time (s) Speedup BLEU ↑
+> Autoregressive Baselines
+> MolT5-Base (Edwards et al., 2022) 220M –<5s –0.452 Text+Chem T5 (Christofidellis et al., 2023) 223M –<5s –0.542
+> Diffusion Baselines
+> DiffuSeq (Gong et al., 2023) 91M 2000 317s 1.0×(Ref) 0.532
+> Ours
+> BiMol-Diff 63M 2000 89s 3.6×0.567 BiMol-Diff 63M 1000 45s 7.0×0.551
+> BiMol-Diff 63M 500 23s 13 .8×0.365
+> BiMol-Diff 63M 100 5s 63 .4×0.312
+
+Table 4: Inference efficiency comparison on the G2S task. We compare BiMol-Diff against the best Autore-gressive (AR) and Diffusion baselines from Table 1. Time is measured as total inference time for a batch size of 50 on a single NVIDIA V100 GPU. 
+
+our model shows a clear operational boundary. In the high-quality output range (1000–2000 steps), 
+
+BiMol-Diff outperforms the strongest AR base-line, Text+Chem T5 (0.542 BLEU), confirming that the extra computational time yields better text generation. However, the model struggles when pushed for extreme speed. As we reduce the infer-ence steps below 1000, we observe a sharp drop in performance. At 500 steps, although the inference time improves to 23 seconds (13.8 × speedup), the BLEU score falls to 0.365, which is lower than even the base MolT5 model (0.452). This indicates that BiMol-Diff requires a minimum threshold of denoising steps (approximately 1000) to maintain its advantage. Our model is ideal for high-precision generation and simple AR models remain the better choice for low-latency applications. 
+
+5 Conclusion 
+
+We introduced BiMol-Diff , a unified diffusion framework addressing the bidirectional tasks of molecular graph generation and textual caption-ing. By moving beyond standard data-agnostic corruption to a token-aware noise schedule , our approach explicitly preserves chemically salient substructures during the diffusion process. Empiri-cal validation on M3-20M and ChEBI-20 confirms that this strategy yields significant gains over state-of-the-art autoregressive and diffusion baselines, particularly in structural fidelity (S2G) and seman-tic alignment (G2S). These findings demonstrate that token-aware denoising is essential for high-fidelity, controllable molecular language modeling, offering a robust alternative to autoregressive ap-proaches in scientific domains. 
+
+6 Limitations 
+
+First, BiMol-Diff relies on linearized sequence representations and standard attention, lacking the explicit structural inductive bias inherent to graphs, which may limit data efficiency for complex topolo-gies. Second, as with most diffusion models, our approach incurs higher computational costs during inference compared to autoregressive baselines due to the iterative denoising process, highlighting the need for future work on accelerated sampling. References 
+
+Marianne Arriola, Subham Sekhar Sahoo, Aaron Gokaslan, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Justin T Chiu, and Volodymyr Kuleshov. 2025. Block diffusion: Interpolating between autoregressive and diffusion language models. In The Thirteenth Inter-national Conference on Learning Representations .Viraj Bagal, Rishal Aggarwal, P. K. Vinod, and U. Deva Priyakumar. 2022. Molgpt: Molecular generation us-ing a transformer-decoder model. Journal of Chem-ical Information and Modeling , 62(9):2064–2076. PMID: 34694798. Satanjeev Banerjee and Alon Lavie. 2005. METEOR: An automatic metric for MT evaluation with im-proved correlation with human judgments. In Pro-ceedings of the ACL Workshop on Intrinsic and Ex-trinsic Evaluation Measures for Machine Transla-tion and/or Summarization , pages 65–72, Ann Arbor, Michigan. Association for Computational Linguis-tics. Tian Bian, Yifan Niu, Heng Chang, Divin Yan, Junzhou Huang, Yu Rong, Tingyang Xu, Jia Li, and Hong Cheng. 2024. Hierarchical graph latent diffusion model for conditional molecule generation. In Pro-ceedings of the 33rd ACM International Conference on Information and Knowledge Management , CIKM ’24, page 130–140, New York, NY, USA. Association for Computing Machinery. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, and 12 others. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems , volume 33, pages 1877–1901. Curran Associates, Inc. Jinho Chang and Jong Chul Ye. 2025. LDMol: Atext-to-molecule diffusion model with structurally informative latent space surpasses AR models. In 
+
+Forty-second International Conference on Machine Learning .Dimitrios Christofidellis, Giorgio Giannone, Jannis Born, Ole Winther, Teodoro Laino, and Matteo Man-ica. 2023. Unifying molecular and textual representa-tions via multi-task language modelling. In Proceed-ings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pages 6140–6157. PMLR. Yifan Deng, Spencer S. Ericksen, and Anthony Git-ter. 2025. Chemical language model linker: Blend-ing text and molecules with modular adapters. 
+
+Journal of Chemical Information and Modeling ,65(17):8944–8956. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2019. BERT: Pre-training of deep bidirectional transformers for language under-standing. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Tech-nologies, Volume 1 (Long and Short Papers) , pages 4171–4186, Minneapolis, Minnesota. Association for Computational Linguistics. Carl Edwards, Tuan Lai, Kevin Ros, Garrett Honke, Kyunghyun Cho, and Heng Ji. 2022. Translation between molecules and natural language. In Pro-ceedings of the 2022 Conference on Empirical Meth-ods in Natural Language Processing , pages 375–413, Abu Dhabi, United Arab Emirates. Association for Computational Linguistics. Yin Fang, Ningyu Zhang, Zhuo Chen, Lingbing Guo, Xiaohui Fan, and Huajun Chen. 2024. Domain-agnostic molecular generation with chemical feed-back. In The Twelfth International Conference on Learning Representations .Bahare Fatemi, Jonathan Halcrow, and Bryan Perozzi. 2024. Talk like a graph: Encoding graphs for large language models. In The Twelfth International Con-ference on Learning Representations .Haisong Gong, Qiang Liu, Shu Wu, and Liang Wang. 2024. Text-guided molecule generation with diffu-sion language model. In Proceedings of the Thirty-Eighth AAAI Conference on Artificial Intelligence and Thirty-Sixth Conference on Innovative Applica-tions of Artificial Intelligence and Fourteenth Sym-posium on Educational Advances in Artificial Intelli-gence , AAAI’24/IAAI’24/EAAI’24. AAAI Press. Shansan Gong, Mukai Li, Jiangtao Feng, Zhiyong Wu, and Lingpeng Kong. 2023. DiffuSeq: Sequence to sequence text generation with diffusion models. In 
+
+The Eleventh International Conference on Learning Representations .Shuhan Guo, Yatao Bian, Ruibing Wang, Nan Yin, Zhen Wang, and Quanming Yao. 2025a. Unified molecule-text language model with discrete token representation. In Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intel-ligence, IJCAI-25 , pages 9205–9213. International Joint Conferences on Artificial Intelligence Organi-zation. AI4Tech: AI Enabling Technologies. Siyuan Guo, Lexuan Wang, Chang Jin, Jinxian Wang, Han Peng, Huayang Shi, Wengen Li, Jihong Guan, and Shuigeng Zhou. 2025b. M 3-20m: A large-scale multi-modal molecule dataset for ai-driven drug de-sign and discovery. Journal of Bioinformatics and Computational Biology , 23(02):2550006. PMID: 40494666. Jonathan Ho, Ajay Jain, and Pieter Abbeel. 2020. Denoising diffusion probabilistic models. In Ad-vances in Neural Information Processing Systems ,volume 33, pages 6840–6851. Curran Associates, Inc. Ross Irwin, Spyridon Dimitriadis, Jiazhen He, and Esben Jannik Bjerrum. 2022. Chemformer: apre-trained transformer for computational chem-istry. Machine Learning: Science and Technology ,3(1):015022. Sangyeup Kim, Nayeon Kim, Yinhua Piao, and Sun Kim. 2025a. GraphT5: Unified molecular graph-language modeling via multi-modal cross-token at-tention. Preprint , arXiv:2503.07655. Seojin Kim, Hyeontae Song, Jaehyun Nam, and Jinwoo Shin. 2025b. Training text-to-molecule models with context-aware tokenization. In Findings of the Asso-ciation for Computational Linguistics: EMNLP 2025 ,pages 22442–22460, Suzhou, China. Association for Computational Linguistics. Mike Lewis, Yinhan Liu, Naman Goyal, Marjan Ghazvininejad, Abdelrahman Mohamed, Omer Levy, Veselin Stoyanov, and Luke Zettlemoyer. 2020. BART: Denoising sequence-to-sequence pre-training for natural language generation, translation, and com-prehension. In Proceedings of the 58th Annual Meet-ing of the Association for Computational Linguistics ,pages 7871–7880, Online. Association for Computa-tional Linguistics. Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy Liang, and Tatsunori B. Hashimoto. 2022. Diffusion-lm improves controllable text generation. In Pro-ceedings of the 36th International Conference on Neural Information Processing Systems , NIPS ’22, Red Hook, NY, USA. Curran Associates Inc. Gang Liu, Jiaxin Xu, Tengfei Luo, and Meng Jiang. 2024a. Graph diffusion transformers for multi-conditional molecular generation. In Advances in Neural Information Processing Systems . Curran As-sociates, Inc. Pengfei Liu, Yiming Ren, Jun Tao, and Zhixiang Ren. 2024b. GIT-Mol: A multi-modal large lan-guage model for molecular science with graph, im-age, and text. Computers in Biology and Medicine ,171:108073. Zequn Liu, Wei Zhang, Yingce Xia, Lijun Wu, Shufang Xie, Tao Qin, Ming Zhang, and Tie-Yan Liu. 2023a. MolXPT: Wrapping molecules with text for genera-tive pre-training. In Proceedings of the 61st Annual Meeting of the Association for Computational Lin-guistics (Volume 2: Short Papers) , pages 1606–1616, Toronto, Canada. Association for Computational Lin-guistics. Zhiyuan Liu, Sihang Li, Yanchen Luo, Hao Fei, Yixin Cao, Kenji Kawaguchi, Xiang Wang, and Tat-Seng Chua. 2023b. MolCA: Molecular graph-language modeling with cross-modal projector and uni-modal adapter. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Process-ing , pages 15623–15638, Singapore. Association for Computational Linguistics. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. 2025. Large language dif-fusion models. Preprint , arXiv:2502.09992. Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. 2002. Bleu: a method for automatic evalu-ation of machine translation. In Proceedings of the 40th Annual Meeting of the Association for Computa-tional Linguistics , pages 311–318, Philadelphia, PA. Association for Computational Linguistics. Krishna Pillutla, Lang Liu, John Thickstun, Sean Welleck, Swabha Swayamdipta, Rowan Zellers, Se-woong Oh, Yejin Choi, and Zaid Harchaoui. 2023. Mauve scores for generative models: Theory and practice. Preprint , arXiv:2212.14578. Maja Popovi´ c. 2015. chrF: character n-gram F-score for automatic MT evaluation. In Proceedings of the Tenth Workshop on Statistical Machine Translation ,pages 392–395, Lisbon, Portugal. Association for Computational Linguistics. Colin Raffel, Noam Shazeer, Adam Roberts, Kather-ine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. 2020. Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of Machine Learning Research ,21(140):1–67. Jascha Sohl-Dickstein, Eric Weiss, Niru Mah-eswaranathan, and Surya Ganguli. 2015. Deep un-supervised learning using nonequilibrium thermody-namics. In Proceedings of the 32nd International Conference on Machine Learning , volume 37 of Pro-ceedings of Machine Learning Research , pages 2256– 2265, Lille, France. PMLR. Duong Thanh Tran, Nhat Truong Pham, Nguyen Doan Hieu Nguyen, and Balachandran Manavalan. 2024. Mol2Lang-VLM: Vision- and text-guided generative pre-trained language models for advanc-ing molecule captioning through multimodal fusion. In Proceedings of the 1st Workshop on Language + Molecules (L+M 2024) , pages 97–102, Bangkok, Thailand. Association for Computational Linguistics. Umit Ucak, Islambek Ashyrmamatov, and Juyong Lee. 2023. Improving the quality of chemical language model outcomes with atom-in-smiles tokenization. 
+
+Journal of Cheminformatics , 15. Clement Vignac, Igor Krawczuk, Antoine Siraudin, Bo-han Wang, Volkan Cevher, and Pascal Frossard. 2023. DiGress: Discrete denoising diffusion for graph gen-eration. In The Eleventh International Conference on Learning Representations .David Weininger. 1988. Smiles, a chemical language and information system. 1. introduction to methodol-ogy and encoding rules. Journal of Chemical Infor-mation and Computer Sciences , 28(1):31–36. David Weininger, Arthur Weininger, and Joseph L. Weininger. 1989. Smiles. 2. algorithm for genera-tion of unique smiles notation. Journal of Chemical Information and Computer Sciences , 29(2):97–101. Yuran Xiang, Haiteng Zhao, Chang Ma, and Zhi-Hong Deng. 2025. Instruction-based molecular graph generation with unified text-graph diffusion model. 
+
+Preprint , arXiv:2408.09896. Zheni Zeng, Bangchen Yin, Shipeng Wang, Jiarui Liu, Cheng Yang, Haishen Yao, Xingzhi Sun, Maosong Sun, Guotong Xie, and Zhiyuan Liu. 2024. Chat-Mol: interactive molecular discovery with natural language. Bioinformatics , 40(9):btae534. Tianyi Zhang*, Varsha Kishore*, Felix Wu*, Kilian Q. Weinberger, and Yoav Artzi. 2020. BERTScore: Evaluating text generation with bert. In International Conference on Learning Representations .Xiaochen Zhang, Shuangxi Wang, Ying Fang, and Qiankun Zhang. 2025. MG-DIFF: A novel molecular graph diffusion model for molecular generation and optimization. PLOS ONE , 20(10):e0331450. Zaixiang Zheng, Yifan Deng, Dongyu Xue, Yi Zhou, Fei Ye, and Quanquan Gu. 2023. Structure-informed language models are protein designers. In Proceed-ings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pages 42317–42338. PMLR. Huaisheng Zhu, Teng Xiao, and Vasant G Honavar. 2024. 3M-Diffusion: Latent multi-modal diffusion for language-guided molecular structure generation. In First Conference on Language Modeling .Rustam Zhumagambetov, Ferdinand Molnar, Vsevolod A. Peshkov, and Siamac Fazli. 2021. Transmol: repurposing a language model for molecular generation. RSC Adv. , 11:25921–25932. 
+
+A Appendix 
+
+A.1 Related Works 
+
+Table 5 positions BiMol-Diff relative to recent state-of-the-art molecule–text generation frame-works. While autoregressive (AR) baselines, such as MolT5 and UniMoT, have successfully demon-strated bidirectional capabilities, they often suf-fer from the standard limitations of sequential de-coding (e.g., exposure bias). Conversely, exist-ing diffusion-based approaches like TGM-DLM and UTGDiff offer non-autoregressive benefits but are predominantly unidirectional, focusing al-most exclusively on the Text →Graph modality. 
+
+BiMol-Diff bridges this gap as a unified diffu-sion framework capable of both Graph →Text and Text →Graph generation. Furthermore, we distin-guish our approach by integrating a token-aware mechanism , a feature notably absent in prior diffu-sion baselines—which adapts the noising schedule to prioritize chemically significant tokens, similar to the strategy employed by the AR-based ChemT5. 
+
+A.2 Derivation 
+
+BiMol-Diff builds on the standard diffusion frame-work, which trades the flexibility of expressive gen-erative models (e.g., GANs, VAEs, flow models) for the tractability of likelihood-based training in a continuous latent space z. The overall goal is to minimize the negative log-likelihood 
+
+Ez0,c
+
+− log pθ(z0 | c), (10) which is upper-bounded by the Variational Lower Bound (VLB). 
+
+A.2.1 Forward and Reverse Processes 
+
+The forward Markov chain is defined as q(z1: T |
+
+z0) = QTt=1 q(zt | zt−1), where each transition is Gaussian: 
+
+q(zt | zt−1) = N
+
+
+
+zt
+
+p1 − βt zt−1, β t I
+
+
+
+.
+
+(11) Let αt = 1 − βt and ¯αt = Qti=1 αi. By induction, the marginal at time t satisfies: 
+
+zt = √¯αt z0 + √1 − ¯αt ϵ, ϵ ∼ N (0, I),
+
+(12) so that q(zt | z0) = N
+
+√¯αt z0, (1 − ¯αt)I
+
+
+
+. We used the sqrt schedule as the baseline schedule used in DiffusionLM (Li et al., 2022), namely ¯αt =1 − pt/T + s with small s > 0. The reverse denoising process then learns 
+
+pθ(z0: T ) = p(zT )
+
+> T
+
+Y
+
+> t=1
+
+pθ(zt−1 | zt),pθ(zt−1 | zt) = N
+
+
+
+μθ(zt, t ), σ2
+
+> θ
+
+(zt, t )
+
+
+
+.
+
+(13) Applying Bayes’ rule to the forward transitions yields the exact posterior mean 
+
+μt(zt, z0) = 
+
+√αt(1 − ¯αt−1)1 − ¯αt
+
+zt +
+
+√¯αt−1 βt
+
+1 − ¯αt
+
+z0,
+
+(14) whose coefficients we denote by U and E.
+
+BiMol-Diff ’s training objective is then to match the network’s predicted μθ, σθ to these poste-rior quantities via a simple noise-prediction loss. We optimize the negative log-likelihood by upper-bounding it with the variational lower bound 
+
+E− log pθ(x0) ≤ L vlb =
+
+> T
+
+X
+
+> t=0
+
+Lt. (15) Method Generation family Text-conditioned Graph →Text Text →Graph Bidirectional Token-aware training                                                                    
+
+> Autoregressive (AR)
+> MolT5 (Edwards et al., 2022) Seq2Seq PLM (T5) ✓✓✓✓—Text+ChemT5 (Christofidellis et al., 2023) Seq2Seq PLM (T5) ✓✓✓✓—CAMT5 (Kim et al., 2025b) Seq2Seq PLM (T5) ✓—✓—✓
+> UniMoT (Guo et al., 2025a) LLM-based multitask ✓✓✓✓—LDMol (Chang and Ye, 2025) PLM-based generator ✓—✓——MolCA (Liu et al., 2023b) Encoder–decoder (graph-aware) —✓———Mol2Lang-VLM (Tran et al., 2024) Multimodal PLM —✓———
+> Non-autoregressive (Diffusion)
+> TGM-DLM (Gong et al., 2024) Diffusion-LM ✓—✓——3M-Diffusion (Zhu et al., 2024) Latent diffusion (graph/seq) ✓—✓——UTGDiff (Xiang et al., 2025) Graph diffusion ✓—✓——
+> BiMol-Diff (ours) Conditional diffusion ✓✓✓✓✓
+
+Table 5: Feature comparison of BiMol-Diff against representative autoregressive (AR) and diffusion baselines. ( ✓=supported; — = not supported/reported). Token-aware mechanism denotes chemistry-aware tokenization/weighting in AR models and token-wise noising schedules in diffusion models. Unlike prior diffusion works which are typically unidirectional, BiMol-Diff enables fully bidirectional generation. 
+
+A.2.2 Variational Lower Bound (VLB) 
+
+Following Sohl-Dickstein et al.(Sohl-Dickstein et al., 2015), for conditional generation the VLB decomposes into: 
+
+Lvlb = Eq(z1: T |z0)
+
+h
+
+LT +
+
+TX
+
+t=2 
+
+Lt − L 0
+
+i
+
+,
+
+LT := log q(zT | z0)
+
+p(zT ) ,
+
+Lt := log q(zt−1 | zt, z0)
+
+pθ(zt−1 | zt, c) ,
+
+L0 := log pθ(z0 | z1, c).
+
+(16) where each Lt is a KL divergence between Gaus-sians. The true posterior mean (via Bayes’ rule) is: 
+
+μt(zt, z0) = 
+
+√αt(1 − ¯αt−1)1 − ¯αt
+
+| {z }
+
+U
+
+zt +
+
+√¯αt−1βt
+
+1 − ¯αt
+
+| {z }
+
+E
+
+z0,
+
+(17) with covariance Σq = ˜βtI, ˜βt = 1− ¯αt−1
+
+1− ¯αt βt. In the standard simplification, the model’s covariance is fixed to match the true posterior covariance Σθ =
+
+Σq, the KL collapses to a weighted MSE: 
+
+Lt = 12 μt−μθ
+
+2
+
+Σ−1
+
+> q
+
+∝ E
+
+h
+
+z0 − M θ(zt, t, c) 2i
+
+.
+
+(18) Thus, for 2 ≤ t ≤ T , Lt → ∥ z0 − M θ(zt, t, c)∥2.
+
+The final KL encourages zT to match the unit Gaus-sian prior: 
+
+LT = KL  q(zT | z0) ∥ p(zT ) ∝ μ(zT ) 2,
+
+(19) a constant w.r.t. θ. The discrete target S (sequence) is encoded into a continuous embedding gΦ(S).The final term in VLB is L0 = − log pθ(z0 | z1, c).We need to integrate the discrete data S into this continuous likelihood term. We use the law of total probability to express the continuous like-lihood pθ(z0 | z1, c) by marginalizing over all possible discrete tokens in the target sequence 
+
+S = {s1, s 2 · · · , s N }:
+
+pθ(z0 | z1, c) = X
+
+S
+
+pθ(z0, S | z1, c) (20) We then apply the product rule to the joint proba-bility: 
+
+pθ(z0, S | z1, c) = pθ(z0 | S, z1, c) · pθ(S | z1, c)
+
+(21) For training, we are interested in the specific ground-truth sequence S. When we evaluate L0
+
+during training, we consider only the term where S
+
+is the ground-truth sequence: 
+
+L0 ≈ − log pθ(z0, S | z1, c)= − log 
+
+h
+
+pθ(z0 | S, z1, c) · pθ(S | z1, c)
+
+i
+
+.
+
+(22) The core approximation simplifies the dependency graph by asserting that the discrete data S is gener-ated only from the clean latent z0, and is indepen-dent of z1 and c given z0.
+
+S ⊥ (z1, c) | z0 (23) This allows us to replace the discrete conditional likelihood with the separate rounding network 
+
+˜pΦ(S | z0): pθ(S | z1, c) ≈ ˜pΦ(S | z0). Substitut-ing this back into the likelihood decomposition: 
+
+pθ(z0, S | z1, c) ≈ pcont (z0 | S, z1, c)· ˜pΦ(S | z0)
+
+(24) Taking the negative logarithm of the approximation gives the two desired terms: 
+
+L0 ≈ − log pcont (z0 | S, z1, c) − log ˜ pΦ(S | z0)
+
+This split yields the two components used in the final training objective: 1. Consistency Term ( LCons ): The first term is the negative log-likelihood of the continuous latent, which is minimized via the MSE loss on the means: − log pcont (z0 | S, z1, c) →LConsistency = gΦ(S) − M θ(z1, 1, c) 2.2. Rounding Term ( LRound ): This second term is the dedicated loss for the discrete data likeli-hood: LRound = − log ˜ pΦ(S | z0)
+
+A.2.3 Final End-to-End Objective 
+
+Combining all components: 
+
+Lvlb ∝
+
+> T
+
+X
+
+> t=2
+
+z0 − M θ(zt, t, c) 2
+
+| {z }
+
+> Denoising
+
+(25) 
+
++ gΦ(S) − M θ(z1, 1, c) 2
+
+| {z }
+
+> Consistency
+
+(26) 
+
+− log ˜ pΦ(S | z0)
+
+| {z }
+
+> Rounding
+
+. (27) Dropping constant terms, the simplified end-to-end training loss is: 
+
+Le2e-simple (S) = Eq
+
+h TX
+
+> t=2
+
+Mθ(zt, t, ˜G) − z0 2
+
+| {z }
+
+> Denoising
+
++ gΦ(S) − M θ(z1, 1, ˜G) 2
+
+| {z }
+
+> Consistency
+
+− log ˜ pΦ(S | z0)
+
+| {z }
+
+> Rounding
+
+i
+
+.
+
+(28) 
+
+A.3 Non-increasing Isotonic Projection 
+
+After constructing the per-token cumulative sched-ule ˜αit, we project it onto the set of non-increasing sequences {¯αit}Tt=1 such that ¯αi 
+
+> 1
+
+≥ ¯αi 
+
+> 2
+
+≥ · · · ≥ ¯αiT .Concretely, this is a 1D isotonic regression problem with squared loss, which we solve using the stan-dard Pool-Adjacent-Violators Algorithm (PAVA). This algorithm finds the closest monotone non-increasing sequence (in the least-squares sense) to the input. Intuitively, it smooths out spurious "bumps" in the loss profile while guaranteeing that the cumulative signal strength strictly decays over time, fulfilling the monotonicity requirement of the diffusion process.
