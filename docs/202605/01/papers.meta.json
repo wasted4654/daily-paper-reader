@@ -1,0 +1,65 @@
+{
+  "label": "2026-05-01",
+  "date": "2026-05-01",
+  "generated_at": "2026-05-01T20:18:42",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202605/01/2604.27443v1-abc-any-subset-autoregression-via-non-markovian-diffusion-bridges-in-continuous-time-and-space",
+      "section": "deep",
+      "title_en": "ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space",
+      "authors": "Gabe Guo, Thanawat Sornwanee, Lutong Hao, Elon Litman, Stefano Ermon, Jose Blanchet",
+      "date": "2026-04-30",
+      "pdf": "https://arxiv.org/pdf/2604.27443v1",
+      "score": "10.0",
+      "evidence": "通过非马尔可夫扩散桥实现任意子集自回归模型",
+      "tldr": "提出ABC框架，利用扩散桥实现连续数据的任意子集自回归生成。",
+      "tags": "query:ardm",
+      "abstract_en": "Generating continuous-time, continuous-space stochastic processes (e.g., videos, weather forecasts) conditioned on partial observations (e.g., first and last frames) is a fundamental challenge. Existing approaches, (e.g., diffusion models), suffer from key limitations: (1) noise-to-data evolution fails to capture structural similarity between states close in physical time and has unstable integration in low-step regimes; (2) random noise injected is insensitive to the physical process's time elapsed, resulting in incorrect dynamics; (3) they overlook conditioning on arbitrary subsets of states (e.g., irregularly sampled timesteps, future observations). We propose ABC: Any-Subset Autoregressive Models via Non-Markovian Diffusion Bridges in Continuous Time and Space. Crucially, we model the process with one continual SDE whose time variable and intermediate states track the real time and process states. This has provable advantages: (1) the starting point for generating future states is the already-close previous state, rather than uninformative noise; (2) random noise injection scales with physical time elapsed, encouraging physically plausible dynamics with similar time-adjacent states. We derive SDE dynamics via changes-of-measure on path space, yielding another advantage: (3) path-dependent conditioning on arbitrary subsets of the state history and/or future. To learn these dynamics, we derive a path- and time-dependent extension of denoising score matching. Our experiments show ABC's superiority to competing methods on multiple domains, including video generation and weather forecasting.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/01/2604.26985v1-simple-self-conditioning-adaptation-for-masked-diffusion-models",
+      "section": "deep",
+      "title_en": "Simple Self-Conditioning Adaptation for Masked Diffusion Models",
+      "authors": "Michael Cardei, Huu Binh Ta, Ferdinando Fioretto",
+      "date": "2026-04-28",
+      "pdf": "https://arxiv.org/pdf/2604.26985v1",
+      "score": "8.0",
+      "evidence": "离散序列生成中掩码扩散模型的自调节适配",
+      "tldr": "针对掩码扩散模型（MDM）在迭代过程中丢弃未预测位置信息的局限性，本文提出了一种简单的后训练自调节适配方法（SCMDM）。该方法通过将每一步的去噪过程建立在模型前一步对清晰状态的预测之上，实现了跨步骤的细化，且无需修改架构或增加采样开销。实验证明，SCMDM在文本、图像、分子和基因组建模等多个领域均显著提升了生成质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion models (MDMs) generate discrete sequences by iterative denoising under an absorbing masking process. In standard masked diffusion, if a token remains masked after a reverse update, the model discards its clean-state prediction for that position. Thus, still-masked positions must be repeatedly inferred from the mask token alone. This design choice limits cross-step refinement. To address this limitation, this paper proposes a simple, yet effective, post-training adaptation for MDMs that conditions each denoising step on the model's own previous clean-state predictions. The resulting method, called Self-Conditioned Masked Diffusion Models (SCMDM), requires minimal architectural change, does not introduce a recurrent latent-state pathway, does not rely on an auxiliary reference model, and adds no extra denoiser evaluations during sampling. This is an important departure from partial self-conditioning approaches which requires expensive model training from scratch. In particular, the paper shows that partial self-conditioning, including the commonly used 50% dropout strategy for training self-conditioned models from scratch, is suboptimal in the post-training regime. Instead, once the model's self-generated clean-state estimates become informative, the specialization to refinement is preferable to mixing conditional and unconditional objectives. SCMDM is evaluated across multiple domains, demonstrating consistent improvement over vanilla MDM baselines, achieving nearly a 50% reduction in generative perplexity on OWT-trained models (42.89 to 23.72), alongside strong improvements in discretized image synthesis quality, small molecular generation, and enhanced fidelity in genomic distribution modeling.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/01/2604.21101v1-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting",
+      "section": "quick",
+      "title_en": "A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting",
+      "authors": "Brooks Kinch, Xiaozhe Hu, Yilong Huang, Martine Dyring Hansen, Sunniva Meltzer, Nathaniel Donald Hamlin, David Sirajuddin, Eric C. Cyr, Nathaniel Trask",
+      "date": "2026-04-22",
+      "pdf": "https://arxiv.org/pdf/2604.21101v1",
+      "score": "6.0",
+      "evidence": "嵌入神经时间积分器的自回归 Transformer 用于预测",
+      "tldr": "本研究针对混沌动力系统长程自回归预测中的稳定性难题，提出一种混合神经时间积分器。该方法将自回归Transformer嵌入到基于射击法的混合有限元方案中，利用拓扑结构确保了离散能量守恒和训练梯度的统一界限，有效解决了梯度爆炸问题。实验表明，该模型在参数量减少65倍的情况下，性能优于现有大模型，并在核聚变模拟中实现了9000倍的加速。",
+      "tags": "query:ardm",
+      "abstract_en": "For autoregressive modeling of chaotic dynamical systems over long time horizons, the stability of both training and inference is a major challenge in building scientific foundation models. We present a hybrid technique in which an autoregressive transformer is embedded within a novel shooting-based mixed finite element scheme, exposing topological structure that enables provable stability. For forward problems, we prove preservation of discrete energies, while for training we prove uniform bounds on gradients, provably avoiding the exploding gradient problem. Combined with a vision transformer, this yields latent tokens admitting structure-preserving dynamics. We outperform modern foundation models with a $65\\times$ reduction in model parameters and long-horizon forecasting of chaotic systems. A \"mini-foundation\" model of a fusion component shows that 12 simulations suffice to train a real-time surrogate, achieving a $9{,}000\\times$ speedup over particle-in-cell simulation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/01/2604.21101v2-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting",
+      "section": "quick",
+      "title_en": "A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting",
+      "authors": "Brooks Kinch, Xiaozhe Hu, Yilong Huang, Martine Dyring Hansen, Sunniva Meltzer, Nathaniel Donald Hamlin, David Sirajuddin, Eric C. Cyr, Nathaniel Trask",
+      "date": "2026-04-22",
+      "pdf": "https://arxiv.org/pdf/2604.21101v2",
+      "score": "6.0",
+      "evidence": "嵌入神经时间积分器的自回归 Transformer 用于预测",
+      "tldr": "本研究针对混沌动力系统长程自回归建模中的训练与推理稳定性难题，提出一种混合神经时间积分器。该方法将自回归Transformer嵌入到基于射击法的混合有限元方案中，通过拓扑结构确保了离散能量守恒和梯度一致有界，有效解决了梯度爆炸问题。实验表明，该模型在参数量减少65倍的情况下，预测性能优于现有基础模型，并在核聚变模拟中实现了9000倍的加速。",
+      "tags": "query:ardm",
+      "abstract_en": "For autoregressive modeling of chaotic dynamical systems over long time horizons, the stability of both training and inference is a major challenge in building scientific foundation models. We present a hybrid technique in which an autoregressive transformer is embedded within a novel shooting-based mixed finite element scheme, exposing topological structure that enables provable stability. For forward problems, we prove preservation of discrete energies, while for training we prove uniform bounds on gradients, provably avoiding the exploding gradient problem. Combined with a vision transformer, this yields latent tokens admitting structure-preserving dynamics. We outperform modern foundation models with a $65\\times$ reduction in model parameters and long-horizon forecasting of chaotic systems. A \"mini-foundation\" model of a fusion component shows that 12 simulations suffice to train a real-time surrogate, achieving a $9{,}000\\times$ speedup over particle-in-cell simulation.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

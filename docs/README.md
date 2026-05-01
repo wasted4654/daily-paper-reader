@@ -6,27 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-04-30
-- 运行时间：2026-04-30 20:19:27 UTC
+- 最新运行日期：2026-05-01
+- 运行时间：2026-05-01 20:18:31 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：1
-- 速读区：1
+- 本次总论文数：4
+- 精读区：2
+- 速读区：2
 
 ### 今日简报（AI）
-今日聚焦扩散模型在语言建模与分子科学领域的双重突破。
-重点推荐 9.0 分佳作，其通过块局部性（Blockwise Locality）显著提升
-- 详情：[/202604/30/README](/202604/30/README)
+今日聚焦扩散模型前沿，深度解析非马尔可夫扩散桥与掩码模型自调节技术。
+满分神作 ABC 框架实现了任意子集自回归的突破，自调节适配方案则显著提升了掩码扩散模型的生成效能。
+建议重点关注扩散模型与自回归机制的融合趋势，探索更灵活的连续时空建模方法。
+- 详情：[/202605/01/README](/202605/01/README)
 
 ### 精读区论文标签
-1. [On the Trainability of Masked Diffusion Language Models via Blockwise Locality](/202604/30/2604.24832v1-on-the-trainability-of-masked-diffusion-language-models-via-blockwise-locality)  
-   标签：评分：9.0/10、query:ardm
-   evidence：比较掩码扩散语言模型与自回归大语言模型
+1. [ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space](/202605/01/2604.27443v1-abc-any-subset-autoregression-via-non-markovian-diffusion-bridges-in-continuous-time-and-space)  
+   标签：评分：10.0/10、query:ardm
+   evidence：通过非马尔可夫扩散桥实现任意子集自回归模型
+2. [Simple Self-Conditioning Adaptation for Masked Diffusion Models](/202605/01/2604.26985v1-simple-self-conditioning-adaptation-for-masked-diffusion-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：离散序列生成中掩码扩散模型的自调节适配
 
 ### 速读区论文标签
-1. [BiMol-Diff: A Unified Diffusion Framework for Molecular Generation and Captioning](/202604/30/2604.24089v1-bimol-diff-a-unified-diffusion-framework-for-molecular-generation-and-captioning)  
+1. [A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting](/202605/01/2604.21101v1-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting)  
    标签：评分：6.0/10、query:ardm
-   evidence：作为分子生成自回归模型替代方案的扩散框架
+   evidence：嵌入神经时间积分器的自回归 Transformer 用于预测
+2. [A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting](/202605/01/2604.21101v2-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting)  
+   标签：评分：6.0/10、query:ardm
+   evidence：嵌入神经时间积分器的自回归 Transformer 用于预测
 
 
 <div class="dpr-home-promo-card">
