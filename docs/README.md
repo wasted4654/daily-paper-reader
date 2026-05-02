@@ -6,34 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-01
-- 运行时间：2026-05-01 20:18:31 UTC
+- 最新运行日期：2026-05-02
+- 运行时间：2026-05-02 20:08:27 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：2
-- 速读区：2
+- 本次总论文数：2
+- 精读区：1
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦扩散模型前沿，深度解析非马尔可夫扩散桥与掩码模型自调节技术。
-满分神作 ABC 框架实现了任意子集自回归的突破，自调节适配方案则显著提升了掩码扩散模型的生成效能。
-建议重点关注扩散模型与自回归机制的融合趋势，探索更灵活的连续时空建模方法。
-- 详情：[/202605/01/README](/202605/01/README)
+今日聚焦图像生成前沿，深入剖析了动态分辨率 1D Tokenizer 与高效扩散模型的最新进展。
+重点关注 VibeToken 如何通过 1D 序列化实现灵活的分辨率生成，以及数据驱动方法对扩散模型效率的显著优化。
+建议优先研读高分论文 VibeToken，掌握自回归模型在多尺度视觉创作中的演进趋势。
+- 详情：[/202605/02/README](/202605/02/README)
 
 ### 精读区论文标签
-1. [ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space](/202605/01/2604.27443v1-abc-any-subset-autoregression-via-non-markovian-diffusion-bridges-in-continuous-time-and-space)  
-   标签：评分：10.0/10、query:ardm
-   evidence：通过非马尔可夫扩散桥实现任意子集自回归模型
-2. [Simple Self-Conditioning Adaptation for Masked Diffusion Models](/202605/01/2604.26985v1-simple-self-conditioning-adaptation-for-masked-diffusion-models)  
+1. [VibeToken: Scaling 1D Image Tokenizers and Autoregressive Models for Dynamic Resolution Generations](/202605/02/2604.24885v1-vibetoken-scaling-1d-image-tokenizers-and-autoregressive-models-for-dynamic-resolution-generations)  
    标签：评分：8.0/10、query:ardm
-   evidence：离散序列生成中掩码扩散模型的自调节适配
+   evidence：自回归模型缩小与扩散模型的差距
 
 ### 速读区论文标签
-1. [A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting](/202605/01/2604.21101v1-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting)  
+1. [Beyond Fixed Formulas: Data-Driven Linear Predictor for Efficient Diffusion Models](/202605/02/2604.26365v1-beyond-fixed-formulas-data-driven-linear-predictor-for-efficient-diffusion-models)  
    标签：评分：6.0/10、query:ardm
-   evidence：嵌入神经时间积分器的自回归 Transformer 用于预测
-2. [A Hybridizable Neural Time Integrator for Stable Autoregressive Forecasting](/202605/01/2604.21101v2-a-hybridizable-neural-time-integrator-for-stable-autoregressive-forecasting)  
-   标签：评分：6.0/10、query:ardm
-   evidence：嵌入神经时间积分器的自回归 Transformer 用于预测
+   evidence：使用可学习预测器的高效扩散模型
 
 
 <div class="dpr-home-promo-card">
