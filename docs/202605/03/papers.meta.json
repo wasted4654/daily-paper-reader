@@ -1,0 +1,37 @@
+{
+  "label": "2026-05-03",
+  "date": "2026-05-03",
+  "generated_at": "2026-05-03T19:46:47",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202605/03/2604.26065v1-flows-one-step-motion-prediction-via-local-transport-conditioning",
+      "section": "deep",
+      "title_en": "FlowS: One-Step Motion Prediction via Local Transport Conditioning",
+      "authors": "Leandro Di Bella, Adrian Munteanu, Bruno Cornelis",
+      "date": "2026-04-28",
+      "pdf": "https://arxiv.org/pdf/2604.26065v1",
+      "score": "8.0",
+      "evidence": "自动驾驶的生成式运动预测",
+      "tldr": "针对自动驾驶中生成式运动预测的高精度、多模态和低延迟需求，本文提出 FlowS 框架。该方法通过“局部传输调节”策略，将复杂的模式发现转化为局部修正，利用在线学习的先验锚点和步长一致性位移场，实现了仅需单步推理的高质量预测。在 Waymo 数据集上达到了 SOTA 性能且推理速度达 75 FPS，解决了扩散模型推理慢的痛点。",
+      "tags": "query:genad",
+      "abstract_en": "Generative motion prediction must satisfy three simultaneous requirements for real-world autonomy: high accuracy, diverse multimodal futures, and strictly bounded latency. Diffusion models meet the first two but violate the third, requiring tens to hundreds of denoising steps. We identify a conditioning strategy that resolves this tension: \\textit{single-step integration is accurate when the underlying transport problem is local}. A model that must both discover the correct behavioral mode and traverse a long displacement in one step accumulates large discretization errors; conditioning the base distribution to lie near plausible futures reduces the problem to short-range refinement, the regime where a single Euler step suffices. We instantiate this \\emph{local transport conditioning} in FlowS, a conditional flow matching framework with two mechanisms. First, an online, scene-conditioned learned prior emits $K$ calibrated anchor trajectories per agent, each already near a plausible future, converting mode discovery into local correction. Second, a step-consistent displacement field enforces semigroup self-consistency, guaranteeing that a single step inherits multi-step accuracy. Crucially, anchoring this field at learned priors along straight-line paths yields a {stable, low-variance} training target, unlike prior self-consistency methods that suffer from {high-variance bootstrap} signals on curved diffusion paths. On the Waymo Open Motion Dataset, FlowS achieves state-of-the-art Soft mAP {(0.4804) and mAP (0.4703) with ensemble at 75\\,FPS} with single-step inference, demonstrating that local transport conditioning makes one-step generative motion prediction practical for safety-critical autonomy. Code and pretrained models will be released upon acceptance.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/03/2604.23235v1-measuring-temporal-linguistic-emergence-in-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Measuring Temporal Linguistic Emergence in Diffusion Language Models",
+      "authors": "Harry Lu",
+      "date": "2026-04-25",
+      "pdf": "https://arxiv.org/pdf/2604.23235v1",
+      "score": "7.0",
+      "evidence": "使用LLaDA研究扩散语言模型中的时间语言出现特性",
+      "tldr": "本研究通过分析扩散语言模型LLaDA-8B的去噪轨迹，探讨了语言信息在生成过程中的涌现规律。研究者利用线性探针测量了词性、语义类别及词汇身份的可恢复性，并结合不确定性动态和扰动敏感度进行分析。结果表明，模型遵循从粗粒度到细粒度的生成顺序：内容词早于功能词稳定，词性和语义信息先于精确词汇出现，且去噪中期对干预最为敏感。这一发现为理解扩散模型的内部生成机制提供了重要的时间维度视角。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models expose an explicit denoising trajectory, making it possible to ask when different kinds of information become measurable during generation. We study three independent 32-step runs of LLaDA-8B-Base on masked WikiText-103 text, each with 1{,}000 probe-training sequences and 200 held-out evaluation sequences. From saved trajectories, we derive four temporal measurements: token commitment; linear recoverability of part-of-speech (POS), coarse semantic category, and token identity; confidence and entropy dynamics; and sensitivity under mid-trajectory re-masking. Across seeds, the same ordering recurs: content categories stabilize earlier than function-heavy categories, POS and coarse semantic labels remain substantially more linearly recoverable than exact lexical identity under our probe setup, uncertainty remains higher for tokens that ultimately resolve incorrectly even though late confidence becomes less calibrated, and perturbation sensitivity peaks in the middle of the trajectory. A direct/collateral decomposition shows that this peak is overwhelmingly local to the perturbed positions themselves. In this LLaDA+WikiText setting, denoising time is therefore a useful analysis axis: under our measurements, coarse labels are recovered earlier and more robustly than lexical identity, trajectory-level uncertainty tracks eventual correctness, and mid-trajectory states are the most intervention-sensitive.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

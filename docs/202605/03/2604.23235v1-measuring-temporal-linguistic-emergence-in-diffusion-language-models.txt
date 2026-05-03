@@ -1,0 +1,469 @@
+Title: Measuring Temporal Linguistic Emergence in Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2604.23235v1
+
+Published Time: Tue, 28 Apr 2026 00:41:54 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Measuring Temporal Linguistic Emergence in Diffusion Language Models 
+
+Harry Lu 1
+
+## Abstract 
+
+Diffusion language models expose an explicit de-noising trajectory, making it possible to ask when different kinds of information become measur-able during generation. We study three indepen-dent 32-step runs of GSAI-ML/LLaDA-8B-Base 
+
+on masked WikiText-103 text, each with 1,000 probe-training sequences and 200 held-out eval-uation sequences. From saved trajectories, we derive four temporal measurements: token com-mitment; linear recoverability of part-of-speech (POS), coarse semantic category, and token iden-tity; confidence and entropy dynamics; and sen-sitivity under mid-trajectory re-masking. Across seeds, the same ordering recurs: content cate-gories stabilize earlier than function-heavy cate-gories, POS and coarse semantic labels remain substantially more linearly recoverable than ex-act lexical identity under our probe setup, uncer-tainty remains higher for tokens that ultimately resolve incorrectly even though late confidence becomes less calibrated, and perturbation sensi-tivity peaks in the middle of the trajectory. Adirect/collateral decomposition shows that this peak is overwhelmingly local to the perturbed positions themselves. In this LLaDA+WikiText setting, denoising time is therefore a useful analy-sis axis: under our measurements, coarse labels are recovered earlier and more robustly than lex-ical identity, trajectory-level uncertainty tracks eventual correctness, and mid-trajectory states are the most intervention-sensitive. 
+
+## 1. Introduction 
+
+Autoregressive language models reveal little about when 
+
+a prediction becomes stable: generation advances left-to-right, and intermediate states are not naturally aligned to a fixed denoising clock. Diffusion language models, by   
+
+> 1School of Mathematics, University of Minnesota, Min-neapolis MN, United States. Correspondence to: Harry Lu <lu000661@umn.edu>.
+> Preprint. April 28, 2026.
+
+contrast, iteratively refine a masked sequence and therefore expose a temporal axis that can be analyzed directly (Li et al., 2022; Nie et al., 2025). That temporal structure is especially attractive for interpretability. If representations and predictions evolve over denoising steps, we can ask whether coarse linguistic labels, lexical identity, certainty, and intervention sensitivity follow the same schedule or distinct ones. We analyze three independent full 32-step runs of 
+
+GSAI-ML/LLaDA-8B-Base on masked WikiText-103 text (Merity et al., 2016). Our analysis is intentionally lightweight: it operates only on saved trajectories, uses simple linear probes in the spirit of prior probing work (He-witt & Manning, 2019; Liu et al., 2019; Rogers et al., 2020), and pairs descriptive summaries with a single intervention-sensitivity curve. Even under these constraints, the temporal structure is far from uniform. We do not claim a universal law of diffusion-language gen-eration from three runs. Instead, we ask whether four tempo-ral measurements follow a consistent ordering across seeds: prediction stability, linearly recoverable linguistic informa-tion, self-reported certainty, and sensitivity to mid-trajectory re-masking. They do, but only in a measurement-aware sense. Under our probes, coarse labels are more recoverable than exact lexical identity throughout denoising, uncertainty remains informative about eventual correctness even late in the trajectory, and a non-initial re-masking-sensitive window becomes disproportionately important for the final outcome. Because the lexical probe uses a compact, partially unseen label space, we treat these comparisons ordinally rather than as normalized effect sizes. Our contributions are threefold: a lightweight trajectory-first framework for commitment, recoverability, certainty, and intervention sensitivity; empirical evidence, in one LLaDA+WikiText setting across three seeds, for a sta-ble temporal ordering in which coarse labels are more re-coverable than lexical identity under our probe setup and trajectory-level uncertainty tracks eventual correctness de-spite calibration drift; and a direct/collateral perturbation analysis showing that the strongest re-masking-sensitive window is non-initial and mostly local to the perturbed po-sitions. 1
+
+> arXiv:2604.23235v1 [cs.CL] 25 Apr 2026 Temporal Linguistic Emergence in Diffusion Language Models
+
+## 2. Related Work 
+
+Diffusion language modeling has been driven mainly by controllable generation, masked-LM initialization, scaling, and noise-schedule design (Li et al., 2022; He et al., 2022; Ye et al., 2023; Nie et al., 2025; von Rütte et al., 2025). Recent work also pushes DLMs toward AR-scale adapta-tion and hybrid causal decoding, including AR-to-diffusion conversion in DiffuLLaMA, non-Markovian trajectory con-ditioning in CaDDi, and causal/masked hybrids such as ARMD and CARD (Gong et al., 2024; Zhang et al., 2025; Karami & Ghodsi, 2026; Ruan et al., 2026). Trajectory-level work has also begun using denoising dynamics for downstream signals such as hallucination detection and gen-erative stability (Hemmat et al., 2026; Gautam et al., 2026), but these studies do not directly ask when linguistic struc-ture becomes available during denoising. We focus on that temporal question. Our commitment analysis is also related to stabilization and early-exit work outside diffusion, where intermediate-layer confidence is used to decide when further computation is unnecessary (Xin et al., 2020; Elhoushi et al., 2024). That literature treats stability mainly as an efficiency signal; we instead use a fixed denoising clock to compare when different kinds of linguistic information become linearly decodable, prediction-stable, and causally important. The analysis also connects to probing and representation analysis (Alain & Bengio, 2016; Conneau et al., 2018; Be-linkov & Glass, 2019; Hewitt & Manning, 2019; Liu et al., 2019; Tenney et al., 2019; de Vries et al., 2020; Rogers et al., 2020). Prior work uses simple probes to study what contextual encoders represent, often along network depth; we keep that probe family lightweight and move the anal-ysis axis to denoising time. In this sense, our paper is closer in spirit to diffusion-trajectory interpretability in vi-sion and planning-style diffusion, where temporal stages already serve as meaningful units of analysis (Tinaz et al., 2025; Chen et al., 2026). 
+
+## 3. Methods 
+
+We treat each full denoising run as a token-by-step table defined over masked positions. For every masked token, the logger stores the predicted token, top-1 confidence, en-tropy, and final-layer hidden state at every denoising step. This representation lets us analyze the same trajectory from four complementary views: stabilization, recoverability, cer-tainty, and intervention sensitivity. 
+
+Measurements. Let Mr denote the masked positions in record r, let ˆy(t) 
+
+> r,i
+
+be the prediction at step t for masked position i ∈ Mr , let h(t) 
+
+> r,i
+
+be the corresponding hidden state, and let q(t) 
+
+> r,i
+
+and H(t) 
+
+> r,i
+
+be the stored top-1 confidence and entropy. We introduce the four measurements one by one. First, token commitment is the earliest step after which a prediction no longer changes: 
+
+cr,i = min {t : ˆ y(t′) 
+
+> r,i
+
+= ˆ y(t) 
+
+> r,i
+
+, ∀t′ ≥ t}. (1) Second, for a probe target g ∈ { POS , semantic , token }, tem-poral recoverability is the average linear-probe accuracy over masked positions: 
+
+Ag (t) = 1
+
+N
+
+X
+
+> r,i
+
+1
+
+h
+
+arg max Wg h(t) 
+
+> r,i
+
+= ℓgr,i 
+
+i
+
+, (2) where N = P 
+
+> r
+
+|Mr |. Third, we summarize certainty at step t by the mean top-1 confidence and entropy: 
+
+¯q(t) = 1
+
+N
+
+X
+
+> r,i
+
+q(t) 
+
+> r,i
+
+, ¯H(t) = 1
+
+N
+
+X
+
+> r,i
+
+H(t) 
+
+> r,i
+
+. (3) Finally, intervention sensitivity is the drop in final accuracy after perturbing the trajectory at step t:
+
+∆( t) = Acc base − Acc perturb at t. (4) Throughout, we interpret this as sensitivity under a spe-cific re-masking intervention rather than as a fully identified causal mechanism. For the direct/collateral follow-up, we additionally evaluate this drop separately on the re-masked positions themselves and on the untouched masked posi-tions, yielding ∆direct (t) and ∆collateral (t). For the probe plots, we reuse per-record outputs to estimate bootstrap uncertainty. For grouped commitment curves, let zr,i be the coarse POS group of masked position (r, i ) and let Nk = P 
+
+> r,i
+
+1[zr,i =
+
+k]. We then report the empirical commitment CDF 
+
+Fk(t) = 1
+
+Nk
+
+X
+
+> r,i
+
+1[zr,i = k]1[cr,i ≤ t], (5) which makes Figure 1(a) interpretable as a family of group-conditioned stabilization curves rather than only as mean commitment summaries. 
+
+Experimental setup and aggregation. We evaluate 
+
+GSAI-ML/LLaDA-8B-Base on masked WikiText-103 trajec-tories over three independent 32-step runs and report either cross-seed mean ± standard deviation or a representative seed-42 trajectory when the qualitative pattern is visually stable. Full sampling, masking, and logging details are deferred to Appendix A. 
+
+## 4. Results 
+
+Coarse labels are more recoverable than lexical identity. 
+
+Figure 1(b) aggregates the probe curves over three seeds. 2Temporal Linguistic Emergence in Diffusion Language Models 0 5 10 15 20 25 30 
+
+> Step
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Cumulative stable fraction
+> Figure 1. Linguistic Emergence Curves
+> NOUN
+> VERB
+> ADJ+ADV
+> NUM
+> FUNCTION
+> PUNCT
+> OTHER
+
+(a) Commitment accumulates earlier for numbers and content words than for function-heavy categories. 0 5 10 15 20 25 30 
+
+> Step
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Accuracy
+> Replication Probe Ribbon
+> POS mean
+> Token mean
+
+(b) Across three seeds, coarse labels remain much more linearly recoverable than exact lexical identity. 0.3              
+
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Mean confidence
+> Confidence by POS group
+> NOUN
+> VERB
+> ADJ+ADV
+> NUM
+> FUNCTION
+> PUNCT
+> OTHER 1
+> 2
+> 3
+> 4
+> 5
+> Mean entropy
+> Entropy by POS group
+> 0510 15 20 25 30
+> Step
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> Mean confidence
+> Confidence by final correctness
+> Final correct
+> Final wrong
+> 0510 15 20 25 30
+> Step
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> 4.5
+> Mean entropy
+> Entropy by final correctness
+
+(c) Trajectory-level uncertainty separates eventually correct from eventually wrong tokens late in denoising. 0 5 10 15 20 25 30 
+
+> Step
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> Accuracy drop after perturbation
+> Replication Perturbation Ribbon
+
+(d) Across three seeds, perturbation sensitivity peaks in the middle of the trajectory rather than at step 0. 
+
+Figure 1. Temporal recoverability, uncertainty, and sensitivity summary for the 200-example evaluation split. Panels (b,d) are the main replicated results, panel (c) gives the focal uncertainty analysis, and panel (a) provides supporting commitment dynamics. Panels (a,c) show the representative seed-42 run, and panels (b,d) report mean ± one standard deviation over three seeds. 
+
+POS starts at 57.9% ± 3.1 and ends at 60.2% ± 3.8, coarse semantic labels rise from 59.8% to 62.3%, and token top-1 moves only from 13.4% ± 2.1 to 15.5% ± 0.7. Because the token probe is evaluated in a compact, partially unseen lexical label space (3,428 classes on average; 33.4% of eval-uation targets unseen during probe training), we interpret the POS/token gap ordinally rather than as a normalized ef-fect size and complement top-1 with retrieval-style metrics (Appendix Table 3). Even with that caveat, the ordering is stable: no step in any seed brings token identity close to POS or semantic recoverability, and the final POS–token gap is 44.7 points. Aggregate lexical top-1 therefore understates what the probe can recover, but it does not erase the coarse-before-lexical pattern. Final token retrieval reaches 29.4% top-5, 34.4% top-10, and 0.218 MRR overall; on seen lexical targets, final top-1/top-5/top-10/MRR improve to 23.4/44.1/51.7/0.327, versus essentially zero on unseen targets. A per-step probe ablation still keeps the POS–token gap positive at every step in every run, never below 34.5 points. Under this probe setup, coarse labels are therefore consistently more linearly recoverable than exact lexical identity throughout denoising. The same ordering survives compact follow-ups: on WikiText-2, final POS/semantic/token recoverability is 57.2/61.2/18.4; under a 16-step schedule it is 63.9/66.0/15.1; and with per-step rather than shared probes, final POS/token accuracies are 58.6 and 14.6, with a minimum POS–token gap of 34.5 points. 
+
+Trajectory-level uncertainty tracks eventual correctness. 
+
+Figure 1(c) shows that the uncertainty split is already visible in the representative seed-42 trajectory, and the endpoint summaries replicate across seeds. Eventually correct tokens 3Temporal Linguistic Emergence in Diffusion Language Models 0 5 10 15 20 25 30  
+
+> Denoising step
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Calibration score
+> ECE
+> Brier
+> Figure 2. Calibration drift on the representative seed-42 run. ECE and Brier rise through the middle of denoising and plateau by about step 16, showing that later confidence is more separative but less calibrated.
+
+end at 0.877 confidence versus 0.819 for eventually wrong tokens, and at 0.774 entropy versus 1.173. The denoising clock therefore does more than track representational emer-gence: it also separates trajectories that converge to the right basin from those that do not. Figure 2 isolates the calibration drift behind this effect. On the representative run, ECE rises from 0.034 at step 0 to 0.415 at the final plateau, and the Brier score rises from 0.126 to 0.414, with both curves flattening around step 16 (Appendix Table 3). Later confidence is therefore more discriminative yet less calibrated, which makes uncertainty a substantive interpretability result rather than just a cosmetic confidence trace. 
+
+Mid-trajectory perturbations are strongest and mostly local. Figure 1(d) shows the mean final accuracy drop after re-masking 20% of tokens at step t and resuming denoising, aggregated over three seeds. The curve rises from roughly one point at step 0 to a peak drop of about 10–11 points, with peak steps between 15 and 18. The most damage-sensitive window therefore appears after partial structure has formed rather than at initialization. A direct-versus-collateral decomposition shows that this peak is overwhelmingly local. At the three-seed mean peak, the total drop is 10.96 points, of which 10.92 come from the re-masked positions and only 0.03 from untouched masked positions, so 99.7% of the peak effect is direct. Collateral effects are not absent, but they are concentrated much earlier in denoising: at step 2, the mean drop is 3.13 points, with only 0.16 direct and 2.96 collateral. Selector-restricted con-trols preserve the same non-initial peak, which strengthens the interpretation that this is a robust re-masking-sensitive window rather than a brittle artifact of one perturbation sub-set (Appendix Tables 2 and 3). Varying the perturbation design changes the amplitude more than the location of this effect: 10/20/40% re-masking peaks at 7.1/11.2/19.9 points in the same late-middle region, and selector-restricted con-trols show the same non-initial sensitivity window, although changing the initial mask ratio shifts the denoising clock itself. 
+
+Commitment timing adds supporting temporal struc-ture. Figure 1(a) shows that commitment timing has sta-ble category structure across seeds: numbers commit earli-est on average (mean 3.37 steps, range 3.23–3.59), nouns and verbs are intermediate (4.07 and 4.46), and function-heavy or punctuation tokens are latest (4.92 and 4.97). We use commitment as a stabilization descriptor rather than a correctness proxy, since the representative seed-42 run is non-monotonic in correctness: tokens that commit at step 0 are correct 62.2% of the time, mid-trajectory commitments (steps 5–9) drop to 30.9%, and very late commitments (step 10 onward) recover to 49.3% (Figure 3; Table 3). 
+
+## 5. Discussion and Conclusion 
+
+Across three seeds in one LLaDA+WikiText setting, our main replicated findings are that coarse linguistic labels are more linearly recoverable than exact lexical identity under the current probe setup, trajectory-level uncertainty tracks eventual correctness even late in denoising, and re-masking sensitivity peaks in the middle of the trajectory while remaining mostly local to the perturbed positions. Commitment provides additional evidence that denoising is temporally structured rather than uniform. Denoising time is therefore a useful analysis axis for DLM interpretability. In future work, the same trajectory-first view could support stage-aware diagnostics, adaptive infer-ence, or trajectory-level uncertainty estimation. Our claim, however, is intentionally narrow: we observe a coarse-to-fine pattern under these measurements, not a universal emer-gence law. 
+
+## 6. Limitations 
+
+We study one model family, one activation site, one masking regime, and one primary dataset. The lexical probe uses a compact label space with substantial unseen-target mass, so lexical comparisons should be read ordinally and alongside ranking metrics rather than as fully matched effect sizes. The 16-step, cross-dataset, and selector-restricted follow-ups are supportive but exploratory, and we do not claim that the same ordering must hold beyond the current setting. 
+
+## References 
+
+Alain, G. and Bengio, Y. Understanding intermediate layers using linear classifier probes. arXiv preprint 
+
+4Temporal Linguistic Emergence in Diffusion Language Models 
+
+arXiv:1610.01644 , 2016. URL https://arxiv.org/ abs/1610.01644 .Belinkov, Y. and Glass, J. Analysis methods in neural language processing: A survey. Transactions of the As-sociation for Computational Linguistics , 7:49–72, 2019. URL https://aclanthology.org/Q19-1004/ .Chen, P., Liu, X., Zhang, X., Shen, F., Gong, X., Liu, Z., Chen, Z., Hu, H., Wang, K., and Lian, S. Chain-of-trajectories: Unlocking the intrinsic generative optimality of diffusion models via graph-theoretic planning. arXiv preprint arXiv:2603.14704 , 2026. URL https://arxiv. org/abs/2603.14704 .Conneau, A., Kruszewski, G., Lample, G., Barrault, L., and Baroni, M. What you can cram into a single $&!#*$ vector: Probing sentence embeddings for lin-guistic properties. In Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 2126–2136, 2018. URL 
+
+https://aclanthology.org/P18-1198/ .de Vries, W., van Cranenburgh, A., and Nissim, M. What’s so special about BERT’s layers? a closer look at the NLP pipeline in monolingual and multilingual models. In 
+
+Findings of the Association for Computational Linguis-tics: EMNLP 2020 , pp. 4339–4350, 2020. URL https: //aclanthology.org/2020.findings-emnlp.389/ .Elhoushi, M., Shrivastava, A., Liskovich, D., Hosmer, B., Wasti, B., Lai, L., Mahmoud, A., Acun, B., Agarwal, S., Roman, A., Aly, A. A., Chen, B., and Wu, C.-J. Layer-skip: Enabling early exit inference and self-speculative decoding. arXiv preprint arXiv:2404.16710 , 2024. URL 
+
+https://arxiv.org/abs/2404.16710 .Gautam, A. S., Talreja, K., and Jha, S. The energy of false-hood: Detecting hallucinations via diffusion model like-lihoods. arXiv preprint arXiv:2602.11364 , 2026. URL 
+
+https://arxiv.org/abs/2602.11364 .Gong, S., Agarwal, S., Zhang, Y., Ye, J., Zheng, L., Li, M., An, C., Zhao, P., Bi, W., Han, J., Peng, H., and Kong, L. Scaling diffusion language models via adaptation from autoregressive models. arXiv preprint arXiv:2410.17891 ,2024. URL https://arxiv.org/abs/2410.17891 .He, Z., Sun, T., Wang, K., Huang, X., and Qiu, X. Diffusion-BERT: Improving generative masked language models with diffusion models. arXiv preprint arXiv:2211.15029 ,2022. URL https://arxiv.org/abs/2211.15029 .Hemmat, A., Torr, P., Chen, Y., and Yu, J. TDGNet: Hallu-cination detection in diffusion language models via tem-poral dynamic graphs. arXiv preprint arXiv:2602.08048 ,2026. URL https://arxiv.org/abs/2602.08048 .Hewitt, J. and Manning, C. D. A structural probe for find-ing syntax in word representations. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies , pp. 4129–4138, 2019. URL 
+
+https://aclanthology.org/N19-1419/ .Karami, M. and Ghodsi, A. Auto-regressive masked dif-fusion models. arXiv preprint arXiv:2601.16971 , 2026. URL https://arxiv.org/abs/2601.16971 .Li, X. L., Thickstun, J., Gulrajani, I., Liang, P., and Hashimoto, T. Diffusion-LM improves controllable text generation. In Advances in Neural Information Pro-cessing Systems , 2022. URL https://arxiv.org/abs/ 2205.14217 .Liu, N. F., Gardner, M., Belinkov, Y., Peters, M. E., and Smith, N. A. Linguistic knowledge and transferability of contextual representations. In Proceedings of the 2019 Conference of the North American Chapter of the Associ-ation for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers) , pp. 1073–1094, 2019. URL https://aclanthology.org/ N19-1112/ .Merity, S., Xiong, C., Bradbury, J., and Socher, R. Pointer sentinel mixture models. arXiv preprint arXiv:1609.07843 , 2016. URL https://arxiv.org/ abs/1609.07843 .Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J., Lin, Y., Wen, J.-R., and Li, C. Large language diffusion models. arXiv preprint arXiv:2502.09992 , 2025. URL 
+
+https://arxiv.org/abs/2502.09992 .Rogers, A., Kovaleva, O., and Rumshisky, A. A primer in BERTology: What we know about how BERT works. Transactions of the Association for Compu-tational Linguistics , 8:842–866, 2020. URL https: //aclanthology.org/2020.tacl-1.54/ .Ruan, J., Li, B., Yin, Y., Huang, P., Chen, X., Wang, J., Cai, X., Xiao, T., and Zhu, J. Causal autoregressive diffusion language model. arXiv preprint arXiv:2601.22031 , 2026. URL https://arxiv.org/abs/2601.22031 .Tenney, I., Das, D., and Pavlick, E. BERT rediscovers the classical NLP pipeline. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics ,pp. 4593–4601, 2019. URL https://aclanthology. org/P19-1452/ .Tinaz, B., Fabian, Z., and Soltanolkotabi, M. Emergence and evolution of interpretable concepts in diffusion models. 
+
+arXiv preprint arXiv:2504.15473 , 2025. URL https: //arxiv.org/abs/2504.15473 .5Temporal Linguistic Emergence in Diffusion Language Models 
+
+von Rütte, D., Fluri, J., Pooladzandi, O., Schölkopf, B., Hofmann, T., and Orvieto, A. Scaling behavior of discrete diffusion language models. arXiv preprint arXiv:2512.10858 , 2025. URL https://arxiv.org/ abs/2512.10858 .Xin, J., Tang, R., Lee, J., Yu, Y., and Lin, J. Deebert: Dynamic early exiting for accelerating BERT inference. 
+
+arXiv preprint arXiv:2004.12993 , 2020. URL https: //arxiv.org/abs/2004.12993 .Ye, J., Zheng, Z., Bao, Y., Qian, L., and Gu, Q. Diffusion language models can perform many tasks with scaling and instruction-finetuning. arXiv preprint arXiv:2308.12219 ,2023. URL https://arxiv.org/abs/2308.12219 .Zhang, Y., He, S., Levine, D., Zhao, L., Zhang, D., Rizvi, S. A., Zhang, S., Zappala, E., Ying, R., and van Dijk, D. Non-markovian discrete diffusion with causal language models. arXiv preprint arXiv:2502.09767 , 2025. URL 
+
+https://arxiv.org/abs/2502.09767 .6Temporal Linguistic Emergence in Diffusion Language Models                            
+
+> Table 1. Selected quantitative summaries from completed runs. Probe entries report step-0 to final accuracy; uncertainty entries re-port final confidence/entropy; 32-step values are three-seed means unless noted otherwise. The commitment-correctness entries use the representative seed-42 run. Analysis Statistic Value Probe recoverabil-ity POS ( 0→final )57 .9→60 .2
+> semantic (0→final )
+> 59 .8→62 .3
+> token ( 0→final )13 .4→15 .5
+> final POS-token gap 44 .7
+> WT2 final POS / sem. / token
+> 57 .2/61 .2/18 .4
+> Commitment tim-ing NUM /NOUN /VERB
+> 3.37 /4.07 /4.46
+> FUNCTION /PUNCT
+> 4.92 /4.97
+> Commitment and correctness step 0 / steps 5–9 63 .0/29 .8
+> steps 10+ 47 .3
+> Uncertainty correct conf. / ent. 0.877 /0.774
+> wrong conf. / ent. 0.819 /1.173
+
+## A. Implementation and Experiment Details 
+
+Experimental protocol. All main-text experi-ments use GSAI-ML/LLaDA-8B-Base on masked 
+
+Salesforce/wikitext (wikitext-103-raw-v1 ) text with 32 denoising steps and final-layer activations recorded for masked positions only. We execute three independent seeds (42, 43, and 44). For each run, the dataset builder samples 1,000 probe-training sequences and 200 held-out analysis sequences, each 10–25 tokens long with a 40% initial mask ratio, yielding 1,873 masked token positions on the eval-uation split per run. Panels (b) and (d) of Figure 1 report stepwise mean ± one standard deviation over these three runs. Panels (a) and (c), together with Figure 3, show the seed-42 run as a representative trajectory because the cor-responding qualitative patterns are visually similar across seeds and the key replicated statistics are reported in text. 
+
+Shared probe training. All probe families use a shared linear decoder across timesteps rather than fitting one probe per step. For each training record, we concatenate hidden states from all denoising steps and train a single linear clas-sifier on the resulting pooled examples. In the current setup, the optimizer is AdamW with learning rate 10 −3, weight de-cay 0, and one training epoch; we do not use class weighting or early stopping. 
+
+Labeling pipeline. POS labels come from a pub-lic BERT POS tagger and are mapped into coarse groups through the explicit MODEL_TO_UNIVERSAL_POS and 
+
+UNIVERSAL_TO_COARSE_POS tables used by the analysis                          
+
+> Table 2. Perturbation robustness summaries from completed runs. Entries report the peak final-accuracy drop after re-masking and resuming denoising, together with the step at which that peak occurs. The 32-step baseline is averaged over three seeds; the ratio sweep uses the representative seed-42 run. Setting Statistic Value 32-step baseline peak drop 10 .9
+> peak steps 15 –18
+> peak direct / collat-eral drop
+> 10 .92 /0.03
+> step-2 direct / collat-eral drop
+> 0.16 /2.96
+> WT2 peak step / drop 23 /11 .2
+> 16-step schedule peak step 15
+> peak drop 9.5
+> final POS / sem. / to-ken
+> 63 .9/66 .0/15 .1
+> 10/20/40% re-masking peak drops 7.1/11 .2/19 .9
+> peak steps 17 –18
+> Targeted re-masking committed peak step / drop
+> 15 ,20 /11 .5,10 .5
+> uncommitted peak step / drop
+> 21 ,20 /11 .1,10 .6
+> content /function peak step / drop
+> 18 /10 .5,27 /10 .9
+> Initial mask ratio 0.3 final POS / sem. / token
+> 59 .6/62 .2/12 .5
+> 0.3 peak step / drop 10 /12 .0
+> 0.5 final POS / sem. / token
+> 48 .7/55 .2/11 .5
+> 0.5 peak step / drop 31 /8.5
+
+code. The semantic-category probe combines word-level predictions from a public BERT NER model with rule-based remapping into six labels: E NTITY , N UMBER , C ONTENT ,FUNCTION , P UNCT , and O THER . This probe should be read as a coarse lexical-semantic/token-type surrogate rather than as a full semantic ontology. 
+
+Confidence, entropy, and token labels. At every denois-ing step, confidence is the top-1 probability under the full-vocabulary softmax, and entropy is the corresponding full-vocabulary softmax entropy. The token-identity probe does not classify over the entire vocabulary; instead, it uses the compact set of masked target IDs observed in the saved trajectory table for a run, yielding 3,428 classes on average across the three 32-step seeds. Relative to this compact task, uniform chance is 0.029%, the train-majority baseline is 3.76%, and 33.4% of evaluation masked tokens belong to targets absent from the corresponding probe-train split. For that reason, comparisons to POS and semantic probes are interpreted ordinally rather than as normalized effect sizes. Final top-5 and top-10 retrieval nevertheless reach 29.4% and 34.4%, with final mean reciprocal rank 0.218, which makes the low top-1 scores substantially easier to interpret. 7Temporal Linguistic Emergence in Diffusion Language Models 0.0 2.5 5.0 7.5 10.0 12.5 15.0                 
+
+> Commitment step
+> 0
+> 200
+> 400
+> 600
+> 800
+> Token count
+> Accuracy by commitment step
+> 012345678910 11 12 13 14 15 16
+> Commitment step
+> NOUN
+> VERB
+> ADJ+ADV
+> NUM
+> FUNCTION
+> PUNCT
+> OTHER
+> Correctness by POS group and commitment
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Final correctness rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Correctness rate
+
+Figure 3. Commitment time is not a monotonic proxy for correct-ness: step-0 commitments are often right, mid-trajectory commit-ments are much less reliable, and very late commitments partially recover, with clear POS-dependent differences. 
+
+Perturbation procedure. For perturbation at step t, we first identify masked positions that have already been filled by the trajectory up to step t and re-mask a random subset of those positions. If no masked position has been filled yet, we fall back to sampling from all masked positions. Randomness is controlled deterministically by the global seed together with the record and step indices, so repeated perturbation runs are reproducible. 
+
+Table 3. Offline follow-up summaries from completed analy-ses. Token-probe and probe-ablation entries report compact label-space statistics and local re-analyses of the three 32-step seeds. Confidence-interval entries report 95% bootstrap intervals. Cali-bration values are from the representative seed-42 run. Analysis Statistic Value Token probe task compact classes 3428 
+
+uniform / majority baseline 
+
+0.029 /3.76 
+
+unseen eval-token fraction 
+
+33 .4
+
+overall final top-1 / top-5 
+
+15 .5/29 .4
+
+overall final top-10 / MRR 
+
+34 .4/0.218 
+
+seen final top-1 / top-5
+
+23 .4/44 .1
+
+seen final top-10 /MRR 
+
+51 .7/0.327 
+
+unseen final top-1 / top-5 
+
+0.0/0.0
+
+unseen final top-10 / MRR 
+
+0.0/0.001 
+
+Probe ablation shared final POS / to-ken 
+
+60 .2/15 .5
+
+per-step final POS / token 
+
+58 .6/14 .6
+
+per-step min POS-token gap 
+
+34 .5
+
+shared / per-step to-ken best step 
+
+16 /0
+
+Bootstrap support final POS-token gap 44 .7 [43 .1, 46 .4] 
+
+final semantic-token gap 
+
+46 .8 [45 .2, 48 .5] 
+
+32-step peak drop 10 .4 [9 .9, 11 .2] 
+
+Commitment strata early / mid / late acc. 62 .8/35 .1/33 .8
+
+early / mid / late peak drop 
+
+12 .8/11 .1/12 .9
+
+Calibration drift ECE step 0 / final 0.034 /0.415 
+
+Brier step 0 / final 0.126 /0.414 
+
+8

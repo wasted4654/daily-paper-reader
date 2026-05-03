@@ -6,28 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-02
-- 运行时间：2026-05-02 20:08:27 UTC
+- 最新运行日期：2026-05-03
+- 运行时间：2026-05-03 19:46:40 UTC
 - 运行状态：成功
 - 本次总论文数：2
 - 精读区：1
 - 速读区：1
 
 ### 今日简报（AI）
-今日聚焦图像生成前沿，深入剖析了动态分辨率 1D Tokenizer 与高效扩散模型的最新进展。
-重点关注 VibeToken 如何通过 1D 序列化实现灵活的分辨率生成，以及数据驱动方法对扩散模型效率的显著优化。
-建议优先研读高分论文 VibeToken，掌握自回归模型在多尺度视觉创作中的演进趋势。
-- 详情：[/202605/02/README](/202605/02/README)
+今日聚焦高效生成前沿，深入探讨了一步式运动预测技术 FlowS 与扩散语言模型的演化机制。
+核心突破在于 FlowS 通过局部传输调节实现了极速运动预测，同时揭示了扩散模型在语言生成中的时间涌现规律。
+推荐关注 FlowS 的工程落地潜力，并持续追踪扩散模型在文本领域的跨界应用。
+- 详情：[/202605/03/README](/202605/03/README)
 
 ### 精读区论文标签
-1. [VibeToken: Scaling 1D Image Tokenizers and Autoregressive Models for Dynamic Resolution Generations](/202605/02/2604.24885v1-vibetoken-scaling-1d-image-tokenizers-and-autoregressive-models-for-dynamic-resolution-generations)  
-   标签：评分：8.0/10、query:ardm
-   evidence：自回归模型缩小与扩散模型的差距
+1. [FlowS: One-Step Motion Prediction via Local Transport Conditioning](/202605/03/2604.26065v1-flows-one-step-motion-prediction-via-local-transport-conditioning)  
+   标签：评分：8.0/10、query:genad
+   evidence：自动驾驶的生成式运动预测
 
 ### 速读区论文标签
-1. [Beyond Fixed Formulas: Data-Driven Linear Predictor for Efficient Diffusion Models](/202605/02/2604.26365v1-beyond-fixed-formulas-data-driven-linear-predictor-for-efficient-diffusion-models)  
-   标签：评分：6.0/10、query:ardm
-   evidence：使用可学习预测器的高效扩散模型
+1. [Measuring Temporal Linguistic Emergence in Diffusion Language Models](/202605/03/2604.23235v1-measuring-temporal-linguistic-emergence-in-diffusion-language-models)  
+   标签：评分：7.0/10、query:ardm
+   evidence：使用LLaDA研究扩散语言模型中的时间语言出现特性
 
 
 <div class="dpr-home-promo-card">
