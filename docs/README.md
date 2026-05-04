@@ -6,28 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-03
-- 运行时间：2026-05-03 19:46:40 UTC
+- 最新运行日期：2026-05-04
+- 运行时间：2026-05-04 20:48:04 UTC
 - 运行状态：成功
 - 本次总论文数：2
-- 精读区：1
-- 速读区：1
+- 精读区：2
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦高效生成前沿，深入探讨了一步式运动预测技术 FlowS 与扩散语言模型的演化机制。
-核心突破在于 FlowS 通过局部传输调节实现了极速运动预测，同时揭示了扩散模型在语言生成中的时间涌现规律。
-推荐关注 FlowS 的工程落地潜力，并持续追踪扩散模型在文本领域的跨界应用。
-- 详情：[/202605/03/README](/202605/03/README)
+今日聚焦生成模型前沿，深度解析了满分级的一步法音频生成技术与一致性扩散语言模型。
+重点关注通过能量评分与蒸馏实现的一步采样音频生成，以及提升扩散语言模型一致性的最新进展。
+建议优先研读 10 分佳作，掌握如何将音频合成效率提升至极致。
+- 详情：[/202605/04/README](/202605/04/README)
 
 ### 精读区论文标签
-1. [FlowS: One-Step Motion Prediction via Local Transport Conditioning](/202605/03/2604.26065v1-flows-one-step-motion-prediction-via-local-transport-conditioning)  
-   标签：评分：8.0/10、query:genad
-   evidence：自动驾驶的生成式运动预测
+1. [Fast Text-to-Audio Generation with One-Step Sampling via Energy-Scoring and Auxiliary Contextual Representation Distillation](/202605/04/2605.00329v1-fast-text-to-audio-generation-with-one-step-sampling-via-energy-scoring-and-auxiliary-contextual-representation-distillation)  
+   标签：评分：10.0/10、query:ardm
+   evidence：带有扩散头的自回归模型以及从掩码自回归模型中蒸馏
+2. [Consistent Diffusion Language Models](/202605/04/2605.00161v1-consistent-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型作为自回归模型的替代方案
 
 ### 速读区论文标签
-1. [Measuring Temporal Linguistic Emergence in Diffusion Language Models](/202605/03/2604.23235v1-measuring-temporal-linguistic-emergence-in-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：使用LLaDA研究扩散语言模型中的时间语言出现特性
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">

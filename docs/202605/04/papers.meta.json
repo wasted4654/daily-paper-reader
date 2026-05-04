@@ -1,0 +1,37 @@
+{
+  "label": "2026-05-04",
+  "date": "2026-05-04",
+  "generated_at": "2026-05-04T20:48:12",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202605/04/2605.00329v1-fast-text-to-audio-generation-with-one-step-sampling-via-energy-scoring-and-auxiliary-contextual-representation-distillation",
+      "section": "deep",
+      "title_en": "Fast Text-to-Audio Generation with One-Step Sampling via Energy-Scoring and Auxiliary Contextual Representation Distillation",
+      "authors": "Kuan-Po Huang, Bo-Ru Lu, Byeonggeun Kim, Mihee Lee, Zalan Fabian, Renard Korzeniowski, Qingming Tang, Greg Ver Steeg, Hung-yi Lee, Chieh-Chi Kao, Chao Wang",
+      "date": "2026-05-01",
+      "pdf": "https://arxiv.org/pdf/2605.00329v1",
+      "score": "10.0",
+      "evidence": "带有扩散头的自回归模型以及从掩码自回归模型中蒸馏",
+      "tldr": "针对自回归扩散模型在文本生成音频任务中推理延迟高的问题，本文提出一种单步采样框架。该方法结合能量距离训练目标与表示级蒸馏技术，通过能量评分头将高斯噪声直接映射为音频潜变量，并利用掩码自回归模型的知识蒸馏保留强条件约束。实验证明，该方法在保持高质量音频的同时，推理速度比现有SOTA模型快8.5倍，显著缩小了单步生成与多步采样模型间的质量差距。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) models with diffusion heads have recently achieved strong text-to-audio performance, yet their iterative decoding and multi-step sampling process introduce high-latency issues. To address this bottleneck, we propose a one-step sampling framework that combines an energy-distance training objective with representation-level distillation. An energy-scoring head maps Gaussian noise directly to audio latents in one step, eliminating the need for a costly recursive diffusion sampling process, while distillation from a masked autoregressive (MAR) text-to-audio model preserves the strong conditioning learned during diffusion training. On the AudioCaps benchmark, our method consistently outperforms prior one-step baselines such as ConsistencyTTA, SoundCTM, AudioLCM and AudioTurbo, on both objective and subjective metrics, while substantially narrowing the quality gap to AR diffusion systems with multi-step sampling. Compared to the state-of-the-art AR diffusion system, IMPACT, our approach achieves up to $8.5$x faster batch inference with highly competitive audio quality. These results demonstrate that combining energy-distance training with representation-level distillation provides an effective recipe for fast, high-quality text-to-audio synthesis.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/04/2605.00161v1-consistent-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Consistent Diffusion Language Models",
+      "authors": "Hasan Amin, Yuan Gao, Yaser Souri, Subhojit Som, Ming Yin, Rajiv Khanna, Xia Song",
+      "date": "2026-04-30",
+      "pdf": "https://arxiv.org/pdf/2605.00161v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为自回归模型的替代方案",
+      "tldr": "针对离散扩散语言模型生成速度慢的问题，本文提出了一致性扩散语言模型（CDLM）。由于离散空间缺乏ODE，研究者利用随机后验桥作为替代，引入多路径离散一致性（MPDC）原则。CDLM是一个单阶段、无需教师模型的训练框架，统一了掩码扩散与一致性模型。实验表明，CDLM在文本生成任务中达到了SOTA，尤其在少步采样下表现优异，显著提升了离散生成模型的效率与质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) are an attractive alternative to autoregressive models because they promise sublinear-time, parallel generation, yet practical gains remain elusive as high-quality samples still demand hundreds of refinement steps. In continuous domains, consistency training along the probability-flow ODE is a popular recipe to accelerate diffusion. For discrete diffusion, no analogous sample-space ODE exists, making direct adaptation ill-defined. We argue that the natural discrete substitute is not a deterministic trajectory but its stochastic counterpart: the exact posterior bridge, available in closed form for broad corruption families including masked and uniform diffusion. Building on this observation, we introduce Multi-Path Discrete Consistency (MPDC), a new principle that trains a denoiser to be path-invariant in expectation across these stochastic bridges, and instantiate it as the Consistent Diffusion Language Model (CDLM), a single-stage, teacher-free training framework. A single CDLM objective unifies masked diffusion, continuous consistency models, and progressive/discrete distillation as analytic limits or empirical approximations of one common view. Empirically, CDLM establishes a new state of the art on both conditional and unconditional text-generation, consistently outperforming strong base discrete diffusion models and often even multi-stage distilled baselines across sampling budgets, with the largest gains in the few-step regime. Together, these results position CDLM as a principled and scalable foundation for the next generation of fast, high-fidelity discrete generative modeling.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
