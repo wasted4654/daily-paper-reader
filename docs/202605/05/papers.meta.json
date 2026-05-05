@@ -1,0 +1,37 @@
+{
+  "label": "2026-05-05",
+  "date": "2026-05-05",
+  "generated_at": "2026-05-05T20:55:53",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202605/05/2605.02641v1-mamoda25-enhancing-unified-multimodal-model-with-dit-moe",
+      "section": "deep",
+      "title_en": "Mamoda2.5: Enhancing Unified Multimodal Model with DiT-MoE",
+      "authors": "Yangming Shi, Shixiang Zhu, Tao Shen, Zhimiao Yu, Dengsheng Chen, Taicai Chen, Yunfei Yang, Juan Zhou, Chen Cheng, Liang Ma, Xibin Wu, Benxuan Yan, Ge Li, Tuoyu Zhang, Dan Li, Chang Liu, Zhenbang Sun",
+      "date": "2026-05-04",
+      "pdf": "https://arxiv.org/pdf/2605.02641v1",
+      "score": "10.0",
+      "evidence": "采用DiT-MoE架构的统一自回归扩散框架",
+      "tldr": "Mamoda2.5是一个统一的AR-Diffusion多模态框架，集成了理解与生成能力。通过引入细粒度混合专家（MoE）设计的Diffusion Transformer，该模型在拥有25B参数的同时仅激活3B参数，显著降低了训练成本。它在视频生成和编辑任务上表现卓越，并通过蒸馏与强化学习技术实现了极速推理，在广告创意修复等实际场景中表现出色。",
+      "tags": "query:ardm",
+      "abstract_en": "We present Mamoda2.5, a unified AR-Diffusion framework that seamlessly integrates multimodal understanding and generation within a single architecture. To efficiently enhance the model's generation capability, we equip the Diffusion Transformer backbone with a fine-grained Mixture-of-Experts (MoE) design (128 experts, Top-8 routing), yielding a 25B-parameter model that activates only 3B parameters, significantly reducing training costs while scaling up the model capacity. Mamoda2.5 achieves top-tier generation performance on VBench 2.0 and sets a new record in video editing quality, surpassing evaluated open-source models and matching the performance of current top-tier proprietary models, including the Kling O1 on OpenVE-Bench. Furthermore, we introduce a joint few-step distillation and reinforcement learning framework that compresses the 30-step editing model into a 4-step model and greatly accelerates model inference. Compared to open-source baselines, Mamoda2.5 achieves up to $95.9\\times$ faster video editing inference. In real-world applications, Mamoda2.5 has been successfully deployed for content moderation and creative restoration tasks in advertising scenarios, achieving a 98% success rate in internal advertising video editing scenario.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/05/2605.01220v1-visual-implicit-autoregressive-modeling",
+      "section": "quick",
+      "title_en": "Visual Implicit Autoregressive Modeling",
+      "authors": "Pengfei Jiang, Jixiang Luo, Luxi Lin, Zhaohong Huang, Xuelong Li",
+      "date": "2026-05-02",
+      "pdf": "https://arxiv.org/pdf/2605.01220v1",
+      "score": "7.0",
+      "evidence": "视觉自回归建模与扩散模型的对比",
+      "tldr": "针对视觉自回归模型（VAR）在处理高分辨率图像时计算量固定且显存占用大的问题，本文提出视觉隐式自回归模型（VIAR）。通过在浅层块间嵌入隐式平衡层，并利用雅可比无关反向传播训练，VIAR实现了训练显存恒定和推理计算可控。在ImageNet基准上，VIAR以不到VAR四成的参数量达到了更优的生成质量，并显著提升了推理速度和显存效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Visual Autoregressive Modeling (VAR) based on next-scale prediction achieves strong generation quality, but their explicit deep stacks fix the amount of computation per scale and inflate memory at high resolutions. We introduce Visual Implicit Autoregressive Modeling (VIAR), a next-scale autoregressive generator that embeds an implicit equilibrium layer between shallow pre/post blocks. The implicit layer is trained with Jacobian-Free Backpropagation, yielding constant training memory, while inference exposes a per-scale iteration knob that enables compute control. On ImageNet 256x256 benchmark, VIAR attains FID 2.16, and sFID 8.07 with only 38.4% parameters of VAR, matching or surpassing strong AR baselines and remaining competitive with large diffusion models. By controlling the per-scale knob, VIAR can reduce peak memory from 19.24 GB to 8.53 GB and doubles throughput from 15.16 to 32.08 images/s on a single RTX 4090, without retraining. Ablations show that fewer steps are sufficient for fixed-point iterations to converge and that VIAR consistently dominates VAR across quality efficiency operating points. In zero shot in-painting and class-conditional editing, VIAR produces sharper details and smoother boundaries while preserving global structure, validating the benefits of implicit equilibria and per-scale compute control for practical, deployable visual generation.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

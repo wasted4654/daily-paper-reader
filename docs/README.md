@@ -6,29 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-04
-- 运行时间：2026-05-04 20:48:04 UTC
+- 最新运行日期：2026-05-05
+- 运行时间：2026-05-05 20:55:45 UTC
 - 运行状态：成功
 - 本次总论文数：2
-- 精读区：2
-- 速读区：0
+- 精读区：1
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦生成模型前沿，深度解析了满分级的一步法音频生成技术与一致性扩散语言模型。
-重点关注通过能量评分与蒸馏实现的一步采样音频生成，以及提升扩散语言模型一致性的最新进展。
-建议优先研读 10 分佳作，掌握如何将音频合成效率提升至极致。
-- 详情：[/202605/04/README](/202605/04/README)
+今日深度复盘 2 篇视觉前沿论文，重点关注满分力作 Mamoda2.5 在统一多模态领域的架构革新。
+研究揭示了 DiT-MoE 架构对多模态能力的显著增强，并同步探讨了视觉隐式自回归建模的新路径。
+建议优先精读 Mamoda2.5，深入理解 Diffusion Transformer 与专家混合机制融合的技术细节。
+- 详情：[/202605/05/README](/202605/05/README)
 
 ### 精读区论文标签
-1. [Fast Text-to-Audio Generation with One-Step Sampling via Energy-Scoring and Auxiliary Contextual Representation Distillation](/202605/04/2605.00329v1-fast-text-to-audio-generation-with-one-step-sampling-via-energy-scoring-and-auxiliary-contextual-representation-distillation)  
+1. [Mamoda2.5: Enhancing Unified Multimodal Model with DiT-MoE](/202605/05/2605.02641v1-mamoda25-enhancing-unified-multimodal-model-with-dit-moe)  
    标签：评分：10.0/10、query:ardm
-   evidence：带有扩散头的自回归模型以及从掩码自回归模型中蒸馏
-2. [Consistent Diffusion Language Models](/202605/04/2605.00161v1-consistent-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型作为自回归模型的替代方案
+   evidence：采用DiT-MoE架构的统一自回归扩散框架
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [Visual Implicit Autoregressive Modeling](/202605/05/2605.01220v1-visual-implicit-autoregressive-modeling)  
+   标签：评分：7.0/10、query:ardm
+   evidence：视觉自回归建模与扩散模型的对比
 
 
 <div class="dpr-home-promo-card">
