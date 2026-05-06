@@ -1,0 +1,131 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-06T20:38:14.517992+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2604.27443v2",
+      "title": "ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space",
+      "abstract": "Generating continuous-time, continuous-space stochastic processes (e.g., videos, weather forecasts) conditioned on partial observations (e.g., first and last frames) is a fundamental challenge. Existing approaches, (e.g., diffusion models), suffer from key limitations: (1) noise-to-data evolution fails to capture structural similarity between states close in physical time and has unstable integration in low-step regimes; (2) random noise injected is insensitive to the physical process's time elapsed, resulting in incorrect dynamics; (3) they overlook conditioning on arbitrary subsets of states (e.g., irregularly sampled timesteps, future observations). We propose ABC: Any-Subset Autoregressive Models via Non-Markovian Diffusion Bridges in Continuous Time and Space. Crucially, we model the process with one continual SDE whose time variable and intermediate states track the real time and process states. This has provable advantages: (1) the starting point for generating future states is the already-close previous state, rather than uninformative noise; (2) random noise injection scales with physical time elapsed, encouraging physically plausible dynamics with similar time-adjacent states. We derive SDE dynamics via changes-of-measure on path space, yielding another advantage: (3) path-dependent conditioning on arbitrary subsets of the state history and/or future. To learn these dynamics, we derive a path- and time-dependent extension of denoising score matching. Our experiments show ABC's superiority to competing methods on multiple domains, including video generation and weather forecasting.",
+      "authors": [
+        "Gabe Guo",
+        "Thanawat Sornwanee",
+        "Lutong Hao",
+        "Elon Litman",
+        "Stefano Ermon",
+        "Jose Blanchet"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-30T05:29:06+00:00",
+      "link": "https://arxiv.org/pdf/2604.27443v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Any-Subset Autoregressive Models via Non-Markovian Diffusion Bridges",
+      "llm_evidence_cn": "通过非马尔可夫扩散桥实现的任意子集自回归模型",
+      "llm_evidence": "通过非马尔可夫扩散桥实现的任意子集自回归模型",
+      "canonical_evidence": "通过非马尔可夫扩散桥实现的任意子集自回归模型",
+      "llm_tldr_en": "Proposes ABC, a continuous-time autoregressive diffusion model for stochastic process generation.",
+      "llm_tldr_cn": "提出ABC，一种用于随机过程生成的连续时间自回归扩散模型。",
+      "llm_tldr": "提出ABC，一种用于随机过程生成的连续时间自回归扩散模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.03849v1",
+      "title": "Stream-R1: Reliability-Perplexity Aware Reward Distillation for Streaming Video Generation",
+      "abstract": "Distillation-based acceleration has become foundational for making autoregressive streaming video diffusion models practical, with distribution matching distillation (DMD) as the de facto choice. Existing methods, however, train the student to match the teacher's output indiscriminately, treating every rollout, frame, and pixel as equally reliable supervision. We argue that this caps distilled quality, since it overlooks two complementary axes of variance in DMD supervision: Inter-Reliability across student rollouts whose supervision varies in reliability, and Intra-Perplexity across spatial regions and temporal frames that contribute unequally to where quality can still be improved. The objective thus conflates two questions under a uniform weight: whether to learn from each rollout, and where to concentrate optimization within it. To address this, we propose Stream-R1, a Reliability-Perplexity Aware Reward Distillation framework that adaptively reweights the distillation objective at both rollout and spatiotemporal-element levels through a single shared reward-guided mechanism. At the Inter-Reliability level, Stream-R1 rescales each rollout's loss by an exponential of a pretrained video reward score, so that rollouts with reliable supervision dominate optimization. At the Intra-Perplexity level, it back-propagates the same reward model to extract per-pixel gradient saliency, which is factored into spatial and temporal weights that concentrate optimization pressure on regions and frames where refinement yields the largest expected gain. An adaptive balancing mechanism prevents any single quality axis from dominating across visual quality, motion quality, and text alignment. Stream-R1 attains consistent improvements on all three dimensions over distillation baselines on standard streaming video generation benchmarks, without architectural modification or additional inference cost.",
+      "authors": [
+        "Bin Wu",
+        "Mengqi Huang",
+        "Shaojin Wu",
+        "Weinan Jia",
+        "Yuxin Wang",
+        "Zhendong Mao",
+        "Yongdong Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-05T15:15:30+00:00",
+      "link": "https://arxiv.org/pdf/2605.03849v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "distillation for autoregressive streaming video diffusion models",
+      "llm_evidence_cn": "自回归流式视频扩散模型的蒸馏",
+      "llm_evidence": "自回归流式视频扩散模型的蒸馏",
+      "canonical_evidence": "自回归流式视频扩散模型的蒸馏",
+      "llm_tldr_en": "Introduces Stream-R1 to improve distillation efficiency for autoregressive video diffusion models.",
+      "llm_tldr_cn": "引入Stream-R1以提高自回归视频扩散模型的蒸馏效率和质量。",
+      "llm_tldr": "引入Stream-R1以提高自回归视频扩散模型的蒸馏效率和质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.03152v1",
+      "title": "Scalable generative modeling of non-Gaussian spatio-temporal fields via autoregressive Gaussian processes",
+      "abstract": "Generative modeling of spatio-temporal fields is crucial for a variety of applications, including stochastic weather generators and climate-model surrogates. However, many such fields exhibit complex dependence structures that vary across space and time and are nonlinear, resulting in nonstationary and non-Gaussian joint distributions. Our approach represents the joint density of a spatio-temporal field as a product of univariate conditional distributions and models these conditionals using Gaussian processes within an autoregressive transport-map construction. This prior distribution provides regularization, making our method suitable for a small number of training samples. Data-dependent sparsity in the conditioning sets ensures scalability to high-dimensional distributions. We also propose a variant of the method designed to sample or predict forward in time from a given incomplete space-time trajectory. We demonstrate the accuracy and scalability of our approach on non-Gaussian climate-model output with tens of millions of data points.",
+      "authors": [
+        "Carrie J. Lei-Cramer",
+        "Jian Cao",
+        "Matthias Katzfuss"
+      ],
+      "primary_category": "stat.ME",
+      "categories": [
+        "stat.ME"
+      ],
+      "published": "2026-05-04T20:49:49+00:00",
+      "link": "https://arxiv.org/pdf/2605.03152v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative modeling via autoregressive Gaussian processes",
+      "llm_evidence_cn": "通过自回归高斯过程进行生成建模",
+      "llm_evidence": "通过自回归高斯过程进行生成建模",
+      "canonical_evidence": "通过自回归高斯过程进行生成建模",
+      "llm_tldr_en": "Models spatio-temporal fields using autoregressive transport-map constructions and Gaussian processes.",
+      "llm_tldr_cn": "利用自回归传输映射构造和高斯过程对时空场进行生成建模。",
+      "llm_tldr": "利用自回归传输映射构造和高斯过程对时空场进行生成建模。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

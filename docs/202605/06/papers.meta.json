@@ -1,0 +1,51 @@
+{
+  "label": "2026-05-06",
+  "date": "2026-05-06",
+  "generated_at": "2026-05-06T20:39:48",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202605/06/2604.27443v2-abc-any-subset-autoregression-via-non-markovian-diffusion-bridges-in-continuous-time-and-space",
+      "section": "deep",
+      "title_en": "ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space",
+      "authors": "Gabe Guo, Thanawat Sornwanee, Lutong Hao, Elon Litman, Stefano Ermon, Jose Blanchet",
+      "date": "2026-04-30",
+      "pdf": "https://arxiv.org/pdf/2604.27443v2",
+      "score": "9.0",
+      "evidence": "通过非马尔可夫扩散桥实现的任意子集自回归模型",
+      "tldr": "本研究针对连续时间与空间随机过程（如视频、天气预报）的生成挑战，提出ABC模型。该模型利用非马尔可夫扩散桥，在连续时空中实现任意子集自回归。通过单一连续SDE建模，使生成过程与物理时间同步，解决了传统扩散模型在物理结构捕捉、噪声注入及任意观测条件下的局限性，显著提升了生成质量和物理一致性。",
+      "tags": "query:ardm",
+      "abstract_en": "Generating continuous-time, continuous-space stochastic processes (e.g., videos, weather forecasts) conditioned on partial observations (e.g., first and last frames) is a fundamental challenge. Existing approaches, (e.g., diffusion models), suffer from key limitations: (1) noise-to-data evolution fails to capture structural similarity between states close in physical time and has unstable integration in low-step regimes; (2) random noise injected is insensitive to the physical process's time elapsed, resulting in incorrect dynamics; (3) they overlook conditioning on arbitrary subsets of states (e.g., irregularly sampled timesteps, future observations). We propose ABC: Any-Subset Autoregressive Models via Non-Markovian Diffusion Bridges in Continuous Time and Space. Crucially, we model the process with one continual SDE whose time variable and intermediate states track the real time and process states. This has provable advantages: (1) the starting point for generating future states is the already-close previous state, rather than uninformative noise; (2) random noise injection scales with physical time elapsed, encouraging physically plausible dynamics with similar time-adjacent states. We derive SDE dynamics via changes-of-measure on path space, yielding another advantage: (3) path-dependent conditioning on arbitrary subsets of the state history and/or future. To learn these dynamics, we derive a path- and time-dependent extension of denoising score matching. Our experiments show ABC's superiority to competing methods on multiple domains, including video generation and weather forecasting.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/06/2605.03849v1-stream-r1-reliability-perplexity-aware-reward-distillation-for-streaming-video-generation",
+      "section": "deep",
+      "title_en": "Stream-R1: Reliability-Perplexity Aware Reward Distillation for Streaming Video Generation",
+      "authors": "Bin Wu, Mengqi Huang, Shaojin Wu, Weinan Jia, Yuxin Wang, Zhendong Mao, Yongdong Zhang",
+      "date": "2026-05-05",
+      "pdf": "https://arxiv.org/pdf/2605.03849v1",
+      "score": "9.0",
+      "evidence": "自回归流式视频扩散模型的蒸馏",
+      "tldr": "Stream-R1 针对流式视频生成中的蒸馏加速问题，提出了一种可靠性与困惑度感知的奖励蒸馏框架。该方法通过预训练视频奖励模型，在样本层面（样本间可靠性）和时空元素层面（样本内困惑度）动态调整蒸馏权重，使模型专注于高质量样本及关键时空区域的优化。在不增加推理成本的前提下，显著提升了视频的视觉质量、运动一致性和文本对齐度。",
+      "tags": "query:ardm",
+      "abstract_en": "Distillation-based acceleration has become foundational for making autoregressive streaming video diffusion models practical, with distribution matching distillation (DMD) as the de facto choice. Existing methods, however, train the student to match the teacher's output indiscriminately, treating every rollout, frame, and pixel as equally reliable supervision. We argue that this caps distilled quality, since it overlooks two complementary axes of variance in DMD supervision: Inter-Reliability across student rollouts whose supervision varies in reliability, and Intra-Perplexity across spatial regions and temporal frames that contribute unequally to where quality can still be improved. The objective thus conflates two questions under a uniform weight: whether to learn from each rollout, and where to concentrate optimization within it. To address this, we propose Stream-R1, a Reliability-Perplexity Aware Reward Distillation framework that adaptively reweights the distillation objective at both rollout and spatiotemporal-element levels through a single shared reward-guided mechanism. At the Inter-Reliability level, Stream-R1 rescales each rollout's loss by an exponential of a pretrained video reward score, so that rollouts with reliable supervision dominate optimization. At the Intra-Perplexity level, it back-propagates the same reward model to extract per-pixel gradient saliency, which is factored into spatial and temporal weights that concentrate optimization pressure on regions and frames where refinement yields the largest expected gain. An adaptive balancing mechanism prevents any single quality axis from dominating across visual quality, motion quality, and text alignment. Stream-R1 attains consistent improvements on all three dimensions over distillation baselines on standard streaming video generation benchmarks, without architectural modification or additional inference cost.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/06/2605.03152v1-scalable-generative-modeling-of-non-gaussian-spatio-temporal-fields-via-autoregressive-gaussian-processes",
+      "section": "quick",
+      "title_en": "Scalable generative modeling of non-Gaussian spatio-temporal fields via autoregressive Gaussian processes",
+      "authors": "Carrie J. Lei-Cramer, Jian Cao, Matthias Katzfuss",
+      "date": "2026-05-04",
+      "pdf": "https://arxiv.org/pdf/2605.03152v1",
+      "score": "6.0",
+      "evidence": "通过自回归高斯过程进行生成建模",
+      "tldr": "本研究针对天气和气候模拟中复杂的非高斯、非平稳时空场建模难题，提出了一种基于自回归高斯过程的生成模型。该方法将联合概率密度分解为一系列单变量条件分布，并利用传输映射构造进行建模。通过引入高斯过程先验提供正则化，使其在小样本下依然稳健，同时利用条件集的稀疏性实现了对数千万级高维数据的可扩展处理，为大规模时空数据生成和预测提供了高效工具。",
+      "tags": "query:ardm",
+      "abstract_en": "Generative modeling of spatio-temporal fields is crucial for a variety of applications, including stochastic weather generators and climate-model surrogates. However, many such fields exhibit complex dependence structures that vary across space and time and are nonlinear, resulting in nonstationary and non-Gaussian joint distributions. Our approach represents the joint density of a spatio-temporal field as a product of univariate conditional distributions and models these conditionals using Gaussian processes within an autoregressive transport-map construction. This prior distribution provides regularization, making our method suitable for a small number of training samples. Data-dependent sparsity in the conditioning sets ensures scalability to high-dimensional distributions. We also propose a variant of the method designed to sample or predict forward in time from a given incomplete space-time trajectory. We demonstrate the accuracy and scalability of our approach on non-Gaussian climate-model output with tens of millions of data points.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
