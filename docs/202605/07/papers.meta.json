@@ -1,0 +1,79 @@
+{
+  "label": "2026-05-07",
+  "date": "2026-05-07",
+  "generated_at": "2026-05-07T20:13:03",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202605/07/2605.04215v1-predict-then-diffuse-adaptive-response-length-for-compute-budgeted-inference-in-diffusion-llms",
+      "section": "deep",
+      "title_en": "Predict-then-Diffuse: Adaptive Response Length for Compute-Budgeted Inference in Diffusion LLMs",
+      "authors": "Michael Rottoli, Subhankar Roy, Stefano Paraboschi",
+      "date": "2026-05-05",
+      "pdf": "https://arxiv.org/pdf/2605.04215v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为传统自回归范式的替代前沿",
+      "tldr": "扩散语言模型（D-LLMs）虽具备并行生成优势，但受限于需预设固定响应长度，导致计算浪费或输出截断。本文提出 Predict-then-Diffuse 框架，通过自适应响应长度预测器（AdaRLP）预估最优长度，并结合数据驱动的安全机制减少重算开销。该方法在保证输出质量的同时显著降低了计算成本，为受限计算预算下的推理提供了高效方案。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion-based Large Language Models (D-LLMs) represent a promising frontier in generative AI, offering fully parallel token generation that can lead to significant throughput advantages and superior GPU utilization over traditional autoregressive paradigm. However, this parallelism is constrained by the requirement of a fixed-size response length prior to generation. This architectural limitation imposes a severe trade-off: oversized response length results in computational waste on semantically meaningless padding tokens, while undersized response length cause output truncation requiring costly re-computations that introduce unpredictable latency spikes. To tackle this issue, we propose Predict-then-Diffuse, a simple and model-agnostic framework, that enables compute-budgeted inference per input query by first estimating the response length and then using it to run inference with D-LLM. At its core lies a Adaptive Response Length Predictor (AdaRLP) auxiliary predictor that predicts the optimal response length given an input query. As a measure against under-predicting the response length and re-running inference with a higher response length, we introduce a data-driven safety mechanism, which trades a negligible padding overhead. As a whole, our framework limits the significant waste of computation on padding tokens and preserves output quality. Experimental validation on multiple datasets demonstrate that Predict-then-Diffuse significantly reduces computational costs (FLOP) compared to the default D-LLM inference mechanism and baselines based on heuristics, while being robust to skewed data distributions.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/07/2605.04291v1-leveraging-pretrained-language-models-as-energy-functions-for-glauber-dynamics-text-diffusion",
+      "section": "deep",
+      "title_en": "Leveraging Pretrained Language Models as Energy Functions for Glauber Dynamics Text Diffusion",
+      "authors": "Tarun Kathuria, Sachin Kumar",
+      "date": "2026-05-05",
+      "pdf": "https://arxiv.org/pdf/2605.04291v1",
+      "score": "8.0",
+      "evidence": "利用预训练因果语言模型作为扩散模型的能量函数",
+      "tldr": "本研究提出了一种基于统计物理中 Glauber 动力学的离散扩散语言模型。其核心创新在于利用预训练的因果或掩码语言模型作为能量函数，而非从头训练具有均匀转移核的模型。通过将该能量函数视为平稳分布，显著提升了生成文本的质量。实验表明，该方法在文本生成质量上优于以往的扩散模型，并在零样本常识推理及数独、斑马难题等规划搜索任务中表现出色，达到了与同规模自回归模型相当的水平。",
+      "tags": "query:ardm",
+      "abstract_en": "We present a discrete diffusion-based language model using Glauber dynamics from statistical physics. Our main insight is that instead of trying to train a discrete state space diffusion model using Glauber dynamics with a uniform transition kernel as the forward process, one can set up an ``energy function'' based on pretrained causal/masked language models. When viewed as the stationary distribution, this energy function allows us to significantly improve the quality of the generated text. Incorporating UL2 as the pretrained model into our diffusion pipeline, we outperform prior diffusion based LMs and perform competitively with autoregressive models of comparable model sizes. Furthermore, our models are competitive with or outperform prior diffusion models and GPT-2 style auto-regressive models on zero-shot common sense reasoning tasks as well as planning and search tasks like Sudoku and Zebra puzzles.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/07/2604.26841v1-language-diffusion-models-are-associative-memories-capable-of-retrieving-unseen-data",
+      "section": "quick",
+      "title_en": "Language Diffusion Models are Associative Memories Capable of Retrieving Unseen Data",
+      "authors": "Bao Pham, Mohammed J. Zaki, Luca Ambrogioni, Dmitry Krotov, Matteo Negri",
+      "date": "2026-04-29",
+      "pdf": "https://arxiv.org/pdf/2604.26841v1",
+      "score": "7.0",
+      "evidence": "用于语言序列生成的离散扩散模型",
+      "tldr": "本研究探讨了离散扩散模型（UDDM）的记忆与泛化机制，将其视为具有联想记忆特性的系统。研究发现，UDDM通过最大化条件似然形成吸引子盆地来恢复数据，并随着训练集增大经历从记忆到泛化的转变。研究提出利用条件熵作为量化指标，有效区分模型是在复现训练数据还是在生成未见过的测试数据，为评估生成模型的真实生成能力提供了新视角。",
+      "tags": "query:ardm",
+      "abstract_en": "When do language diffusion models memorize their training data, and how to quantitatively assess their true generative regime? We address these questions by showing that Uniform-based Discrete Diffusion Models (UDDMs) fundamentally behave as Associative Memories (AMs) $\\textit{with emergent creative capabilities}$. The core idea of an AM is to reliably recover stored data points as $\\textit{memories}$ by establishing distinct basins of attraction around them. Historically, models like Hopfield networks use an explicit energy function to guarantee these stable attractors. We broaden this perspective by leveraging the observation that energy is not strictly necessary, as basins of attraction can also be formed via conditional likelihood maximization. By evaluating token recovery of $\\textit{training}$ and $\\textit{test}$ examples, we identify in UDDMs a sharp memorization-to-generalization transition governed by the size of the training dataset: as it increases, basins around training examples shrink and basins around unseen test examples expand, until both later converge to the same level. Crucially, we can detect this transition using only the conditional entropy of predicted token sequences: memorization is characterized by vanishing conditional entropy, while in the generalization regime the conditional entropy of most tokens remains finite. Thus, conditional entropy offers a practical probe for the memorization-to-generalization transition in deployed models.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/07/2605.05031v1-computer-aided-design-generation-by-cascaded-discrete-diffusion-model",
+      "section": "quick",
+      "title_en": "Computer-Aided Design Generation by Cascaded Discrete Diffusion Model",
+      "authors": "Honghu Pan, Xiaoling Luo, Yongyong Chen, Zhenyu He, Pengyang Wang",
+      "date": "2026-05-06",
+      "pdf": "https://arxiv.org/pdf/2605.05031v1",
+      "score": "7.0",
+      "evidence": "在CAD序列生成中对比自回归模型与扩散模型",
+      "tldr": "本研究针对计算机辅助设计（CAD）自动生成中连续扩散模型难以处理离散且异构的命令与参数序列的问题，提出了一种级联离散扩散框架。该框架包含命令扩散和受命令约束的参数扩散两个阶段，通过精心设计的转移矩阵（如吸收态矩阵和特定属性核）直接在类别分布上进行扩散。实验表明，该方法在DeepCAD数据集上的生成质量优于现有的自回归和连续扩散模型，并展现了良好的可控性。",
+      "tags": "query:ardm",
+      "abstract_en": "Recent deep learning approaches seek to automate CAD creation by representing a model as a sequence of discrete commands and parameters, and then generating them using autoregressive models or continuous diffusion operating in Euclidean embedding space. However, continuous diffusion perturbs representations in a continuous Euclidean domain that does not reflect the inherently discrete and heterogeneous nature of CAD tokens, often producing perturbed representations that map to semantically invalid symbols. To overcome this limitation, we propose a cascaded discrete diffusion framework for CAD generation, which consists of a command diffusion for generating CAD commands and a parameter diffusion conditioned on CAD commands. Unlike isotropic Gaussian perturbation, the forward process of our approach operates directly over categorical token distributions using delicate transition matrices. For commands, we adopt an absorbing-state transition matrix that progressively corrupts tokens to a designated symbol; for parameters, we introduce specific transition matrices tailored to heterogeneous attributes: a Gaussian kernel for coordinate continuity, a scale-invariant kernel for dimensional values, and a prior-preserving kernel for boolean attributes. The reverse process is achieved by two denoising networks: a Transformer-based encoder for command recovery, and a parameter network with extra local self-attention for command-level interaction and cross-attention for conditional injection. Experiments on the DeepCAD dataset show that the proposed approach surpasses existing autoregressive and continuous diffusion models on unconditional generation metrics, while qualitative results validate effective controllability in conditional generation tasks. Source codes will be released.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/07/2605.03317v1-ahpa-adaptive-hierarchical-prior-alignment-for-diffusion-transformers",
+      "section": "quick",
+      "title_en": "AHPA: Adaptive Hierarchical Prior Alignment for Diffusion Transformers",
+      "authors": "Ruibin Min, Yexin Liu, Aimin Pan, Changsheng Lu, Jiafei Wu, Kelu Yao, Xiaogang Xu, Harry Yang",
+      "date": "2026-05-05",
+      "pdf": "https://arxiv.org/pdf/2605.03317v1",
+      "score": "6.0",
+      "evidence": "扩散Transformer架构的对齐优化",
+      "tldr": "AHPA 针对扩散 Transformer (DiT) 训练加速，提出了一种自适应分层先验对齐框架。针对现有方法在去噪过程中对齐粒度固定的局限性，AHPA 利用冻结 VAE 编码器的多级特征，通过时间步条件动态路由器，在不同噪声水平下自适应调整对齐粒度（从粗略语义到精细几何），在不增加推理成本的情况下显著提升了收敛速度和生成质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Representation alignment has recently emerged as an effective paradigm for accelerating Diffusion Transformer training. Despite their success, existing alignment methods typically impose a fixed supervision target or a fixed alignment granularity throughout the entire denoising trajectory, whether the guidance is provided by external vision encoders, internal self-representations, or VAE-derived features. We argue that such timestep-agnostic alignment is suboptimal because the useful granularity of representation supervision changes systematically with the signal-to-noise ratio. In high-noise regimes, diffusion models benefit more from coarse semantic and layout-level anchoring, whereas in low-noise regimes, the training signal should emphasize spatially detailed and structurally faithful refinement. This non-stationary alignment behavior creates a representational mismatch for static single-level supervisors. To address this issue, we propose Adaptive Hierarchical Prior Alignment (AHPA), a lightweight alignment framework that exploits the hierarchical representations naturally embedded in the frozen VAE encoder. Instead of using only a single compressed latent as the alignment target, AHPA extracts multi-level VAE features that provide complementary priors ranging from local geometry and spatial topology to coarse semantic layout. A timestep-conditioned Dynamic Router adaptively selects and weights these hierarchical priors along the denoising trajectory, thereby synchronizing the alignment granularity with the model's evolving training needs. Extensive experiments show that AHPA improves convergence and generation quality over baselines and incurs no additional inference cost while avoiding external encoder supervision during training.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

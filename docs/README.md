@@ -6,31 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-06
-- 运行时间：2026-05-06 20:39:39 UTC
+- 最新运行日期：2026-05-07
+- 运行时间：2026-05-07 20:12:53 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：5
 - 精读区：2
-- 速读区：1
+- 速读区：3
 
 ### 今日简报（AI）
-今日精选 3 篇前沿论文，深度聚焦非马尔可夫扩散桥与流式视频生成的 9.0 分重磅突破。
-重点关注 ABC 框架实现的任意子集自回归，以及 Stream-R1 通过奖励蒸馏显著提升视频生成的可靠性与质量。
-建议优先研读这两项高分成果，探索连续时空建模在高质量内容生成中的实战潜力。
-- 详情：[/202605/06/README](/202605/06/README)
+今日聚焦扩散模型在语言生成与CAD设计中的跨界突破，重点解析推理效率与生成质量的平衡。
+核心结论指出，通过自适应响应长度可显著优化推理预算，而将预训练模型转化为能量函数则为文本扩散提供了新路径。
+建议关注扩散模型作为“关联记忆”检索未知数据的理论发现，这可能重塑我们对模型存储能力的认知。
+- 详情：[/202605/07/README](/202605/07/README)
 
 ### 精读区论文标签
-1. [ABC: Any-Subset Autoregression via Non-Markovian Diffusion Bridges in Continuous Time and Space](/202605/06/2604.27443v2-abc-any-subset-autoregression-via-non-markovian-diffusion-bridges-in-continuous-time-and-space)  
-   标签：评分：9.0/10、query:ardm
-   evidence：通过非马尔可夫扩散桥实现的任意子集自回归模型
-2. [Stream-R1: Reliability-Perplexity Aware Reward Distillation for Streaming Video Generation](/202605/06/2605.03849v1-stream-r1-reliability-perplexity-aware-reward-distillation-for-streaming-video-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：自回归流式视频扩散模型的蒸馏
+1. [Predict-then-Diffuse: Adaptive Response Length for Compute-Budgeted Inference in Diffusion LLMs](/202605/07/2605.04215v1-predict-then-diffuse-adaptive-response-length-for-compute-budgeted-inference-in-diffusion-llms)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型作为传统自回归范式的替代前沿
+2. [Leveraging Pretrained Language Models as Energy Functions for Glauber Dynamics Text Diffusion](/202605/07/2605.04291v1-leveraging-pretrained-language-models-as-energy-functions-for-glauber-dynamics-text-diffusion)  
+   标签：评分：8.0/10、query:ardm
+   evidence：利用预训练因果语言模型作为扩散模型的能量函数
 
 ### 速读区论文标签
-1. [Scalable generative modeling of non-Gaussian spatio-temporal fields via autoregressive Gaussian processes](/202605/06/2605.03152v1-scalable-generative-modeling-of-non-gaussian-spatio-temporal-fields-via-autoregressive-gaussian-processes)  
+1. [Language Diffusion Models are Associative Memories Capable of Retrieving Unseen Data](/202605/07/2604.26841v1-language-diffusion-models-are-associative-memories-capable-of-retrieving-unseen-data)  
+   标签：评分：7.0/10、query:ardm
+   evidence：用于语言序列生成的离散扩散模型
+2. [Computer-Aided Design Generation by Cascaded Discrete Diffusion Model](/202605/07/2605.05031v1-computer-aided-design-generation-by-cascaded-discrete-diffusion-model)  
+   标签：评分：7.0/10、query:ardm
+   evidence：在CAD序列生成中对比自回归模型与扩散模型
+3. [AHPA: Adaptive Hierarchical Prior Alignment for Diffusion Transformers](/202605/07/2605.03317v1-ahpa-adaptive-hierarchical-prior-alignment-for-diffusion-transformers)  
    标签：评分：6.0/10、query:ardm
-   evidence：通过自回归高斯过程进行生成建模
+   evidence：扩散Transformer架构的对齐优化
 
 
 <div class="dpr-home-promo-card">
