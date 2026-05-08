@@ -1,0 +1,279 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-08T20:42:52.127134+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2605.04525v1",
+      "title": "HDFlow: Hierarchical Diffusion-Flow Planning for Long-horizon Tasks",
+      "abstract": "Recent advances in generative models have shown promise in generating behavior plans for long-horizon, sparse reward tasks. While these approaches have achieved promising results, they often lack a principled framework for hierarchical decomposition and struggle with the computational demands of real-time execution, due to their iterative denoising process. In this work, we introduce Hierarchical Diffusion-Flow (HDFlow), a novel hierarchical planning framework that optimally leverages the strengths of diffusion and rectified flow models to overcome the limitations of single-paradigm generative planners. HDFlow employs a high-level diffusion planner to generate sequences of strategic subgoals in a learned latent space, capitalizing on diffusion's powerful exploratory capabilities. These subgoals then guide a low-level rectified flow planner that generates smooth and dense trajectories, exploiting the speed and efficiency of ordinary differential equation (ODE)-based trajectory generation. We evaluate HDFlow on four challenging furniture assembly tasks in both simulation and real-world, where it significantly outperforms state-of-the-art methods. Furthermore, we also showcase our method's generalizability on two long-horizon benchmarks comprising diverse locomotion and manipulation tasks. Project website: https://hdflow-page.github.io/",
+      "authors": [
+        "Nandiraju Gireesh",
+        "Yuanliang Ju",
+        "Chaoyi Xu",
+        "Weiheng Liu",
+        "Yuxuan Wan",
+        "He Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-06T06:08:51+00:00",
+      "link": "https://arxiv.org/pdf/2605.04525v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "hierarchical diffusion planner for long-horizon tasks",
+      "llm_evidence_cn": "用于长程任务的分层扩散规划器",
+      "llm_evidence": "用于长程任务的分层扩散规划器",
+      "canonical_evidence": "用于长程任务的分层扩散规划器",
+      "llm_tldr_en": "Introduces HDFlow, a hierarchical framework using diffusion for high-level strategic subgoal planning.",
+      "llm_tldr_cn": "引入HDFlow，一种利用扩散模型进行高级战略子目标规划的分层框架。",
+      "llm_tldr": "引入HDFlow，一种利用扩散模型进行高级战略子目标规划的分层框架。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.06366v1",
+      "title": "Layer Collapse in Diffusion Language Models",
+      "abstract": "Diffusion language models (DLMs) have recently emerged as competitive alternatives to autoregressive (AR) language models, yet differences in their activation dynamics remain poorly understood. We characterize these dynamics in LLaDA-8B and identify a striking layer-collapse property: a few early layers exhibit highly similar, collapsed activation patterns dominated by a single large super-outlier persisting over a long token range. Despite its apparent redundancy, this outlier is critical: pruning it causes outputs to degrade into repetitive random token loops. Paradoxically, layers in LLaDA contain more redundant representations overall, with redundancy most pronounced in earlier layers -- the reverse of AR models, where deeper layers grow redundant due to undertraining. Our analysis indicates that layer collapse in DLMs is not driven by undertraining but by overtraining: a dominant outlier becomes an indispensable information carrier while remaining representations collapse into redundant structure. These findings have strong practical implications, verified through controlled pre-training experiments. DLMs are surprisingly robust to compression: LLaDA under 3-bit GPTQ quantization drops only -1.8% on GSM8K, whereas Llama-3.1-8B drops -64.7%. Optimal sparsity allocation also reverses between families: at 50% average sparsity, allocating more to early layers in LLaDA yields +8.4% over the reverse strategy, while the same allocation costs Llama -8.4%. Our findings reveal that the DLM training objective fundamentally reshapes layer dynamics relative to AR models, with direct consequences for compression and deployment. Code: github.com/Conzel/super-outlier-dlm.",
+      "authors": [
+        "Alexander Conzelmann",
+        "Albert Catalan-Tatjer",
+        "Shiwei Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-07T14:39:40+00:00",
+      "link": "https://arxiv.org/pdf/2605.06366v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "analysis of activation dynamics in diffusion language models compared to AR models",
+      "llm_evidence_cn": "扩散语言模型与自回归模型激活动态的对比分析",
+      "llm_evidence": "扩散语言模型与自回归模型激活动态的对比分析",
+      "canonical_evidence": "扩散语言模型与自回归模型激活动态的对比分析",
+      "llm_tldr_en": "Investigates layer collapse in diffusion language models like LLaDA, contrasting them with autoregressive models.",
+      "llm_tldr_cn": "研究了LLaDA等扩散语言模型中的层崩溃现象，并将其与自回归模型进行了对比。",
+      "llm_tldr": "研究了LLaDA等扩散语言模型中的层崩溃现象，并将其与自回归模型进行了对比。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.06548v1",
+      "title": "Continuous Latent Diffusion Language Model",
+      "abstract": "Large language models have achieved remarkable success under the autoregressive paradigm, yet high-quality text generation need not be tied to a fixed left-to-right order. Existing alternatives still struggle to jointly achieve generation efficiency, scalable representation learning, and effective global semantic modeling. We propose Cola DLM, a hierarchical latent diffusion language model that frames text generation through hierarchical information decomposition. Cola DLM first learns a stable text-to-latent mapping with a Text VAE, then models a global semantic prior in continuous latent space with a block-causal DiT, and finally generates text through conditional decoding. From a unified Markov-path perspective, its diffusion process performs latent prior transport rather than token-level observation recovery, thereby separating global semantic organization from local textual realization. This design yields a more flexible non-autoregressive inductive bias, supports semantic compression and prior fitting in continuous space, and naturally extends to other continuous modalities. Through experiments spanning 4 research questions, 8 benchmarks, strictly matched ~2B-parameter autoregressive and LLaDA baselines, and scaling curves up to about 2000 EFLOPs, we identify an effective overall configuration of Cola DLM and verify its strong scaling behavior for text generation. Taken together, the results establish hierarchical continuous latent prior modeling as a principled alternative to strictly token-level language modeling, where generation quality and scaling behavior may better reflect model capability than likelihood, while also suggesting a concrete path toward unified modeling across discrete text and continuous modalities.",
+      "authors": [
+        "Hongcan Guo",
+        "Qinyu Zhao",
+        "Yian Zhao",
+        "Shen Nie",
+        "Rui Zhu",
+        "Qiushan Guo",
+        "Feng Wang",
+        "Tao Yang",
+        "Hengshuang Zhao",
+        "Guoqiang Wei",
+        "Yan Zeng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-05-07T16:44:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.06548v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Hierarchical latent diffusion language model with block-causal DiT for text generation",
+      "llm_evidence_cn": "具有块因果DiT的分层潜扩散语言模型，用于文本生成",
+      "llm_evidence": "具有块因果DiT的分层潜扩散语言模型，用于文本生成",
+      "canonical_evidence": "具有块因果DiT的分层潜扩散语言模型，用于文本生成",
+      "llm_tldr_en": "Proposes Cola DLM, a hierarchical latent diffusion model for text generation using a block-causal transformer.",
+      "llm_tldr_cn": "提出Cola DLM，一种使用块因果Transformer进行文本生成的分层潜扩散模型。",
+      "llm_tldr": "提出Cola DLM，一种使用块因果Transformer进行文本生成的分层潜扩散模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.05540v1",
+      "title": "Towards Scalable One-Step Generative Modeling for Autoregressive Dynamical System Forecasting",
+      "abstract": "Fast surrogate modeling for high-dimensional physical dynamics requires more than low short-term error: useful models must roll out efficiently while preserving the statistical structure of long trajectories. Neural operators provide inexpensive autoregressive forecasts but can drift in turbulent regimes, whereas rolling diffusion and latent generative surrogates can represent stochastic transitions at the cost of multi-step denoising, noise-schedule design, or auxiliary compression models. We propose MeanFlow Long-term Invariant Spatiotemporal Consistency Autoregressive Models (MeLISA), a latent-free autoregressive generative surrogate built on pixel-space MeanFlow. MeLISA defines a blockwise stochastic transition kernel that generates each forecast block with a single model evaluation, avoiding latent encoders and iterative diffusion solvers at inference time. To stabilize long-horizon rollouts, MeLISA combines a Window-Consistency MeanFlow objective that learns conditional spatiotemporal generation from partially observed temporal windows with a Time Increment Consistency loss that constrains multi-lag finite increments and targets temporal-correlation structure. We evaluate MeLISA with compact UNet and scalable DiT backbones on two high-resolution benchmarks, extended 2D Kolmogorov flow at $256 \\times 256$ and turbulent channel-flow slice at $192 \\times 192$. MeLISA outperforms neural-operator baselines on short-term forecasting accuracy and long-horizon statistical metrics, including energy spectra, turbulent kinetic energy, and mixing-rate-related dynamics, while achieving inference speeds comparable to, and in some cases faster than, neural operators. Compact 3.7-5.7M-parameter variants already deliver strong parameter efficiency, and DiT variants provide a scalable path up to 150M parameters. Overall, MeLISA benefits both rollout efficiency and long-horizon statistical accuracy.",
+      "authors": [
+        "Tianyue Yang",
+        "Xiao Xue"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "physics.flu-dyn"
+      ],
+      "published": "2026-05-07T00:41:47+00:00",
+      "link": "https://arxiv.org/pdf/2605.05540v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "latent-free autoregressive generative surrogate for dynamical system forecasting",
+      "llm_evidence_cn": "用于动力系统预测的无潜变量自回归生成代理模型",
+      "llm_evidence": "用于动力系统预测的无潜变量自回归生成代理模型",
+      "canonical_evidence": "用于动力系统预测的无潜变量自回归生成代理模型",
+      "llm_tldr_en": "Proposes MeLISA, a scalable autoregressive generative model for high-dimensional physical dynamics forecasting.",
+      "llm_tldr_cn": "提出MeLISA，一种用于高维物理动力学预测的可扩展自回归生成模型。",
+      "llm_tldr": "提出MeLISA，一种用于高维物理动力学预测的可扩展自回归生成模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.06169v1",
+      "title": "Mean Mode Screaming: Mean--Variance Split Residuals for 1000-Layer Diffusion Transformers",
+      "abstract": "Scaling Diffusion Transformers (DiTs) to hundreds of layers introduces a structural vulnerability: networks can enter a silent, mean-dominated collapse state that homogenizes token representations and suppresses centered variation. Through mechanistic auditing, we isolate the trigger event of this collapse as Mean Mode Screaming (MMS). MMS can occur even when training appears stable, with a mean-coherent backward shock on residual writers that opens deep residual branches and drives the network into a mean-dominated state. We show this behavior is driven by an exact decomposition of these gradients into mean-coherent and centered components, compounded by the structural suppression of attention-logit gradients through the null space of the Softmax Jacobian once values homogenize.   To address this, we propose Mean-Variance Split (MV-Split) Residuals, which combine a separately gained centered residual update with a leaky trunk-mean replacement. On a 400-layer single-stream DiT, MV-Split prevents the divergent collapse that crashes the un-stabilized baseline; it tracks close to the baseline's pre-crash trajectory while remaining substantially better than token-isotropic gating methods such as LayerScale across the full schedule. Finally, we present a 1000-layer DiT as a scale-validation run at boundary scales, establishing that the architecture remains stably trainable at extreme depth.",
+      "authors": [
+        "Pengqi Lu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-07T12:53:45+00:00",
+      "link": "https://arxiv.org/pdf/2605.06169v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "structural vulnerability in 1000-layer Diffusion Transformers",
+      "llm_evidence_cn": "1000层扩散Transformer的结构脆弱性",
+      "llm_evidence": "1000层扩散Transformer的结构脆弱性",
+      "canonical_evidence": "1000层扩散Transformer的结构脆弱性",
+      "llm_tldr_en": "Identifies and mitigates Mean Mode Screaming to enable scaling Diffusion Transformers to 1000 layers.",
+      "llm_tldr_cn": "识别并缓解均值模式尖叫问题，使扩散Transformer能够扩展到1000层。",
+      "llm_tldr": "识别并缓解均值模式尖叫问题，使扩散Transformer能够扩展到1000层。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "state of the art autoregressive diffusion architectures",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.05736v1",
+      "title": "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
+      "abstract": "Vector quantization (VQ) with autoregressive (AR) token modeling is a widely adopted and highly competitive paradigm for time-series generation. However, such models are fundamentally limited by exposure bias: during inference, errors can accumulate across sequential predictions, leading to pronounced quality degradation in long-horizon generation. To address this, we propose SDFlow ($\\textbf{S}$imilarity-$\\textbf{D}$riven $\\textbf{Flow}$ Matching), a non-autoregressive framework that operates entirely in the frozen VQ latent space and enables parallel sequence generation via flow matching. We tackle three key challenges in making this transition: (1) eliminating exposure bias by replacing step-wise token prediction with a global transport map; (2) mitigating the high-dimensionality of VQ token spaces via a low-rank manifold decomposition with a learned anchor prior over the latent manifold; and (3) incorporating discrete supervision into continuous transport dynamics by introducing a categorical posterior over codebook indices within a variational flow-matching formulation. Extensive experiments show that SDFlow achieves state-of-the-art performance, improving Discriminative Score and substantially reducing Context-FID, particularly for challenging long-sequence generation. Moreover, SDFlow provides significant inference speedups over autoregressive baselines, offering both high fidelity and computational efficiency. Code is available at https://anonymous.4open.science/r/SDFlow-D6F3/",
+      "authors": [
+        "Wei Li",
+        "Shibo Feng",
+        "Pengcheng Wu",
+        "Min Wu",
+        "Peilin Zhao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-07T06:28:18+00:00",
+      "link": "https://arxiv.org/pdf/2605.05736v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Discusses limitations of autoregressive token modeling and proposes non-AR flow matching",
+      "llm_evidence_cn": "讨论了自回归令牌建模的局限性并提出了非自回归流匹配方法",
+      "llm_evidence": "讨论了自回归令牌建模的局限性并提出了非自回归流匹配方法",
+      "canonical_evidence": "讨论了自回归令牌建模的局限性并提出了非自回归流匹配方法",
+      "llm_tldr_en": "SDFlow addresses exposure bias in AR models by using a non-autoregressive flow matching framework.",
+      "llm_tldr_cn": "SDFlow通过非自回归流匹配框架解决了自回归模型中的曝光偏差问题。",
+      "llm_tldr": "SDFlow通过非自回归流匹配框架解决了自回归模型中的曝光偏差问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.06355v1",
+      "title": "Order-Agnostic Autoregressive Modelling with Missing Data",
+      "abstract": "Order-Agnostic autoregressive models have demonstrated strong performance in deep generative modeling, yet their use in settings with incomplete data remains largely unexplored. In this work, we reinterpret them through the lens of missing data. First, we show that their standard training procedure on fully observed data implicitly performs imputation under a missing completely at random mechanism, resulting in robust out-of-sample imputation performance in settings with high missingness. Second, we introduce the first principled framework for training them directly on incomplete datasets under general missingness mechanisms. Third, we leverage their amortized conditional density estimation to perform active information acquisition, i.e., sequentially selecting the most informative missing variables for downstream prediction or inference. Across a suite of real-world benchmarks, our Missingness-Aware Order-Agnostic Autoregressive Model (MO-ARM) consistently outperforms established imputation baselines.",
+      "authors": [
+        "Ignacio Peis",
+        "Pablo M. Olmos",
+        "Jes Frellsen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-05-07T14:34:08+00:00",
+      "link": "https://arxiv.org/pdf/2605.06355v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Order-Agnostic Autoregressive Modelling",
+      "llm_evidence_cn": "顺序无关的自回归建模",
+      "llm_evidence": "顺序无关的自回归建模",
+      "canonical_evidence": "顺序无关的自回归建模",
+      "llm_tldr_en": "Explores order-agnostic autoregressive models for generative modeling with missing data.",
+      "llm_tldr_cn": "研究顺序无关的自回归模型在缺失数据生成建模中的应用。",
+      "llm_tldr": "研究顺序无关的自回归模型在缺失数据生成建模中的应用。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
