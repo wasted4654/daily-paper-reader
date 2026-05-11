@@ -1,0 +1,883 @@
+Title: DiffRetriever: Parallel Representative Tokens for Retrieval with Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2605.07210v1
+
+Published Time: Mon, 11 May 2026 00:39:02 GMT
+
+Number of Pages: 23
+
+Markdown Content:
+# DiffRetriever: Parallel Representative Tokens for Retrieval with Diffusion Language Models 
+
+Shuai Wang 1 Yu Yin 1 Shengyao Zhuang 1 Bevan Koopman 1,2 Guido Zuccon 1
+
+> 1
+
+The University of Queensland, Brisbane, QLD, Australia 2CSIRO 
+
+{shuai.wang2, y.yin1, s.zhuang, g.zuccon}@uq.edu.au bevan.koopman@csiro.au 
+
+Abstract 
+
+PromptReps showed that an autoregressive language model can be used directly as a retriever by prompting it to generate dense and sparse representations of a query or passage. Extending this to multiple representatives is inefficient for autoregressive models, since tokens must be generated sequentially, and prior multi-token variants did not reliably improve over single-token decoding. We show that the bottleneck is sequential generation, not the multi-token idea itself. DiffRetriever is a representative- token retriever for diffusion language models: it appends K masked positions to the prompt and reads all K in a single bidirectional forward pass. Across in-domain and out-of-domain evaluation, multi-token DiffRetriever substantially improves over single-token on every diffusion backbone we test, while autoregressive multi-token is flat or negative and pays a latency cost that scales with K where diffusion does not. After supervised fine-tuning, DiffRetriever on Dream is the strongest BEIR-7 retriever in our comparison, ahead of PromptReps, the encoder-style DiffEmbed baseline on the same diffusion backbones, and the contrastively fine-tuned single-vector RepLLaMA. A per-query oracle on the frozen base model exceeds contrastive fine-tuning at the same fixed budget, pointing to adaptive budget selection as future work. Code is available at https://github.com/ielab/diffretriever .20 50 100 200 500   
+
+> 30
+> 35
+> 40
+> 45
+> 50
+> 55
+> BEIR-7 NDCG@10 (×100)
+> BM25
+> K20
+> K20
+> K=(4,16)
+> K=(4,4)
+
+Zero-shot  
+
+> 20 50
+> 56
+> 58
+> 60
+> 62
+> 64
+> 66
+> 68
+> K=4
+> K=4
+> K=(4,16)
+> K=(4,4)
+
+Fine-tuned 
+
+Encoding + search latency (ms / query)                   
+
+> Backbone: Dream (Diff) LLaDA (Diff) Qwen2.5 (AR) LLaMA3 (AR)
+> Method: RepLLaMA DiffEmbed PromptReps DiffRetriever (Ours)
+> Backbone: Dream (Diff) LLaDA (Diff) Qwen2.5 (AR) LLaMA3 (AR)
+> Method: RepLLaMA DiffEmbed PromptReps DiffRetriever (Ours)
+> Representation: empty = single-token filled = multi-token
+
+Figure 1: BEIR-7 NDCG@10 vs. encoding plus search latency (ms/query, 100 K-document sample). Left: zero-shot (PromptReps at K≤20 ). Right: fine-tuned ( K=4 ). Dashed lines link single-token (open) and multi-token (filled) variants. DiffRetriever gains from multi-token at near single-token cost in both panels; PromptReps pays 
+
+≈ 15 × the latency at zero-shot and ≈ 3× at fine-tuning, with no consistent gain. Fine-tuned DiffRetriever (Dream, 
+
+(Kq , K p)=(4 , 16) ) is the strongest BEIR-7 retriever in our comparison. 
+
+1
+
+> arXiv:2605.07210v1 [cs.IR] 8 May 2026
+
+# 1 Introduction 
+
+PromptReps (Zhuang et al., 2024) showed that an off-the-shelf autoregressive language model can serve as an effective zero-shot retriever. The model is prompted to represent a query or passage in a retrieval task, and the hidden state and next-token logits at the answering position are used as a dense vector and a sparse representation, which are scored against indexed passage representations to rank candidates. A natural follow-up is whether a single token’s representation is enough to capture a query or passage for retrieval. Late-interaction retrievers such as ColBERT (Khattab and Zaharia, 2020) show that scoring against multiple vectors is often more effective than compressing a query or passage into one. However, autoregressive decoding extends poorly to this setting: producing K representations requires generating tokens one at a time, so encoding cost scales with K, and prior multi-token variants of PromptReps did not reliably improve over the single-token setting despite this added cost (Zhuang et al., 2024). We ask whether the limiting factor is multi-token retrieval itself, or sequential autoregressive generation. Diffusion language models (Nie et al., 2025; Ye et al., 2025) provide a way to separate the two. They fill masked positions jointly under bidirectional attention, so K [MASK] positions appended to a prompt can be processed in a single forward pass and produce multiple dense and sparse representations at once, instead of one per forward pass as in PromptReps. Existing diffusion language model retrievers, such as DiffEmbed (Zhang et al., 2025) and pplx-embed (Eslami et al., 2026), do not use the masked-position prediction objective at retrieval time. They employ the diffusion model as a BERT-style encoder for a mean-pooled embedding model, a use case far from how the model was pretrained. DiffRetriever, our retriever, instead queries the diffusion model in the form it was trained on: K masked positions read out as K
+
+dense vectors and K sparse representations in a single bidirectional forward pass. We compare two autoregressive backbones (LLaMA3-8B, Qwen2.5-7B) and two diffusion backbones (LLaDA-8B, Dream-7B) on MS MARCO, TREC DL 2019/2020, and BEIR-7 (seven datasets in BEIR spanning diverse task domains and objectives), both zero-shot and after supervised fine-tuning. Three findings emerge. First, multi-token helps diffusion and not autoregression: multi-token DiffRetriever substantially improves over single-token on every diffusion backbone we test, while its encoding cost stays roughly constant in K where the autoregressive multi-token cost scales linearly, and autoregressive multi-token shows no consistent gain (Figure 1). Second, the training-aligned objective and parallel-decoding advantage in DiffRetriever transfer to BEIR-7 in both zero-shot and fine-tuned settings. Zero-shot, DiffRetriever on LLaDA is the strongest system in our comparison, ahead of PromptReps on autoregressive backbones and the encoder-style DiffEmbed baseline. After supervised fine-tuning, DiffRetriever on Dream is the strongest BEIR-7 retriever overall, ahead of fine-tuned PromptReps, DiffEmbed, and RepLLaMA. Third, the fixed deployable budget leaves substantial effectiveness on the table: a perfect per-query budget predictor on the frozen base model would exceed contrastive fine-tuning at the same fixed budget on every backbone-benchmark combination we test, pointing to adaptive budget selection as a direction for future work. 
+
+# 2 Related Work 
+
+LLM-based retrieval and PromptReps. Several recent dense retrievers, including RepLLaMA (Ma et al., 2024), E5-Mistral (Wang et al., 2024), and GTE-Qwen (Li et al., 2023), adapt autoregressive LLM backbones through contrastive fine-tuning. The dense signals from these retrievers are typically combined with a sparse / lexical baseline in the zero-shot setting, since dense alone underperforms BM25 without supervision (Wang et al., 2021; Li et al., 2022); we follow the same hybrid recipe (§3.3). PromptReps (Zhuang et al., 2024) is the closest prior work to ours: it shows that representative-token prompting can turn an off-the-shelf autoregressive LLM into a zero-shot retriever, reading a dense vector and a sparse representation from the same generated token. That paper also tested multi-token and ColBERT-style multi-vector (Khattab and Zaharia, 2020; Santhanam et al., 2022) variants, but reported that neither reliably improved over single-token despite the added decoding cost. We revisit this finding under a different production strategy. Late-interaction retrievers in the ColBERT family share the MaxSim aggregation we adopt in §3.3 but use a BERT-scale 2Figure 2: Overview of DiffRetriever. A query and a passage are each formatted with a representative-token prompt that ends in a sequence of Kq (query) or Kp (passage) [MASK] positions, capped by fixed suffix tokens. A diffusion language model fills all mask positions in a single bidirectional forward pass, yielding K
+
+hidden states (dense) and K token logit vectors (sparse). Scoring uses ColBERT-style MaxSim on the dense vectors and max-pooled logits on the sparse vectors, combined into a hybrid score for ranking. Top-middle inset: PromptReps on an autoregressive backbone produces the same K representatives sequentially across 
+
+K forward passes, so encoding cost scales with K; DiffRetriever produces all K in parallel from one pass. encoder trained end-to-end for retrieval; we hold the LLM backbone fixed across retrieval mechanisms instead. 
+
+Diffusion language models in retrieval. Diffusion language models generate text by iteratively denoising masked positions under bidirectional attention, rather than predicting one token at a time left to right. Recent open models such as Dream (Ye et al., 2025) and LLaDA (Nie et al., 2025) rival autoregressive models at comparable scale on language modeling benchmarks, raising the question of how to use them as retrievers. The closest prior work is DiffEmbed (Zhang et al., 2025), which treats the diffusion model as a BERT-style encoder, training a mean-pooled embedding model on top of its bidirectional attention without invoking masked-position prediction at retrieval time. A separate line uses diffusion at the reranking stage: DiffuRank (Liu et al., 2026) scores candidates from a first-stage retriever by their diffusion likelihood. DiffRetriever departs from both: we query the diffusion model in the form it was pretrained on, filling K
+
+masked positions in parallel and reading them out as K dense and K sparse representatives from a single forward pass. 
+
+# 3 Method 
+
+DiffRetriever follows the overall recipe of PromptReps for extracting retrieval representations from a language model, and departs from it in one place. We first prompt the model to represent a query or passage in a retrieval task (§3.1). We then collect the representations from the model’s response, and this is where DiffRetriever significantly differs from PromptReps: a diffusion backbone fills K masked positions in parallel, where an autoregressive backbone would generate them one at a time (§3.2). Scoring against indexed passages follows PromptReps closely (§3.3). On top of this zero-shot pipeline, we add a contrastive fine-tuning stage (§3.4) so that DiffRetriever can also be evaluated as a fully trained retriever, not only as a prompted one. 33.1 Representative-Token Prompt 
+
+We reuse the chat-template prompt from PromptReps at K=1 , and replace “one word” with “a few words” 
+
+for the multi-token case ( K> 1); Table 1 shows both. 1 The same template is used for both queries and passages, with Query replaced by Passage for passages. Table 1: Representative-token prompts for Query . Single-token prompt is unchanged from PromptReps; multi-token prompt differs only in the bolded phrasing. 
+
+Single-token ( K=1 )
+
+System: You are an AI assistant that can understand human language. 
+
+User: Query: “ x”. Use one word to represent the query in a retrieval task. Make sure your word is in lowercase. 
+
+Assistant: The word is “ 
+
+Multi-token ( K> 1)
+
+System: You are an AI assistant that can understand human language. 
+
+User: Query: “ x”. Use a few words to represent the query in a retrieval task. Make sure your words are in lowercase. 
+
+Assistant: The words are “ 
+
+3.2 Decoding the Representative Tokens 
+
+The same prompt can be decoded in two ways, depending on the backbone. The extracted signals are identical in both cases: hidden state and logits at each representative token. Only the cost differs. 
+
+Autoregressive (sequential). An autoregressive backbone generates representative tokens left-to-right after the assistant prefix The words are " , under a causal attention mask. Generation stops at a closing quotation mark or at a cap of N tokens, with N =20 at zero-shot and N =4 at fine-tuning time (reduced for memory reasons; see §4.5). Because each token conditions on all preceding tokens, encoding cost scales linearly in the number of tokens produced (with KV caching), and the count of representative tokens varies query by query. 
+
+Diffusion (parallel). A diffusion backbone requires the sequence length to be fixed in advance, so the query and passage budgets, which we write as Kq and Kp, must be set before encoding. We extend the prompt with 
+
+K [MASK] positions and the closing tokens, and pass the full sequence through the model in a single forward pass: 
+
+[chat prompt] The words are " [MASK] 1 · · · [MASK] K " <turn-end> <eos> , (1) where <turn-end> is the chat template’s end-of-turn token (e.g., <|im_end|> for Dream, <|eot_id|> for LLaDA) and <eos> is the end-of-sequence token. Under bidirectional attention, each [MASK] position attends to the full prefix, to the other [MASK] positions, and to the closing tokens. We select (Kq, K p) as described in §4.4. The two strategies therefore differ in cost but not in what is read out. Autoregressive decoding pays up to N forward passes; diffusion decoding pays one, regardless of K.2 All main experiments use S=1 (a single forward pass). Appendix A.1 reports an iterative-denoising variant ( S> 1); it is significantly worse at zero-shot on all diffusion backbones we test, and shows mixed results when fine-tuned. The fact that iterative denoising does not improve over single-step suggests the gain comes from bidirectional attention over appended masked positions rather than from matching the iterative training procedure at inference.      
+
+> 1The original PromptReps multi-token variant used “three words” (Zhuang et al., 2024); we find “a few words” works better in practice. See Appendix A.2.
+> 2In FLOPs, diffusion has no asymptotic advantage over autoregression with KV caching: both scale linearly in K. The advantage is in wall-clock latency, since the autoregressive forward passes must run sequentially while diffusion finishes in one parallel pass; see Figure 1.
+
+43.3 Scoring 
+
+Each representative token yields a hidden state hk ∈ RH and a logit vector ℓk ∈ R|V |. We use these to compute a dense score and a sparse score, and combine them into a hybrid score by linear interpolation. 
+
+Dense. We score query and passage representations with ColBERT-style late interaction (Khattab and Zaharia, 2020), which extends the single-vector inner product to multiple vectors per side and naturally handles unequal Kq and Kp. Stacking the Kq query hidden states as Eq = [ hq
+
+> 1
+
+, . . . , hqKq ] and the Kp passage hidden states as Ep = [ hp
+
+> 1
+
+, . . . , hpKp ],
+
+sdense (q, p ) = 1
+
+KqKq
+
+X
+
+> i=1
+> Kp
+
+max  
+
+> j=1
+
+hq ⊤ 
+
+> i
+
+hpj . (2) When Kq=Kp=1 , this reduces to a standard inner product. 
+
+Sparse. Following PromptReps, we apply log(1+ReLU( ·)) to each logit vector and aggregate the result by element-wise max-pooling: 
+
+s = max  
+
+> k
+
+log  1 + ReLU( ℓk) ∈ R|V |. (3) The sparse score is the inner product ssparse (q, p ) = s⊤ 
+
+> q
+
+sp, with the content-word filter of PromptReps applied unchanged. 
+
+Hybrid. Combining dense and sparse signals with linear interpolation is a standard recipe for zero-shot dense retrievers, where dense alone underperforms a sparse baseline (Wang et al., 2021; Li et al., 2022). We follow this recipe: equal-weight linear interpolation after min-max normalization within each retriever’s top-1000 result list: 
+
+shybrid (q, p ) = 12 ˜sdense (q, p ) + 12 ˜ssparse (q, p ), (4) where ˜s denotes the normalized score. 
+
+3.4 Supervised Fine-Tuning 
+
+We fine-tune each backbone contrastively on the dense and sparse scores from §3.3. The same loss applies to autoregressive and diffusion backbones; only the decoding strategy differs at training time. For each query q, let p+ be a positive passage and let P be a pool of negatives (sampled hard negatives plus in-batch passages from other queries). The dense loss is InfoNCE with temperature τ :
+
+Ldense = − log exp  sdense (q, p +)/τ P 
+
+> p∈P
+
+exp  sdense (q, p )/τ  . (5) The sparse loss is the analogous InfoNCE on ssparse , applied without temperature. The training objective is their sum, L = Ldense + Lsparse .At training time, we set (Kq, K p) to the same values used at zero-shot, so a backbone is trained and evaluated under the same budget. Diffusion backbones use parallel [MASK] prediction as in §3.2; autoregressive backbones use sequential decoding. Full training details are in §4.5. 
+
+# 4 Experimental Setup 
+
+4.1 Models 
+
+We compare two autoregressive and two diffusion LLM backbones at similar parameter scale ( 7 to 8B). The autoregressive models are LLaMA3-8B-Instruct (Grattafiori et al., 2024) and Qwen2.5-7B-Instruct (Team, 52024); the diffusion models are Dream-v0-Instruct-7B (Ye et al., 2025) and LLaDA-8B-Instruct (Nie et al., 2025). We refer to these as LLaMA3, Qwen2.5, Dream, and LLaDA. We pair each diffusion backbone with an autoregressive model that lets us isolate what changes when we switch decoding strategy. Dream is initialized from Qwen2.5 and then trained with bidirectional masked-token denoising, so the two share architecture and initialization and differ only in the training objective; this is our tightest pair. LLaDA is trained from scratch under the same diffusion objective, without any autoregressive checkpoint. We pair it with LLaMA3, the closest autoregressive model in size and also LLaDA’s direct competitor in the original paper, as a complementary pair without shared initialization. 
+
+4.2 Baselines 
+
+We compare DiffRetriever against four baselines. BM25 uses the Pyserini (Lin et al., 2021) default hyperpa-rameters and index on each dataset. PromptReps (Zhuang et al., 2024) runs on Qwen2.5 and LLaMA3 as the directly comparable representative-token retrieval baseline. DiffEmbed (Zhang et al., 2025) runs on Dream and LLaDA as an encoder-style alternative on the same diffusion backbones, mean-pooling over the input sequence without prompting or masked-position reading. RepLLaMA (Ma et al., 2024) runs on LLaMA3 as a contrastively fine-tuned single-vector reference. For PromptReps, DiffEmbed, and RepLLaMA, we re-train each baseline ourselves with the same training data, optimizer, schedule, and adapter configuration as DiffRetriever (§4.5), so any effectiveness difference comes from the retrieval mechanism. 
+
+4.3 Datasets and Metrics 
+
+We evaluate on three benchmarks. MS MARCO passage ranking (Bajaj et al., 2016) is reported on the dev set with MRR@10. TREC DL 2019 and TREC DL 2020 (Craswell et al., 2020a,b) are reported with NDCG@10. 
+
+BEIR-7 is the seven-dataset subset of BEIR (Thakur et al., 2021) we use to measure out-of-domain transfer, comprising Natural Questions, HotpotQA, SciFact, TREC-COVID, FiQA, ArguAna, and Quora; we report NDCG@10. The seven datasets span open-domain QA, multi-hop QA, scientific fact verification, biomedical retrieval, financial QA, argument retrieval, and duplicate-question detection. MS MARCO training queries are used only for budget selection (§4.4), never as a test set. For latency comparisons (Figure 1), we report query encoding plus search time using the same attention implementation across backbones, on a 100 K-document sample of the MS MARCO corpus. §5.4 reports latency scaling across input length and index size, and at the fine-tuned K=4 cap. 
+
+4.4 Budget Selection 
+
+A diffusion backbone cannot encode a query or passage without first fixing the number of [MASK] positions (§3.2), so (Kq, K p) must be chosen up front. For each diffusion backbone we sweep (Kq, K p) over 
+
+{1, 2, 4, 8, 16 }2 on the MS MARCO training split and pick the pair with the highest hybrid score, allowing 
+
+Kq and Kp to differ. The selected budgets are (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) = (4 , 16) for Dream and (4 , 4) for LLaDA; we apply each unchanged across all evaluations (MS MARCO dev, TREC DL 2019/2020, BEIR-7) and reuse it as the train-time budget for supervised fine-tuning. The full selection grid is in Figure 4; the test-set landscape and oracle analysis are in §6. 
+
+4.5 Fine-Tuning Setup 
+
+We fine-tune on the Tevatron MS MARCO passage augmented triples (Gao et al., 2022; Bajaj et al., 2016), following PromptReps. Each training item contains a query, one sampled positive passage, and 15 sampled hard negatives. Diffusion backbones are fine-tuned at the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+), so train-time and inference-time budgets agree. Autoregressive backbones train with the fine-tuning cap N =4 across both LLaMA3 and 6Qwen2.5; 3 the Fwd column of Table 2 reports the fine-tuned forward-pass counts. We use parameter-efficient fine-tuning with LoRA adapters (Hu et al., 2022) on all four backbones and on the re-trained baselines, with the same configuration across systems, so any difference in fine-tuned effectiveness comes from the retrieval mechanism, not the training recipe. Full hyperparameters are in Appendix B.1. 
+
+# 5 Results 
+
+We report results in three settings: in-domain zero-shot (§5.1), in-domain fine-tuned (§5.2), and out-of-domain transfer to BEIR-7 (§5.3). All evaluations use the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) from §4.4, applied unchanged across settings. Table 2: In-domain retrieval (MRR@10 for MS MARCO, NDCG@10 for TREC DL). D=Dense, S=Sparse, 
+
+H=Hybrid. Scores in ×100 form, three decimals. Fwd: query forward passes per encoding. Bold : best within each half per column. †: significantly better than same-backbone single-token; ‡: significantly better than LLaMA-3 PromptReps single-token of the same half. Paired t-test on per-query scores, p < 0.05 .
+
+Method Backbone Variant Fwd MS MARCO DL19 DL20 D S H D S H D S H
+
+> Zero-shot
+
+BM25 — sparse — — .184 — — .506 — — .480 —DiffEmbed Dream single-vector 1 .034 — — .184 — — .110 — —LLaDA single-vector 1 .014 — — .111 — — .063 — —PromptReps Qwen2.5 single-token 1 .100 .190 .200 .320 .407 .439 .245 .428 .422 multi-token ≤20 .142 † .177 .200 .404 .405 .477 .386 † .410 .478 †
+
+LLaMA-3 single-token 1 .178 .211 .242 .511 .431 .513 .445 .452 .536 
+
+multi-token ≤20 .151 .196 .220 .319 .454 .473 .336 .412 .471 
+
+DiffRetriever 
+
+Dream single-token 1 .086 .073 .112 .325 .313 .369 .255 .208 .312 multi-token 1 .192 †‡ .165 † .218 † .479 † .427 † .496 † .466 † .422 † .512 †
+
+LLaDA single-token 1 .158 .200 .221 .391 .451 .481 .367 .463 .483 multi-token 1 .192 †‡ .223 †‡ .248 † .490 † .479 .549 † .472 † .479 .536 †
+
+> Fine-tuned
+
+RepLLaMA LLaMA single-vector 1 .412 — — .715 — — .690 — —DiffEmbed Dream single-vector 1 .405 — — .720 — — .693 — —LLaDA single-vector 1 .398 — — .695 — — .676 — —PromptReps Qwen2.5 single-token 1 .419 .343 .405 .741 .592 .711 .715 .620 .703 multi-token 4 .424 .347 .406 .738 .607 .729 .731 .632 .705 LLaMA-3 single-token 1 .425 .347 .410 .743 .605 .715 .751 .631 .707 multi-token 4 .430 .348 .414 .746 .613 .732 .739 .621 .709 DiffRetriever 
+
+Dream single-token 1 .424 .341 .405 .741 .614 .724 .721 .627 .690 multi-token 1 .433 †‡ .349 † .411 † .751 .620 .739 .729 .617 .697 LLaDA single-token 1 .424 .347 .405 .656 .562 .637 .715 .624 .701 multi-token 1 .427 .348 .408 .657 .579 .655 † .721 .614 .698 
+
+5.1 Zero-shot in-domain retrieval 
+
+We start with the single-token ( K=1 ) setting, shown in the zero-shot half of Table 2. Autoregressive backbones lead here. LLaMA3 reaches .242 hybrid MRR@10 on MS MARCO, ahead of both diffusion backbones on every benchmark. Dream is the weakest single-token system and falls below BM25 on 
+
+> 3See §3.2 for the zero-shot vs. fine-tuning cap values and the memory rationale.
+
+7MS MARCO. DiffEmbed, which uses the same diffusion backbones as mean-pooled encoders, does even worse. The diffusion K=1 disadvantage therefore lives in the backbone family rather than in the prompt design itself. The picture changes at K> 1, but only for diffusion. For autoregressive backbones, multi-token is flat or negative: LLaMA3 hybrid drops on MS MARCO and DL19, Qwen2.5 is flat across all three benchmarks, and no AR multi-token configuration is significantly better than LLaMA3 single-token. For diffusion, multi-token gains on every benchmark for both backbones, and each gain is statistically significant against same-backbone single-token and against LLaMA3 single-token. Dream on MS MARCO nearly doubles from .112 to .218 ,overtaking its autoregressive counterpart Qwen2.5. The reversal could in principle reflect a backbone effect rather than a decoding-strategy effect, but the Dream–Qwen2.5 pair rules this out. Dream is initialized from Qwen2.5 and then trained as a diffusion language model, so the two share architecture and initialization and differ only in how representative tokens are decoded. Their ordering inverts exactly with K: Qwen2.5 leads at K=1 on every benchmark, Dream multi-token leads at K> 1 on every benchmark (e.g., MS MARCO hybrid .218 vs. .200 ). The LLaDA– LLaMA3 pair, which does not share initialization, shows the same direction at larger absolute scale. The reversal tracks how representative tokens are decoded, not the backbone. Encoding cost differs sharply between the two decoding strategies. Autoregressive multi-token takes 
+
+275 to 300 ms per query, while diffusion takes 16 to 20 ms (Figure 1), a roughly 15 × latency penalty for no consistent gain, so the multi-token bottleneck identified by prior work was sequential generation, not the multi-token idea itself. 
+
+5.2 In-domain fine-tuning 
+
+We turn now to the fine-tuned half of Table 2. Supervision compresses the systems into a narrow band: differ-ences between PromptReps (sequential) and DiffRetriever (parallel), and between single- and multi-token, are at most one or two points across the four representative-token configurations on all three benchmarks. Within this band, DiffRetriever Dream multi-token is the strongest fine-tuned representative-token system: it holds five of the nine column-best cells, including all three modes on DL19, and its .433 on MS MARCO dense is ahead of PromptReps LLaMA3 multi-token ( .430 ), DiffEmbed Dream on the same backbone ( .405 ), and RepLLaMA ( .412 ). The within-backbone DiffEmbed comparison is the most informative: on the same recipe, representative- token use of the same diffusion model beats mean-pooled encoder use of it. AR systems take the remaining four cells: hybrid on MS MARCO and all three modes on DL20. The strongest scoring mode also flips. In the zero-shot half, hybrid wins for every backbone and every K;in the fine-tuned half, dense wins. Dense roughly doubles under supervision while sparse gains less, so the fine-tuned dense vectors are strong enough on their own that interpolating with the weaker sparse score at equal weight drags the combined score down rather than up. Dream’s trajectory is the most informative pattern in the fine-tuned half. Zero-shot Dream single-token was one of the weakest systems in the table, below BM25 on MS MARCO; after fine-tuning, DiffRetriever Dream becomes one of the strongest, and gains far more from fine-tuning than LLaDA does on the same recipe. One possible explanation: Dream is initialized from Qwen2.5 and inherits contrastive-friendly priors that combine with bidirectional decoding once supervision is applied, while LLaDA, trained from scratch as a diffusion model, does not. The same asymmetry shows up more sharply out of domain (§5.3). 8Table 3: Out-of-domain transfer to BEIR-7 (NDCG@10) — full breakdown across Dense (D), Sparse (S), and Hybrid (H) per dataset for every system. Scores in ×100 form, three decimal places. Bold : best within each half per column. †: significantly better than same-backbone single-token (same column). ‡: significantly better than LLaMA-3 PromptReps single-token of the same half (same column). The table is split into two stacked sub-tables (top: NQ, HQA, SciFact, COVID; bottom: FiQA, ArguAna, Quora and the BEIR-7 average) so it fits in textwidth. 
+
+Method Backbone Variant NQ HQA SciFact COVID D S H D S H D S H D S H
+
+> Zero-shot
+
+BM25 — sparse — .243 — — .567 — — .664 — — .530 —DiffEmbed Dream single-vector .118 — — .149 — — .383 — — .316 — —LLaDA single-vector .066 — — .167 — — .385 — — .407 — —PromptReps Qwen2.5 single-token .156 .261 .302 .066 .394 .322 .455 .570 .618 .490 .545 .577 multi-token .232 .265 .316 .267 .484 .470 .489 .595 .609 .411 .513 .538 LLaMA-3 single-token .331 .293 .410 .199 .452 .454 .517 .584 .643 .612 .558 .645 multi-token .301 .276 .379 .287 .508 .507 .539 .605 .639 .530 .552 .613 
+
+DiffRetriever 
+
+Dream single-token .117 .102 .153 .038 .056 .066 .334 .276 .380 .501 .339 .497 multi-token .346 .219 .358 .294 .411 .449 .554 .564 .636 .622 .481 .590 LLaDA single-token .289 .296 .382 .129 .322 .299 .525 .576 .618 .679 .666 .752 
+
+multi-token .385 .292 .415 .328 .468 .494 .592 .624 .660 .662 .690 .717 
+
+> Fine-tuned
+
+RepLLaMA LLaMA single-vector .622 — — .503 — — .653 — — .564 — —DiffEmbed Dream single-vector .625 — — .668 — — .735 — — .758 — —LLaDA single-vector .587 — — .601 — — .714 — — .578 — —PromptReps Qwen2.5 single-token .619 .441 .573 .661 .580 .684 .756 .662 .727 .843 .632 .797 multi-token .623 .453 .582 .686 .601 .701 .773 .681 .748 .848 .664 .818 LLaMA-3 single-token .619 .443 .573 .685 .595 .695 .750 .659 .731 .815 .596 .756 multi-token .631 .458 .583 .696 .613 .709 .735 .673 .737 .809 .659 .792 
+
+DiffRetriever 
+
+Dream single-token .619 .433 .572 .650 .587 .684 .739 .670 .729 .841 .629 .789 multi-token .644 .458 .596 .683 .603 .705 .752 .666 .729 .847 .665 .830 
+
+LLaDA single-token .620 .446 .579 .640 .595 .674 .733 .681 .743 .840 .691 .823 multi-token .622 .452 .584 .647 .613 .687 .744 .695 .746 .846 .710 .819 Method Backbone Variant FiQA ArguAna Quora Avg D S H D S H D S H D S H
+
+> Zero-shot
+
+BM25 — sparse — .236 — — .275 — — .789 — — .472 —DiffEmbed Dream single-vector .143 — — .308 — — .685 — — .300 — —LLaDA single-vector .117 — — .326 — — .528 — — .285 — —PromptReps Qwen2.5 single-token .200 .193 .271 .189 .179 .209 .693 .667 .784 .321 .401 .441 multi-token .165 .188 .239 .231 .121 .240 .600 .634 .707 .342 .400 .446 LLaMA-3 single-token .272 .205 .318 .229 .173 .248 .729 .682 .804 .412 .421 .503 multi-token .212 .207 .270 .315 .133 .316 .538 .686 .772 .389 .424 .500 
+
+DiffRetriever 
+
+Dream single-token .200 .118 .220 .290 .139 .273 .702 .503 .725 .311 .219 .331 multi-token .293 .173 .278 .350 .137 .323 .532 .647 .696 .427 .376 .476 LLaDA single-token .311 .218 .325 .379 .237 .370 .811 .706 .825 .446 .432 .510 multi-token .308 .225 .317 .386 .179 .357 .819 .678 .814 .497 .451 .539 Fine-tuned 
+
+RepLLaMA LLaMA single-vector .383 — — .411 — — .821 — — .565 — —DiffEmbed Dream single-vector .478 — — .375 — — .831 — — .638 — —LLaDA single-vector .455 — — .387 — — .842 — — .595 — —PromptReps Qwen2.5 single-token .444 .299 .411 .407 .300 .386 .872 .727 .844 .657 .520 .632 multi-token .440 .293 .404 .407 .287 .381 .872 .729 .844 .664 .530 .640 LLaMA-3 single-token .417 .268 .378 .414 .311 .391 .860 .715 .834 .651 .512 .623 multi-token .437 .290 .395 .416 .290 .390 .865 .698 .827 .655 .526 .633 
+
+DiffRetriever 
+
+Dream single-token .463 .292 .409 .406 .288 .387 .859 .703 .833 .654 .515 .629 multi-token .479 .316 .431 .403 .305 .382 .887 .748 .859 .671 .537 .647 
+
+LLaDA single-token .453 .302 .406 .414 .294 .392 .799 .552 .746 .643 .509 .623 multi-token .443 .303 .397 .412 .291 .389 .798 .595 .760 .645 .523 .626 
+
+95.3 Out-of-domain transfer 
+
+We now turn to BEIR-7 (Table 3), reading within the same two pairs as in-domain: Dream against Qwen2.5, and LLaDA against LLaMA3. We report all three scoring modes (Dense, Sparse, Hybrid) per dataset; the saturation pattern from §5.2 repeats out-of-domain (hybrid wins zero-shot, dense wins fine-tuned), so the discussion below highlights the winning column per half but the full breakdown is in the table. 
+
+Zero-shot transfer. The in-domain zero-shot pattern from §5.1 generalizes to BEIR-7. At single-token, both diffusion backbones lose: Dream trails Qwen2.5, and LLaDA is roughly level with LLaMA3. Multi-token flips both pairs. DiffRetriever Dream multi-token ( .476 ) beats Qwen2.5 multi-token, and DiffRetriever LLaDA multi-token ( .539 ) beats LLaMA3 multi-token and is the strongest zero-shot BEIR-7 system in our comparison. 
+
+Fine-tuned transfer. In contrast to the zero-shot half, supervision splits the two pairs. DiffRetriever Dream multi-token ( .671 ) stays ahead of PromptReps Qwen2.5 multi-token ( .664 ) and is the highest BEIR-7 average in our comparison; the lead is statistically significant against PromptReps LLaMA3 single-token and against the encoder-style DiffEmbed Dream baseline ( .638 ). DiffRetriever LLaDA multi-token ( .645 ), in contrast, falls slightly behind PromptReps LLaMA3 multi-token ( .655 ). Dream wins by being steady across datasets, not by dominating any single one: it holds the column-best score on NQ, FiQA, and Quora, while AR systems take the other four. A different way to read the fine-tuned half is by backbone. Dream-based and AR-pretrained systems all reach the .638 –.671 band; LLaDA-based systems sit lower, between .595 and .645 , regardless of which retrieval mechanism is used. LLaDA’s ceiling under contrastive supervision appears to be a property of the backbone itself, not of how it is queried at retrieval time. One possible reason: AR pre-training (or initialization from an AR-pretrained model, in Dream’s case) builds left-conditional next-token representations that contrastive fine-tuning can lift effectively, while LLaDA, trained from scratch as a diffusion model, may not. Dream’s +.195 BEIR-7 swing from zero-shot ( .476 ) to fine-tuned ( .671 ) is much larger than LLaDA’s 
+
++.106 , consistent with this account. We leave verifying this to future work. Across both settings, with a single (Kq, K p) held constant across all seven BEIR-7 datasets, multi-token diffusion gives the strongest retriever in our comparison: zero-shot LLaDA at .539 , fine-tuned Dream at .671 ,both at single-pass query encoding cost. 
+
+5.4 Latency analysis 
+
+The teaser figure (Figure 1) reports per-query latency at one operating point: the zero-shot AR multi-token cap of K≤20 on a 100 K-document MS MARCO sample. We now report the same kind of measurement across two scaling axes: encoding latency as a function of input sequence length, and search latency as a function of index size. Measurements use a single H100 ( 96 GB) GPU with the same attention implementation across all backbones; runs use synthetic random-token inputs and random-vector indices to isolate compute cost from retrieval correctness. Figure 3 reports both axes for the four main-paper backbones, in two retrieval interfaces (PromptReps and DiffRetriever), at single-token and multi-token configurations. The multi-token configurations in this figure use the fine-tuned cap K=4 for AR backbones (§4.5) and the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) for diffusion backbones (Dream (4 , 16) , LLaDA (4 , 4) ). 
+
+Encoding scales mildly with input length on both families. On the encoding axis (top row of Figure 3), all systems scale roughly linearly with input length, but at very different absolute levels. AR multi-token sits at 60 to 80 ms across the range; AR single-token at 15 to 30 ms. DiffRetriever multi-token and DiffRetriever single-token both sit near 15 to 30 ms across the range; the multi-token overhead is 5 to 10 ms on average, far below AR’s multi-token overhead. At K=4 on AR (the fine-tuned cap), the AR vs. diffusion encoding 10 0 100 200 300 400 500 600 700 800                      
+
+> Input sequence length (tokens)
+> 20
+> 40
+> 60
+> 80
+> Encoding latency (ms / query)
+> PromptReps
+> 0100 200 300 400 500 600 700 800
+> Input sequence length (tokens)
+> DiffRetriever
+> 1,000 10,000 100,000 1,000,000
+> Index size (documents)
+> 0.1
+> 1
+> 10
+> Search latency (ms / query)
+> 1,000 10,000 100,000 1,000,000
+> Index size (documents)
+> Qwen2.5 (AR) LLaMA-3 (AR) Dream (Diff) LLaDA (Diff) Qwen2.5 (AR) LLaMA-3 (AR) Dream (Diff) LLaDA (Diff)
+> empty = single-token filled = multi-token
+
+Figure 3: Latency scaling on synthetic inputs and indices. Top row: encoding latency vs. input sequence length (tokens). Bottom row: search latency vs. index size (documents, log scale). Left column: PromptReps on autoregressive backbones (Qwen2.5, LLaMA3). Right column: DiffRetriever on diffusion backbones (Dream, LLaDA). Open markers: single-token. Filled markers: multi-token (AR uses K=4 , the fine-tuned cap; diffusion uses the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+)). All measurements on a single H100 GPU with the same attention implementation across backbones, 5-query warmup, 20 timed runs averaged. ratio is ≈ 3× at short inputs and narrows toward longer inputs as the fixed-length passes start to dominate. The teaser ratio ( 15 ×) is at the zero-shot K≤20 cap, which compounds AR’s sequential overhead and is the relevant operating point for that comparison; at the fine-tuned K=4 cap, sequential generation still dominates the gap, but at a smaller absolute multiple. 
+
+Search cost grows with index size and with the passage budget Kp. On the search axis (bottom row of Figure 3), all systems scale roughly log-linearly with index size on a flat-index ANN search. Multi-token retrievers have higher search cost than single-token retrievers because each query performs Kq ANN lookups and the index stores Kp vectors per document. The difference between DiffRetriever Dream multi-token (red, top curve, Kp=16 ) and DiffRetriever LLaDA multi-token (yellow, Kp=4 ) is purely from Kp: Dream’s index is 4× larger than LLaDA’s at the same number of documents, which translates directly to higher per-query search cost. At 1M documents, the spread between the slowest multi-token configuration ( ≈ 17 ms, DiffRetriever Dream) and the fastest single-token configuration ( ≈ 4 ms) is well under the encoding-side gap, so the encoding-cost ratio reported above still dominates end-to-end latency at corpus sizes up to 1M. 
+
+Implication. At the deployable AR multi-token cap of K=4 , the encoding advantage of DiffRetriever over PromptReps narrows relative to the zero-shot K≤20 headline number, but DiffRetriever multi-token encoding stays comparable to single-token encoding on either family, while AR multi-token encoding remains 
+
+2 to 3× AR single-token across the entire input-length range. Search cost is small enough at 1M documents that the encoding-side comparison drives the end-to-end story; for larger deployments, the larger passage index of DiffRetriever multi-token (especially Dream’s Kp=16 ) becomes a more substantial component of total cost. 11 6 Analysis 
+
+The main results in §5 treated the budget (Kq, K p) as a fixed deployment choice, picked once on MS MARCO training data (train grid in Figure 4). This leaves two questions: (1) does the train-selected budget generalize, both to the MS MARCO dev set and to the seven BEIR-7 datasets? (2) how much effectiveness does committing to a single budget leave on the table, compared to choosing (Kq, K p) per query? The analysis below answers both. The second answer is worth flagging up front: a perfect per-query budget predictor on the frozen base model would exceed contrastive fine-tuning at the same fixed budget, and the oracle’s per-query preferences correlate with cheap query features (length and entropy), suggesting a learned router is reachable (§6.4). 
+
+6.1 Generalization of the ( Kq, K p) landscape 0.08 0.10 0.12 0.14 0.16 0.18 0.20 
+
+MS MARCO train (MRR@10)     
+
+> 124816
+
+Kq
+
+> 1
+> 2
+> 4
+> 8
+> 16
+> Kp
+
+Dream     
+
+> 124816
+
+Kq
+
+LLaDA 
+
+Figure 4: Zero-shot hybrid retrieval grid on MS MARCO train, used for budget selection (§4.4). Stars mark the per-panel argmax that defines the fixed (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) used unchanged across all evaluations: (4 , 16) for Dream and (4 , 4) for LLaDA. The two diffusion backbones select different regions of the (Kq, K p) grid on MS MARCO train (Figure 4). Dream selects (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) = (4 , 16) , strongly passage-heavy; LLaDA selects (4 , 4) , symmetric. Figure 5 shows the test-set landscape on MS MARCO dev and BEIR-7 for both backbones, with the best cell on each panel marked. Overall, the train selection generalizes well. On both Dream panels and on LLaDA’s BEIR-7 panel, the train-selected cell is at the panel best (sometimes tied with neighboring cells). On LLaDA’s MS MARCO dev panel, the train-selected (4 , 4) is tied with (2 , 2) at the same score ( .25 ), within a flat plateau spanning several cells. The per-backbone asymmetry also holds across distributions: Dream’s high-score region on both test panels concentrates around Kq = 4 with Kp on the larger side, while LLaDA’s grid is more isotropic, with scores plateauing across a broader region around the symmetric centre. The two grids also differ in absolute spread. On MS MARCO dev, LLaDA cells span .18 to .25 (∆ = .07 ); Dream spans .08 to .22 (∆ = .14 ). A wrong choice of (Kq, K p) therefore costs more on Dream than on LLaDA. This matches the broader pattern from §5: Dream gains more from good configurations (multi-token, supervision) than LLaDA does, and equivalently pays more for poor ones. 12 0.10 0.15 0.20 
+
+MS MARCO dev (MRR@10) 0.30 0.35 0.40 0.45 0.50 
+
+BEIR-7 avg (NDCG@10)     
+
+> Dream
+> 1
+> 2
+> 4
+> 8
+> 16
+> Kp
+> LLaDA
+> 124816
+
+Kq    
+
+> 1
+> 2
+> 4
+> 8
+> 16
+> Kp
+> 124816
+
+KqFigure 5: Zero-shot hybrid retrieval landscape across (Kq, K p) ∈ { 1, 2, 4, 8, 16 }2 on MS MARCO dev (MRR@10) and BEIR-7 average (NDCG@10), for Dream and LLaDA. Stars mark the best cell per panel. Train-selected values (held fixed across evaluations) are (4 , 16) for Dream and (4 , 4) for LLaDA (Figure 4). 
+
+6.2 Per-dataset ( Kq, K p) Landscape 
+
+The aggregate panels in Figure 5 compress per-dataset variance. Figures 6 and 7 break the in-domain and BEIR-7 views into per-dataset panels; both figures include the corresponding aggregate panel from Figure 5 as an in-figure reference. The in-domain panels show a clean pattern. For Dream, the train-selected (4 , 16) lands at the per-panel best on every in-domain dataset. For LLaDA, the train-selected (4 , 4) lands at the per-panel best on DL19, and on the other two in-domain panels it sits within a flat plateau where multiple cells tie at the same score. The per-backbone asymmetry from §6.1 (Dream passage-heavy, LLaDA isotropic around the symmetric centre) holds in every in-domain panel. The out-of-domain picture is more varied. The aggregate BEIR-7 generalization claim from §6.1 still holds: the train-selected cell lands at the per-panel best on the BEIR-7 average panel for both backbones. Per-dataset peaks, however, scatter across the grid in a way the aggregate hides. HotpotQA peaks at (8 , 16) 
+
+for both backbones, well above the train-selected score, suggesting that multi-hop QA benefits from larger budgets on both sides than the train selection allocates. LLaDA on TREC-COVID peaks at (1 , 1) , where minimal representations are sufficient. LLaDA on ArguAna and Quora peaks at the Kp = 1 row, suggesting that short-passage datasets prefer single passage representatives. The train-selected cell is rarely more than 
+
+.02 below the per-panel best on most datasets, but the per-dataset peaks themselves can differ from the aggregate by .10 or more (HotpotQA for both backbones; COVID and Quora for LLaDA). This per-dataset variance lines up with the per-query oracle analysis below: a fixed (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) leaves substantial performance on the table when different queries (or different datasets) prefer different budgets. The aggregate generalization shown by the average panel is a property of averaging across diverse preferences, not evidence that any single (Kq, K p) is universally optimal. 13 1 2 4 8 16 
+
+> 1
+> 2
+> 4
+> 8
+> 16
+
+MSMARCO dev     
+
+> 124816
+
+DL19     
+
+> 124816
+
+DL20     
+
+> Dream
+> 124816
+> 1
+> 2
+> 4
+> 8
+> 16
+
+MSMARCO dev     
+
+> 124816
+
+DL19     
+
+> 124816
+
+DL20 
+
+> LLaDA
+
+Kq
+
+> Kp
+
+Figure 6: In-domain per-dataset zero-shot hybrid retrieval landscape on MS MARCO dev (MRR@10), TREC DL19, and TREC DL20 (NDCG@10), across (Kq, K p) ∈ { 1, 2, 4, 8, 16 }2, for Dream (top row) and LLaDA (bottom row). Stars mark the per-panel best-performing cell. The train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) used in the main paper is (4 , 16) for Dream and (4 , 4) for LLaDA. MS MARCO dev reproduces the corresponding panel from Figure 5. 14 1
+
+> 2
+> 4
+> 8
+> 16
+
+NQ HQA SciFact COVID     
+
+> Dream
+> 124816
+> 1
+> 2
+> 4
+> 8
+> 16
+
+FiQA     
+
+> 124816
+
+ArguAna     
+
+> 124816
+
+Quora     
+
+> 124816
+
+BEIR-7 Avg 
+
+> 1
+> 2
+> 4
+> 8
+> 16
+
+NQ HQA SciFact COVID     
+
+> LLaDA
+> 124816
+> 1
+> 2
+> 4
+> 8
+> 16
+
+FiQA     
+
+> 124816
+
+ArguAna     
+
+> 124816
+
+Quora     
+
+> 124816
+
+BEIR-7 Avg 
+
+Kq
+
+> Kp
+
+Figure 7: Out-of-domain per-dataset zero-shot hybrid retrieval landscape on the seven BEIR-7 datasets and their average (NDCG@10) across (Kq, K p) ∈ { 1, 2, 4, 8, 16 }2, for Dream (top two rows) and LLaDA (bottom two rows). Stars mark the per-panel best-performing cell. The train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) used in the main paper is (4 , 16) for Dream and (4 , 4) for LLaDA. The Avg panel reproduces the BEIR-7 average from Figure 5 as a within-figure reference. 15 6.3 Per-query oracle headroom Dream LLaDA 
+
+0.2 
+
+0.3 
+
+0.4 
+
+MS MARCO dev (MRR@10) 
+
+## Dream LLaDA 
+
+0.5 
+
+0.6 
+
+0.7 
+
+BEIR-7 avg (NDCG@10) 
+
+Fixed ( K * 
+
+> q
+
+, K * 
+
+> p
+
+)
+
+Per-query best Kq
+
+Per-query best Kp
+
+Per-query best ( Kq, Kp)
+
+Tuned at ( K * 
+
+> q
+
+, K * 
+
+> p
+
+)
+
+Figure 8: Per-query oracle headroom on MS MARCO dev (MRR@10) and BEIR-7 average (NDCG@10), for Dream and LLaDA. Each group compares the fixed deployable budget (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) (grey) against three zero-shot per-query oracles adapting Kq only (blue), Kp only (red), or both jointly (green), and the contrastively fine-tuned model at the same fixed budget (orange). Oracles are upper bounds, not deployable systems: they serve as ceilings for a learned per-query budget predictor with the encoder frozen. We now turn to question (2): how much effectiveness is left on the table by committing to a single 
+
+(K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) for all queries. Figure 8 answers this with three zero-shot per-query oracles (adapting only Kq,only Kp, or both jointly) and a contrastively fine-tuned baseline at the same fixed budget. The full per-query oracle reaches .46 MRR@10 on MS MARCO dev for both backbones, against fixed-budget zero-shot scores of .22 (Dream) and .25 (LLaDA). On BEIR-7 the gap is .21 for Dream ( .48 → .68 )and .15 for LLaDA ( .54 → .69 ). Per-query adaptation is therefore a large effect, with Kp contributing more than Kq: the Kp-only oracle recovers more of the gap than the Kq-only oracle on every panel, and the full oracle exceeds either partial oracle, so a per-query router would need to predict both jointly. The full per-query oracle (green) exceeds the contrastively fine-tuned model at the same fixed budget (orange) on every panel: by .05 on MS MARCO dev for both backbones, by .03 on BEIR-7 for Dream, and by .07 on BEIR-7 for LLaDA. A perfect per-query budget predictor on the frozen base model would therefore outperform fine-tuning, with no parameter updates to the encoder. The Kp-only oracle alone almost matches fine-tuning on BEIR-7 LLaDA ( .62 vs. .63 ). Designing a router that predicts (Kq, K p) from query and passage features alone is left to future work; the next subsection asks whether the oracle’s per-query preferences are even structured enough to learn from. 
+
+6.4 Optimal Kq correlates with cheap query features 
+
+A natural question is whether the optimal query budget K⋆q is predictable from cheap surface features available without re-encoding. We report two correlations on the query side: query length and query Shannon entropy, each for dense and sparse scoring (Figure 9). We restrict to the query side because the analysis can be run per query (the unit at which the oracle in §6.3 operates). 
+
+Setup. For each query in the pooled MS MARCO dev, DL19, DL20, and BEIR evaluation sets, we record the per-query peak K⋆ (the K value that maximizes the corresponding score on that query, computed in §6.3). We compute query length as the model-tokenizer subword count and query entropy as the Shannon entropy of the query token distribution. We report Spearman ρ and Kendall τ across the pooled set. 16 0 10 20 30 40 50                                                   
+
+> Query length (subwords)
+> 1
+> 2
+> 4
+> 8
+> 16
+> Peak K  (Dense)  Dream: =+0.31 [+0.30, +0.32] =+0.23 (n=23055)
+> LLaDA: =+0.29 [+0.27, +0.30] =+0.22 (n=22866)
+> 012345678
+> Query Shannon entropy (bits)
+> Dream: =+0.28 [+0.27, +0.29] =+0.21 (n=24342)
+> LLaDA: =+0.25 [+0.24, +0.27] =+0.19 (n=24162)
+> 010 20 30 40 50
+> Query length (subwords)
+> 1
+> 2
+> 4
+> 8
+> 16
+> Peak K  (Sparse)  Dream: =+0.23 [+0.22, +0.24] =+0.17 (n=21268)
+> LLaDA: =+0.13 [+0.12, +0.15] =+0.10 (n=21943)
+> 012345678
+> Query Shannon entropy (bits)
+> Dream: =+0.19 [+0.18, +0.21] =+0.14 (n=21933)
+> LLaDA: =+0.11 [+0.10, +0.12] =+0.08 (n=22750)
+> Dream LLaDA
+
+Figure 9: Per-query peak K⋆ (argmax score over K) vs. two cheap query features, on Dream and LLaDA. Top row: dense scoring. Bottom row: sparse scoring. Left column: query length (model-tokenizer subwords). Right column: query Shannon entropy (bits, over tokenizer ids). Spearman ρ and Kendall τ shown in each panel inset, with 95% bootstrap confidence intervals. Both features correlate positively with peak Kq on both backbones; length is the stronger signal, and dense scoring shows cleaner correlations than sparse. 
+
+Both features correlate with peak Kq, with length the stronger signal. Query length correlates with peak 
+
+Kq at ρ= + 0 .31 (Dream) and ρ= + 0 .29 (LLaDA) on dense scoring (top-left panel of Figure 9), dropping to 
+
+ρ= + 0 .23 and ρ= + 0 .13 on sparse (bottom-left). Query entropy correlates slightly less strongly: ρ= + 0 .28 
+
+(Dream) and ρ= + 0 .25 (LLaDA) on dense (top-right), ρ= + 0 .19 and ρ= + 0 .11 on sparse (bottom-right). On the dense panels, peak K⋆ rises monotonically from ∼2 at the shortest queries to ∼8 at the longest. On the sparse panels, the relationship is flatter, especially for LLaDA. 
+
+Dense scoring shows the cleanest signal. For both features, the dense correlation is consistently stronger than the sparse correlation. This matches the saturation observation in §5.2: dense vectors carry more retrieval-relevant information per K, so the optimal Kq has more room to scale with input complexity. Sparse representations saturate at smaller K, so the relationship between feature and peak Kq is flatter. 
+
+Implication for adaptive budget selection. Both features are computable from the query alone, without a forward pass through the encoder, so they are usable by a learned router that predicts Kq before encoding. The ρ values we observe ( +0 .11 to +0 .31 ) are not large, so length and entropy alone would not match the per-query oracle headroom from §6.3. They establish that the oracle’s preferences are at least partially structured rather than noise, and they are a starting point for the feature set of a deployable router. We leave the router itself to future work. 
+
+# 7 Conclusion 
+
+Prior multi-token variants of PromptReps did not reliably improve over single-token retrieval despite paying a large decoding cost, leaving open whether multi-token retrieval is ineffective or only expensive. We showed that the bottleneck was sequential generation, not the multi-token idea itself. DiffRetriever, a representative-token retriever for diffusion language models, appends K masked positions to the prompt and reads all 
+
+K in a single bidirectional forward pass. Multi-token retrieval then becomes both effective and cheap: zero-shot DiffRetriever on LLaDA is the highest-scoring system on BEIR-7 in our comparison, and fine-tuned DiffRetriever on Dream is the strongest BEIR-7 retriever overall, at single-pass query encoding cost. 17 Our analysis further shows that the fixed deployable budget leaves substantial effectiveness on the table. A per-query oracle on the frozen base model exceeds contrastive fine-tuning at the same fixed budget on every backbone-benchmark combination we test, and the oracle’s preferences correlate with cheap query features (§6.4), pointing to adaptive budget selection as a direction for future work. 
+
+# Limitations 
+
+We focus on two diffusion language models (Dream and LLaDA) at the 7 to 8B parameter scale. Our tightest controlled comparison (Dream against Qwen2.5) is enabled by Dream’s initialization from Qwen2.5; analogous controlled comparisons for other diffusion-autoregressive pairs would require similarly aligned model families, which are not currently available for the other backbones we considered. For out-of-domain evaluation we use BEIR-7, a seven-dataset subset of BEIR covering open-domain QA, multi-hop QA, scientific fact verification, biomedical retrieval, financial QA, argument retrieval, and duplicate-question detection. We do not run on the remaining BEIR datasets due to compute and storage constraints: the experiments reported here already required thousands of GPU hours and over 20 TB of disk storage for index construction and intermediate artifacts across the full (Kq, K p) grid, four backbones, and both zero-shot and fine-tuned settings. Extending to the full BEIR suite would multiply these costs across roughly twice as many corpora. The latency comparison in Figure 1 is reported on a 100 K-document sample of MS MARCO using the same attention implementation across backbones, at the zero-shot N =20 generation cap. §5.4 reports encoding and search latency separately, and across input length, index size, and the fine-tuned N =4 cap; the encoding-cost ratio between autoregressive and diffusion decoding is what carries our 15 × headline claim. At the fine-tuned cap the ratio is smaller (roughly 3× at short inputs), though diffusion still encodes faster. The per-query oracle analysis in §6.3 uses test labels and serves as a ceiling on what a learned budget predictor could recover. The query-feature correlations in §6.4 ( ρ up to +0 .31 on dense scoring) are a step toward that ceiling but do not match it on their own. Designing a deployable router that approaches the oracle is left to future work. 
+
+# References 
+
+Payal Bajaj, Daniel Campos, Nick Craswell, Li Deng, Jianfeng Gao, Xiaodong Liu, Rangan Majumder, Andrew McNamara, Bhaskar Mitra, Tri Nguyen, et al. 2016. Ms marco: A human generated machine reading comprehension dataset. arXiv preprint arXiv:1611.09268 .Nick Craswell, Bhaskar Mitra, Emine Yilmaz, Daniel Campos, and Ellen M Voorhees. 2020a. Overview of the TREC 2019 deep learning track. In Proceedings of the 28th Text REtrieval Conference (TREC 2019) .NIST. Nick Craswell, Bhaskar Mitra, Emine Yilmaz, Daniel Campos, and Ellen M Voorhees. 2020b. Overview of the TREC 2020 deep learning track. In Proceedings of the Twenty-Ninth Text REtrieval Conference (TREC 2020) . NIST. Sedigheh Eslami, Maksim Gaiduk, Markus Krimmel, Louis Milliken, Bo Wang, and Denis Bykov. 2026. Diffusion-pretrained dense and contextual embeddings. arXiv preprint arXiv:2602.11151 .Luyu Gao, Xueguang Ma, Jimmy Lin, and Jamie Callan. 2022. Tevatron: An efficient and flexible toolkit for dense retrieval. arXiv preprint arXiv:2203.05765 .Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, et al. 2024. The llama 3 herd of models. 
+
+arXiv preprint arXiv:2407.21783 .18 Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Liang Wang, Weizhu Chen, et al. 2022. Lora: Low-rank adaptation of large language models. Iclr , 1(2):3. Omar Khattab and Matei Zaharia. 2020. Colbert: Efficient and effective passage search via contextualized late interaction over bert. In Proceedings of the 43rd International ACM SIGIR conference on research and development in Information Retrieval , pages 39–48. Hang Li, Shuai Wang, Shengyao Zhuang, Ahmed Mourad, Xueguang Ma, Jimmy Lin, and Guido Zuccon. 2022. To interpolate or not to interpolate: Prf, dense and sparse retrievers. In Proceedings of the 45th international ACM SIGIR conference on research and development in information retrieval , pages 2495–2500. Zehan Li, Xin Zhang, Yanzhao Zhang, Dingkun Long, Pengjun Xie, and Meishan Zhang. 2023. Towards general text embeddings with multi-stage contrastive learning. arXiv preprint arXiv:2308.03281 .Jimmy Lin, Xueguang Ma, Sheng-Chieh Lin, Jheng-Hong Yang, Ronak Pradeep, and Rodrigo Nogueira. 2021. Pyserini: A python toolkit for reproducible information retrieval research with sparse and dense rep-resentations. In Proceedings of the 44th international ACM SIGIR conference on research and development in information retrieval , pages 2356–2362. Qi Liu, Kun Ai, Jiaxin Mao, Yanzhao Zhang, Mingxin Li, Dingkun Long, Pengjun Xie, Fengbin Zhu, and Ji-Rong Wen. 2026. Diffurank: Effective document reranking with diffusion language models. arXiv preprint arXiv:2602.12528 .Xueguang Ma, Liang Wang, Nan Yang, Furu Wei, and Jimmy Lin. 2024. Fine-tuning llama for multi-stage text retrieval. In Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval , pages 2421–2425. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. 2025. Large language diffusion models. arXiv preprint arXiv:2502.09992 .Keshav Santhanam, Omar Khattab, Jon Saad-Falcon, Christopher Potts, and Matei Zaharia. 2022. Colbertv2: Effective and efficient retrieval via lightweight late interaction. In Proceedings of the 2022 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies , pages 3715–3734. Shuoqi Sun, Shengyao Zhuang, Shuai Wang, and Guido Zuccon. 2025. An investigation of prompt variations for zero-shot llm-based rankers. In European Conference on Information Retrieval , pages 185–201. Springer. Qwen Team. 2024. Qwen2.5: A party of foundation models. Nandan Thakur, Nils Reimers, Andreas Rücklé, Abhishek Srivastava, and Iryna Gurevych. 2021. Beir: A heterogenous benchmark for zero-shot evaluation of information retrieval models. arXiv preprint arXiv:2104.08663 .Liang Wang, Nan Yang, Xiaolong Huang, Linjun Yang, Rangan Majumder, and Furu Wei. 2024. Improving text embeddings with large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 11897–11916. Shuai Wang, Shengyao Zhuang, and Guido Zuccon. 2021. Bert-based dense retrievers require interpolation with bm25 for effective passage retrieval. In Proceedings of the 2021 ACM SIGIR international conference on theory of information retrieval , pages 317–324. Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. 2025. Dream 7b: Diffusion large language models. arXiv preprint arXiv:2508.15487 .19 Siyue Zhang, Yilun Zhao, Liyuan Geng, Arman Cohan, Luu Anh Tuan, and Chen Zhao. 2025. Diffusion vs. autoregressive language models: A text embedding perspective. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 4273–4303. Shengyao Zhuang, Xueguang Ma, Bevan Koopman, Jimmy Lin, and Guido Zuccon. 2024. Promptreps: Prompting large language models to generate dense and sparse representations for zero-shot document retrieval. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing ,pages 4375–4391. 
+
+# A Supplementary Method Details 
+
+This appendix section collects details that extend §3. Table 4: Multi-step denoising on in-domain benchmarks at the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+): Dream (4 , 16) ,LLaDA (4 , 4) . S=1 is the single-pass variant used throughout the main paper; S=2 is two-step iterative denoising. Each cell reports Dense ( D), Sparse ( S), and Hybrid ( H) scores, matching the convention of Table 2. MS MARCO uses MRR@10; DL19 and DL20 use NDCG@10. Bold : better of the S=1 / S=2 
+
+pair within each (backbone, regime, column). Underline : best across all eight rows in the column. Paired two-sided t-tests on per-query scores compare S=2 against S=1 : † p < 0.05 , ‡ p < 0.01 . S=2 does not consistently improve over S=1 in any configuration. 
+
+MS MARCO DL19 DL20 Regime Steps D S H D S H D S H
+
+> Dream
+
+Zero-shot S=1 .192 .165 .218 .479 .427 .496 .466 .422 .512 
+
+S=2 .102 ‡ .132 ‡ .172 ‡ .287 ‡ .393 .465 .317 ‡ .373 † .446 ‡
+
+Fine-tuned S=1 .433 .349 .411 .751 .620 .739 .729 .617 .697 
+
+S=2 .425 ‡ .344 † .409 .759 .622 .741 .746 .625 .709 
+
+> LLaDA
+
+Zero-shot S=1 .192 .223 .248 .490 .479 .549 .472 .479 .536 
+
+S=2 .132 ‡ .208 ‡ .205 ‡ .392 ‡ .477 .513 .374 ‡ .464 .483 †
+
+Fine-tuned S=1 .427 .348 .408 .657 .579 .655 .721 .614 .698 
+
+S=2 .414 ‡ .330 ‡ .397 ‡ .719 ‡ .624 .715 ‡ .724 .594 .690 
+
+20 Table 5: Multi-step denoising on BEIR-7 (out-of-domain). Per-dataset NDCG@10 plus the BEIR-7 average, at the train-selected (K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+): Dream (4 , 16) , LLaDA (4 , 4) . S=1 is the single-pass variant used throughout the main paper; S=2 is two-step iterative denoising. Each cell reports Dense ( D), Sparse ( S), and Hybrid (H) scores, matching the convention of Table 3. Bold : better of the S=1 / S=2 pair within each (backbone, regime, column). Underline : best across all eight rows in the column. Paired two-sided t-tests on per-query scores compare S=2 against S=1 (pooled across the seven BEIR datasets for the Avg column): † p < 0.05 ,
+
+‡ p < 0.01 . S=2 does not consistently improve over S=1 in any configuration. 
+
+NQ HQA SciFact COVID Regime Steps D S H D S H D S H D S H
+
+> Dream
+
+Zero-shot S=1 .346 .219 .358 .294 .411 .449 .554 .564 .636 .622 .481 .590 
+
+S=2 .179 ‡ .173 ‡ .267 ‡ .121 ‡ .292 ‡ .301 ‡ .419 ‡ .461 ‡ .559 ‡ .382 ‡ .313 ‡ .495 ‡
+
+Fine-tuned S=1 .644 .458 .596 .683 .603 .705 .752 .666 .729 .847 .665 .830 
+
+S=2 .643 .455 .596 .662 ‡ .608 ‡ .697 ‡ .753 .666 .723 .825 .658 .789 ‡
+
+> LLaDA
+
+Zero-shot S=1 .385 .292 .415 .328 .468 .494 .592 .624 .660 .662 .690 .717 
+
+S=2 .255 ‡ .267 ‡ .328 ‡ .177 ‡ .424 ‡ .385 ‡ .463 ‡ .605 .607 ‡ .571 ‡ .638 ‡ .697 
+
+Fine-tuned S=1 .622 .452 .584 .647 .613 .687 .744 .695 .746 .846 .710 .819 
+
+S=2 .634 ‡ .429 ‡ .582 .660 ‡ .615 .696 ‡ .761 .676 .747 .841 .659 ‡ .808 
+
+FiQA ArguAna Quora Avg Regime Steps D S H D S H D S H D S H
+
+> Dream
+
+Zero-shot S=1 .293 .173 .278 .350 .137 .323 .532 .647 .696 .427 .376 .476 
+
+S=2 .179 ‡ .127 ‡ .219 ‡ .229 ‡ .080 ‡ .196 ‡ .654 ‡ .517 ‡ .707 ‡ .309 ‡ .280 ‡ .392 ‡
+
+Fine-tuned S=1 .479 .316 .431 .403 .305 .382 .887 .748 .859 .671 .537 .647 
+
+S=2 .485 .313 .429 .417 ‡ .295 ‡ .396 ‡ .878 ‡ .747 .854 ‡ .666 ‡ .535 .640 ‡
+
+> LLaDA
+
+Zero-shot S=1 .308 .225 .317 .386 .179 .357 .819 .678 .814 .497 .451 .539 
+
+S=2 .224 ‡ .215 † .279 ‡ .324 ‡ .173 † .309 ‡ .680 ‡ .663 ‡ .754 ‡ .385 ‡ .427 ‡ .480 ‡
+
+Fine-tuned S=1 .443 .303 .397 .412 .291 .389 .798 .595 .760 .645 .523 .626 
+
+S=2 .465 ‡ .294 .412 ‡ .428 ‡ .303 ‡ .406 ‡ .842 ‡ .654 ‡ .803 ‡ .662 ‡ .519 ‡ .636 ‡
+
+A.1 Multi-Step Denoising 
+
+The single forward pass used in the main paper (§3.2, S=1 ) is a deliberate restriction of how a diffusion language model normally operates. These models are trained as iterative denoisers: at inference, they fill the masked positions of a sequence over S steps, revealing a subset per step and re-encoding the remainder under bidirectional attention. This appendix describes the multi-step variant ( S> 1) and reports its empirical effect on retrieval at the multi-token budgets used in the main paper. 
+
+Procedure. With S denoising steps, the K representative positions are unmasked over S rounds following the confidence-based schedule of the underlying diffusion backbone (Nie et al., 2025; Ye et al., 2025), with roughly K/S positions unmasked per step. At each step, the model performs one forward pass and reveals the most confident remaining positions by replacing their [MASK] with the argmax predicted token. The hidden state and logits at each newly-unmasked position are stored in a frozen buffer. At the final step, the readout combines frozen hidden states from earlier-unmasked positions with current-step hidden states from later-unmasked positions; the dense and sparse scores from §3.3 are computed over this combined representation. 21 Fine-tuning interaction. When applied during supervised fine-tuning (§3.4), the retrieval loss is computed only at the final step. The frozen buffer carries no gradient, while later-step positions contribute gradient through the current forward pass. 
+
+Empirical effect. We compare S=1 against S=2 for both diffusion backbones at the train-selected 
+
+(K∗ 
+
+> q
+
+, K ∗ 
+
+> p
+
+) used in the main paper, across both zero-shot and fine-tuned settings on MS MARCO, DL19, DL20, and the seven BEIR-7 datasets. Tables 4 and 5 report the full breakdown. At zero-shot, S=1 wins decisively. S=2 is significantly worse than S=1 on every benchmark and on every BEIR-7 dataset for both backbones, often by large margins: Dream MS MARCO hybrid drops from 
+
+.218 to .172 (‡), and the BEIR-7 dense average drops from .427 to .309 for Dream and from .497 to .385 for LLaDA (both ‡). The single-pass extraction described in §3.2 is what makes representative-token retrieval work at zero-shot, and iterative denoising at inference adds noise rather than signal in this setting. At fine-tuning, the picture splits along the backbone. For Dream, S=2 has no consistent benefit: MS MARCO dense drops from .433 to .425 (‡), BEIR-7 dense average drops from .671 to .666 (‡), and across the seven BEIR-7 datasets only ArguAna shows a significant gain. For LLaDA, S=2 improves performance broadly: BEIR-7 dense average rises from .645 to .662 (‡), with significant per-dataset gains on five of the seven BEIR-7 datasets (NQ, HQA, FiQA, ArguAna, Quora), and DL19 dense rises from .657 to 
+
+.719 (‡). MS MARCO is the only configuration where S=2 hurts LLaDA, with a significant drop from .427 
+
+to .414 on dense. This split lines up with the fine-tuning asymmetry from §5.3: Dream gained a +.195 swing under contrastive fine-tuning while LLaDA gained only +.106 . Dream’s representations are closer to saturated by single-pass plus supervision, so additional denoising at inference does not add information. LLaDA still has headroom that contrastive fine-tuning has not reached, and iterative denoising recovers part of it, especially on out-of-domain data where the contrastive recipe has done less to align the backbone. We use S=1 throughout the main paper for consistency across backbones and benchmarks. Selective S> 1
+
+use, particularly for backbones with lower contrastive ceilings on out-of-domain transfer, is a deployment strategy left to future work. 
+
+A.2 Prompt Comparison: “A Few Words” vs. “Three Words” 
+
+Table 6: Multi-token zero-shot retrieval on MS MARCO dev (MRR@10), TREC DL19, and TREC DL20 (NDCG@10) under the original PromptReps “three words” phrasing and the “a few words” phrasing used throughout this paper. Each cell reports Dense (D), Sparse (S), and Hybrid (H) scores. Bold : better phrasing per (backbone, column). Paired two-sided t-tests on per-query scores compare the two phrasings; when the difference is significant, both cells in the pair carry the marker: † p < 0.05 , ‡ p < 0.01 .                                                  
+
+> MS MARCO DL19 DL20 Backbone Phrasing DSHDSHDSHLLaMA3-8B “three words” .094 ‡.194 .181 ‡.216 ‡.416 .388 ‡.203 ‡.416 .407 ‡
+> “a few words” .151 ‡.196 .220 ‡.319 ‡.454 .473 ‡.336 ‡.412 .471 ‡
+> Qwen2.5-7B “three words” .142 .200 ‡.211 ‡.383 .445 †.485 .390 .436 †.495
+> “a few words” .142 .177 ‡.200 ‡.404 .405 †.477 .386 .410 †.478
+
+PromptReps’s original multi-token variant (Zhuang et al., 2024) instructs the model to produce three words as representatives of the input. We use a few words instead (Table 1). Since the original PromptReps multi-token experiments were conducted on LLaMA3-8B, we compare both phrasings on LLaMA3-8B and Qwen2.5-7B. Prompt phrasing is a non-trivial design lever for zero-shot LLM retrievers and rankers (Sun et al., 2025), and this subsection isolates its effect for the multi-token representative-token prompt. 22 Setup. We run zero-shot multi-token retrieval on MS MARCO dev, TREC DL19, and TREC DL20 under each phrasing, with all other settings held to the main-paper configuration: same scoring, same hybrid interpolation, and the same 20 -token zero-shot cap on sequential decoding. 
+
+Result. Table 6 reports the comparison, and the two backbones differ. On LLaMA3-8B, “a few words” 
+
+wins on 8 of 9 (benchmark, scoring mode) cells, with significant dense and hybrid gains across all three benchmarks (e.g., dense MRR@10 on MS MARCO from .094 to .151 , dense NDCG@10 on DL19 from 
+
+.216 to .319 ). On Qwen2.5-7B the ranking flips: “three words” wins 5 of 9 cells, mostly on sparse and hybrid, while dense is statistically tied on MS MARCO and only marginally different on DL19 / DL20. The two phrasings are therefore not a strict ordering across backbones; the gap is larger for LLaMA3 than for Qwen2.5, and the win-direction flips between them. We use “a few words” as the default phrasing in the main paper for three reasons. Conceptually, “a few” 
+
+lets the model decide how many representatives to emit based on its own capability, while “three” imposes a fixed budget independent of the input or the backbone, which is harder to justify a priori. Empirically, “a few words” gives the larger improvement on LLaMA3, the backbone of the original PromptReps multi-token experiments. And methodologically, the same prompt is applied uniformly to all backbones in the main experiments, so within-comparison rankings hold under either phrasing. Whether the optimal phrasing transfers identically to diffusion backbones is an open question we leave to future work. 
+
+# B Supplementary Experimental Setup 
+
+This appendix collects details that extend §4. 
+
+B.1 Fine-Tuning Details 
+
+Table 7 lists the fine-tuning recipe. The same optimization, batching, and LoRA settings are applied to every backbone and every re-trained AR baseline, so any difference in fine-tuned performance reflects the retrieval interface (DiffEmbed, DiffRetriever, PromptReps multi-token, RepLLaMA), not the training pipeline. LoRA target module names differ between LLaMA-/Qwen-style backbones and LLaDA, but we target the same set of weight matrices in every case: attention {q, k, v, o } projections and the three feed-forward projections. The trainable-parameter fraction stays within 0.52 –0.53% across all four backbones ( 40 –42 M parameters). Table 7: Fine-tuning hyperparameters. Applied uniformly to all four backbones and re-trained AR baselines.                                          
+
+> Training
+> Optimizer AdamW Learning rate 1×10 −4
+> Warmup ratio 0.06
+> Epochs 1
+> Precision bf16 Distributed ZeRO-2, 4×H100
+> LoRA
+> Rank r16
+> Scaling α64
+> Dropout 0.05
+> Trainable params 40 –42 MFraction 0.52 –0.53%
+> Batching
+> Per-device batch 8
+> Grad. accumulation 4
+> Global batch 128
+> Negatives / query 1pos + 15 hard Query / passage len 32 /156 tok InfoNCE temperature τ= 0 .01
+> Method-specific
+> Diffusion S(train) 1
+> Dream (Kq, K p)(4 ,16)
+> LLaDA (Kq, K p)(4 ,4)
+> AR cap (train) K=4
+> AR cap (zero-shot) K≤20
+
+The autoregressive baselines train at K=4 rather than the zero-shot K≤20 cap because training under longer sequential generation exceeds our memory budget at the global batch of 128 (see the fine-tuning setup in §4.5). 23
