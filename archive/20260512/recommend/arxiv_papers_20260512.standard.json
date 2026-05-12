@@ -1,0 +1,393 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-12T21:21:43.437869+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 7,
+    "quick_skim_target": 11,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2605.09681v1",
+      "title": "Forcing-KV: Hybrid KV Cache Compression for Efficient Autoregressive Video Diffusion Models",
+      "abstract": "Autoregressive (AR) video diffusion models adopt a streaming generation framework, enabling long-horizon video generation with real-time responsiveness, as exemplified by the Self Forcing training paradigm. However, existing AR video diffusion models still suffer from significant attention complexity and severe memory overhead due to the redundant key-value (KV) caches across historical frames, which limits scalability. In this paper, we tackle this challenge by introducing KV cache compression into autoregressive video diffusion. We observe that attention heads in mainstream AR diffusion models exhibit markedly distinct attention patterns and functional roles that remain stable across samples and denoising steps. Building on our empirical study of head-wise functional specialization, we divide the attention heads into two categories: static heads, which focus on transitions across autoregressive chunks and intra-frame fidelity, and dynamic heads, which govern inter-frame motion and consistency. We then propose Forcing-KV, a hybrid KV cache compression strategy that performs structured static pruning for static heads and dynamic pruning based on segment-wise similarity for dynamic heads. While maintaining output quality, our method achieves a generation speed of over 29 frames per second on a single NVIDIA H200 GPU along with 30% cache memory reduction, delivering up to 1.35x and 1.50x speedups on LongLive and Self Forcing at 480P resolution, and further scaling to 2.82x speedup at 1080P resolution. Code and demo videos are provided at https://zju-jiyicheng.github.io/Forcing-KV-Page.",
+      "authors": [
+        "Yicheng Ji",
+        "Zhizhou Zhong",
+        "Jun Zhang",
+        "Qin Yang",
+        "XiTai Jin",
+        "Ying Qin",
+        "Wenhan Luo",
+        "Shuiyang Mao",
+        "Wei Liu",
+        "Huan Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-10T17:59:21+00:00",
+      "link": "https://arxiv.org/pdf/2605.09681v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "efficient autoregressive video diffusion models architecture",
+      "llm_evidence_cn": "高效自回归视频扩散模型架构",
+      "llm_evidence": "高效自回归视频扩散模型架构",
+      "canonical_evidence": "高效自回归视频扩散模型架构",
+      "llm_tldr_en": "Introduces KV cache compression to improve the efficiency and scalability of autoregressive video diffusion.",
+      "llm_tldr_cn": "为自回归视频扩散模型引入KV缓存压缩技术，解决了长视频生成的内存开销问题。",
+      "llm_tldr": "为自回归视频扩散模型引入KV缓存压缩技术，解决了长视频生成的内存开销问题。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "AR-Diffusion model architecture and performance",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.06366v2",
+      "title": "Layer Collapse in Diffusion Language Models",
+      "abstract": "Diffusion language models (DLMs) have recently emerged as competitive alternatives to autoregressive (AR) language models, yet differences in their activation dynamics remain poorly understood. We characterize these dynamics in LLaDA-8B and identify a striking layer-collapse property: a few early layers exhibit highly similar, collapsed activation patterns dominated by a single large super-outlier persisting over a long token range. Despite its apparent redundancy, this outlier is critical: pruning it causes outputs to degrade into repetitive random token loops. Paradoxically, layers in LLaDA contain more redundant representations overall, with redundancy most pronounced in earlier layers -- the reverse of AR models, where deeper layers grow redundant due to undertraining. Our analysis indicates that layer collapse in DLMs is not driven by undertraining but by overtraining: a dominant outlier becomes an indispensable information carrier while remaining representations collapse into redundant structure. These findings have strong practical implications, verified through controlled pre-training experiments. DLMs are surprisingly robust to compression: LLaDA under 3-bit GPTQ quantization drops only -1.8% on GSM8K, whereas Llama-3.1-8B drops -64.7%. Optimal sparsity allocation also reverses between families: at 50% average sparsity, allocating more to early layers in LLaDA yields +8.4% over the reverse strategy, while the same allocation costs Llama -8.4%. Our findings reveal that the DLM training objective fundamentally reshapes layer dynamics relative to AR models, with direct consequences for compression and deployment. Code: github.com/Conzel/super-outlier-dlm.",
+      "authors": [
+        "Alexander Conzelmann",
+        "Albert Catalan-Tatjer",
+        "Shiwei Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-07T14:39:40+00:00",
+      "link": "https://arxiv.org/pdf/2605.06366v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "dynamics of diffusion language models vs autoregressive models",
+      "llm_evidence_cn": "扩散语言模型与自回归模型的动力学对比",
+      "llm_evidence": "扩散语言模型与自回归模型的动力学对比",
+      "canonical_evidence": "扩散语言模型与自回归模型的动力学对比",
+      "llm_tldr_en": "Identifies layer-collapse in diffusion language models and compares their activation dynamics to AR models.",
+      "llm_tldr_cn": "揭示了扩散语言模型中的层坍缩现象，并分析了其与自回归模型在激活态动力学上的差异。",
+      "llm_tldr": "揭示了扩散语言模型中的层坍缩现象，并分析了其与自回归模型在激活态动力学上的差异。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.09303v1",
+      "title": "Path-Dependent Denoising: A Non-Conservative Field Perspective on Order Collapse in Diffusion Language Models",
+      "abstract": "Diffusion language models (DLMs) offer a structural alternative to autoregressive generation: denoising can update tokens in arbitrary orders or in parallel rather than along a fixed left-to-right chain. In practice, fast DLM decoding remains strongly order-sensitive and often drifts toward autoregressive-like trajectories. We trace this tension to compatibility. At each reverse-time step, a DLM provides local denoising conditionals over the unresolved tokens. Arbitrary-order denoising becomes well defined when these local conditionals compose into order-invariant pseudo-joints.   We formalize this view by defining order-induced pseudo-joints and a local denoising circulation: the log-ratio between the two pseudo-joints obtained by swapping a pair of unresolved positions. This circulation is zero under compatible conditionals, and global order gaps decompose into sums of local circulations along adjacent swaps. We further separate incompatibility-driven path dependence from conditional-dependence error in parallel updates and from order-specific estimation error. The resulting framework provides inference-only diagnostics for testing when DLM decoding is genuinely order-free.",
+      "authors": [
+        "Jeonseong Kim"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-10T04:00:52+00:00",
+      "link": "https://arxiv.org/pdf/2605.09303v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Diffusion language models drifting toward autoregressive-like trajectories",
+      "llm_evidence_cn": "扩散语言模型向类自回归轨迹漂移的研究",
+      "llm_evidence": "扩散语言模型向类自回归轨迹漂移的研究",
+      "canonical_evidence": "扩散语言模型向类自回归轨迹漂移的研究",
+      "llm_tldr_en": "Analyzes why diffusion language models often drift toward autoregressive trajectories during decoding.",
+      "llm_tldr_cn": "分析了扩散语言模型在解码过程中为何经常向自回归轨迹漂移的原因。",
+      "llm_tldr": "分析了扩散语言模型在解码过程中为何经常向自回归轨迹漂移的原因。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.05736v2",
+      "title": "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
+      "abstract": "Vector quantization (VQ) with autoregressive (AR) token modeling is a widely adopted and highly competitive paradigm for time-series generation. However, such models are fundamentally limited by exposure bias: during inference, errors can accumulate across sequential predictions, leading to pronounced quality degradation in long-horizon generation. To address this, we propose SDFlow ($\\textbf{S}$imilarity-$\\textbf{D}$riven $\\textbf{Flow}$ Matching), a non-autoregressive framework that operates entirely in the frozen VQ latent space and enables parallel sequence generation via flow matching. We tackle three key challenges in making this transition: (1) eliminating exposure bias by replacing step-wise token prediction with a global transport map; (2) mitigating the high-dimensionality of VQ token spaces via a low-rank manifold decomposition with a learned anchor prior over the latent manifold; and (3) incorporating discrete supervision into continuous transport dynamics by introducing a categorical posterior over codebook indices within a variational flow-matching formulation. Extensive experiments show that SDFlow achieves state-of-the-art performance, improving Discriminative Score and substantially reducing Context-FID, particularly for challenging long-sequence generation. Moreover, SDFlow provides significant inference speedups over autoregressive baselines, offering both high fidelity and computational efficiency. Code is available at https://anonymous.4open.science/r/SDFlow-D6F3/",
+      "authors": [
+        "Wei Li",
+        "Shibo Feng",
+        "Pengcheng Wu",
+        "Xingyu Gao",
+        "Min Wu",
+        "Peilin Zhao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-07T06:28:18+00:00",
+      "link": "https://arxiv.org/pdf/2605.05736v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "comparison with autoregressive token modeling",
+      "llm_evidence_cn": "与自回归令牌建模的对比",
+      "llm_evidence": "与自回归令牌建模的对比",
+      "canonical_evidence": "与自回归令牌建模的对比",
+      "llm_tldr_en": "Proposes a non-autoregressive flow matching framework to solve exposure bias in autoregressive time-series models.",
+      "llm_tldr_cn": "提出了一种非自回归流匹配框架，以解决自回归时间序列模型中的曝光偏差问题。",
+      "llm_tldr": "提出了一种非自回归流匹配框架，以解决自回归时间序列模型中的曝光偏差问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.07503v1",
+      "title": "Diffusion-APO: Trajectory-Aware Direct Preference Alignment for Video Diffusion Transformers",
+      "abstract": "Efficiently aligning large-scale video diffusion models with human intent requires a scalable and trajectory-aware pathway that bridges the inherent discrepancy between training noise distributions and practical inference trajectories. While existing paradigms such as Direct Preference Optimization (DPO) and Group Relative Policy Optimization (GRPO) attempt to address this, they are often hindered by either reliance on bias-prone, complex reward models or suboptimal timestep sampling. In this paper, we propose Diffusion-APO (Aligned Preference Optimization), a trajectory-aware algorithm that resolves this misalignment by synchronizing training noise with inference-time denoising paths to maximize gradient signal efficacy. To translate this algorithmic innovation into a practical solution, we introduce a unified and modular RLHF framework that integrates online ranking, half-online anchoring, offline refinement, and distillation-aware drift correction. This framework enables flexible, multi-stage preference alignment across diverse data and computational constraints without relying on scalar-reward-based policy gradients. Through extensive experiments, we demonstrate that Diffusion-APO consistently outperforms standard baselines in visual quality and instruction following, while effectively preserving generative fidelity during model acceleration, providing a robust, end-to-end pathway for scalable video diffusion alignment.",
+      "authors": [
+        "Jingyuan Zhu",
+        "Biaolong Chen",
+        "Le Zhang",
+        "Aixi Zhang",
+        "Hao Jiang",
+        "Pipei Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-08T09:37:46+00:00",
+      "link": "https://arxiv.org/pdf/2605.07503v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Trajectory-aware alignment for video diffusion transformers",
+      "llm_evidence_cn": "视频扩散Transformer的轨迹感知对齐",
+      "llm_evidence": "视频扩散Transformer的轨迹感知对齐",
+      "canonical_evidence": "视频扩散Transformer的轨迹感知对齐",
+      "llm_tldr_en": "Introduces Diffusion-APO to align video diffusion models with human intent using trajectory-aware optimization.",
+      "llm_tldr_cn": "引入Diffusion-APO，通过轨迹感知优化使视频扩散模型与人类意图对齐。",
+      "llm_tldr": "引入Diffusion-APO，通过轨迹感知优化使视频扩散模型与人类意图对齐。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.07820v2",
+      "title": "Scaling Categorical Flow Maps",
+      "abstract": "Continuous diffusion and flow matching models could represent a powerful alternative to autoregressive approaches for language modelling (LM), as they unlock a host of advantages currently reserved for continuous modalities, including accelerated sampling and tilting. Recently, several works have demonstrated the possibility of generating discrete data continuously by a simple flow matching process between a Gaussian and the one-hot encoded data distribution. They have further shown the feasibility of accelerated sampling via Categorical Flow Maps (CFMs), resulting in competitive sample quality in the few-step regime. However, this method had only been evaluated at relatively modest scales ($<1$B), leaving the question of its scalability completely open. In this article, we train a $1.7$B-parameter base flow model on $2.1$T tokens and self-distill it into a CFM that generates diverse, high-quality text in as few as $4$ inference steps while maintaining near-data-level token entropy. Furthermore, we introduce a likelihood bound for CFMs in the semi-discrete setting, and show that they can be used to score the model on standard LM benchmarks, achieving results in the same range as discrete diffusion methods. Finally, we uncover some of the challenges that arise from training these models at scale, and we provide prescriptive insights on loss weighting and time scheduling.",
+      "authors": [
+        "Oscar Davis",
+        "Anastasiia Filippova",
+        "Pierre Ablin",
+        "Victor Turrisi",
+        "Amitis Shidani",
+        "Marco Cuturi",
+        "Louis Béthune"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-08T14:50:57+00:00",
+      "link": "https://arxiv.org/pdf/2605.07820v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "alternative to autoregressive approaches for language modelling",
+      "llm_evidence_cn": "语言建模中自回归方法的替代方案",
+      "llm_evidence": "语言建模中自回归方法的替代方案",
+      "canonical_evidence": "语言建模中自回归方法的替代方案",
+      "llm_tldr_en": "Explores the scalability of Categorical Flow Maps as a continuous alternative to autoregressive language models.",
+      "llm_tldr_cn": "研究类别流映射在大规模语言建模中的可扩展性，作为自回归方法的连续替代方案。",
+      "llm_tldr": "研究类别流映射在大规模语言建模中的可扩展性，作为自回归方法的连续替代方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.09313v1",
+      "title": "Attention Sinks in Diffusion Transformers: A Causal Analysis",
+      "abstract": "Attention sinks -- tokens that receive disproportionate attention mass -- are assumed to be functionally important in autoregressive language models, but their role in diffusion transformers remains unclear. We present a causal analysis in text-to-image diffusion, dynamically identifying dominant attention recipients per timestep and suppressing them via paired, training-free interventions on the score and value paths. Across 553 GenEval prompts on Stable Diffusion~3 (with SDXL corroboration), removing these sinks does not degrade text-image alignment (CLIP-T) or preference proxies (ImageReward, HPS-v2) at $k{=}1$; only under stronger interventions ($k\\!\\geq\\!10$) does HPS-v2 exhibit a metric-dependent boundary, while CLIP-T remains robust throughout. The perceptual shifts induced by suppression are nonetheless \\emph{sink-specific} -- $\\sim\\!6\\times$ larger than equal-budget random masking -- revealing an empirical dissociation between trajectory-level perturbation and \\emph{semantic alignment} in diffusion transformers. \\footnote{Code available at https://github.com/wfz666/ICML26-attention-sink.}",
+      "authors": [
+        "Fangzheng Wu",
+        "Brian Summa"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-10T04:14:07+00:00",
+      "link": "https://arxiv.org/pdf/2605.09313v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "analysis of attention sinks in diffusion transformers vs AR models",
+      "llm_evidence_cn": "扩散Transformer与自回归模型中注意力汇点的对比分析",
+      "llm_evidence": "扩散Transformer与自回归模型中注意力汇点的对比分析",
+      "canonical_evidence": "扩散Transformer与自回归模型中注意力汇点的对比分析",
+      "llm_tldr_en": "Analyzes the role of attention sinks in diffusion transformers compared to autoregressive language models.",
+      "llm_tldr_cn": "对扩散Transformer中的注意力汇点进行因果分析，并与自回归语言模型中的作用进行对比。",
+      "llm_tldr": "对扩散Transformer中的注意力汇点进行因果分析，并与自回归语言模型中的作用进行对比。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.09749v1",
+      "title": "Primal-Dual Guided Decoding for Constrained Discrete Diffusion",
+      "abstract": "Discrete diffusion models generate structured sequences by progressively unmasking tokens, but enforcing global property constraints during generation remains an open challenge. We propose primal-dual guided decoding, an inference-time method that formulates constrained generation as a KL-regularised optimisation problem and solves it online via adaptive Lagrangian multipliers. At each denoising step, the method modifies token logits through an additive, constraint-dependent bias, with multipliers updated by mirror descent based on constraint violation. The bias arises as the optimal KL-regularised projection of the constraint, so the constrained distribution remains as close as possible to the model's unconstrained distribution while still satisfying the constraint. The method requires no retraining and no additional model evaluations beyond standard sampling, supports multiple simultaneous constraints, and provides formal bounds on constraint violation. We evaluate our approach on topical text generation, molecular design, and music playlist generation, showing that a single algorithm instantiated via domain-specific scoring functions improves constraint satisfaction while preserving relevant domain-specific quality metrics.",
+      "authors": [
+        "Federico Tomasi",
+        "Dmitrii Moor",
+        "Alice Wang",
+        "Mounia Lalmas"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-10T20:55:19+00:00",
+      "link": "https://arxiv.org/pdf/2605.09749v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "discrete diffusion for structured sequence generation",
+      "llm_evidence_cn": "用于结构化序列生成的离散扩散模型",
+      "llm_evidence": "用于结构化序列生成的离散扩散模型",
+      "canonical_evidence": "用于结构化序列生成的离散扩散模型",
+      "llm_tldr_en": "Proposes primal-dual guided decoding for enforcing global constraints in discrete diffusion sequence generation.",
+      "llm_tldr_cn": "提出了一种原对偶引导解码方法，用于在离散扩散序列生成中强制执行全局约束。",
+      "llm_tldr": "提出了一种原对偶引导解码方法，用于在离散扩散序列生成中强制执行全局约束。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.09820v1",
+      "title": "Dystruct: Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference",
+      "abstract": "Diffusion language models (DLMs) have recently emerged as a promising alternative to autoregressive models, primarily due to their ability to enable parallel decoding. Despite this advantage, most existing DLMs rely on a fixed generation length specified prior to decoding, which restricts their flexibility in real-world applications. While a few recent works attempt to support flexible-length generation, they typically suffer from notable limitations: some require costly retraining to accommodate variable-length outputs, while others depend solely on local confidence signals during decoding. Such local criteria fail to capture the evolving structure of the sequence, often resulting in suboptimal generation quality. In this paper, we propose a training-free, Bayesian structured decoding framework that formulates flexible-length generation as a dynamic structural inference problem. Our approach formulates flexible-length generation as a dynamic structural inference problem, jointly computing the expansion length, the block boundaries, and the decoding schedule. At each window expansion step, the method integrates local uncertainty with structural signals via a unified mechanism that supports dynamic structured generation, including both flexible block expansion and block organization, while maintaining coherence. Extensive experiments across multiple benchmarks demonstrate that our approach significantly improves generation quality and flexibility over existing fixed-length and flexible-length baselines. These results highlight the advantage of Bayesian structured decoding for diffusion language model, providing a principled and efficient solution for structured text generation.",
+      "authors": [
+        "Bian Sun",
+        "Kevin Zhai",
+        "Mubarak Shah",
+        "Zhenyi Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-10T23:51:14+00:00",
+      "link": "https://arxiv.org/pdf/2605.09820v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "diffusion language model as alternative to autoregressive models",
+      "llm_evidence_cn": "扩散语言模型作为自回归模型的替代方案",
+      "llm_evidence": "扩散语言模型作为自回归模型的替代方案",
+      "canonical_evidence": "扩散语言模型作为自回归模型的替代方案",
+      "llm_tldr_en": "Proposes a dynamic decoding structure for diffusion language models to handle flexible sequence lengths.",
+      "llm_tldr_cn": "为扩散语言模型提出动态解码结构，以处理灵活的序列长度生成。",
+      "llm_tldr": "为扩散语言模型提出动态解码结构，以处理灵活的序列长度生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.10518v1",
+      "title": "Infinite Mask Diffusion for Few-Step Distillation",
+      "abstract": "Masked Diffusion Models (MDMs) have emerged as a promising alternative to autoregressive models in language modeling, offering the advantages of parallel decoding and bidirectional context processing within a simple yet effective framework. Specifically, their explicit distinction between masked tokens and data underlies their simple framework and effective conditional generation. However, MDMs typically require many sampling iterations due to factorization errors stemming from simultaneous token updates. We observe that a theoretical lower bound of the factorization error exists, which standard MDMs cannot reduce due to their use of a deterministic single-state mask. In this paper, we propose the Infinite Mask Diffusion Model (IMDM), which introduces a stochastic infinite-state mask to mitigate the theoretical bound while directly inheriting the benefits of MDMs, including the compatibility with pre-trained weights. We empirically demonstrate that MDM fails to perform few-step generation even in a simple synthetic task due to the factorization error bound, whereas IMDM can find an efficient solution for the same task. Finally, when equipped with appropriate distillation methods, IMDM surpasses existing few-step distillation methods at small step counts on LM1B and OpenWebText. Code is available at https://Ugness.github.io/official_imdm.",
+      "authors": [
+        "Jaehoon Yoo",
+        "Wonjung Kim",
+        "Chanhyuk Lee",
+        "Seunghoon Hong"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-11T13:07:03+00:00",
+      "link": "https://arxiv.org/pdf/2605.10518v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "alternative to autoregressive models in language modeling",
+      "llm_evidence_cn": "语言建模中自回归模型的替代方案",
+      "llm_evidence": "语言建模中自回归模型的替代方案",
+      "canonical_evidence": "语言建模中自回归模型的替代方案",
+      "llm_tldr_en": "Proposes Infinite Mask Diffusion to reduce factorization errors in masked diffusion language models.",
+      "llm_tldr_cn": "提出无限掩码扩散模型，旨在减少掩码扩散语言模型中的分解误差并提升生成效率。",
+      "llm_tldr": "提出无限掩码扩散模型，旨在减少掩码扩散语言模型中的分解误差并提升生成效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

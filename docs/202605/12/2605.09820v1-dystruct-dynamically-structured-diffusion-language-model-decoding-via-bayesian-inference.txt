@@ -1,0 +1,1144 @@
+Title: Dystruct: Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference
+
+URL Source: https://arxiv.org/pdf/2605.09820v1
+
+Published Time: Tue, 12 May 2026 01:55:29 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# DYSTRUCT : D YNAMICALLY STRUCTURED DIFFUSION 
+
+# LANGUAGE MODEL DECODING VIA BAYESIAN INFERENCE 
+
+Bian Sun ∗ Kevin Zhai ∗ Mubarak Shah Zhenyi Wang 
+
+University of Central Florida 
+
+## ABSTRACT 
+
+Diffusion language models (DLMs) have recently emerged as a promising alternative to autoregres-sive models, primarily due to their ability to enable parallel decoding. Despite this advantage, most existing DLMs rely on a fixed generation length specified prior to decoding, which restricts their flexibility in real-world applications. While a few recent works attempt to support flexible-length generation, they typically suffer from notable limitations: some require costly retraining to accommo-date variable-length outputs, while others depend solely on local confidence signals during decoding. Such local criteria fail to capture the evolving structure of the sequence, often resulting in suboptimal generation quality. In this paper, we propose a training-free, Bayesian structured decoding framework that formulates flexible-length generation as a dynamic structural inference problem. Our approach formulates flexible-length generation as a dynamic structural inference problem, jointly computing the expansion length, the block boundaries, and the decoding schedule. At each window expansion step, the method integrates local uncertainty with structural signals to (i) dynamically expand the sequence via adaptive length growth, (ii) infer block boundaries through Chinese Restaurant Process (CRP)-style partitioning, and (iii) allocate different number of decoding steps for different blocks and determine block decoding order via context-aware scheduling. This yields a unified mechanism that supports dynamic structured generation, including both flexible block expansion and block organiza-tion, while maintaining coherence. Extensive experiments across multiple benchmarks demonstrate that our approach significantly improves generation quality and flexibility over existing fixed-length and flexible-length baselines. These results highlight the advantage of Bayesian structured decod-ing for diffusion language model, providing a principled and efficient solution for structured text generation. 
+
+## 1 Introduction 
+
+Most large language models (LLMs) [ 1] rely on autoregressive decoding, where tokens are generated sequentially. This process limits decoding efficiency, especially for long sequences, because each new token depends on all previously generated tokens and cannot be produced in parallel. As a result, autoregressive LLMs often suffer from high inference latency and computational cost during deployment. Diffusion language models (DLMs) [ 2, 3] offer an efficient alternative by enabling parallel decoding. Instead of predicting tokens one by one, diffusion-based approaches iteratively refine multiple token positions simultaneously. This parallel decoding paradigm makes diffusion language models a promising direction for building faster and scalable language generation systems. However, DLMs typically rely on a fixed, pre-specified generation length. This assumption restricts practical flexibility, as the optimal output length depends on task complexity: complex queries require detailed responses, whereas simpler inputs call for concise outputs. Consequently, fixed-length decoding leads to either truncation or redundancy. More critically, it prevents the model from adapting generation to the evolving semantic context, highlighting the need for mechanisms that dynamically adjust sequence length during generation. Several recent works attempt to relax this fixed-length assumption in DLMs, but existing approaches exhibit key limitations. FlexMDM [ 4 ] and DID [ 5 ] rely on retraining to enable variable-length decoding, which incurs substantial 
+
+> ∗
+
+Equal contribution 
+
+> arXiv:2605.09820v1 [cs.LG] 10 May 2026
+
+Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference computational cost. DAEDAL [ 6 ] avoids retraining but depends on heuristic, local confidence-based criteria. Crucially, these approaches overlook content organization after sequence expansion. When new tokens are generated, the lack of structural guidance results in fragmented structure. To overcome these limitations, we formulate variable-length generation as structured decoding via Bayesian inference. We model the joint posterior distribution over the new window expansion size, the partition of the window into contiguous blocks, and the block decoding schedule. We introduce a structured prior over the latent block partition to govern content organization and guide decoding. This prior encourages coherent partition patterns while avoiding rigid assumptions about the number or boundaries of blocks. Specifically, we model block formation through a Chinese Restaurant Process (CRP) [ 7]. The advantages of the CRP are threefold: (1) it removes the need to preset the number of blocks, letting the model determine the quantity adaptively; (2) it does not require predefined partition boundaries, allowing the model to infer splits directly from the data; and (3) it provides a predictive prior over the partition structure, allowing decoding to assess at each step whether the current token should continue the current block or initiate a new one. This framework provides a training-free mechanism for sequence growth, allowing the model to jointly determine how much content to introduce, where to expand, and how newly generated tokens should be organized into contiguous blocks. By unifying local evidence with structural constraints, our approach enables flexible, coherent decoding without modifying the underlying model parameters. The overall algorithm is illustrated in Figure 1. We evaluate this framework across diverse language generation tasks. The results demonstrate that performing joint structural inference at decoding time actively prevents sequence fragmentation, improving both generation quality and coherence while keeping the model completely frozen. Our contributions are summarized as follows: • We introduce a training-free Bayesian framework for dynamic structured decoding in diffusion language models, formulating flexible-length generation as joint inference over the new window size, block partitions, and decoding organization. • We develop an efficient posterior inference algorithm to estimate dynamic window expansion, block partitioning via the CRP, and blocks decoding scheduling via context-aware prioritization. • We evaluate the method across multiple datasets, demonstrating improved flexible-length generation quality and coherence without additional training. 
+
+## 2 Related Work 
+
+Diffusion Language Models (DLMs). Recent advances establish DLMs by applying denoising diffusion probabilistic models [ 8] through masked discrete formulations, improved training objectives and large-scale pretrained models. These developments demonstrate that diffusion is both a controllable generation framework and a viable foundation-modeling paradigm for language [ 9, 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 2, 19 , 20 , 21 , 22 , 3, 23 , 24 , 25 , 26 , 27 , 28 , 29 , 30 , 31 , 32 ,33 , 34 , 35 , 36 ]. Despite this empirical success, DLMs share two practical limitations. First, most existing approaches operate under a fixed-length decoding setting, restricting real-world applicability where generation length must adapt to task complexity. Second, parallel generation in these models introduces distributional drift due to the conditional independence assumption across tokens [ 37 ]. Recent strategies like Hierarchy-dLLM [ 38 ] attempt to mitigate this drift via hierarchical decoding. However, it relies on heuristic, position-based rules under a fixed-length setting and lacks explicit modeling of decoding structure or content planning. In contrast, we formulate decoding as a Bayesian structural inference problem, jointly inferring new window size, block partitioning, and decoding order within a unified probabilistic framework. This framework enables dynamic length adaptation and coherent content organization, moving beyond local spatial heuristics toward structure-aware generation. 
+
+Variable-Length Generation in DLMs. Recent works attempt to relax the fixed-length constraint, but existing approaches exhibit key limitations. DID [ 5] and FlexMDM [ 4] enable dynamic token adjustments during generation, but lack an explicit model of decoding structure and require extensive retraining or alterations to the forward process. Similarly, DAEDAL [ 6] and AdaBlock-dLLM [ 39 ] avoid retraining but rely on strictly left-to-right, semi-autoregressive expansion driven by heuristic confidence thresholds or pre-defined semantic delimiters. Concurrent work such as VSB [40 ] evaluates block boundaries using local predictive divergence, but remains constrained to monotonic left-to-right truncation and utilizes custom training alignment. By contrast, our pure inference-time approach replaces monotonic truncation with a joint non-monotonic Bayesian framework, allowing the frozen model to dynamically determine where to expand, how much to expand, and how new content organizes into contiguous blocks. 2Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+## 3 Problem Formulation 
+
+We formulate the structured decoding problem. DLMs generate sequences through iterative refinement. Let x denote the input prompt and let V denote the vocabulary. We define t ∈ { 1, . . . , T ext } as the expansion step index. After step 
+
+t − 1, the current response is y(t−1) = ( y(t−1) 1 , . . . , y (t−1)  
+
+> nt−1
+
+), where each position is either a vocabulary token or [MASK] .To predict the masked values, the model processes the concatenated sequence [x; y(t−1) ]. To enable flexible-length generation, the decoder appends a new masked window of length Lt at expansion step t:
+
+˜y(t) = y(t−1) ; [MASK] , . . . , [MASK] 
+
+| {z } 
+
+> Ltnew positions
+
+.
+
+We index positions inside this newly appended window locally by j = 1 , . . . , L t, corresponding to global indices 
+
+nt−1 + j in ˜y(t). Appending this window introduces a structural inference problem. At each expansion step t, the decoder needs to infer: (i) the allocated window length Lt, (ii) a partition P(t) = {B(t)1 , . . . , B (t) 
+
+> Mt
+
+} dividing the window into Mt contiguous blocks, and (iii) a schedule τ (t), which is a permutation of {1, . . . , M t} denoting the decoding order. To determine the partition P(t), the decoder utilizes a CRP prior, governed by a concentration parameter α,to evaluate whether adjacent positions should extend an existing block or initialize a new block. Once the structure 
+
+(P(t), τ (t)) is established, the decoder decodes each block through a series of unmasking iterations, the total count of which is dynamically determined based on block instability. We detail the notation in Appendix Table 5. 
+
+## 4 Method 
+
+4.1 Dynamic Structured Decoding as Bayesian Inference 
+
+We formulate flexible-length diffusion decoding as a unified Bayesian structural inference problem over the latent variables Z(t) = {Lt, P(t), τ (t)}. We denote O(t) as the set of statistics derived from a temporary diagnostic pass that summarizes positional instability and structural boundary evidence within the unanchored window. We model the prior over these latent variables as a structured factorization: p Z(t) = p Lt
+
+ p P(t) | Lt, α  p τ (t) |P(t). Here, p(Lt) defines a prior over the window expansion size. The term p(P(t) | Lt, α ) is a Chinese Restaurant Process (CRP) prior [ 7] over block partitions P(t) across the local indices W (t) = {1, . . . , L t}, where α denotes the concentration parameter. This CRP prior favors coherent contiguous blocks while permitting sequence splitting when supported by edge evidence. Finally, p(τ (t) | P (t)) defines a preference over the block decoding schedule τ (t).Given the prompt x, the previously generated sequence y(t−1) , and the diagnostic observations O(t), we perform posterior inference over the latent structure: 
+
+p Z(t) | O(t), y (t−1) , x  ∝ p O(t) | Lt, P(t), y (t−1) , x  p Lt
+
+ p P(t) | Lt, α  p τ (t) | P (t).
+
+The structural progression of this inference is depicted in Figure 1 and summarized in Algorithm 1. A detailed step-by-step algorithmic description is provided in Appendix B. To estimate the joint posterior, the following sections detail the estimation of its three components: the expansion length p(Lt | O(t), y (t−1) , x ), the block partition p P(t) |
+
+O(t), L t, α , and the decoding schedule p τ (t) | P (t), O (t).
+
+4.2 Latent Block Formation and Growth Posterior over the new window size. At each step t, the decoder determines the expansion length Lt. A stable preceding window permits a larger window expansion, whereas an unstable window restricts expansion to a smaller window. To capture this dynamic scaling, we summarize the preceding window using its finalized mean instability value ¯h(t−1) ∈ [0 , 1] , where larger values indicate structural instability. We model the posterior distribution over the next window length as a Poisson-distributed random variable: 
+
+Lt ∼ p(Lt | O(t), y (t−1) , x ) ≈ Poisson( μt), where μt = Lmin +  1 − ¯h(t−1)   Lmax − Lmin 
+
+ (1) clipped to [Lmin , L max ].
+
+Statistics for characterizing block boundary changes. Before decoding the new window, the model executes a short sequence of temporary diagnostic steps over indices W (t) to assess positional instability under partial context. At each 3Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference Summarize the water cycle in one sentence:  First [MASK] Window                               
+
+> Summarize the water cycle in one sentence: Water evaporates into vapor, then condenses into clouds,
+> Summarize the water cycle in one sentence: Second [MASK] Window
+> Summarize the water cycle in one sentence: and falls back as precipitation
+> Water evaporates into vapor, then condenses into clouds,
+> Water evaporates into vapor, then condenses into clouds,
+> Later window
+> size is adapted from the
+> previous step’s average
+> complexity.
+> Summarize the water cycle in one sentence: [MASK] [MASK] [MASK] [MASK] [MASK]
+> Water evaporates into water, then
+> [MASK] [MASK] [MASK]
+> condenses into clouds,
+> Split the new window
+> into blocks according
+> to CRP-style prior
+> ①Decode First:
+> Left-Anchored Block
+> [MASK] [MASK] [MASK] [MASK]
+> [MASK] Water evaporates,
+> [MASK] [MASK] [MASK] [MASK]
+> [MASK] [MASK] [MASK] [MASK]
+> ②Decode Second: Right-Anchored Block
+
+Planning 
+
+Block-wise Decoding 
+
+> Edge-Welding (Remask + Unmask)
+
+Masked Window Decoding                              
+
+> Block 1 Block 3
+> Water evaporates into water, then condenses into clouds,
+> Block 2
+> [MASK]
+> [MASK] [MASK]
+> Water evaporates, into clouds then condenses into clouds,
+> [MASK] [MASK] [MASK] [MASK]
+> into vapor, then condenses into clouds, Water evaporates
+> ③Decode Third:
+> Unanchored Interior Block
+> Third [MASK] Window
+> then condenses into clouds, Water evaporates,
+> Predicted token
+> Committed token
+> [MASK] token
+> Prompt
+
+Get temporary prediction 
+
+(a) 
+
+> Token Instability
+
+(b) 
+
+(c) 
+
+(d) 
+
+Figure 1: Overview of DyStruct. The framework performs flexible-length decoding by iteratively appending masked windows and executing structural inference. (a) Window Expansion: The next window size adaptively scales based on the mean instability ( ¯h) of previously decoded tokens. (b) CRP-Style Partitioning: A short temporary pass extracts token-level instability scores ( hj ), which a CRP-style prior uses to partition the unanchored window into contiguous blocks. (c) Context-Aware Scheduling: Partitioned blocks are decoded according to a schedule that prioritizes stable, anchored segments. (d) Local Boundary Repair (Edge-Welding): To align predictive distributions at block interfaces, the decoder performs localized remasking (red dashed boxes) to ensure structural consistency. step, the frozen model predicts all masked positions, commits a fraction of the tokens with the highest confidence, and remasks the remainder. For each position j ∈ { 1, . . . , L t}, this diagnostic pass produces a feature vector ϕ(t)
+
+j ∈ RR
+
+capturing observable signals including entropy, prediction shifts, hidden state variation, and confidence. This vector is projected to a scalar u(t)
+
+j using an estimated weight w (illustrated in Appendix D), and normalized via a logistic function to obtain a local instability score h(t)
+
+j :
+
+u(t)
+
+j = w⊤ϕ(t)
+
+j , h(t)
+
+j = σ u(t)
+
+j − 1
+
+LtLtX
+
+r=1 
+
+u(t)
+
+r
+
+!
+
+. (2) A larger h(t)
+
+j indicates higher uncertainty relative to the window. To determine block boundaries, we evaluate the gaps between adjacent tokens. For each gap g ∈ { 1, . . . , L t − 1}, we construct a feature vector ψ(t)
+
+g (illustrated in Appendix C) and project it using an estimated boundary weight vector wb to compute an edge score: 
+
+ℓ(t)
+
+g = w⊤
+
+b ψ(t)
+
+g , q(t)
+
+g = σ
+
+
+
+ℓ(t)
+
+g
+
+
+
+. (3) 4Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+Algorithm 1 DyStruct: Dynamic Structured Decoding 
+
+1: Input: Prompt x, global length limit Nmax , hyperparameters (α0, γ, r weld )
+
+2: Initialize: y(0) ← x, step t ← 1, previous window instability ¯h(0) ← 0.5
+
+3: while [EOS] not generated and |y(t−1) | < N max do 
+
+4: Sample expansion length Lt ∼ p(Lt | O(t), y (t−1) , x ) via Eq. 1 
+
+5: Append Lt [MASK] tokens to y(t−1) to form window indices W (t)
+
+6: Execute temporary diagnostic pass over W (t) to extract feature signals ϕ(t)
+
+7: Compute instability h(t) 
+
+> j
+
+(Eq. 2) and edge scores q(t) 
+
+> g
+
+for all j, g ∈ W (t)
+
+8: Partition W (t) into blocks P(t) using CRP (Eq. 9) 
+
+9: Order blocks into schedule τ (t) via Gibbs distribution (Eq. 10) 
+
+10: for each block B ∈ τ (t) do 
+
+11: Predict and commit tokens over T (B) refinement steps 
+
+12: end for 
+
+13: Perform localized edge-welding at shared block boundaries (Eq. 11) 
+
+14: Calculate finalized mean instability ¯h(t) over W (t), update sequence y(t), increment t
+
+15: end while 
+
+16: Output: Final generated sequence y(final )
+
+Larger q(t) 
+
+> g
+
+values indicate stronger probabilistic evidence for placing a boundary at gap g. The window is partitioned using a CRP-inspired prior. We define a local concentration parameter (where α0 is the empirical base constant): 
+
+α(t) 
+
+> g
+
+= α0 exp ¯h(t−1) + ℓ(t) 
+
+> g
+
+− 1
+
+Lt − 1
+
+> Lt−1
+
+X
+
+> r=1
+
+ℓ(t)
+
+> r
+
+!
+
+. (4) Here, ¯h(t−1) controls the overall split rate (higher instability results in more blocks), while ℓ(t) 
+
+> g
+
+scores the likelihood of splitting at specific gaps. 
+
+Prior over block partitions. To model how tokens are grouped into blocks, we place a prior over partitions using the Chinese Restaurant Process (CRP) [ 7]. The intuition is analogous to customers (tokens) sequentially choosing seats at tables (contiguous blocks) in a restaurant: each token either joins the current block (an existing table) or starts a new one (a new table). Joining the current block is more likely when the block is already large ( mg ), while starting a new block is controlled by the local concentration parameter α(t) 
+
+> g
+
+. This naturally balances block growth and block creation . At expansion step t, the newly allocated window has length Lt and is partitioned into contiguous blocks 
+
+P(t) = {B(t)1 , . . . , B (t) 
+
+> Mt
+
+}. We implement the CRP prior through decisions at each of the Lt − 1 gaps between adjacent positions. At each gap g, the decoder decides whether to continue the current block (“stay”) or start a new block (“cut”). Let bg ∈ { 0, 1} denote this decision, with bg = 1 indicating a cut. If the current block has length mg , we define: 
+
+p(bg = 0 | mg , α (t) 
+
+> g
+
+) = mg
+
+mg + α(t)
+
+> g
+
+, p(bg = 1 | mg , α (t) 
+
+> g
+
+) = α(t)
+
+> g
+
+mg + α(t)
+
+> g
+
+. (5) This formulation has two practical advantages that are important for decoding. First, it does not require fixing the number of blocks in advance; the model automatically determines how many blocks are needed. Second, it does not assume fixed boundaries ; instead, boundaries are inferred dynamically based on local evidence through α(t) 
+
+> g
+
+. As a result, the prior encourages coherent block growth (by favoring “stay” for large mg ) while still allowing new blocks when necessary. The prior probability of a partition P(t) is then given by: 
+
+p P(t) | Lt, α (t)
+
+> g
+
+ =
+
+> Lt−1
+
+Y
+
+> g=1
+
+α(t)
+
+> g
+
+mg + α(t)
+
+> g
+
+!bg
+
+mg
+
+mg + α(t)
+
+> g
+
+!1−bg
+
+. (6) 
+
+Likelihood of diagnostic observations given a block partition. For each gap g, we compute an edge probability 
+
+q(t) 
+
+> g
+
+= σ(ℓ(t) 
+
+> g
+
+), which we interpret as: p(bg = 1 | O(t)) = q(t) 
+
+> g
+
+, p(bg = 0 | O(t)) = 1 − q(t) 
+
+> g
+
+. The likelihood of a given partition is: 
+
+p O(t) | P (t) =
+
+> Lt−1
+
+Y
+
+> g=1
+
+ q(t)
+
+> g
+
+bg  1 − q(t)
+
+> g
+
+1−bg
+
+. (7) 5Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+Posterior over block partitions. Combining the likelihood and the prior, the posterior over partitions is defined as: 
+
+p P(t) | O(t), L t, α (t)
+
+> g
+
+ ∝ p O(t) | P (t) p P(t) | Lt, α (t)
+
+> g
+
+.
+
+Taking the logarithm, we obtain the objective function: 
+
+log p P(t) | O(t), L t, α (t)
+
+> g
+
+ =
+
+> Lt−1
+
+X
+
+> g=1
+
+h
+
+bg log q(t) 
+
+> g
+
++ (1 − bg ) log  1 − q(t)
+
+> g
+
+i
+
++
+
+> Lt−1
+
+X
+
+> g=1
+
+h
+
+bg log α(t)
+
+> g
+
+mg + α(t)
+
+> g
+
++ (1 − bg ) log mg
+
+mg + α(t)
+
+> g
+
+i
+
++ const .
+
+(8) 
+
+Maximum a posteriori inference determines the block split positions. The final partition is obtained via maximum a posteriori (MAP) inference: 
+
+arg max 
+
+> P(t)
+
+h
+
+log p P(t) | O(t), L t, α (t)
+
+> g
+
+i
+
+(9) This objective explicitly grounds the algorithm: the gap feature vectors provide the likelihood evidence for a split, while the CRP prior enforces contiguous block partitions. Given the resulting split points g1 < · · · < g Mt−1, the contiguous blocks P(t) = {B(t)1 , . . . , B (t) 
+
+> Mt
+
+} are defined as: 
+
+B(t)1 = {1, . . . , g 1}, B(t)2 = {g1 + 1 , . . . , g 2}, . . . , B(t) 
+
+> Mt
+
+= {gMt−1 + 1 , . . . , L t}.
+
+4.3 Blockwise Decoding Schedule and Edge Welding Posterior over the block decoding schedule. Given a fixed window partition, the decoder assigns each block a refinement budget and a decoding order. For a block B ⊆ W (t), we define the block instability as H(B) = 
+
+> 1
+> |B|
+
+P 
+
+> j∈B
+
+h(t) 
+
+> j
+
+. The total refinement steps T (B) allocated to the block is obtained by linearly interpolating between 
+
+Tmin and Tmax using H(B).To determine the decoding order, we measure how well a block is anchored by neighboring decoded tokens. Let 
+
+C(B) ∈ { 0, 0.5, 1} represent the context proximity: C(B) = 1 if both sides are anchored, 0.5 if one side is anchored, and 0 if bounded entirely by masks. The schedule τ (t) follows a Gibbs distribution: 
+
+p
+
+
+
+τ (t) | P (t), O (t), y (t−1) , x 
+
+
+
+∝ exp 
+
+ X
+
+> B∈P (t)
+
+ρ(B)
+
+ , ρ(B) = −H(B) + γC (B). (10) This schedule prioritizes anchored blocks ( γC (B)) with low instability ( H(B)), where γ is a context weight. This ordering allows the resulting decoded tokens to serve as stable context that constrains the subsequent decoding of regions with higher instability. Within each scheduled block, the model iteratively commits tokens with high confidence while refining the remaining masked positions. 
+
+Boundary reconciliation via edge-welding. To ensure distributional consistency across independently scheduled blocks, we apply a local edge-welding step. For neighboring blocks B(t) 
+
+> m
+
+= [ a, b ) and B(t) 
+
+> m+1
+
+= [ b, c ), we define an interval around the boundary: 
+
+E(t) 
+
+> m
+
+= max( a, b − rweld ), min( c, b + rweld ). (11) where rweld defines the fixed boundary repair radius. Within this interval, tokens with low confidence are remasked and locally refined, while all positions outside the interval remain fixed. This step aligns boundary predictions without modifying the established blocks. After welding is complete, the decoder calculates the updated mean instability ¯h(t) to control the subsequent expansion step. 
+
+## 5 Experiments 
+
+We evaluate DyStruct using LLaDA-8B-Base [ 3 ] and Dream-7B-Base [ 41 ]. To isolate the effect of structural inference from computational scaling, we restrict the base unmasking iterations and the maximum sequence length to 256. For DyStruct, this iteration limit operates as the total available budget across all expanded blocks. Baseline models denoise a fixed 256-token window. We implement DAEDAL [ 6] to represent monotonic variable-length diffusion methods. All 6Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference experiments utilize uniform hyperparameters (Appendix E) and execute on a single NVIDIA H100 GPU within the LM-Evaluation-Harness [42]. To assess generalizability, we benchmark across three domains. We quantify mathematical reasoning using GSM8K [43 ] and MATH [ 44 ], reporting strict-match accuracy. For code generation, we use MBPP [ 45 ] and HumanEval [ 46 ], reporting greedy pass@1 accuracy. Multi-step logical reasoning is evaluated on Big-Bench Hard (BBH) [ 47 ] using exact match accuracy. 
+
+5.1 Main Results 
+
+Table 1 reports the primary evaluation. DyStruct improves accuracy across all five benchmarks, increasing the BBH exact match score from 44.9 to 49.3 on the LLaDA-8B backbone. To verify that this improvement originates from the decoding mechanism rather than dataset variance, we conduct paired McNemar tests (Appendix G). The tests demonstrate statistically significant prompt-level improvements for BBH and both mathematics datasets. In contrast, DAEDAL degrades BBH performance on both backbones, indicating that monotonic confidence heuristics fail to preserve logical coherence on complex, multi-step tasks. For code synthesis, DyStruct increases MBPP accuracy from 39.8 to 41.4 on LLaDA-8B. Code generation requires rigid adherence to structural syntax (e.g., loops, variable declarations). Monotonic decoding often commits to early syntax errors that corrupt the entire downstream function. By partitioning the sequence and scheduling updates dynamically, DyStruct successfully anchors stable syntax blocks before resolving complex interior logic. The consistent gains on Dream-7B demonstrate that this Bayesian formulation transfers across base models without architecture-specific tuning. Table 1: Dynamic structured decoding outperforms baselines. To ensure strict computational parity, all models utilize a base budget of 256 unmasking iterations and a maximum generation limit of 256 tokens. DyStruct scales this base iteration budget across adaptively sized blocks based on block instability H(B). Numbers in parentheses indicate default few-shot examples. Values in gray are standard errors (SE) from lm-eval [42]. 
+
+Code Ability Mathematics General Model HumanEval (0) MBPP (3) GSM8K (5) MATH (4) BBH (3) LLaDA-8B-Base 32.3 ±3.6 39.8 ±2.1 70.3 ±1.2 30.5 ±0.6 44.9 ±0.5 
+
+LLaDA-8B-Base + DAEDAL 33.5 ±3.7 40.2 ±2.1 70.8 ±1.2 31.2 ±0.6 43.7 ±0.5 
+
+LLaDA-8B-Base + DyStruct 34.8 ±3.7 41.4 ±2.2 72.1 ±1.2 31.4 ±0.6 49.3 ±0.5 
+
+Dream-7B-Base 40.2 ±2.7 57.2 ±2.2 74.9 ±1.1 38.2 ±0.6 51.7 ±0.5 
+
+Dream-7B-Base + DAEDAL 34.7 ±2.7 54.4 ±2.2 74.3 ±1.2 38.6 ±0.6 44.8 ±0.5 
+
+Dream-7B-Base + DyStruct 47.0 ±3.9 59.8 ±2.1 75.1 ±1.9 38.8 ±0.6 52.5 ±0.5 
+
+Structuring the decoding process according to block instability ( H(B)) directly alters the computational distribution. Figure 2 maps the per-question inference time on GSM8K. Because GSM8K relies on repeating arithmetic templates, the mathematical syntax stabilizes early in the generation sequence. DyStruct terminates refinement early on these low-instability regions. In contrast, fixed-length decoders continue to denoise the entire 256-token window until the iteration limit is reached. This early termination produces a lower seconds-per-iteration (s/it) footprint across both backbones. Conversely, on BBH, the model allocates the iteration budget toward high-instability logical transitions, producing the 4.4-point accuracy improvement. This adaptive compute distribution confirms that DyStruct selectively applies computation where structural uncertainty is highest. 
+
+5.2 Structural Ablations and Sensitivity 
+
+Table 2 isolates the core structural mechanisms. When the context-aware Gibbs schedule is replaced with a strict left-to-right monotonic order, mathematical reasoning accuracy drops (e.g., MATH decreases from 31.4 to 30.3). This reduction demonstrates that multi-step logic requires bidirectional conditioning; the model must anchor the terminal states before resolving the intermediate logical transitions. Furthermore, removing the localized edge-welding step degrades HumanEval pass rates by 1.9 points. Because adjacent blocks are scheduled independently, their boundary tokens are generated under disjoint contexts. Without edge-welding to reconcile these interfaces, the final sequence suffers from structurally incompatible syntax. 7Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+Figure 2: Inference efficiency comparison. DyStruct achieves the lowest inference time across different backbone models on the GSM8K dataset. Time is reported in seconds per iteration (s/it). Table 2: Ablation study of structural decoding components. W/o Block Decoding Schedule replaces the context-aware Gibbs scheduling with a fixed left-to-right block order. 
+
+Coding Ability Mathematics General Configuration HumanEval MBPP GSM8K MATH BBH Full DyStruct 34.8 41.4 72.1 31.4 49.3 
+
+w/o Block Decoding Schedule 33.5 41.2 71.8 30.3 49.3 w/o Boundary Repair 32.9 40.8 70.5 31.2 49.1 w/o Block Decoding Schedule & Boundary Repair 32.9 41.0 69.7 31.0 49.1 LLaDA-8B-Base 32.3 40.2 70.3 30.5 44.9 Table 4 maps the effect of the initial window length constraint. An expansion length of 48 tokens maximizes BBH accuracy. Table 3 details the corresponding token consumption. Across varying concentration priors ( α0), the framework terminates the expansion loop at an average of 219 tokens for HumanEval and 246 tokens for BBH, remaining well below the 256-token limit. If the initial window is set to the full 256 tokens, the algorithm is forced to denoise the maximum sequence length in parallel. Because the tokens lack an established conditional anchor, this parallel decoding induces severe distributional drift, causing BBH accuracy to collapse from 49.3 to 46.3. Finally, the framework relies on structural hyperparameters to govern block resolution, such as the CRP concentration prior α0 and the welding radius rweld . As shown in Table 3, performance remains stable under variations of α0. We provide additional ablations for the architectural parameters in Appendix F. DyStruct adopts a fixed set of values that provide stable partitioning across all evaluated datasets, demonstrating the robustness of the formulation without requiring task-specific hyperparameter tuning. 
+
+5.3 Qualitative Analysis 
+
+The quantitative performance degradations observed in the ablations are a direct consequence of structural failures during unconstrained generation. Figure 3 illustrates a HumanEval boundary failure caused by disabling the edge-welding step. When blocks are resolved independently, the partial context if abs provides an insufficient conditional signal for the adjacent segment, generating the incoherent syntax (x - y) . DyStruct measures the predictive entropy (Hi) spike at this interface and forces a re-evaluation within the rweld radius. This localized refinement reconciles the adjacent distributions, recovering the variable syntax (numbers[i] - numbers[j]) .Similarly, the accuracy collapse observed when forcing a 256-token initial window is mitigated by the CRP prior, which isolates high-instability steps into distinct blocks. In Figure 4, the diagnostic pass partitions a 17-token BBH 8Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference Table 3: Effect of concentration parameter. Toks denotes the average number of newly generated tokens per sample, and Blks denotes the rounded average number of finalized blocks. The default setting is shaded. 
+
+HumanEval BBH 
+
+α0 Pass@1 ↑ Toks ↓ Blks Acc. ↑ Toks ↓ Blks 
+
+1.2 35.4 217 7 49.4 246 71.5 34.8 219 7 49.3 246 71.8 33.5 220 7 49.5 245 62.0 34.1 221 6 49.3 245 6Table 4: Effect of initial sequence length. Performance remains stable across different initial sequence lengths. Forcing a massive initial window (256) causes accuracy collapse due to distributional drift. 
+
+HumanEval BBH Len. Pass@1 ↑ Toks ↓ Blks Acc. ↑ Toks ↓ Blks 
+
+32 33.5 220 8 48.8 239 748 34.8 219 7 49.3 246 764 33.5 216 6 49.0 246 6128 35.4 225 5 48.9 248 5256 36.6 256 7 46.3 256 3
+
+Dataset: HumanEval 
+
+Prompt: Given an array numbers, determine if any two elements have an absolute difference less than a threshold. 
+
+Context: def check_diff(numbers, threshold): for i in range(len(numbers)): 
+
+Pre-Welding: for j in range(i + 1, len(numbers)): 
+
+(Independent Blocks) if abs(x - y) < threshold: 
+
+Post-Welding: for j in range(i + 1, len(numbers)): 
+
+(Final Output) if abs(numbers[i] - numbers[j]) < threshold: 
+
+Figure 3: DyStruct Resolves Boundary Fragmentation via Edge-Welding. Independent block decoding produces structurally incompatible boundaries. The predictive entropy spike triggers localized boundary repair to recover context-grounded syntax. (Red: incoherent variables; Green: localized repair.) window into two segments. The Gibbs schedule prioritizes the low-instability setup (Block 1). This order establishes a conditional anchor before the model refines the high-instability deductive step in Block 2. 
+
+Dataset: BBH Logical Deduction 
+
+Prompt: Evaluate the logical validity: Let A = True. B = (not A). Is A and B True? 
+
+Context: Let’s evaluate B: B = ( True ) = True. Plugging 
+
+Block 1 (Low Hi): in A and B, 
+
+Schedule Priority 1 Length: 5 tokens | Mean Instability: 0.27 | Steps: 41 
+
+Block 2 (High Hi): we get True and False, which evaluates to False. 
+
+Schedule Priority 2 Length: 12 tokens | Mean Instability: 0.52 | Steps: 215 
+
+Figure 4: DyStruct Isolates Logical Transitions via Partitioning. The framework splits the unanchored window to isolate segments with high instability scores. Prioritizing Block 1 provides stable conditioning before refining the logical evaluation in Block 2. (Blue: low-instability segment; Red: high-instability deduction.) When the generated sequence contains causal dependencies, the scheduler resolves terminal anchors before the intermediate tokens. Figure 5 demonstrates this behavior on a BBH disambiguation task. The scheduler prioritizes the initial setup and the conclusive answer format (Blocks 1 and 3). This bidirectional grounding constrains the pronoun resolution step in Block 2. 9Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+Dataset: BBH Disambiguation 
+
+Prompt: Identify the antecedent: The chief thanked the housekeeper and gave her some tips. 
+
+Context: Options: (A) The chief (B) The housekeeper (C) Ambiguous 
+
+Block 1 (Low Hi): The chief thanked the housekeeper 
+
+Schedule Priority 1 Length: 5 tokens | Mean Instability: 0.21 | Steps: 40 
+
+Block 2 (High Hi): and gave her some tips. 
+
+Schedule Priority 3 Length: 5 tokens | Mean Instability: 0.59 | Steps: 216 
+
+Block 3 (Low Hi): So the answer is (B). 
+
+Schedule Priority 2 Length: 5 tokens | Mean Instability: 0.18 | Steps: 35 
+
+Figure 5: DyStruct Multi-Block Scheduling via Stable Anchors. The scheduler prioritizes both terminal anchor blocks (1 and 3) to establish a constrained context for the high-instability inferential resolution in Block 2. (Blue: stable anchors; Red: high-instability inference.) 
+
+## 6 Conclusion 
+
+This paper presents a principled Bayesian framework for flexible-length diffusion language models (DLMs). We formulate flexible-length generation as a joint posterior inference problem over dynamic window expansion, latent block structure, and decoding organization. Extensive experiments across multiple benchmarks show that our approach consistently outperforms both fixed-length and existing flexible-length DLMs decoding methods on a variety of datasets. 
+
+Limitations. Our method operates purely at inference time without modifying model parameters. While this enables broad applicability, integrating structural inference into training may further enhance performance, which we leave for future work. 10 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+## A Notation 
+
+Table 5 provides a concise mathematical reference for the notation used in our method. Table 5: Mathematical notation for DyStruct. Symbol Description 
+
+Decoding and Sequence Parameters 
+
+t Window expansion step index. 
+
+Lt Window expansion length at step t.
+
+Lmin , L max Bounds for the window expansion length. 
+
+Nmax Global sequence token limit. 
+
+W (t) Local indices in the newly appended window. 
+
+Z(t) Set of latent structural variables {Lt, P(t), τ (t)}.
+
+Diagnostic Temporary Pass and Uncertainty Metrics 
+
+O(t) Observations from the diagnostic temporary pass. 
+
+ptemp  
+
+> g
+
+Initial distribution from the diagnostic pass. 
+
+Hi Token predictive entropy at position i.
+
+ϕ(t) 
+
+> j
+
+Local feature vector at token position j.
+
+w Learned weights for position features ϕ(t) 
+
+> j
+
+.
+
+h(t) 
+
+> j
+
+Position instability score at position j.
+
+¯h(t) Mean instability of the previously decoded window. 
+
+Partitioning and CRP Prior 
+
+g Gap index between token positions g and g + 1 .
+
+ψ(t) 
+
+> g
+
+Gap feature vector for the boundary at gap g.
+
+wb Learned weights for gap features ψ(t) 
+
+> g
+
+.
+
+ℓ(t) 
+
+> g
+
+, q (t) 
+
+> g
+
+Logit edge score and boundary split probability. 
+
+α(t) 
+
+> g
+
+Local CRP concentration parameter at gap g.
+
+α0 Base CRP concentration parameter. 
+
+mg Length of the block immediately preceding gap g.
+
+P(t) Partition of W (t) into contiguous token blocks. 
+
+B(t) 
+
+> m
+
+The m-th block in partition P(t).
+
+Scheduling and Edge-Welding 
+
+τ (t) Context-aware decoding schedule for partition P(t).
+
+H(B) Mean instability score of block B.
+
+C(B) Context-adjacency metric for block B.
+
+γ Weight for context-adjacency priority. 
+
+T (B) Interpolated refinement steps allocated to block B.
+
+Tmin , T max Bounds for block refinement steps. 
+
+rweld Spatial radius for localized edge-welding. 
+
+E(t) 
+
+> m
+
+Localized edge-welding interval between adjacent blocks. 
+
+## B Algorithm 
+
+Algorithm 2 details the execution DyStruct. The process transforms flexible-length generation into an iterative cycle of adaptive expansion, structural partitioning, and context-aware resolution. 11 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+Algorithm 2 DyStruct: Dynamic Structured Decoding  
+
+> 1:
+
+Input: Prompt x, global length limit Nmax , hyperparameters (α0, γ, r weld ) 
+
+> 2:
+
+Initialize: y(0) ← x, step t ← 1, previous window instability ¯h(0) ← 0.5 
+
+> 3:
+
+while [EOS] not generated and |y(t−1) | < N max do  
+
+> 4:
+
+# 1. Adaptive Window Expansion  
+
+> 5:
+
+Sample expansion length Lt ∼ p(Lt | O(t), y (t−1) , x ) via Poisson( μt) scaled by (1 − ¯h(t−1) ) 
+
+> 6:
+
+Append Lt [MASK] tokens to y(t−1) to form local window indices W (t) 
+
+> 7:
+
+# 2. Diagnostic Pass & Partitioning  
+
+> 8:
+
+Execute temporary diagnostic pass over W (t) to extract feature signals ϕ(t) 
+
+> 9:
+
+Compute position instability h(t) 
+
+> j
+
+and gap split probabilities q(t) 
+
+> g
+
+for all j, g ∈ W (t) 
+
+> 10:
+
+Evaluate local CRP parameters α(t) 
+
+> g
+
+against continuation and cutting scores  
+
+> 11:
+
+Partition W (t) into contiguous blocks P(t) = {B(t)1 , . . . , B (t) 
+
+> Mt
+
+} 
+
+> 12:
+
+# 3. Instability-Aware Scheduling  
+
+> 13:
+
+Compute mean instability H(B) and context-adjacency C(B) for all B ∈ P (t) 
+
+> 14:
+
+Order blocks into schedule τ (t) by sorting −H(B) + γC (B) 
+
+> 15:
+
+# 4. Block-wise Resolution & Edge-Welding  
+
+> 16:
+
+for each block B ∈ τ (t) do  
+
+> 17:
+
+Predict and commit tokens over interpolated T (B) refinement steps  
+
+> 18:
+
+end for  
+
+> 19:
+
+for each shared boundary between adjacent blocks in P(t) do  
+
+> 20:
+
+Remask lowest-confidence positions strictly inside radius rweld and refine  
+
+> 21:
+
+end for  
+
+> 22:
+
+# 5. State Update  
+
+> 23:
+
+Calculate finalized mean instability ¯h(t) over the decoded window W (t) 
+
+> 24:
+
+Update sequence y(t) and increment t ← t + 1  
+
+> 25:
+
+end while  
+
+> 26:
+
+Output: Final generated sequence y(final )
+
+Algorithmic Description. At each window expansion step, the decoder determines the length of the new masked window by evaluating the stability of the previously generated segment; high instability restricts expansion to prevent the propagation of structural errors. Before unmasking begins, a temporary diagnostic pass extracts local feature signals 
+
+ϕ(t). These diagnostic features inform a Bayesian partitioning step where a CRP prior groups tokens into contiguous blocks based on local instability. To ensure stable conditioning, the decoder resolves these partitioned blocks in a context-aware order, prioritizing segments that exhibit low-instability or exist adjacent to established context. Finally, an edge-welding step performs localized remasking at the interfaces of adjacent blocks to reconcile the predictive distributions and ensure sequence coherence. 
+
+## C Method Details 
+
+For a gap g ∈ { 1, . . . , L t − 1} located between token positions g and g + 1 , we form a gap feature vector: 
+
+ψ(t) 
+
+> g
+
+=
+
+h
+
+h(t) 
+
+> g
+
+, h (t)
+
+> g+1
+
+, h(t) 
+
+> g
+
+− h(t) 
+
+> g+1
+
+, JSD( ptemp  
+
+> g
+
+∥ ptemp  
+
+> g+1
+
+)
+
+i
+
+, (12) where ptemp  
+
+> g
+
+and ptemp  
+
+> g+1
+
+are the diagnostic predictive distributions for the tokens immediately adjacent to the gap, and 
+
+JSD( · ∥ · ) represents the Jensen-Shannon divergence. This gap feature vector quantifies whether the adjacent tokens operate as a single contiguous block or require structural separation. 
+
+## D Calibration of Instability Coefficients 
+
+To determine the instability coefficients ( w), we construct a calibration dataset D = {(ϕi, d i)}Ni=1 by extracting N
+
+token-level observations from validation trajectories with accessible ground-truth sequences. We define the feature vector ϕi ∈ R7 such that each vector contains the diagnostic metrics recorded for a specific token: 
+
+ϕi = [ Hi, R i, Ωi, JSD i, ∆si, F i, G i]⊤ (13) 12 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference where the features correspond to predictive entropy ( H), remasking frequency ( R), logit oscillation ( Ω), Jensen-Shannon divergence ( JSD ), hidden state jump ( ∆s), confidence ( F ), and probability margin ( G). We define the binary diagnostic targets di ∈ { 0, 1} using the ground-truth sequences: di = 1 if the predicted token mismatches the ground truth or triggers a remasking event during decoding. Conversely, di = 0 if the token correctly matches the ground truth and remains committed. The components of ϕi are defined as follows: 
+
+Hi = − X
+
+> v∈V
+
+pi,v log pi,v , (14a) 
+
+Ri = 1
+
+K
+
+> K
+
+X
+
+> k=1
+
+1
+
+h
+
+κ(k) 
+
+> i
+
+= 1 ∧ η(k) 
+
+> i
+
+= 0 
+
+i
+
+, (14b) 
+
+Ωi = 1max( K − 1, 1) 
+
+> K
+
+X
+
+> k=2
+
+1
+
+h
+
+ˆy(k)
+
+> i
+
+̸ = ˆ y(k−1) 
+
+> i
+
+i
+
+, (14c) 
+
+JSD i = 1max( K − 1, 1) 
+
+> K
+
+X
+
+> k=2
+
+JSD 
+
+
+
+p(k) 
+
+> i
+
+∥ p(k−1) 
+
+> i
+
+
+
+, (14d) 
+
+∆si = 1
+
+d
+
+> d
+
+X
+
+> r=1
+
+|si,r − si−1,r | , (14e) 
+
+Fi = pi, ˆyi , (14f) 
+
+Gi = log pi, (1) − log pi, (2) . (14g) Here zi ∈ R|V| denotes the model logits at position i, si ∈ Rd denotes the corresponding final-layer hidden state, 
+
+pi = softmax( zi), ˆyi = arg max v zi,v , and pi, (1) and pi, (2) denote the largest and second-largest probabilities at position i, respectively. The boolean variable κ(k) 
+
+> i
+
+indicates if the position is masked at refinement step k, and η(k)
+
+> i
+
+indicates if the token is accepted. The Jensen–Shannon divergence is defined as: 
+
+JSD( p ∥ q) = 12 KL( p ∥ m) + 12 KL( q ∥ m), m = 12 (p + q). (15) We estimate the optimal coefficient vector w∗ by minimizing an L2-regularized binary cross-entropy loss over the calibration dataset D:
+
+J (w) = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+di log σ(w⊤ϕi) + (1 − di) log(1 − σ(w⊤ϕi))  + λreg ∥w∥22 (16) where σ(·) is the sigmoid function and λreg is the regularization penalty. During inference, the runtime algorithm evaluates the unconstrained logit ui:
+
+ui = ( w∗)⊤ϕi (17) The linear projection ui preserves the relative ranking of token instability established during calibration. The generation pipeline then normalizes the projection ui using the window-centered logistic function defined in Equation 2 to compute the final positional instability score hi.
+
+## E Implementation Details and Hyperparameters 
+
+To ensure the generalizability of DyStruct, DyStruct maintains a uniform set of hyperparameters across all benchmarks, domains, and model scales. We do not tune these parameters for task-specific optimality. 
+
+Window Expansion. The dynamic expansion loop is bounded by a minimum burst length of Lmin = 8 and a maximum burst length of Lmax = 48 .
+
+Partitioning and Scheduling. The Bayesian partitioning utilizes an empirical base CRP concentration prior of 
+
+α0 = 1 .5. During schedule evaluation, the context-adjacency priority weight is set to γ = 2 .0.
+
+Blockwise Decoding and Welding. Based on the block instability score H(B) ∈ [0 , 1] , the total refinement steps T (B)
+
+are interpolated between Tmin = 6 and Tmax = 18 . Finally, the localized edge-welding step operates within a fixed spatial repair radius of rweld = 4 tokens and executes for 4 refinement steps. 13 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference 
+
+## F Ablative Studies 
+
+More hyperparameter sensitivity analysis. Appendix Table 6 studies the sensitivity of the welding radius rweld used in Eq. (11). For two neighboring blocks B(t) 
+
+> m
+
+= [ a, b ) and B(t) 
+
+> m+1
+
+= [ b, c ), edge-welding only operates within the local interval E(t) 
+
+> m
+
+= [max( a, b − rweld ), min( c, b + rweld )] . Therefore, rweld controls the amount of neighboring context used to reconcile predictions around the block boundary, but it does not change the block partitioning objective in Eq. (9). This explains the stability observed in the table. When rweld is within a moderate range, the repair interval covers enough cross-boundary context to correct local inconsistencies while preserving the original block structure. On HumanEval, the results remain unchanged from rweld = 8 to rweld = 12 , and on MBPP the nearby settings remain close to the default rweld = 10 . Since the token counts and block numbers are almost unchanged, the welding radius mainly affects local boundary coherence rather than generation length or segmentation granularity. Overly small values of rweld may make E(t) 
+
+> m
+
+too narrow to include sufficient cross-boundary dependency, leaving adjacent blocks weakly aligned. Conversely, overly large values expand E(t) 
+
+> m
+
+too far into neighboring blocks, which may remask positions that are already stable under the block score ρ(B) = −H(B) + C(B). This can weaken the locality induced by the Bayesian partition and slightly degrade performance, as observed when rweld = 16 on HumanEval. We therefore use rweld = 10 as a fixed default, which provides stable boundary reconciliation without requiring task-specific tuning. Table 6: Sensitivity analysis of the welding radius rweld . We evaluate the effect of different welding radius on HumanEval and MBPP. The setting used in our main experiments is highlighted in blue. P@1 denotes Pass@1, Toks denotes the average number of newly generated tokens per sample, and Blks denotes the average number of blocks per sample. 
+
+rweld 
+
+HumanEval MBPP P@1 ↑ Toks ↓ Blks P@1 ↑ Toks ↓ Blks 
+
+8 34.8 219 7 41.0 256 7
+
+10 34.8 219 7 41.4 256 7
+
+12 34.8 219 7 41.2 256 7
+
+16 34.1 219 7 41.0 256 7
+
+## G Statistical Significance 
+
+We compare LLaDA-8B-Base + DyStruct against LLaDA-8B-Base + DAEDAL using McNemar’s test, since both methods are evaluated on the same set of prompts. We choose DAEDAL as the comparison baseline because it improves upon LLaDA-8B-Base. This paired test focuses only on discordant examples: prompts solved by DAEDAL but not DyStruct, and prompts solved by DyStruct but not DAEDAL. A significant one-sided McNemar test indicates that DyStruct wins on significantly more prompts than it loses against DAEDAL. Table 7: Paired McNemar test comparing DyStruct vs. Daedal. BBH is pooled over all BBH subtasks; Math is pooled over GSM8K and MATH; Code is pooled over HumanEval and MBPP. We report McNemar’s chi-square statistic with continuity correction, its asymptotic pCC -value, and the exact two-sided binomial pexact computed on discordant pairs only. Significant p-values are highlighted in light green. 
+
+Benchmark n Acc Daedal Acc DyStruct χ2 pCC pexact 
+
+BBH 6511 43.7% 49.3% 116.9 3.07 ×10 −27 1.09 ×10 −27 
+
+Math 6319 44.2% 45.3% 4.6 0.03 0.03 Code 664 38.5% 39.9% 0.9 0.35 0.35 Overall, the paired McNemar test shows that DyStruct consistently improves over DAEDAL across all three evaluation groups. The improvement is especially strong on BBH, where DyStruct achieves a substantially higher accuracy than 14 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference DAEDAL and the difference is highly significant under both the continuity-corrected McNemar test and the exact binomial test. On the pooled Math benchmarks, DyStruct also obtains a statistically significant improvement, indicating that the gains are not limited to reasoning-heavy BBH tasks but also extend to mathematical problem solving. For Code, DyStruct achieves higher accuracy than DAEDAL. This group contains only 664 instances, compared with 6,511 for BBH and 6,319 for Math, leading to fewer discordant pairs and lower statistical power in the paired test. The result therefore indicates a positive trend, while statistical significance would require a larger code evaluation set. 
+
+## References 
+
+[1] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Nee-lakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever, and Dario Amodei. Language models are few-shot learners. In H. Larochelle, M. Ranzato, R. Hadsell, M.F. Balcan, and H. Lin, editors, Advances in Neural Information Processing Systems ,volume 33, pages 1877–1901. Curran Associates, Inc., 2020. [2] Subham S Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. Advances in Neural Information Processing Systems , 37:130136–130184, 2024. [3] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, JUN ZHOU, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. [4] Jaeyeon Kim, Lee Cheuk Kit, Carles Domingo-Enrich, Yilun Du, Sham M. Kakade, Timothy Ngotiaoco, Sitan Chen, and Michael Samuel Albergo. Any-order flexible length masked diffusion. In The Fourteenth International Conference on Learning Representations , 2026. [5] Fangyu Ding, Ding Ding, Sijin Chen, Kaibo Wang, Peng Xu, Zijin Feng, Haoli Bai, Kai Han, Youliang Yan, Binhang Yuan, and Jiacheng Sun. Beyond masks: Efficient, flexible diffusion language models via deletion-insertion processes. In The Fourteenth International Conference on Learning Representations , 2026. [6] Jinsong Li, Xiaoyi Dong, Yuhang Zang, Yuhang Cao, Jiaqi Wang, and Dahua Lin. Beyond fixed: Training-free variable-length denoising for diffusion large language models. In The Fourteenth International Conference on Learning Representations , 2026. [7] David M Blei, Thomas L Griffiths, and Michael I Jordan. The nested chinese restaurant process and bayesian nonparametric inference of topic hierarchies. Journal of the ACM (JACM) , 57(2):1–30, 2010. [8] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. [9] Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forré, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. Advances in neural information processing systems , 34:12454–12465, 2021. [10] Xiang Li, John Thickstun, Ishaan Gulrajani, Percy S Liang, and Tatsunori B Hashimoto. Diffusion-lm improves controllable text generation. Advances in neural information processing systems , 35:4328–4343, 2022. [11] Peiyu Yu, Sirui Xie, Xiaojian Ma, Baoxiong Jia, Bo Pang, Ruiqi Gao, Yixin Zhu, Song-Chun Zhu, and Ying Nian Wu. Latent diffusion energy-based model for interpretable text modelling. In International Conference on Machine Learning , pages 25702–25720. PMLR, 2022. [12] Nikolay Savinov, Junyoung Chung, Mikolaj Binkowski, Erich Elsen, and Aaron van den Oord. Step-unrolled denoising autoencoders for text generation. In International Conference on Learning Representations , 2022. [13] Machel Reid, Vincent Josua Hellendoorn, and Graham Neubig. DiffusER: Diffusion via edit-based reconstruction. In The Eleventh International Conference on Learning Representations , 2023. [14] Ishaan Gulrajani and Tatsunori Hashimoto. Likelihood-based diffusion language models. In Thirty-seventh Conference on Neural Information Processing Systems , 2023. [15] Zhengfu He, Tianxiang Sun, Qiong Tang, Kuanning Wang, Xuan-Jing Huang, and Xipeng Qiu. Diffusionbert: Improving generative masked language models with diffusion models. In Proceedings of the 61st annual meeting of the association for computational linguistics (volume 1: Long papers) , pages 4521–4534, 2023. [16] Shansan Gong, Mukai Li, Jiangtao Feng, Zhiyong Wu, and Lingpeng Kong. Diffuseq: Sequence to sequence text generation with diffusion models. In The Eleventh International Conference on Learning Representations , 2023. 15 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference [17] Justin Lovelace, Varsha Kishore, Chao Wan, Eliot Shekhtman, and Kilian Q Weinberger. Latent diffusion for language generation. Advances in Neural Information Processing Systems , 36:56998–57025, 2023. [18] Itai Gat, Tal Remez, Neta Shaul, Felix Kreuk, Ricky TQ Chen, Gabriel Synnaeve, Yossi Adi, and Yaron Lipman. Discrete flow matching. Advances in Neural Information Processing Systems , 37:133345–133385, 2024. [19] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In Forty-first International Conference on Machine Learning , 2024. [20] Guangyi Liu, Yu Wang, Zeyu Feng, Qiyu Wu, Liping Tang, Yuan Gao, Zhen Li, Shuguang Cui, Julian McAuley, Zichao Yang, Eric P. Xing, and Zhiting Hu. Unified generation, reconstruction, and representation: Generalized diffusion with adaptive latent encoding-decoding. In Forty-first International Conference on Machine Learning ,2024. [21] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized masked diffusion for discrete data. In The Thirty-eighth Annual Conference on Neural Information Processing Systems ,2024. [22] Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian Liu, Guangtao Zeng, Min Lin, and Chongxuan Li. Scaling up masked diffusion models on text. In The Thirteenth International Conference on Learning Representations , 2025. [23] Anji Liu, Oliver Broadrick, Mathias Niepert, and Guy Van den Broeck. Discrete copula diffusion. In The Thirteenth International Conference on Learning Representations , 2025. [24] Jiacheng Ye, Jiahui Gao, Shansan Gong, Lin Zheng, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Beyond autoregression: Discrete diffusion for complex reasoning and planning. In The Thirteenth International Conference on Learning Representations , 2025. [25] Minkai Xu, Tomas Geffner, Karsten Kreis, Weili Nie, Yilun Xu, Jure Leskovec, Stefano Ermon, and Arash Vahdat. Energy-based diffusion language models for text generation. In The Thirteenth International Conference on Learning Representations , 2025. [26] Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao, Wei Bi, Jiawei Han, Hao Peng, and Lingpeng Kong. Scaling diffusion language models via adaptation from autoregressive models. In The Thirteenth International Conference on Learning Representations , 2025. [27] Justin Deschenaux and Caglar Gulcehre. Beyond autoregression: Fast LLMs via self-distillation through time. In 
+
+The Thirteenth International Conference on Learning Representations , 2025. [28] Dimitri von Rütte, Janis Fluri, Yuhui Ding, Antonio Orvieto, Bernhard Schölkopf, and Thomas Hofmann. Generalized interpolating discrete diffusion. In Forty-second International Conference on Machine Learning ,2025. [29] Sulin Liu, Juno Nam, Andrew Campbell, Hannes Stark, Yilun Xu, Tommi Jaakkola, and Rafael Gomez-Bombarelli. Think while you generate: Discrete diffusion with planned denoising. In The Thirteenth International Conference on Learning Representations , 2025. [30] Marianne Arriola, Subham Sekhar Sahoo, Aaron Gokaslan, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Justin T Chiu, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregressive and diffusion language models. In The Thirteenth International Conference on Learning Representations , 2025. [31] Kaiwen Zheng, Yongxin Chen, Hanzi Mao, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. Masked diffusion models are secretly time-agnostic masked models and exploit inaccurate categorical sampling. In The Thirteenth International Conference on Learning Representations , 2025. [32] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin T Chiu, and Volodymyr Kuleshov. The diffusion duality. In Forty-second International Conference on Machine Learning , 2025. [33] Ruixiang ZHANG, Shuangfei Zhai, Yizhe Zhang, James Thornton, Zijing Ou, Joshua M. Susskind, and Navdeep Jaitly. Target concrete score matching: A holistic framework for discrete diffusion. In Forty-second International Conference on Machine Learning , 2025. [34] Jaeyeon Kim, Kulin Shah, Vasilis Kontonis, Sham M. Kakade, and Sitan Chen. Train for the worst, plan for the best: Understanding token ordering in masked diffusions. In Forty-second International Conference on Machine Learning , 2025. [35] Litu Rout, Constantine Caramanis, and Sanjay Shakkottai. Anchored diffusion language model. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. [36] Yeongbin Seo, Dongha Lee, Jaehyung Kim, and Jinyoung Yeo. Fast and fluent diffusion language models via convolutional decoding and rejective fine-tuning. In The Thirty-ninth Annual Conference on Neural Information Processing Systems , 2025. 16 Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference [37] Gabe Guo and Stefano Ermon. Self-speculative decoding accelerates lossless inference in any-order and any-subset autoregressive models. In The Fourteenth International Conference on Learning Representations , 2026. [38] Xiaojing Qi, Lun Du, Xinyuan Zhang, Lanning Wei, Tao Jin, and Da Zheng. Hierarchy decoding: A training-free parallel decoding strategy for diffusion large language models. In The Fourteenth International Conference on Learning Representations , 2026. [39] Guanxi Lu, Hao Mark Chen, Yuto Karashima, Zhican Wang, Daichi Fujiki, and Hongxiang Fan. Adablock-dLLM: Semantic-aware diffusion LLM inference via adaptive block size. In The Fourteenth International Conference on Learning Representations , 2026. [40] Danny Wang, Ruihong Qiu, and Zi Huang. When to commit? towards variable-size self-contained blocks for discrete diffusion language models. arXiv preprint arXiv:2604.23994 , 2026. [41] Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7b: Diffusion large language models, 2025. [42] Leo Gao, Jonathan Tow, Baber Abbasi, Stella Biderman, Sid Black, Anthony DiPofi, Charles Foster, Laurence Golding, Jeffrey Hsu, Alain Le Noac’h, Haonan Li, Kyle McDonell, Niklas Muennighoff, Chris Ociepa, Jason Phang, Laria Reynolds, Hailey Schoelkopf, Aviya Skowron, Lintang Sutawika, Eric Tang, Anish Thite, Ben Wang, Kevin Wang, and Andy Zou. A framework for few-shot language model evaluation, 12 2023. [43] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training verifiers to solve math word problems, 2021. [44] Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Jacob Steinhardt. Measuring mathematical problem solving with the MATH dataset. In Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2) , 2021. [45] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. [46] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, et al. Evaluating large language models trained on code, 2021. [47] Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung, Aakanksha Chowdhery, Quoc Le, Ed Chi, Denny Zhou, and Jason Wei. Challenging BIG-bench tasks and whether chain-of-thought can solve them. In Anna Rogers, Jordan Boyd-Graber, and Naoaki Okazaki, editors, Findings of the Association for Computational Linguistics: ACL 2023 , pages 13003–13051, Toronto, Canada, July 2023. Association for Computational Linguistics. 17

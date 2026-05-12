@@ -6,46 +6,50 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-11
-- 运行时间：2026-05-11 20:55:00 UTC
+- 最新运行日期：2026-05-12
+- 运行时间：2026-05-12 21:22:52 UTC
 - 运行状态：成功
-- 本次总论文数：8
-- 精读区：4
-- 速读区：4
+- 本次总论文数：10
+- 精读区：3
+- 速读区：7
 
 ### 今日简报（AI）
-今日聚焦扩散模型与自回归技术的深度融合，重点攻克长视频生成的一致性难题。
-满分论文 A$^2$RD 实现了长视频的逻辑连贯，而表征对齐技术则让自回归模型无需重训即可高效适配扩散架构。
-建议关注扩散机制在语言模型检索与生成任务中的跨界应用潜力。
-- 详情：[/202605/11/README](/202605/11/README)
+今日精选 10 篇论文，深度攻克视频扩散模型效率瓶颈与扩散语言模型的层坍缩难题。
+- 详情：[/202605/12/README](/202605/12/README)
 
 ### 精读区论文标签
-1. [A$^2$RD: Agentic Autoregressive Diffusion for Long Video Consistency](/202605/11/2605.06924v1-a2rd-agentic-autoregressive-diffusion-for-long-video-consistency)  
-   标签：评分：10.0/10、query:ardm
-   evidence：用于长视频一致性的智能体自回归扩散架构
-2. [Don't Retrain, Align: Adapting Autoregressive LMs to Diffusion LMs via Representation Alignment](/202605/11/2605.06885v1-dont-retrain-align-adapting-autoregressive-lms-to-diffusion-lms-via-representation-alignment)  
+1. [Forcing-KV: Hybrid KV Cache Compression for Efficient Autoregressive Video Diffusion Models](/202605/12/2605.09681v1-forcing-kv-hybrid-kv-cache-compression-for-efficient-autoregressive-video-diffusion-models)  
    标签：评分：9.0/10、query:ardm
-   evidence：通过表示对齐将自回归语言模型适配为扩散语言模型
-3. [Towards Closing the Autoregressive Gap in Language Modeling via Entropy-Gated Continuous Bitstream Diffusion](/202605/11/2605.07013v1-towards-closing-the-autoregressive-gap-in-language-modeling-via-entropy-gated-continuous-bitstream-diffusion)  
-   标签：评分：9.0/10、query:ardm
-   evidence：通过连续比特流扩散缩小语言模型中的自回归差距
-4. [Fast Byte Latent Transformer](/202605/11/2605.08044v1-fast-byte-latent-transformer)  
-   标签：评分：9.0/10、query:ardm
-   evidence：在下个字节预测损失旁加入辅助块扩散目标
+   evidence：高效自回归视频扩散模型架构
+2. [Layer Collapse in Diffusion Language Models](/202605/12/2605.06366v2-layer-collapse-in-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型与自回归模型的动力学对比
+3. [Path-Dependent Denoising: A Non-Conservative Field Perspective on Order Collapse in Diffusion Language Models](/202605/12/2605.09303v1-path-dependent-denoising-a-non-conservative-field-perspective-on-order-collapse-in-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型向类自回归轨迹漂移的研究
 
 ### 速读区论文标签
-1. [DiffRetriever: Parallel Representative Tokens for Retrieval with Diffusion Language Models](/202605/11/2605.07210v1-diffretriever-parallel-representative-tokens-for-retrieval-with-diffusion-language-models)  
+1. [SDFlow: Similarity-Driven Flow Matching for Time Series Generation](/202605/12/2605.05736v2-sdflow-similarity-driven-flow-matching-for-time-series-generation)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型作为顺序自回归检索的替代方案
-2. [How to Train Your Latent Diffusion Language Model Jointly With the Latent Space](/202605/11/2605.07933v1-how-to-train-your-latent-diffusion-language-model-jointly-with-the-latent-space)  
+   evidence：与自回归令牌建模的对比
+2. [Scaling Categorical Flow Maps](/202605/12/2605.07820v2-scaling-categorical-flow-maps)  
    标签：评分：7.0/10、query:ardm
-   evidence：潜空间扩散作为自回归文本生成的替代方案
-3. [Scaling Categorical Flow Maps](/202605/11/2605.07820v1-scaling-categorical-flow-maps)  
-   标签：评分：6.0/10、query:ardm
-   evidence：语言建模中自回归方法的替代方案研究
-4. [Normalizing Trajectory Models](/202605/11/2605.08078v1-normalizing-trajectory-models)  
+   evidence：语言建模中自回归方法的替代方案
+3. [Primal-Dual Guided Decoding for Constrained Discrete Diffusion](/202605/12/2605.09749v1-primal-dual-guided-decoding-for-constrained-discrete-diffusion)  
+   标签：评分：7.0/10、query:ardm
+   evidence：用于结构化序列生成的离散扩散模型
+4. [Dystruct: Dynamically Structured Diffusion Language Model Decoding via Bayesian Inference](/202605/12/2605.09820v1-dystruct-dynamically-structured-diffusion-language-model-decoding-via-bayesian-inference)  
+   标签：评分：7.0/10、query:ardm
+   evidence：扩散语言模型作为自回归模型的替代方案
+5. [Infinite Mask Diffusion for Few-Step Distillation](/202605/12/2605.10518v1-infinite-mask-diffusion-for-few-step-distillation)  
+   标签：评分：7.0/10、query:ardm
+   evidence：语言建模中自回归模型的替代方案
+6. [Diffusion-APO: Trajectory-Aware Direct Preference Alignment for Video Diffusion Transformers](/202605/12/2605.07503v1-diffusion-apo-trajectory-aware-direct-preference-alignment-for-video-diffusion-transformers)  
    标签：评分：6.0/10、query:genad
-   evidence：用于运动规划和轨迹生成的归一化轨迹模型
+   evidence：视频扩散Transformer的轨迹感知对齐
+7. [Attention Sinks in Diffusion Transformers: A Causal Analysis](/202605/12/2605.09313v1-attention-sinks-in-diffusion-transformers-a-causal-analysis)  
+   标签：评分：6.0/10、query:ardm
+   evidence：扩散Transformer与自回归模型中注意力汇点的对比分析
 
 
 <div class="dpr-home-promo-card">
