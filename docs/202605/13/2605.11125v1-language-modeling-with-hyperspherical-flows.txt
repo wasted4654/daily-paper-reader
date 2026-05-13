@@ -1,0 +1,1628 @@
+Title: Language Modeling with Hyperspherical Flows
+
+URL Source: https://arxiv.org/pdf/2605.11125v1
+
+Published Time: Wed, 13 May 2026 00:08:22 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+# Language Modeling with Hyperspherical Flows 
+
+Justin Deschenaux 
+
+EPFL Lausanne, Switzerland 
+
+justin.deschenaux@epfl.ch 
+
+Caglar Gulcehre 
+
+EPFL, Lausanne, Switzerland Microsoft AI 
+
+## Abstract 
+
+Discrete Diffusion Language Models progressed rapidly as an alternative to autore-gressive (AR) models, motivated by their parallel generation abilities. However, for tractability, discrete diffusion models sample from a factorized distribution, which is less expressive than AR. Recent Flow Language Models (FLMs) apply continuous flows to language, transporting noise to data with a deterministic ODE that avoids factorized sampling. FLMs operate on one-hot vectors whose dimen-sion scales with the vocabulary size, making FLMs costly to train. Moreover, since all distinct one-hot embeddings are equidistant in ℓ2, adding Gaussian noise does not have a clear semantic interpretation (unlike images, where Gaussian noise progressively degrades structure). We introduce S-FLM, a latent FLM in the hypersphere. S-FLM generates sequences by rotating vectors in Sd−1 along a velocity field learned with cross-entropy, avoiding the overhead of materializing one-hot vectors. Previous FLMs match AR in Generative Perplexity (Gen. PPL), but samples with high likelihood are not necessarily correct in verifiable domains such as math and code. S-FLM substantially improves continuous flow language models on large-vocabulary reasoning and closes the gap to masked diffusion under standard-temperature sampling ( T = 1 ), while a gap remains under optimized low-temperature ( T = 0 .1) decoding. 1 2 4 8 16 32 64 128 256 512 1024           
+
+> NFE vs GSM8K Accuracy (T=1)
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.2%
+> Exact
+> Stoch.
+> Top-1
+> Top-10 124816 32 64 128 256 512 1024
+> NFE vs GSM8K Accuracy (T=1)
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.4%
+> -FLM
+> -FLM (k=1)
+> MDLM
+> Duo
+
+Figure 1: Accuracy on GSM8K at T = 1 . Left: Decoding strategies for S-FLM with the S-arch (Sec. 3.3). Exact velocity (15) and stochastic decoding (Algo. 3, Stoch. ) plateau near 12% . Restricting the velocity to the top-k entries of pθ 
+
+> 1|t
+
+improves the accuracy, with top-1 reaching ∼ 18% . Right: 
+
+S-FLM (with the S-arch) vs. MDLM and Duo. With the exact velocity, S-FLM beats both baselines at NFE ≤ 16 .
+
+Preprint. 
+
+> arXiv:2605.11125v1 [cs.LG] 11 May 2026
+
+Training 
+
+Sampling                            
+
+> The
+> cat
+> sat
+> x∼p1
+> . . . . . .
+> Encode
+> zℓ
+> 1=f(xℓ)
+> Sample noise
+> zℓ
+> 0∼ U (Sd−1)
+> . . . . . .
+> Interpolate
+> zℓt= SLERP( zℓ
+> 0,zℓ
+> 1, α t)
+> pθ
+> 1|t
+> xℓ
+> pθ
+> 1|t(· | zt)
+> Learn Posterior
+> LCE =−
+> L∑
+> ℓ=1
+> log pθ
+> 1|t
+> (xℓ|zt
+> )
+> Init. with noise
+> zℓ
+> 0∼ U (Sd−1)
+> zt
+> Tangent directions
+> pθ
+> 1|t
+> pθ
+> 1|t(· | zt)
+> Posterior ∗
+> zt
+> zt+∆
+> Euler step
+> ¯vℓ=∑
+> v∈V
+> pθ
+> 1|t(v|zt) log zℓtf(v)
+> pθ
+> 1|t
+> The
+> cat
+> sat
+> argmax
+> N−1iterations
+
+Figure 2: S-FLM overview. Training (top): we embed each token as a unit-norm vector on Sd−1.We obtain the noisy latent zℓt by SLERP between the clean embedding and a random vector on 
+
+Sd−1. We train the denoiser pθ 
+
+> 1|t
+
+with cross-entropy. Sampling (bottom): pθ 
+
+> 1|t
+
+defines a velocity field by marginalizing over tangent vectors pointing toward each clean embedding ˆev , v ∈ V . Starting from uniform noise on Sd−1, we integrate along the velocity field and decode the final latent via 
+
+arg max v∈V pθ
+
+> 1|1
+
+(v | z1).
+
+## 1 Introduction 
+
+Autoregressive (AR) models currently dominate language modeling. Thanks to the chain-rule factorization and the Transformer architecture [ 89 ], the AR likelihood is fast to evaluate, and AR language models scale to large sizes [ 39 , 63 , 64 , 57 , 29 , 31 ]. However, during sampling, AR models need one forward pass per token, and causal attention can hurt on reasoning tasks, where bidirectional context is required [65, 44, 98, 60]. Discrete diffusion models [ 5 , 9, 76 , 28 , 77 , 82 , 61 , 93 , 78 , 95 ] approach AR models in Generative Perplexity (Gen. PPL), with parallel generation and bidirectional context. However, at each denoising step, tokens are sampled from factorized marginals rather than jointly. The factorization makes discrete diffusion less expressive than AR models when generating tokens in parallel. Continuous flows trained with Flow Matching [ 47 , 49 , 1 ] learn a velocity field that defines an Ordinary Differential Equation (ODE), transporting noisy samples to the data distribution. Thus, inference steps update all positions jointly and avoid the factorized sampling issue of discrete diffusion. Recent work [ 75 , 45 , 68 ] revived the interest in flow-based language models [ 46 , 22 , 33 ], known as 
+
+Flow Language Models (FLMs). Recent FLMs represent tokens as one-hot vectors, add Gaussian noise, and train a denoiser with Cross-Entropy (CE). Although they match the Gen. PPL of AR and discrete diffusion models, these FLMs have two main shortcomings. (1) Firstly, representing tokens as one-hot vectors is costly. Large Language Models (LLMs) commonly use vocabularies containing 100k–200k tokens [ 64 , 70 ], thus large FLMs would need to store a > 100 k-dimensional vector for every token. After adding Gaussian noise to these one-hot vectors, the denoiser multiplies them with the embedding matrix instead of looking up a single vector. Therefore, FLMs are slower to train than discrete diffusion and AR models. (2) Secondly, in images, Gaussian diffusion smoothly degrades higher-frequency components first. For one-hot vectors, the interpretation of adding Gaussian noise is not as clear. 2Contributions We propose the Hyperspherical Flow Language Model (S-FLM), a flow over embeddings that does not need to materialize one-hot vectors. (1) Recall that the cosine distance captures the similarity between token embeddings better than the Euclidean distance [ 58 , 67 , 94 ]. Since the cosine distance is determined by the arc length on the unit hypersphere, we implement 
+
+S-FLM as a Riemannian flow on Sd−1. Our forward process transports unit-norm embeddings toward a uniform prior. (2) S-FLM operates on d-dimensional embeddings rather than |V| -dimensional one-hot vectors. Thus, assuming the same backbone, S-FLM has a similar training cost as discrete diffusion models (unlike FLMs over one-hot vectors, which are costlier). We further introduce the 
+
+S-arch, a backbone whose activations lie on Sd−1. Aligning the activations with the input improves the sample quality on GSM8K and OpenWebText (OWT) [ 30 ]. (3) On GSM8K, the accuracy of prior FLMs trained on TinyGSM [ 48 ] is less than 1% . In contrast, S-FLM reaches ∼ 12% with the exact velocity and ∼ 18% with the top-1 velocity (Sec. 3.1). At standard-temperature sampling (T = 1 ), S-FLM closes the gap to MDLM and Duo with the top-1 velocity across Number of Function Evaluations (NFE) budgets, and outperforms them with the exact velocity at NFE ≤ 16 (Figure 1). A gap remains at low-temperature ( T = 0 .1) decoding, where MDLM and Duo reach 33 –36% 
+
+(Figure 3). 
+
+## 2 Background 
+
+Notation We denote by V the finite vocabulary of size |V| . Boldface letters denote either sequences 
+
+x ∈ V L of L tokens, with xℓ the ℓ-th element, or vectors in Rd, the meaning clear from context. We write Sd−1 := {x ∈ Rd : ∥x∥ = 1 } for the unit hypersphere in Rd, and U(Sd−1) for the uniform distribution on Sd−1. Token embeddings are stored in a lookup table E ∈ R|V|× d and we write 
+
+ev ∈ Rd for the row associated with v ∈ V .
+
+Language Modeling and Autoregressive Models Language models approximate the data dis-tribution pdata : VL → [0 , 1] over sequences with a density pθ (x). AR models factorize 
+
+pθ (x) = QLℓ=1 pθ (xℓ | x<ℓ ) using the chain rule of probability. This factorization enables ex-act likelihood training, but implies that inference is slow, as we generate tokens one by one, and that we cannot condition on future tokens. 
+
+2.1 Flow Generative Modeling 
+
+Continuous Normalizing Flows (CNFs) [ 12 , 32 ] are generative models on Rd. CNFs learn a continuous-time transport from a noise distribution p0 = pnoise to the data distribution p1 = pdata .The time-dependent velocity field uθt : Rd → Rd induces the flow ϕt : Rd → Rd by integration: 
+
+ddt ϕt(z0) = uθt (ϕt(z0)) , ϕ0(z0) = z0, (1) The velocity field uθt is parameterized by a neural network with continuously differentiable, bounded derivatives, so the ODE (1) has a unique solution [ 15 ]. For t ∈ [0 , 1] , the pushforward pt = [ ϕt]♯ p0
+
+defines intermediate densities pt, and the family {pt}t∈[0 ,1] is called a probability path from p0 to p1.Integrating (1) up to t produces a sample zt = ϕt(z0) ∼ pt.
+
+Flow Matching Flow Matching (FM) [ 47 , 49 , 1 ] is a method to learn the velocity field uθt that transports p0 to p1 (Suppl. A). The true velocity ut is typically expressed as an expectation: 
+
+ut(zt) = 
+
+Z
+
+ut|1(zt | x) p1|t(x | zt) dx, (2) where ut|1 is a conditional velocity, conditioned on x ∼ pdata , and p1|t is the posterior given the noisy example zt. Since p1|t is generally intractable, FM trains uθt against ut|1 instead. Let ψt|1 denote the 
+
+conditional flow associated with ut|1. A common choice is the linear interpolation: 
+
+ψt|1(z0 | x) = zt = αt x + (1 − αt) z0, (3) where z0 ∼ p0 and x ∼ p1. αt : [0 , 1] → [0 , 1] is a monotonically increasing noise schedule with 
+
+α0 = 0 and α1 = 1 . The conditional velocity is given by the time derivative of ψt|1:
+
+ut|1(zt | x) = ˙ αt (x − z0). (4) 3A key result in FM [ 47 ] is that the minimizer of the Conditional Flow Matching (CFM) loss is the marginal velocity ut (2): 
+
+LCFM (θ) = Et∼U [0 ,1] , z 0∼p0, x ∼p1 uθt (zt) − ut|1(zt | x) 2 . (5) 
+
+2.2 Geometry of the Hypersphere 
+
+We summarize the primitives we use on Sd−1. For a thorough treatment of Riemannian geometry, see do Carmo [ 23 ]. The geodesic distance between p, q ∈ Sd−1 is the angle dS(p, q) = arccos( p⊤q) ∈
+
+[0 , π ]. The tangent space at p is TpSd−1 = {v ∈ Rd : v⊤p = 0 }. The exponential map 
+
+exp p : TpSd−1 → Sd−1 moves p along the geodesic in direction v for arc length ∥v∥:
+
+exp p(v) = cos( ∥v∥) p + sin( ∥v∥) v
+
+∥v∥ . (6) The logarithmic map log p : Sd−1 → TpSd−1 inverts the exponential map and returns the tangent vector at p pointing toward q, with magnitude dS(p, q)1:
+
+log p(q) = ω
+
+sin ω (q − cos( ω) p) , ω = dS(p, q). (7) The Spherical Linear Interpolation (SLERP) follows the geodesic from p to q [83]: 
+
+SLERP( p, q, t ) = sin((1 −t) ω)sin ω p + sin( t ω )sin ω q, ω = dS(p, q), (8) or equivalently, SLERP( p, q, t ) = exp p
+
+ t log p(q). To sample uniformly on Sd−1, draw 
+
+ϵ ∼ N (0, Id) and normalize ϵ ← ϵ/∥ϵ∥ [59]. 
+
+2.3 Flow Matching on the Hypersphere 
+
+Riemannian Flow Matching (RFM) [ 11 ] extends FM to Riemannian manifolds, which include Sd−1.As in the Euclidean case, the marginal velocity is the expectation of a conditional velocity: 
+
+ut(zt) = 
+
+Z
+
+ut|1(zt | z1) p1|t(z1 | zt) dz1, (9) where ut|1 is the conditional velocity associated with the conditional flow ψt|1, and p1|t is the posterior given zt. We define ψt|1 with SLERP (8), where z0 ∼ p0 is drawn from a noise distribution on Sd−1 and z1 ∼ p1 is a data sample: 
+
+ψt|1(z0 | z1) = zt = SLERP( z0, z1, α t) = exp z0
+
+ αt log z0 (z1) , (10) which satisfies ψ0|1(z0 | z1) = z0 and ψ1|1(z0 | z1) = z1. Differentiating ψt|1 gives the conditional velocity (Suppl. A.2): 
+
+ut|1(zt | z1) = ˙αt
+
+1 − αt
+
+log zt (z1). (11) As in the Euclidean case, the minimizer of the Riemannian Conditional Flow Matching (RCFM) loss is the marginal velocity ut (9): 
+
+LRCFM (θ) = Et∼U [0 ,1] , z0∼p0, z1∼p1 uθt (zt) − ut|1(zt | z1) 2 . (12) 
+
+## 3 Hyperspherical Flow Language Models 
+
+Figure 2 overviews the training and sampling. S-FLM is a Riemannian CNF on (Sd−1)L that transports a sequence of random vectors on Sd−1 towards the clean token representation. To bridge the continuous and discrete representations, we map tokens to the sphere via a normalized embedding lookup and decode via the arg max of pθ
+
+> 1|t
+
+. The denoiser pθ
+
+> 1|t
+
+, trained with cross-entropy, induces a closed-form marginal velocity field that we integrate at sampling time. Optionally, after each optimization step, we re-project the embeddings to Sd−1 (Suppl. B.5).       
+
+> 1When p=−q(antipodal points), log p(q)is undefined since infinitely many geodesics connect them.
+
+4Encoder and Decoder Let x = ( x1, . . . , x L) ∈ V L be an input sequence of L tokens. Each token 
+
+v ∈ V is associated with a unit-norm embedding ˆev ∈ Sd−1, hence we represent x as a sequence in 
+
+(Sd−1)L. The decoder g : ( Sd−1)L × [0 , 1] → V L is defined as the arg max of the learned posterior: 
+
+ev = E[v], ˆev = ev
+
+∥ev ∥2
+
+, gℓ(z, t ) = arg max  
+
+> v∈V
+
+pθ
+
+> 1|t
+
+(xℓ = v | z), (13) 
+
+Training with Cross-Entropy Unlike standard flow matching on fixed data (e.g., pixels), we train the data representation via an embedding table E jointly with the flow by backpropagating through the SLERP. Regressing the velocity field against learnable embeddings admits a trivial minimum where all token representations collapse to a point. Instead, we approximate the posterior p1|t(· | zt)
+
+with a denoiser pθ
+
+> 1|t
+
+(· | zt), trained with cross-entropy (CE). The denoiser cannot recover the clean token if embeddings collapse, thus the CE pushes them apart, as noted in CDCD [ 22 ]. At every position ℓ, we take zℓ 
+
+> 1
+
+= ˆ exℓ (13) as the clean endpoint, draw zℓ 
+
+> 0
+
+∼ U (Sd−1) independently, and form the noisy latent zℓt = SLERP( zℓ
+
+> 0
+
+, zℓ
+
+> 1
+
+, α t) (10). We minimize the cross-entropy 
+
+LCE (θ) = Ex∼p1, t ∼U [0 ,1] , z0∼p0
+
+"
+
+−
+
+> L
+
+X
+
+> ℓ=1
+
+log pθ
+
+> 1|t
+
+(xℓ | zt)
+
+#
+
+. (14) 
+
+3.1 Sampling Exact velocity Because our data distribution is supported on {ˆev : v ∈ V} L ⊂ (Sd−1)L, the marginal velocity (9) reduces to a finite sum at each position: 
+
+uθt (zℓt ) = ˙αt
+
+1 − αt
+
+X
+
+> v∈V
+
+pθ
+
+> 1|t
+
+(xℓ = v | zt) log zℓt (ˆ ev ) . (15) We call this the exact velocity , in contrast to the stochastic and top-k approximations below. 
+
+Stochastic decoding We can replace the sum in (15) with a single Monte Carlo sample of the posterior. At each step, we draw ˆxℓ ∼ pθ
+
+> 1|t
+
+(· | zt) and use ¯vℓ = log zℓt (ˆ eˆxℓ ) in place of (15). The deterministic and stochastic samplers differ only in how they construct the velocity from pθ
+
+> 1|t
+
+. CANDI [69] uses an analogous one-sample Monte Carlo approximation. See Algo. 3 for the pseudocode. 
+
+Top-k velocity Alternatively, we can restrict the sum in (15) to the top-k entries of pθ
+
+> 1|t
+
+(· | zt) at each sampling step. We take the top-k logits and apply log-softmax to renormalize over the truncated set. We call this top-k velocity decoding , with k = 1 giving top-1 decoding, the analogue of greedy decoding for autoregressive models. 
+
+3.2 Noise Schedule Truncation After training with standard noise schedules (Table 5), we observe that pθ 
+
+> 1|t
+
+becomes close to one-hot in few sampling steps. This is likely due to the curse of dimensionality [6]. In high dimension, Sd−1 has enough room to spread |V| embeddings apart [ 91 ]. Training with CE separates the embeddings because the denoiser cannot differentiate tokens whose embeddings coincide [ 94 ]. When the embeddings are well separated, the true posterior p1|t at low noise levels ( αt large) is close to one-hot. Thus, during sampling, after zℓt enters the Voronoi cell of a clean embedding 
+
+ˆek, the posterior collapses. To avoid training on noise levels where p1|t is close to one-hot, we truncate the noise schedule to [0 , a ] ⊆ [0 , 1] , i.e. we train only at the higher noise levels. We propose a closed-form expression for the truncation bound a as a function of the vocabulary size |V| and embedding dimension d by analyzing a tractable approximation of the sampling dynamics on Sd−1.Truncation is critical for strong performance, as seen in Sudoku (Table 1), and after a grid search on GSM8K, our bound achieves similar accuracy as the best truncation value (Suppl. C.6). 5Tractable model of the sampling dynamics. Let {ˆev }v∈V be the normalized token represen-tations, sampled i.i.d. uniformly on Sd−1. Let z0 ∼ U (Sd−1) be the initial noise sample. Fix a target token k and let zα = SLERP( z0, ˆek, α ) for α ∈ [0 , 1] . Define α⋆(δ) as the smallest α at which ˆek is the nearest neighbor of zα with probability at least 1 − δ. Then, in high dimension, 
+
+α⋆(δ) ≈ 2
+
+π arcsin 
+
+s
+
+2 log  2( |V| − 1) /δ 
+
+d
+
+ . (16) 
+
+Derivation sketch. Under our model, the similarity to non-target tokens ⟨zα, ˆev ⟩ (with v̸ = k) is sub-Gaussian, as the product of a fixed vector and a uniform random vector on Sd−1 [91 ]. With a simple union bound, we conclude that max v̸ =k⟨zα, ˆev ⟩ ≤ p2 log(2( |V| − 1) /δ )/d with probability at least 1 − δ. Along the sampling trajectory, ⟨zα, ˆek⟩ = cos((1 − α)ω) with ω = dS(z0, ˆek) ≈ π/ 2
+
+in high dimension, thus ⟨zα, ˆek⟩ ≈ sin( πα/ 2) . We conclude by solving for the critical point such that zα is closest to ˆev with high probability. The complete argument is in Suppl. C.2, and the numerical values in Table 4. 
+
+Adaptive noise schedule On top of truncating to [0 , a ], we adapt the noise schedule during training to allocate more samples to noise levels where the loss L changes most, inspired by InfoNoise [ 73 ]. Every 50 steps, we fit the loss profile ˆL(t) from recent pairs (t, L) and define the noise schedule αt
+
+using the inverse CDF of |d ˆL/dt | [22 ]. We use |d ˆL/dt | as a proxy for the critical noise levels where the model learns most, thus sample these more often. We stabilize the updates with an exponential moving average (EMA) of the successive schedules. Find the pseudocode and comparison with InfoNoise in Suppl. B.2. In practice, the adaptive schedule does not slow training (Table 3). 
+
+3.3 Hyperspherical Architecture 
+
+The latents zℓt live on Sd−1, and the sampling step (15) rotates vectors. We propose a Transformer variant inspired by nGPT [ 50 ] that keeps the intermediate activations on Sd−1 and parameterizes the attention and MLP layers as rotations. Each block replaces the additive residual with a normalized interpolation hout ← Norm  hin + γ ⊙ (Norm( hlayer ) − hin ), where hin is the input, hlayer is the layer (MLP or attention) output, and hout is the updated state. The normalized interpolation approximates SLERP for small γ. The per-dimension gate γ is computed from the noise level, similar to adaptive layernorm (adaLN) in DiT [ 66 ]. We do not use adaLN, so our architecture ( S-arch ) has slightly fewer parameters than the standard DiT used in discrete diffusion papers [ 76 , 77 , 78 ]. The 
+
+S-arch achieves better results over the standard DiT (Sec. 4). 
+
+Takeaway. We propose the S-arch to implement the denoiser pθ 
+
+> 1|t
+
+in place of the standard DiT. We train with cross-entropy (14) with a truncated, adaptive noise schedule. We marginalize the conditional velocities under pθ 
+
+> 1|t
+
+to obtain uθt (15) and integrate from z0 ∼ p0 to z1, and decode with arg max . The velocity admits exact, stochastic, and top-k variants. See Algo. 1, Algo. 2, and Algo. 3 for pseudocode. 
+
+## 4 Experiments 
+
+We apply S-FLM to Sudoku solving (Sec. 4.1), math reasoning via code on TinyGSM [ 48 ] (Sec. 4.2), and unconditional language modeling on OWT [ 30 ] (Sec. 4.3). The most common measure of sample quality in recent work on diffusion language models is Generative Perplexity (Gen. PPL) and is computed using a large AR model. However, samples with good likelihood are not necessarily correct at the sequence level [ 90 , 26 ], and repetitive text has low perplexity [ 22 , 18 ]. Therefore, we primarily focus on datasets with ground-truth solutions (Sudoku, GSM8K). 
+
+4.1 Reasoning on Sudoku Experimental Setup We compare S-FLM with AR and recent diffusion models on Sudoku [ 7, 42 ]. We use 48k training and 2k validation puzzles (no overlap), each with a unique solution [ 3 ]. We 61 2 4 8 16 32 64 128 256 512 1024               
+
+> NFE vs GSM8K Accuracy
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.2%
+> Exact (T=0.1)
+> Stoch. (T=0.1)
+> Top-1 (T=1)
+> Top-10 (T=1) 124816 32 64 128 256 512 1024
+> NFE vs GSM8K Accuracy (T=0.1)
+> 0%
+> 10%
+> 20%
+> 30%
+> 40%
+> 36.0%
+> -FLM ( -arch.)
+> -FLM
+> MDLM
+> Duo
+
+Figure 3: Accuracy on GSM8K with T = 0 .1. Left: Decoding strategies for S-FLM ( S-arch). At low temperature, sampling with the exact or stochastic velocities approaches the accuracy with top-1
+
+decoding. Right: At T = 0 .1 the standard DiT and the S-arch perform similarly, and their accuracy is roughly half of that of Duo. At T = 1 the S-arch outperforms the standard DiT (Figure 6). define three difficulty levels, based on the number of visible digits (easy: 40/81, medium: 35/81, hard: 30/81). We use the modified Diffusion Transformer (DiT) [ 66 ] architecture from SEDD [ 52 ] with 8 layers and embedding dimension 512. We compare against AR, MDLM [ 76 ], Duo [ 77 ], CANDI [ 69 ], and FLM [ 45 ], using 180 sampling steps for the diffusion variants. We describe the input format and training hyperparameters in Suppl. C.3. Table 1: Exact match accuracy (%) on Sudoku when sampling with 180 steps. The overall best is underlined . The best score with continuous dif-fusion is bolded . CANDI is a hybrid continuous-masked model, which can also be trained as a pure Gaussian diffusion model. S-FLM is best, but sim-ilar to FLM. 
+
+Model Easy Med. Hard 
+
+Autoregressive 
+
+Sample 13.9 5.1 0.6 Greedy 14.6 5.1 1.0 
+
+Discrete Diffusion 
+
+MDLM [76] 92.0 77.1 30.2 Duo [77] 96.3 84.7 58.4 
+
+Continuous Diffusion 
+
+CANDI [69] 79.3 45.9 16.7 CANDI pure Gaussian 63.9 41.9 12.5 FLM [45] 94.2 82.7 44.5 
+
+S-FLM 81.5 50.6 14.0 
+
+S-FLM + α⋆(0 .1) 94.0 77.6 43.2 
+
+S-FLM + α⋆(0 .1) + adaptive 94.8 85.2 45.0 
+
+Results Table 1 shows the results. The au-toregressive model performs poorly on all dif-ficulties, since the task requires global context. Duo [ 77 ] obtains the highest accuracy. Among the continuous methods, FLM [ 45 ] and S-FLM outperform AR and MDLM at every difficulty. 
+
+S-FLM with the simple linear schedule performs poorly on hard Sudokus, but with truncation and the adaptive schedule, S-FLM performs simi-larly to the prior best continuous language mod-els. See Suppl. C.4 for the ablation over sched-ules and embedding re-projection. We do not re-project embeddings to Sd−1 after each opti-mizer step in Table 1. 
+
+4.2 Reasoning on GSM8K Experimental Setup TinyGSM [48 ] is adataset of ∼ 11.8M synthetic math word prob-lems similar to GSM8K [ 14 ]. Each solution is a GPT-3.5-generated Python program that pro-duces the numerical answer. We compare our models in the GSM8K test, after executing one generated solution per problem. We plot error bars corresponding to bootstrapped confidence intervals in the percentile 95% on the test set (Suppl. C.5). We use the SmolLM-135M tokenizer [ 2]because it compresses the code better than the GPT-2 tokenizer [ 71 ] (Figure 5). We pad the input sequences to length 512 and compute the loss on padding tokens. As for Sudoku, we always keep the problem statement clean, so that we can sample conditionally. All backbones use hidden dimension 768, 12 layers, 12 attention heads, and dropout 0.1. For S-FLM, we train both the standard DiT and the S-arch (Sec. 3.3). We train for 250k steps with batch size 512, using Adam ( lr = 3 × 10 −4,
+
+β1 = 0 .9, β2 = 0 .999 , no weight decay) and an EMA rate of 0.9999 .
+
+Results We report the accuracy at T = 1 with 1024 sampling steps for diffusion variants in Table 2. The accuracy of CANDI [ 69 ] and FLM [ 45 ] is below 1% despite using their respective 75.0 5.2 5.4 5.6 5.8      
+
+> Entropy vs Gen. PPL — NFE = 32
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 4.8 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 1024
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.)
+
+Figure 4: Gen. PPL ( ↓) / Entropy ( ↑) Frontier on OpenWebText at NFE = 32 (left) and NFE 
+
+= 1024 (right). Each curve is obtained by sweeping over the temperature T . S-FLM with the S-arch performs similarly to prior FLMs. Duo is best overall. At NFE = 32, the frontier of FLM is highly unstable. optimized schedules. Temperature annealing did not improve the accuracy above 0.5% . In contrast, 
+
+S-FLM solves 18% of problems with top-1 decoding. In Table 2, we ablate on the impact of each new element of S-FLM. With the vanilla linear schedule, S-FLM has an accuracy of 1.2% .Table 2: Accuracy (%) on GSM8K after 250k training steps. Diffusion variants use 1024 steps, no temper-ature scaling, AR uses 512 (context length). The overall best is underlined ,the best continuous diffusion result is bolded . S-FLM outperforms prior continuous diffusion language mod-els, and closes the gap to MDLM at 
+
+T = 1 when the velocity (15) is com-puted with top-k = 1 . A gap remains at low-temperature ( T = 0 .1) decod-ing, where MDLM and Duo reach 33 –
+
+36% (Figure 3). Model Acc. (%) 
+
+Autoregressive 
+
+Sample 53.9 Greedy 63.3 
+
+Discrete Diffusion 
+
+MDLM [76] 18.0 DUO [77] 17.2 
+
+Continuous Diffusion 
+
+CANDI [69] 0.2 FLM [45] 0.3 
+
+S-FLM 1.2 + α⋆(0 .1) 7.7 + no renorm. 8.1 + adaptive 11.1 + S-arch. (Sec. 3.3) 12.4 + top-k = 1 18.0 
+
+The truncation of the noise schedule according to (16) im-proves to 7.7%. Not re-normalizing the embeddings after each optimization step (Suppl. B.5) increases it to 8.1%. Note that the denoiser always processes unit-norm vectors in the forward pass, but the embedding table itself can either be re-projected to Sd−1 after every optimization step or left unconstrained. Skipping the re-projection is equivalent to annealing learning rate for embedding vectors (Suppl. B.5), which might stabilize training since the velocity (15) is a function of the embeddings. The adaptive noise sched-ule improves the accuracy to 11.1% and S-arch to 12.4%. With top-k = 1 velocity decoding (15), S-FLM closes the gap to MDLM and Duo at T = 1 . A gap remains at low-temperature ( T = 0 .1) decoding, where MDLM and Duo reach 33 –36% (Figure 3). 
+
+Ablations Figure 1 shows that at T = 1 , with NFE ≤ 16 ,
+
+S-FLM outperforms MDLM and Duo. All methods benefit from greedy decoding (Sec. 3.1); therefore, we compare 
+
+S-FLM with MDLM, Duo at low temperature ( T = 0 .1). At 
+
+T = 0 .1, MDLM reaches 33% and Duo 36% , while S-FLM is around 18% (Figure 3). Thus, while S-FLM outperforms previous continuous approaches, there is a large performance gap at low temperature compared to discrete diffusion and AR. Figure 8 shows that at T = 1 , the only k such that top-k
+
+decoding significantly improves the accuracy is k = 1 . In addition, the top-1 decoding beats the low-temperature and the stochastic sampler (Figure 9). See Suppl. C.7 for more details. 
+
+4.3 Language Modeling on OpenWebText Experimental Setup Following MDLM [ 76 ], we train 
+
+S-FLM on OpenWebText using the GPT-2 tokenizer and a context length of 1024. The model is a 12-layer standard DiT backbone with hidden dimension 768 and 12 attention heads. We train for 1M steps with the same optimizer configuration as in TinyGSM (Sec. 4.2). For FLM [45], we use the original checkpoint released by the authors. 8Gen. PPL / Entropy Frontier Repetitive generations can improve the Gen. PPL without improving sample quality [ 90 ], and different models might have different optimal sampling temperatures. We therefore evaluate the Gen. PPL and the average unigram entropy across T ∈ { 0.70 , 0.75 , . . . , 1.20 }
+
+and plot the frontier for each model and NFE (details in Suppl. C.8) [ 69 ]. In NFE = 1024 (right), 
+
+S-FLM with the S-arch matches prior FLMs in Gen. PPL, while the standard DiT is slightly weaker. At low NFE, the frontier becomes unstable for prior FLMs, but remains stable for S-FLM, which has a similar Gen. PPL to MDLM. Duo generally achieves the best Gen. PPL / Entropy trade-off. See Suppl. C.9 for the complete sweep of NFEs. 
+
+## 5 Related Work 
+
+S-FLM differs from prior work in three ways: it operates in continuous rather than discrete space, defines its flow on the hypersphere Sd−1, and learns token embeddings end-to-end. 
+
+Continuous diffusion for language modeling Prior work applies Gaussian diffusion to embeddings and trains end-to-end with cross-entropy [ 46 , 33 ], or regresses onto pre-trained embeddings [ 86 ,54 , 81 ], which caps sample quality at the pre-trained embeddings and requires two training stages. Riemannian flow models extend score-based generative modeling to manifolds [ 56 , 8 , 53 ], but generally assume data already lie on the manifold. S-FLM instead learns the embeddings and the velocity on Sd−1 jointly and injects noise via rotations. 
+
+Flow language models (FLMs) A recent line of work treats language modeling as flow matching on continuous representations. Several recent works [ 77 , 45 , 75 , 68 ] add Gaussian noise to one-hot or simplex representations and decode via arg max . These approaches materialize dense L × |V| arrays at training and sampling time. Fisher-Flow [ 17 ] maps one-hot vectors to the positive orthant of Sd−1
+
+via the Fisher–Rao metric, but such approach does not scale well to language modeling with large vocabularies [ 37 ]. S-FLM operates on d-dimensional token embeddings on Sd−1, learned end-to-end, which avoids the |V| -dimensional bottleneck and trains faster (Table 3). 
+
+Representation learning on the hypersphere Hyperspherical representations are common in contrastive learning, where uniform spread on Sd−1 correlates with strong downstream performance [ 94 ], and the cosine distance outperform Euclidean one for comparing word embeddings [ 58 , 67 ]and for retrieval [ 74 , 40 ]. A latent prior on Sd−1 also stabilizes Variational Autoencoders [ 16 , 96 ], and normalizing activations and weights to Sd−1 improves the stability of AR models [ 50 ]. Suppl. D gives a fuller discussion. 
+
+## 6 Conclusion 
+
+We introduced S-FLM, a Riemannian flow on Sd−1 that is competitive at language modeling with large vocabularies and learns the velocity and embeddings jointly. Beyond the formalism, our key contributions include the S-arch backbone with normalized activations and the truncated and adaptive noise-schedule analysis. On Sudoku, S-FLM performs similarly to prior FLMs. On GSM8K, where other FLMs fail, S-FLM with top-1 decoding closes the gap to MDLM and Duo at T = 1 , though a gap remains at low-temperature ( T = 0 .1) sampling. On OpenWebText, S-FLM follows the Gen. PPL / Entropy frontier of prior FLMs at high NFE and beats them at low NFE where prior continuous models have an unstable frontier. S-FLM avoids materializing |V| -dimensional one-hot vectors, so it trains faster than prior FLMs and may be easier to scale (though this is speculation and left for future work). Our analysis of the sampling-dynamics provides a principled heuristic for truncating the noise schedule that works well in practice. At the same time, there remains a clear gap between diffusion models and AR models in GSM8K. 97 Limitations 
+
+Continuous diffusion language models, including S-FLM, underperform their discrete counterparts. In TinyGSM, S-FLM reduces the gap compared to prior FLMs but does not eliminate it, and a substantial gap to autoregressive decoding remains (Sec. 4.2). The truncation threshold α⋆(δ) is derived a simplified model (Suppl. C.2) which assumes that the embeddings are randomly distributed on the sphere. The learned embeddings are likely more structured. Therefore, α⋆(δ) should only be treated as a principled heuristic for the truncation hyperparameter. A more sophisticated model of the sampling dynamics might improve the bound. The S-arch follows the design of nGPT for simplicity and trains slower than the standard DiT. Improving its throughput is an important future direction. The training dynamics of S-FLM should also be studied further, and the results of contrastive representation learning may be relevant. We train a single model per configuration. Training once on TinyGSM costs more than $300, thus we could not afford to train several copies with the same hyperparameters. 
+
+## 8 Impact Statement 
+
+This work advances research on continuous diffusion language models. Like any language modeling research, it carries the standard risks of misuse for misinformation or harmful content. Our models are trained at small scale on Sudoku, TinyGSM (synthetc math word problems), and OpenWebText, and remain far below the capabilities of state-of-the-art autoregressive language models. Anyone seeking to cause harm has stronger publicly available models at their disposal. The contribution is methodological. 
+
+## Acknowledgments and Disclosure of Funding 
+
+Acknowledgements 
+
+## References 
+
+[1] Michael S. Albergo and Eric Vanden-Eijnden. Building normalizing flows with stochastic interpolants, 2023. [2] Loubna Ben Allal, Anton Lozhkov, Elie Bakouch, Gabriel Martín Blázquez, Guilherme Penedo, Lewis Tunstall, Andrés Marafioti, Hynek Kydlíˇ cek, Agustín Piqueres Lajarín, Vaibhav Srivastav, Joshua Lochner, Caleb Fahlgren, Xuan-Son Nguyen, Clémentine Fourrier, Ben Burtenshaw, Hugo Larcher, Haojun Zhao, Cyril Zakka, Mathieu Morlon, Colin Raffel, Leandro von Werra, and Thomas Wolf. Smollm2: When smol goes big – data-centric training of a small language model, 2025. [3] Ali Alp. Sudoku puzzle generator. https://github.com/alicommit-malp/sudoku , 2024. [4] Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregressive and diffusion language models, 2025. [5] Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Structured denoising diffusion models in discrete state-spaces, 2023. [6] Richard Bellman. Adaptive Control Processes: A Guided Tour . Princeton University Press, Princeton, NJ, 1961. [7] Heli Ben-Hamu, Itai Gat, Daniel Severo, Niklas Nolte, and Brian Karrer. Accelerated sampling from masked diffusion models via entropy bounded unmasking, 2025. [8] Valentin De Bortoli, Emile Mathieu, Michael Hutchinson, James Thornton, Yee Whye Teh, and Arnaud Doucet. Riemannian score-based generative modelling, 2022. [9] Andrew Campbell, Joe Benton, Valentin De Bortoli, Tom Rainforth, George Deligiannidis, and Arnaud Doucet. A continuous time framework for discrete denoising models, 2022. 10 [10] Andrew Campbell, Jason Yim, Regina Barzilay, Tom Rainforth, and Tommi Jaakkola. Gener-ative flows on discrete state-spaces: Enabling multimodal flows with applications to protein co-design, 2024. [11] Ricky T. Q. Chen and Yaron Lipman. Flow matching on general geometries, 2024. [12] Tian Qi Chen, Yulia Rubanova, Jesse Bettencourt, and David Kristjanson Duvenaud. Neural ordinary differential equations. NeurIPS 2018 , abs/1806.07366, 2018. [13] Ting Chen, Ruixiang Zhang, and Geoffrey Hinton. Analog bits: Generating discrete data using diffusion models with self-conditioning, 2022. [14] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training verifiers to solve math word problems, 2021. [15] Earl A. Coddington and Norman Levinson. Theory of Ordinary Differential Equations . McGraw-Hill, New York, 1955. [16] Tim R. Davidson, Luca Falorsi, Nicola De Cao, Thomas Kipf, and Jakub M. Tomczak. Hyper-spherical variational auto-encoders, 2018. [17] Oscar Davis, Samuel Kessler, Mircea Petrache, ˙ Ismail ˙ Ilkan Ceylan, Michael Bronstein, and Avishek Joey Bose. Fisher flow matching for generative modeling over discrete data, 2024. [18] Justin Deschenaux and Caglar Gulcehre. Promises, outlooks and challenges of diffusion language modeling, 2024. [19] Justin Deschenaux, Caglar Gulcehre, and Subham Sekhar Sahoo. The diffusion duality, chapter ii: ψ-samplers and efficient curriculum, 2026. [20] Justin Deschenaux, Lan Tran, and Caglar Gulcehre. Partition generative modeling: Masked modeling without masks, 2025. [21] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat gans on image synthesis. 
+
+Advances in neural information processing systems , 34:8780–8794, 2021. [22] Sander Dieleman, Laurent Sartran, Arman Roshannai, Nikolay Savinov, Yaroslav Ganin, Pierre H. Richemond, Arnaud Doucet, Robin Strudel, Chris Dyer, Conor Durkan, Curtis Hawthorne, Rémi Leblond, Will Grathwohl, and Jonas Adler. Continuous diffusion for categor-ical data, 2022. [23] Manfredo Perdigão do Carmo. Riemannian Geometry . Mathematics: Theory & Applications. Birkhäuser Boston, 1992. [24] Bradley Efron. Bootstrap methods: Another look at the jackknife. The Annals of Statistics ,7(1):1–26, 1979. [25] Floor Eijkelboom, Grigory Bartosh, Christian Andersson Naesseth, Max Welling, and Jan-Willem van de Meent. Variational flow matching for graph generation, 2025. [26] Guhao Feng, Yihan Geng, Jian Guan, Wei Wu, Liwei Wang, and Di He. Theoretical benefit and limitation of diffusion language model, 2025. [27] F. N. Fritsch and J. Butland. A method for constructing local monotone piecewise cubic interpolants. SIAM Journal on Scientific and Statistical Computing , 5(2):300–304, 1984. [28] Itai Gat, Tal Remez, Neta Shaul, Felix Kreuk, Ricky T. Q. Chen, Gabriel Synnaeve, Yossi Adi, and Yaron Lipman. Discrete flow matching, 2024. [29] Gemini Team, Rohan Anil, Sebastian Borgeaud, et al. Gemini: A family of highly capable multimodal models, 2025. [30] Aaron Gokaslan and Vanya Cohen. Openwebtext corpus. http://Skylion007.github.io/ OpenWebTextCorpus , 2019. 11 [31] Google. Gemma 3 technical report, 2025. [32] Will Grathwohl, Ricky T. Q. Chen, Jesse Bettencourt, Ilya Sutskever, and David Duvenaud. Ffjord: Free-form continuous dynamics for scalable reversible generative models, 2018. [33] Ishaan Gulrajani and Tatsunori B. Hashimoto. Likelihood-based diffusion language models, 2023. [34] Xiaochuang Han, Sachin Kumar, and Yulia Tsvetkov. Ssd-lm: Semi-autoregressive simplex-based diffusion language model for text generation and modular control, 2023. [35] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models, 2020. [36] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance, 2022. [37] Jaehyeong Jo and Sung Ju Hwang. Continuous diffusion model for language modeling, 2025. [38] Mingyu Jo, Jaesik Yoon, Justin Deschenaux, Caglar Gulcehre, and Sungjin Ahn. Loopholing discrete diffusion: Deterministic bypass of the sampling wall, 2025. [39] Jared Kaplan, Sam McCandlish, Tom Henighan, Tom B. Brown, Benjamin Chess, Rewon Child, Scott Gray, Alec Radford, Jeffrey Wu, and Dario Amodei. Scaling laws for neural language models, 2020. [40] Vladimir Karpukhin, Barlas O˘ guz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen tau Yih. Dense passage retrieval for open-domain question answering, 2020. [41] Tero Karras, Miika Aittala, Jaakko Lehtinen, Janne Hellsten, Timo Aila, and Samuli Laine. Analyzing and improving the training dynamics of diffusion models, 2024. [42] Jaeyeon Kim, Seunggeun Kim, Taekyun Lee, David Z. Pan, Hyeji Kim, Sham Kakade, and Sitan Chen. Fine-tuning masked diffusion for provable self-correction, 2025. [43] Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization, 2017. [44] Ouail Kitouni, Niklas Nolte, Diane Bouchacourt, Adina Williams, Mike Rabbat, and Mark Ibrahim. The factorization curse: Which tokens you predict underlie the reversal curse and more, 2024. [45] Chanhyuk Lee, Jaehoon Yoo, Manan Agarwal, Sheel Shah, Jerry Huang, Aditi Raghunathan, Seunghoon Hong, Nicholas M. Boffi, and Jinwoo Kim. One-step language modeling via continuous denoising, 2026. [46] Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy Liang, and Tatsunori B. Hashimoto. Diffusion-lm improves controllable text generation, 2022. [47] Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Maximilian Nickel, and Matt Le. Flow matching for generative modeling, 2023. [48] Bingbin Liu, Sebastien Bubeck, Ronen Eldan, Janardhan Kulkarni, Yuanzhi Li, Anh Nguyen, Rachel Ward, and Yi Zhang. TinyGSM: Achieving >80% on GSM8k with small language models, 2023. [49] Xingchao Liu, Chengyue Gong, and Qiang Liu. Flow straight and fast: Learning to generate and transfer data with rectified flow, 2022. [50] Ilya Loshchilov, Cheng-Ping Hsieh, Simeng Sun, and Boris Ginsburg. ngpt: Normalized transformer with representation learning on the hypersphere, 2024. [51] Aaron Lou, Derek Lim, Isay Katsman, Leo Huang, Qingxuan Jiang, Ser-Nam Lim, and Christopher De Sa. Neural manifold ordinary differential equations, 2020. [52] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution, 2024. 12 [53] Aaron Lou, Minkai Xu, and Stefano Ermon. Scaling riemannian diffusion models, 2023. [54] Justin Lovelace, Varsha Kishore, Chao Wan, Eliot Shekhtman, and Kilian Q. Weinberger. Latent diffusion for language generation, 2022. [55] Rabeeh Karimi Mahabadi, Hamish Ivison, Jaesung Tae, James Henderson, Iz Beltagy, Matthew E. Peters, and Arman Cohan. TESS: Text-to-text self-conditioned simplex diffu-sion, 2023. [56] Emile Mathieu and Maximilian Nickel. Riemannian continuous normalizing flows, 2020. [57] Meta. The llama 3 herd of models, 2024. [58] Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. Efficient estimation of word representations in vector space, 2013. [59] Mervin E. Muller. A note on a method for generating points uniformly on n-dimensional spheres. 
+
+Communications of the ACM , 2(4):19–20, 1959. [60] Vaishnavh Nagarajan, Chen Henry Wu, Charles Ding, and Aditi Raghunathan. Roll the dice & look before you leap: Going beyond the creative limits of next-token prediction. arXiv preprint arXiv:2504.15266 , 2025. [61] Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian Liu, Guangtao Zeng, Min Lin, and Chongxuan Li. Scaling up masked diffusion models on text, 2025. [62] Hunter Nisonoff, Junhao Xiong, Stephan Allenspach, and Jennifer Listgarten. Unlocking guidance for discrete state-space diffusion and flow models. arXiv preprint arXiv:2406.01572 ,2024. [63] OpenAI. Gpt-4 technical report, 2024. [64] OpenAI. Gpt-oss: open-weight language models by openai. https://github.com/openai/ gpt-oss , 2024. GitHub repository. [65] Vassilis Papadopoulos, Jérémie Wenger, and Clément Hongler. Arrows of time for large language models, 2024. [66] William Peebles and Saining Xie. Scalable diffusion models with transformers, 2023. [67] Jeffrey Pennington, Richard Socher, and Christopher Manning. GloVe: Global vectors for word representation. In Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP) , pages 1532–1543. Association for Computational Linguistics, 2014. [68] Peter Potaptchik, Jason Yim, Adhi Saravanan, Peter Holderrieth, Eric Vanden-Eijnden, and Michael S. Albergo. Discrete flow maps, 2026. [69] Patrick Pynadath, Jiaxin Shi, and Ruqi Zhang. Candi: Hybrid discrete-continuous diffusion models, 2025. [70] Qwen Team. Qwen2.5 technical report, 2025. [71] Alec Radford, Jeff Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language models are unsupervised multitask learners, 2019. [72] Sebastian Raschka. Creating confidence intervals for machine learning classifiers. https:// sebastianraschka.com/blog/2022/confidence-intervals-for-ml.html , 2022. Ac-cessed 2026-05-05. [73] Gabriel Raya, Bac Nguyen, Georgios Batzolis, Yuhta Takida, Dejan Stancevic, Naoki Murata, Chieh-Hsin Lai, Yuki Mitsufuji, and Luca Ambrogioni. Information-guided noise allocation for efficient diffusion training, 2026. [74] Nils Reimers and Iryna Gurevych. Sentence-bert: Sentence embeddings using siamese bert-networks, 2019. 13 [75] Daan Roos, Oscar Davis, Floor Eijkelboom, Michael Bronstein, Max Welling, ˙ Ismail ˙ Ilkan Ceylan, Luca Ambrogioni, and Jan-Willem van de Meent. Categorical flow maps, 2026. [76] Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models, 2024. [77] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin Chiu, and Volodymyr Kuleshov. The diffusion duality, 2025. [78] Subham Sekhar Sahoo, Jean-Marie Lemercier, Zhihan Yang, Justin Deschenaux, Jingyu Liu, John Thickstun, and Ante Jukic. Scaling beyond masked diffusion language models, 2026. [79] Subham Sekhar Sahoo, Zhihan Yang, Yash Akhauri, Johnna Liu, Deepansha Singh, Zhoujun Cheng, Zhengzhong Liu, Eric Xing, John Thickstun, and Arash Vahdat. Esoteric language models, 2025. [80] Yair Schiff, Subham Sekhar Sahoo, Hao Phung, Guanghan Wang, Sam Boshar, Hugo Dalla-torre, Bernardo P. de Almeida, Alexander Rush, Thomas Pierrot, and Volodymyr Kuleshov. Simple guidance mechanisms for discrete diffusion models, 2025. [81] Junzhe Shen, Jieru Zhao, Ziwei He, and Zhouhan Lin. Codar: Continuous diffusion language models are more powerful than you think, 2026. [82] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis K. Titsias. Simplified and generalized masked diffusion for discrete data, 2025. [83] Ken Shoemake. Animating rotation with quaternion curves. In Proceedings of the 12th Annual Conference on Computer Graphics and Interactive Techniques , SIGGRAPH ’85, New York, NY, USA, 1985. Association for Computing Machinery. [84] Jascha Sohl-Dickstein, Eric A. Weiss, Niru Maheswaranathan, and Surya Ganguli. Deep unsupervised learning using nonequilibrium thermodynamics, 2015. [85] Hannes Stark, Bowen Jing, Chenyu Wang, Gabriele Corso, Bonnie Berger, Regina Barzilay, and Tommi Jaakkola. Dirichlet flow matching with applications to dna sequence design, 2024. [86] Robin Strudel, Corentin Tallec, Florent Altché, Yilun Du, Yaroslav Ganin, Arthur Mensch, Will Grathwohl, Nikolay Savinov, Sander Dieleman, Laurent Sifre, and Rémi Leblond. Self-conditioned embedding diffusion for text generation, 2022. [87] Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding, 2023. [88] Alexander Tong, Kilian Fatras, Nikolay Malkin, Guillaume Huguet, Yanlei Zhang, Jarrid Rector-Brooks, Guy Wolf, and Yoshua Bengio. Improving and generalizing flow-based generative models with minibatch optimal transport, 2024. [89] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention is all you need, 2023. [90] Petar Veliˇ ckovi´ c, Federico Barbero, Christos Perivolaropoulos, Simon Osindero, and Razvan Pascanu. Perplexity cannot always tell right from wrong, 2026. [91] Roman Vershynin. High-Dimensional Probability: An Introduction with Applications in Data Science . Number 47 in Cambridge Series in Statistical and Probabilistic Mathematics. Cambridge University Press, 2018. [92] Dimitri von Rütte, Janis Fluri, Yuhui Ding, Antonio Orvieto, Bernhard Schölkopf, and Thomas Hofmann. Generalized interpolating discrete diffusion, 2025. [93] Dimitri von Rütte, Janis Fluri, Omead Pooladzandi, Bernhard Schölkopf, Thomas Hofmann, and Antonio Orvieto. Scaling behavior of discrete diffusion language models, 2026. 14 [94] Tongzhou Wang and Phillip Isola. Understanding contrastive representation learning through alignment and uniformity on the hypersphere, 2020. [95] Chengyue Wu, Hao Zhang, Shuchen Xue, Zhijian Liu, Shizhe Diao, Ligeng Zhu, Ping Luo, Song Han, and Enze Xie. Fast-dllm: Training-free acceleration of diffusion llm by enabling kv cache and parallel decoding, 2025. [96] Jiacheng Xu and Greg Durrett. Spherical latent spaces for stable variational autoencoders, 2018. [97] Olga Zaghen, Floor Eijkelboom, Alison Pouplin, Cong Liu, Max Welling, Jan-Willem van de Meent, and Erik J. Bekkers. Riemannian variational flow matching for material and protein design, 2026. [98] Daniel Zhang-Li, Nianyi Lin, Jifan Yu, Zheyuan Zhang, Zijun Yao, Xiaokang Zhang, Lei Hou, Jing Zhang, and Juanzi Li. Reverse that number! decoding order matters in arithmetic learning, 2024. 15 Contents 
+
+1 Introduction 22 Background 3
+
+2.1 Flow Generative Modeling . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32.2 Geometry of the Hypersphere . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42.3 Flow Matching on the Hypersphere . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+
+3 Hyperspherical Flow Language Models 4
+
+3.1 Sampling . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53.2 Noise Schedule . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53.3 Hyperspherical Architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+
+4 Experiments 6
+
+4.1 Reasoning on Sudoku . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 64.2 Reasoning on GSM8K . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 74.3 Language Modeling on OpenWebText . . . . . . . . . . . . . . . . . . . . . . . . 8
+
+5 Related Work 96 Conclusion 97 Limitations 10 8 Impact Statement 10 A Background on Flow Matching 18 
+
+A.1 The Continuity Equation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 A.2 Deriving the Conditional Velocity Fields . . . . . . . . . . . . . . . . . . . . . . . 18 
+
+B Additional Details 19 
+
+B.1 Training and Sampling Pseudocode . . . . . . . . . . . . . . . . . . . . . . . . . . 19 B.2 Adaptive Noise Schedule . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.3 Hyperspherical Backbone Architecture . . . . . . . . . . . . . . . . . . . . . . . . 21 B.4 Step Size with the Euler Sampler . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B.5 Re-Normalizing Embeddings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B.6 Training Cost . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 
+
+C Additional Results 24 
+
+C.1 Sequence Length Using Different Tokenizers . . . . . . . . . . . . . . . . . . . . 24 C.2 Analysis under the Random Codebook Model . . . . . . . . . . . . . . . . . . . . 24 C.3 Sudoku Setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 C.4 Additional Ablations on Sudoku . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 16 C.5 Bootstrap Confidence Intervals on TinyGSM . . . . . . . . . . . . . . . . . . . . . 27 C.6 Additional Ablations on TinyGSM . . . . . . . . . . . . . . . . . . . . . . . . . . 27 C.7 Additional Sampling Results on TinyGSM . . . . . . . . . . . . . . . . . . . . . . 27 C.8 Gen. PPL / Entropy Frontier Protocol . . . . . . . . . . . . . . . . . . . . . . . . 29 C.9 Additional Results on OpenWebText . . . . . . . . . . . . . . . . . . . . . . . . . 29 
+
+D Extended Related Work 30 
+
+17 A Background on Flow Matching 
+
+A.1 The Continuity Equation 
+
+The velocity field ut and the density pt are related locally through the continuity equation :
+
+∂tpt + ∇ · (pt ut) = 0 . (17) This guarantees that matching ut suffices to match pt, without computing ϕt or its Jacobian. The Flow Matching (FM) objective regresses uθt against a target velocity field: 
+
+LFM (θ) = Et∼U [0 ,1] , x ∼pt uθt (x) − ut(x) 2 . (18) In general, ut and pt are intractable. CFM replaces them with tractable conditional quantities. Differentiating the conditional flow xt = αtx1 + (1 − αt)x0 yields the conditional velocity field 
+
+ut|1(xt | x1) = ˙αt(x1 − x0). The marginal velocity field is recovered by averaging under the posterior: 
+
+ut(x) = 
+
+Z
+
+ut|1(x | x1) pt|1(x | x1) q(x1)
+
+pt(x) dx 1 =
+
+Z
+
+ut|1(x | x1) p1|t(x1 | x) dx 1. (19) The CFM objective has the same gradients and minimizer as LFM but is tractable [47, 88]. 
+
+A.2 Deriving the Conditional Velocity Fields 
+
+Training both Euclidean and Riemannian flow models requires computing the conditional velocity field ut|1(zt | z1) that serves as the regression target in the CFM loss. In both cases, the derivation follows the same recipe: (1) define a conditional flow ψt|1, (2) differentiate with respect to t to obtain  
+
+> dzt
+> dt
+
+, and (3) eliminate z0 so that the velocity field is expressed as a function of the current position zt.During training, any equivalent form of the velocity field can be used as the regression target. 
+
+Euclidean Case We define the conditional flow (3) as the linear interpolation xt = αt x1 + (1 −
+
+αt) x0. Differentiating with respect to t:
+
+dx t
+
+dt = ˙ αt (x1 − x0). (20) By simple algebra, we find x0 = ( xt − αt x1)/(1 − αt). Substituting: 
+
+ut|1(xt | x1) = ˙ αt
+
+
+
+x1 − xt − αt x1
+
+1 − αt
+
+
+
+= ˙αt
+
+1 − αt
+
+(x1(1 − αt) − xt + αt x1)= ˙αt
+
+1 − αt
+
+(x1 − xt). (21) For the common choice αt = t, this simplifies to ut|1(xt | x1) = ( x1 − xt)/(1 − t). During training, the equivalent form ut|1(xt | x1) = ˙ αt (x1 − x0) can also be used. 
+
+Spherical Case Let ω = dS(z0, z1) ∈ (0 , π ) be the geodesic distance between the endpoints. The conditional flow (10), written using the SLERP formula (8), is 
+
+zt = sin((1 − αt) ω)sin ω z0 + sin( αt ω)sin ω z1. (22) Differentiating with respect to t:
+
+dzt
+
+dt = ˙αt ω
+
+sin ω [− cos((1 − αt) ω) z0 + cos( αt ω) z1] . (23) Rewriting (22) gives z0 = sin ω  
+
+> sin((1 −αt)ω)
+
+zt − sin( αt ω)sin((1 −αt) ω) z1. Substituting into (23): 
+
+dzt
+
+dt = ˙αt ω
+
+sin ω
+
+
+
+− cos((1 −αt)ω) sin ω
+
+sin((1 −αt)ω) zt + cos((1 −αt)ω) sin( αtω) + cos( αtω) sin((1 −αt)ω)sin((1 −αt)ω) z1
+
+
+
+.
+
+(24) 18 Algorithm 1 Training 
+
+Require: Dataset of token sequences, embedding table E, scheduling function αt 
+
+> 1:
+
+repeat  
+
+> 2:
+
+Sample sequence x ∼ p1, time t ∼ U [0 , 1]  
+
+> 3:
+
+for ℓ = 1 to L do  
+
+> 4:
+
+zℓ 
+
+> 1
+
+← E[xℓ]/∥E[xℓ]∥ ▷ Embed and normalize 5: ϵℓ ∼ N (0, Id); zℓ 
+
+> 0
+
+← ϵℓ/∥ϵℓ∥ ▷ Sample noise on Sd−1 
+
+> 6:
+
+zℓt ← SLERP( zℓ
+
+> 0
+
+, zℓ
+
+> 1
+
+, α t) ▷ Construct noisy latent 7: end for  
+
+> 8:
+
+Compute LCE = − P 
+
+> ℓ
+
+log pθ
+
+> 1|t
+
+(xℓ | zt) ▷ Cross-entropy loss 9: Update θ and E by gradient descent on LCE  
+
+> 10:
+
+until converged 
+
+Algorithm 2 Sampling 
+
+Require: Denoiser pθ
+
+> 1|t
+
+, embedding table E with rows ev and unit-norm versions ˆev = ev /∥ev ∥,number of steps N , decoder pdec  
+
+> 1:
+
+for ℓ = 1 to L do  
+
+> 2:
+
+ϵℓ ∼ N (0, Id); zℓ 
+
+> 0
+
+← ϵℓ/∥ϵℓ∥ ▷ Sample noise on Sd−1 
+
+> 3:
+
+end for  
+
+> 4:
+
+for n = 0 to N −1 do  
+
+> 5:
+
+sn ← (αtn+1 − αtn ) / (1 − αtn ) ▷ Step size 6: Compute pθ 
+
+> 1|tn
+
+(· | ztn ) ▷ One forward pass 7: for ℓ = 1 to L do  
+
+> 8:
+
+¯vℓ ← P 
+
+> v∈V
+
+pθ 
+
+> 1|tn
+
+(v | ztn ) log zℓtn 
+
+(ˆ ev ) ▷ Posterior-weighted velocity 9: zℓtn+1 ← exp zℓtn 
+
+ sn · ¯vℓ ▷ Geodesic Euler step 10: end for  
+
+> 11:
+
+end for  
+
+> 12:
+
+x ∼ pdec (· | z1) ▷ Decode (argmax or AR) 13: return x
+
+The numerator of the z1 coefficient simplifies by the following identity: cos((1 −αt)ω) sin( αtω) + cos( αtω) sin((1 −αt)ω) = sin ω. Therefore: 
+
+dzt
+
+dt = ˙αt ω
+
+sin((1 − αt) ω) (z1 − cos((1 − αt) ω) zt) . (25) Recalling the definition of the logarithmic map (7) with dS(zt, z1) = (1 − αt) ω, we recognize that (25) is proportional to log zt (z1) = (1 −αt) ω  
+
+> sin((1 −αt)ω)
+
+(z1 − cos((1 − αt) ω) zt). Their ratio is 
+
+˙αtω/ ((1 − αt)ω) = ˙ αt/(1 − αt), giving 
+
+ut|1(zt | z1) = ˙αt
+
+1 − αt
+
+log zt (z1). (26) During training, the equivalent form from (23) can also be used. 
+
+## B Additional Details 
+
+B.1 Training and Sampling Pseudocode 
+
+Algo. 1 shows the training pseudocode for S-FLM, Algo. 2 the deterministic sampler, and Algo. 3 the stochastic sampler that replaces the posterior-weighted velocity by the log map toward a single token sampled from pθ
+
+> 1|t
+
+.19 Algorithm 3 Stochastic sampling 
+
+Require: Denoiser pθ
+
+> 1|t
+
+, embedding table E with rows ev and unit-norm versions ˆev = ev /∥ev ∥,number of steps N , decoder pdec  
+
+> 1:
+
+for ℓ = 1 to L do  
+
+> 2:
+
+ϵℓ ∼ N (0, Id); zℓ 
+
+> 0
+
+← ϵℓ/∥ϵℓ∥ ▷ Sample noise on Sd−1 
+
+> 3:
+
+end for  
+
+> 4:
+
+for n = 0 to N −1 do  
+
+> 5:
+
+sn ← (αtn+1 − αtn ) / (1 − αtn ) ▷ Step size 6: Compute pθ 
+
+> 1|tn
+
+(· | ztn ) ▷ One forward pass 7: for ℓ = 1 to L do  
+
+> 8:
+
+Sample ˆxℓ ∼ pθ 
+
+> 1|tn
+
+(· | ztn ) ▷ Posterior sample 9: ¯vℓ ← log zℓtn 
+
+(ˆ eˆxℓ ) ▷ Velocity toward sampled token 10: zℓtn+1 ← exp zℓtn 
+
+ sn · ¯vℓ ▷ Geodesic Euler step 11: end for  
+
+> 12:
+
+end for  
+
+> 13:
+
+x ∼ pdec (· | z1) ▷ Decode (argmax or AR) 14: return x
+
+B.2 Adaptive Noise Schedule Motivation The denoising task is not as meaningful at every noise level. At low noise levels, the task is trivial since the noisy embeddings are very close to the clean embeddings (16). At high noise levels, the latent zℓt is close to pure noise hence carries little signal about the clean token. In both cases the denoiser pθ 
+
+> 1|t
+
+has little to learn. The informative region lies in between, where the model can extract signal from noise and the loss drops fastest as a function of t. Inspired by InfoNoise [ 73 ], we focus training on regions where the loss derivative |dL/dt | is largest. 
+
+Algorithm 4 Adaptive noise schedule refit 
+
+Require: buffer {(ti, Li)}, base schedule αbase , grid {tj }Nj=1 ⊂ [0 , 1] , EMA rate β, uniform mix μ,ridge λ, refit count n 
+
+> 1:
+
+Fit a spline ˆL(t) to (ti, Li) via ridge regression ( λ) 
+
+> 2:
+
+g(tj ) ← max {d ˆL/dt (tj ), 0} ▷ Clamp: loss should grow with noise 3: w(tj ) ← (1 − μ) g(tj ) + μ ▷ Ensure the CDF is invertible 4: F (tj ) ← P 
+
+> j′≤j
+
+w(tj′ ) P  
+
+> j′
+
+w(tj′ ) ▷ Empirical CDF (discrete points) 5: ˜tj ← F −1(tj ) via PCHIP interpolation ▷ Invert CDF 6: ¯αj ← β ¯αj + (1 − β) αbase (˜ tj ) ▷ EMA update 7: αfinal  
+
+> j
+
+← ¯αj /(1 − βn) ▷ Bias correction 8: Store αadapt  
+
+> t
+
+as a PCHIP spline through {(tj , α final  
+
+> j
+
+)}
+
+During training we append (t, L) pairs to the buffer at every step and invoke Algo. 4 every R steps after a warmup of W = 1000 steps. The EMA is essential to reduce oscillations in the schedule, and the Adam-style bias correction 1/(1 − βn) [ 43 ] prevents the early-training estimate from being biased toward zero. By default we use R = 50 , buffer size R · batch size , β = 0 .9, and μ = 10 −3.All operations run on CPU in numpy , so the impact on training throughput is minimal. Empirically, the noise schedule stabilizes quickly. 
+
+Implementation We fit the loss profile using a spline (sklearn.preprocessing.SplineTransformer ) with ridge regression (sklearn.linear_model.Ridge ). For interpolating the inverse CDF F −1 and the final noise schedule αadapt  
+
+> t
+
+, we use scipy.interpolate.PchipInterpolator , which builds a 
+
+Piecewise Cubic Hermite Interpolating Polynomial [27] that preserves the monotonicity of the data. 20 Relation to InfoNoise Our adaptive schedule is inspired by InfoNoise [ 73 ], which also adapts the noise schedule online from the value of the loss. We differ in several ways. • Importance signal. InfoNoise estimates the conditional entropy rate ˙H[x0 | xσ ] ∝
+
+mmse( σ)/σ 3 via the I–MMSE identity. We use |d ˆL/dt | directly on the cross-entropy profile. • Estimator. InfoNoise splits the σ-range into bins, each with a FIFO buffer for recent losses and an EMA on the MSE estimate. We fit a spline to (t, L) pairs via ridge regression. This removes the need to choose a number of bins. • Stabilization. InfoNoise uses pivot calibration and gating to suppress boundary artifacts. We enforce a minimum CDF increment μ to keep the CDF invertible and stabilize the schedule with an EMA, in addition to truncating the noise schedule range (16). • Loss weight. InfoNoise separates sampling density π(σ) from loss weight w(σ) via the effective weight ϕ = π · w. We use unweighted cross-entropy ( w ≡ 1), so the sampling density matches effective weight directly. 
+
+B.3 Hyperspherical Backbone Architecture 
+
+In this section, we present the hyperspherical denoising backbone in more details. The architecture is adapted from nGPT [ 50 ] for S-FLM. The main differences are that (1) we use bidirectional attention, (2) we use GELU activations in the MLP, since the other AR / diffusion denoisers also use GELU, (3) we make the residual gates time-conditional. As in nGPT, every weight matrix has unit-norm vectors along the embedding-dimension axis. We enforce this at initialization and optionally re-apply the projection after every optimizer step. 
+
+Notation Let Norm( u) = u/ max( ∥u∥2, ε ) with ε = 10 −6 project a vector onto the unit sphere along its last axis. We write d for the embedding dimension, H for the number of attention heads, 
+
+dk = d/H , and N for the number of transformer blocks. The base scale b = 1 /√d appears in several rescaling parameters. All per-dimension scales ( sqk , sf c , sz ) and residual gates ( γA, γM ) introduced below are learnable. 
+
+Normalized attention The multi-head attention uses bias-free linear layers: Q = hW Q,
+
+K = hW K , V = hW V , split into H heads. RoPE [ 87 ] is applied to Q, K. We then apply the normalization and rescaling: 
+
+˜sqk = sqk · sinit  
+
+> qk
+
+/s scale  
+
+> qk
+
+, Q′ = ˜ sqk ⊙ Norm( Q), K′ = ˜ sqk ⊙ Norm( K),
+
+with sinit  
+
+> qk
+
+= 1 and sscale  
+
+> qk
+
+= b. The softmax scaling follows from the variance of the inner product 
+
+⟨ˆq, ˆk⟩ between two unit-norm vectors ˆq = Norm( Q) and ˆk = Norm( K). Assume the components of Q, K are i.i.d. zero-mean Gaussian. After projection by Norm , ˆq and ˆk are independent samples from Unif( Sdk −1). By rotational symmetry and ∥u∥2 = 1 , any u ∼ Unif( Sdk −1) satisfies E[ui] = 0 
+
+and E[uiuj ] = δij /d k, hence E[⟨ˆq, ˆk⟩] = 0 and Var[ ⟨ˆq, ˆk⟩] = 1 /d k. Following nGPT, we therefore set the softmax scale to √dk:
+
+O = softmax  p dk Q′K′⊤ V, hA = O W O .
+
+Normalized MLP The MLP is similar to the MLP in discrete-diffusion DiTs [ 66 , 52 ], with the addition of a per-dimension scale sf c on the hidden activations: 
+
+hM = GELU  √d sf c ⊙ (h W f c ) WMO .
+
+As in the previous section, the √d factor restores unit variance to the inputs of GELU. 
+
+Timestep injection Let τ (t) = SiLU(TimestepEmbedder( σ(t))) ∈ Rdcond be the timestep embedding (sinusoidal embedding followed by a two-layer MLP). Each transformer block has its own zero-initialized linear map Wδ ∈ R2d×dcond that computes per-dimension biases (δA(t), δM (t)) = 
+
+Wδ τ (t), for the residual update (next paragraph). 21 Residual update The block updates the hidden state by interpolating with the (normalized) attention output, and then with the (normalized) MLP output. Each interpolation is gated by learnable per-dimension parameters γA, γM ∈ Rd, and renormalized: 
+
+h ← Norm 
+
+
+
+Norm( h) + ˜ γA ⊙  Norm( hA) − Norm( h)
+
+,
+
+h ← Norm 
+
+
+
+Norm( h) + ˜ γM ⊙  Norm( hM ) − Norm( h)
+
+.
+
+The effective gate is ˜γX = |γX · (γinit /γ scale ) + δX (t)| with γinit = 0 .05 and γscale = b, for 
+
+X ∈ { A, M }, where δX (t) is the time modulation defined above. Except for the time modulation 
+
+δX (t), the design and hyperparameters, are carried from nGPT. The absolute value ensures the gate is non-negative, so the update always pulls h toward the block output. 
+
+Output head We project the output of the last block through a row-normalized linear map Wlm ∈
+
+R|V|× d and rescale by a learnable scale sz ∈ R|V| :
+
+˜sz = sz · sinit  
+
+> z
+
+/s scale  
+
+> z
+
+, ℓ = ˜ sz ⊙ (h W ⊤
+
+> lm
+
+),
+
+with sinit  
+
+> z
+
+= 1 and sscale  
+
+> z
+
+= b. The rescaling is necessary because hW ⊤ 
+
+> lm
+
+contains inner products of unit vectors and is therefore bounded in [−1, 1] |V| . Without sz the cross-entropy would saturate near a uniform distribution. 
+
+B.4 Step Size with the Euler Sampler 
+
+The marginal velocity from (15) is uℓt = ˙αt 
+
+> 1−αt
+
+¯uℓt , where ¯uℓt = P 
+
+> v
+
+p1|t(xℓ = v | zt) log zℓt (ˆ ev ).During sampling, to take an Euler step of size ∆t from time time tn to tn+1 , we compute 
+
+zℓtn+1 = exp zℓtn 
+
+ ∆t · uℓtn
+
+ = exp zℓtn 
+
+ ˙αtn ∆t
+
+1 − αtn
+
+· ¯uℓtn
+
+
+
+. (27) Using the first-order approximation ˙αtn ∆t ≈ αtn+1 − αtn , the step size applied to ¯uℓt is 
+
+sn = αtn+1 − αtn
+
+1 − αtn
+
+, (28) so that zℓtn+1 = exp zℓtn 
+
+(sn · ¯uℓtn ). For the linear schedule αt = t with uniform time steps tn = n/N ,this gives sn = 1 /(N − n).
+
+B.5 Re-Normalizing Embeddings 
+
+We show that when embeddings are normalized during the forward pass, the norm of the embeddings grow at every optimization step, and thus we obtain a decay of the effective learning rate (since the angular updates become smaller). Our argument is similar to prior work [41]. 
+
+Setup Let e ∈ Rd be an unconstrained embedding vector, and let ˆe = e/∥e∥ be the normalized version used in the forward pass. The loss L depends on e only through ˆe.
+
+Jacobian of the normalization The Jacobian of ˆe with respect to e is 
+
+∂ˆe
+
+∂e = 1
+
+∥e∥
+
+ I − ˆe ˆe⊤ . (29) By the chain rule, the gradient of L with respect to the unnormalized embedding is 
+
+∇eL =
+
+ ∂ˆe
+
+∂e
+
+⊤
+
+∇ˆeL = 1
+
+∥e∥
+
+ I − ˆe ˆe⊤ ∇ˆeL, (30) where we used the fact that I − ˆe ˆe⊤ is symmetric. 22 Table 3: Training cost on TinyGSM and OpenWebText. The total duration and GPU-hours are derived from the step/sec. We did not investigate deeply why S-FLM trains faster than MDLM. We did not try to hyper-optimize our implementations. For MDLM, CANDI and S-FLM, we import their original implementation, based on the Duo codebase ( https://github.com/s-sahoo/duo ), since we also use it. It is plausible that MDLM / Duo can be made to train as fast as S-FLM. Observe that FLM is slower than S-FLM. This is expected since FLM materializes dense one-hot-diffused arrays, and multiplies them with the embedding table, which is costly.                                                          
+
+> Steps/sec Duration (h) GPU-hours Model TinyGSM OWT TinyGSM OWT TinyGSM OWT AR 5.46.012 .846 .6102 .1745 .7
+> MDLM 3.03.522 .880 .3182 .71284 .5
+> Duo 3.03.522 .880 .3182 .71284 .5
+> CANDI 3.02.523 .5108 .9188 .31742 .9
+> FLM 3.23.321 .784 .2173 .61346 .8
+> S-FLM 4.24.516 .561 .7132 .3987 .7
+> S-FLM + adapt. 4.24.516 .561 .7132 .3987 .7
+> S-FLM + adapt. + S-arch 2.62.826 .799 .2213 .71587 .3
+
+The gradient is orthogonal to e The matrix P = I − ˆe ˆe⊤ projects onto the subspace orthogonal to ˆe. Since e = ∥e∥ ˆe:
+
+e⊤∇eL = 1
+
+∥e∥ e⊤ I − ˆe ˆe⊤ ∇ˆeL
+
+= 1
+
+∥e∥
+
+e⊤ − e⊤ˆe|{z}  
+
+> =∥e∥
+
+ˆe⊤
+
+ ∇ˆeL
+
+= 1
+
+∥e∥
+
+ e⊤ − ∥ e∥ ˆe⊤ ∇ˆeL
+
+= 1
+
+∥e∥
+
+ e⊤ − e⊤ ∇ˆeL = 0 , (31) where we used ∥e∥ ˆe = e.
+
+Norm growth Since ∇eL ⊥ e, a gradient step e′ = e − η ∇eL gives, by the Pythagorean theorem: 
+
+∥e′∥2 = ∥e∥2 + η2 ∥∇ eL∥ 2 > ∥e∥2. (32) The norm grows at every step, which induces an effective learning rate decay on the embedding table. 
+
+Fix After each optimization step, we can re-project e ← e/∥e∥ (not through the computational graph, but by directly modifying the parameters). This ensures that ∥e∥ = 1 and that there is no implicit learning rate annealing[ 41 ]. Empirically, we find that the learning rate annealing on the embedding table is beneficial. 
+
+B.6 Training Cost 
+
+Training on Sudokus is fast and cheap. We use a single L40S GPU and train for less than 2 hours. Using the on-demand price on RunPod ( https://www.runpod.io ), training costs less than $2. Table 3 shows the step per second and total cost on TinyGSM and OpenWebText. We train on H100 GPUs with bfloat16 mixed precision. We use 8 H100s for TinyGSM, and 16 H100s on OpenWebtext. We train for 250k steps on TinyGSM (Sec. 4.2) and 1M on OpenWebText (Sec. 4.3). 23 0 250 500 750 1,000 1,250 1,500 1,750 2,000               
+
+> Number of tokens
+> num. seq.=11,846,109 mean len.=221 median len.=204 max len.=7,221
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> 10 6
+> Number of examples
+> 128 (5.36%)
+> 256 (73.60%)
+> 512 (99.43%)
+> 1024 (100.00%)
+> 2048 (100.00%)
+> GPT-2
+> 0250 500 750 1,000 1,250 1,500 1,750 2,000
+> Number of tokens
+> num. seq.=11,846,109 mean len.=194 median len.=180 max len.=1,830
+> Number of examples
+> 128 (16.20%)
+> 256 (82.93%)
+> 512 (99.80%)
+> 1024 (100.00%)
+> SmolLM-135M
+> TinyGSM - token length distribution
+
+Figure 5: Distribution of tokenized sequence lengths on TinyGSM, under the GPT-2 tokenizer (left) and the SmolLM-135M tokenizer (right). The SmolLM tokenizer yields shorter sequences on average (median 204 vs. 180 tokens), which allows us to fit more problems in a fixed context length of 512 tokens. 
+
+## C Additional Results 
+
+C.1 Sequence Length Using Different Tokenizers 
+
+In Figure 5, we plot the histogram of length of the tokenized examples in TinyGSM [ 48 ], when tokenized with the GPT-2 tokenizer [ 71 ] or the SmolLM tokenizer [ 2]. Since the SmolLM tokenizer was trained on code, unlike GPT-2, we see that it offers better compression. Therefore, for the experiments on TinyGSM, we use the SmolLM tokenizer. 
+
+C.2 Analysis under the Random Codebook Model 
+
+To derive (16), we use the standard concentration bound for inner products of uniform random vectors on the sphere [ 91 , Theorem 3.4.5]. For X, Y ∈ Sd−1 with at least one of them sampled from U(Sd−1)
+
+and the other either fixed or independently sampled, for every ϵ > 0:
+
+P X⊤Y > ϵ  ≤ 2 exp 
+
+
+
+− dϵ 2
+
+2
+
+
+
+. (33) The probability decreases exponentially in the dimension d.
+
+Closed-form for the sampling dynamics Let zα = SLERP( z0, ˆek, α ) for α ∈ [0 , 1] . Then, by definition of SLERP, we have 
+
+⟨zα, ˆek⟩ = cos  ω(1 − α), (34) where ω is the angle between z0 and ˆek. Indeed, we recall the standard trigonometric identities 
+
+sin( a − b) = sin( a) cos( b) − cos( a) sin( b) (35) and 
+
+cos( a − b) = cos( a) cos( b) + sin( a) sin( b). (36) By the definition of SLERP in (8), 
+
+zα = sin((1 − α)ω)sin ω z0 + sin( αω )sin ω ˆek. (37) 24 Therefore, 
+
+⟨zα, ˆek⟩ = sin((1 − α)ω)sin ω ⟨z0, ˆek⟩ + sin( αω )sin ω
+
+= 1sin ω
+
+h
+
+sin((1 − α)ω) cos ω + sin( αω )
+
+i
+
+= 1sin ω
+
+h  sin ω cos( αω ) − cos ω sin( αω ) cos ω + sin( αω )
+
+i
+
+= 1sin ω
+
+h
+
+sin ω cos ω cos( αω ) − cos 2 ω sin( αω ) + sin( αω )
+
+i
+
+= 1sin ω
+
+h
+
+sin ω cos ω cos( αω ) + (1 − cos 2 ω) sin( αω )
+
+i
+
+= 1sin ω
+
+h
+
+sin ω cos ω cos( αω ) + sin 2 ω sin( αω )
+
+i
+
+= cos ω cos( αω ) + sin ω sin( αω )= cos( ω − αω ) = cos  ω(1 − α),
+
+(38) which proves (34). We can now derive (16). 
+
+Approximation 1 Since z0 and ˆek are independent random points on Sd−1, (33) implies that they are close to orthogonal with high probability in high dimension. We therefore approximate the initial angle by 
+
+ω ≈ π
+
+2 . (39) Substituting this into (34) yields 
+
+⟨zα, ˆek⟩ ≈ cos 
+
+ π
+
+2 (1 − α)
+
+
+
+= sin 
+
+ π
+
+2 α
+
+
+
+. (40) 
+
+Approximation 2 Now define 
+
+Mα := max   
+
+> j̸=k
+
+⟨zα, ˆej ⟩, (41) that is, the maximum similarity among codewords that the simplified generation dynamics does not interpolate toward. Using a union bound together with (33), we obtain 
+
+P(Mα ≥ t | zα) ≤ X 
+
+> j̸=k
+
+P(⟨zα, ˆej ⟩ > t | zα) ≤ 2( |V| − 1) exp 
+
+
+
+− dt 2
+
+2
+
+
+
+. (42) We now solve for the threshold t|V| ,d,δ such that, with probability at least 1−δ, we have Mα < t |V| ,d,δ .Concretely, we solve 
+
+δ = 2( |V| − 1) exp − d t 2
+
+> |V| ,d,δ
+
+2
+
+!
+
+, (43) which gives 
+
+t|V| ,d,δ =
+
+s
+
+2 log  2( |V| − 1) /δ 
+
+d . (44) We can now conclude by defining α⋆(δ) as the interpolation level after which zα is most similar to 
+
+ˆek with probability at least 1 − δ. A sufficient condition is 
+
+cos  (1 − α⋆)ω ≈ sin 
+
+ π
+
+2 α⋆
+
+≥ t|V| ,d,δ 
+
+⇐⇒ sin 
+
+ π
+
+2 α⋆
+
+≥
+
+s
+
+2 log  2( |V| − 1) /δ 
+
+d
+
+⇐⇒ α⋆(δ) ≈ 2
+
+π arcsin 
+
+s
+
+2 log  2( |V| − 1) /δ 
+
+d
+
+ .
+
+(45) This concludes the argument. 25 Table 4: α⋆(δ) for different |V| , d, and δ.                                               
+
+> |V| = 12
+> dδ= 0 .1δ= 0 .01
+> 256 0.132 0.158 512 0.093 0.111 768 0.076 0.090 1024 0.065 0.078 4096 0.033 0.039
+> |V| = 50 ,000
+> dδ= 0 .1δ= 0 .01
+> 256 0.213 0.231 512 0.149 0.161 768 0.121 0.131 1024 0.105 0.114 4096 0.052 0.057
+> |V| = 100 ,000
+> dδ= 0 .1δ= 0 .01
+> 256 0.219 0.236 512 0.153 0.165 768 0.125 0.134 1024 0.108 0.116 4096 0.054 0.058
+
+Table 5: Analytical noise schedules used on Sudoku, in the convention α0 = 0 , α1 = 1 .    
+
+> Schedule αt
+> Linear t
+> Cosine 2sin 2
+> πt
+> 2
+> 
+
+Numerical evaluation of the critical threshold Table 4 shows the critical threshold for various vocabulary size |V| , embedding dimension d, and confidence parameter δ. As expected, the threshold 
+
+decreases as the embedding dimension increases, which means that the minimum noise level used during training should increase to counteract the increasing sparsity of Sd−1. Furthermore, reducing 
+
+δ corresponds to increasing the confidence level for similarity to the clean token being the largest, hence it means the minimal noise level is smaller than with a larger value of δ.
+
+C.3 Sudoku Setup 
+
+We format the input as a 1D sequence, starting with the partial grid where the missing digits are encoded with 0. We append a [BOS] separator and the solution, and separate rows with [SEP] . This representation allows us to train both AR and diffusion models with the same format with a context length of 180. Our vocabulary contains 12 tokens, except for MDLM, which additionally uses a [MASK ] token. When training the diffusion models, the partial grid is never corrupted, and we never penalize the predictions on those positions. We train all models with Adam for 20k steps, batch size 256, and a learning rate of 3 × 10 −4 and an 
+
+Exponential Moving Average (EMA) rate of 0.9999. For S-FLM, we consider the linear and cos 2
+
+schedules and truncate following (16) (value in Table 4). 
+
+C.4 Additional Ablations on Sudoku 
+
+Table 6 ablates two design choices on Sudoku, the noise schedule and the embedding renormalization step. We define the noise schedules in Table 5. 
+
+Effect of the noise schedule Truncating to α⋆(0 .1) improves accuracy on both Sudoku (Table 1) and TinyGSM (Table 2). On Sudoku, the gains are largest for the linear schedule (Table 6). Cosine 2
+
+also benefits from truncation, but by a smaller margin. Without truncation, Cosine 2 outperforms the linear schedule. 
+
+Effect of embedding renormalization Training without renormalizing the embeddings after each step improves accuracy across nearly all schedules and difficulties (Table 6). The gap is largest at the hard difficulty, reaching 7.3 points on Cosine 2 without truncation. As discussed in Suppl. B.5, the gradient with respect to a normalized embedding is tangent to the sphere, so each gradient step increases the norm of the embeddings. This is equivalent to a learning-rate decay on the embedding table. Empirically, such annealing improves performance on Sudoku (Table 6). 26 Table 6: Effect of embedding renormalization on S-FLM. Each row compares the same config without vs. with embedding re-normalization after every optimizer update. We bold the best result per row and difficulty. Training without re-normalization after each step leads to stronger performance.                                  
+
+> Without renorm With renorm Schedule Easy Med. Hard Easy Med. Hard Linear, no trunc 81.5 50.6 14.0 75.4 46.0 11.3 Linear, trunc α⋆(0 .1) 94.0 77.6 43.2 92.5 76.7 40.1 Cosine 2, no trunc 89.9 68.0 36.1 92.1 66.3 28.8 Cosine 2, trunc α⋆(0 .1) 93.8 80.7 38.6 92.9 76.4 34.1
+
+Table 7: Effect of the truncation hyperparameter αtrunc on S-FLM accuracy on GSM8K (trained on TinyGSM). Linear noise schedule, standard DiT backbone, 250k steps. The values 0.879 and 0.869 
+
+are the thresholds α⋆(δ) from (16) at δ = 0 .1 and δ = 0 .01 respectively. Bold marks the best result.       
+
+> αtrunc Accuracy (%)
+> 0.01.21 0.84.62 0.869 7.66 0.879 7.43 0.97.73
+
+C.5 Bootstrap Confidence Intervals on TinyGSM 
+
+The error bars on the TinyGSM accuracy plots are 95% percentile bootstrap confidence intervals [ 24 , 72 ]. The GSM8K test split contains N = 1 ,319 problems, each with a generated solution that is either correct or incorrect. We resample the N outcomes with replacement B = 1 ,000 times and recompute the accuracy on every resample. The point estimate is the mean of the B accuracies. The error bar runs from the 2.5% quantile of the B resample accuracies to the 97 .5% quantile, namely the 2.5th and 97 .5th percentiles of the empirical bootstrap accuracy distribution. 
+
+C.6 Additional Ablations on TinyGSM 
+
+Table 7 sweeps the truncation hyperparameter αtrunc on the linear schedule, with the standard DiT backbone trained for 250k steps. Truncating the noise schedule improves the accuracy from 1.21% 
+
+at αtrunc = 0 to 7.73% at αtrunc = 0 .9. The thresholds from (16) for d = 768 and |V| ≈ 50 k,
+
+α⋆(0 .1) = 0 .879 and α⋆(0 .01) = 0 .869 , perform similarly to the best run ( αtrunc = 0 .9). 
+
+C.7 Additional Sampling Results on TinyGSM 
+
+For models trained on TinyGSM, we sweep architecture, sampling temperature, and velocity decoding, and report GSM8K accuracy. Figure 6 replots Figure 1 (right). At T = 0 .1, Duo reaches 36 .0% and MDLM about 33% , while S-FLM plateaus near 18% . Figure 7 compares the S-arch and standard DiT backbones at both temperatures, with T = 0 .1 improving GSM8K accuracy by about six points for both. Figure 8 sweeps the top-k truncation of velocity decoding for S-arch at T = 1 . Top-1 reaches 
+
+18 .0% , while k ≥ 10 plateau near 12% , matching unrestricted decoding. 27 1 2 4 8 16 32 64 128 256 512 1024 
+
+NFE vs GSM8K Accuracy (T=1) 
+
+> 0%
+> 10%
+> 30%
+> 40%
+> 18.4%
+> -FLM ( -arch.)
+> -FLM
+> MDLM
+> Duo
+
+Figure 6: GSM8K accuracy vs. NFE at T = 1 for S-FLM ( S-arch and standard DiT), MDLM, and Duo. Same data as Figure 1 (right). 1 2 4 8 16 32 64 128 256 512 1024 
+
+NFE vs GSM8K Accuracy (exact) 
+
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 17.8%
+> T=1
+> T=0.1
+> -arch.
+> Std.
+
+Figure 7: GSM8K accuracy vs. NFE under exact decoding for S-FLM with S-arch (Norm.) and standard DiT (Std.), at T = 1 (grey) and T = 0 .1 (orange). Lowering the temperature improves accuracy by about six points for both backbones. 1 2 4 8 16 32 64 128 256 512 1024 
+
+NFE vs GSM8K Accuracy (exact, norm., T=1) 
+
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.2%
+> k=1
+> k=10
+> k=50
+> k=250
+> k=1000
+> All
+
+Figure 8: GSM8K accuracy vs. NFE for S-FLM ( S-arch) at T = 1 , sweeping the top-k truncation of the predicted velocity field at each Euler step. Top-1 reaches 18 .0% , while k ≥ 10 all plateau near 
+
+12% , matching unrestricted decoding. 28 1 2 4 8 16 32 64 128 256 512 1024               
+
+> NFE vs GSM8K Accuracy (T=1)
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.2%
+> Exact
+> Stoch.
+> Top-1
+> Top-10 124816 32 64 128 256 512 1024
+> NFE vs GSM8K Accuracy
+> 0%
+> 5%
+> 10%
+> 15%
+> 20%
+> 18.2%
+> Exact (T=0.1)
+> Stoch. (T=0.1)
+> Top-1 (T=1)
+> Top-10 (T=1)
+
+Figure 9: GSM8K accuracy vs. NFE for S-FLM ( S-arch) under exact velocity, stochastic, top-1, and top-10 decoding. (left) Sampling temperature T = 1 . Exact velocity and stochastic decoding plateau near 12% , while top-1 reaches 18 .0% . (right) Sampling temperature T = 0 .1. All four schemes plateau within one point of 18 .0% . Top-1 decoding ( T = 1 ) outperforms low-temperature stochastic decoding. 
+
+C.8 Gen. PPL / Entropy Frontier Protocol 
+
+We adopt the same setup as as PGM [ 20 ]. For each method (MDLM, Duo, FLM, and S-FLM with exact, stochastic, and k = 1 velocity decoding), we sweep the sampling temperature T ∈{0.50 , 0.55 , . . . , 1.20 } (15 evenly-spaced values) and the number of function evaluations NFE ∈{32 , 64 , 128 , 256 , 512 , 1024 }. For every (T, NFE) cell, we draw N = 512 samples of length 
+
+L = 1024 from the OpenWebText-trained model and compute two scalars per sample. 
+
+Generative Perplexity We score each generated sample with a pretrained GPT-2-large reference model [20] and report the per-sample average 
+
+PPL gen = exp − 1
+
+L
+
+> L
+
+X
+
+> i=1
+
+log pGPT2 (xi | x<i )
+
+!
+
+, (46) masking tokens at or after the first end-of-text. We average across the N samples in the cell. 
+
+Unigram entropy To flag degenerate (repetitive) outputs, we compute the per-cell mean unigram entropy [20] 
+
+H = − 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+X
+
+> v∈V
+
+c(v, x (n))
+
+L log c(v, x (n))
+
+L , (47) where c(v, x (n)) counts the occurrences of token v in sample x(n).
+
+Visible window Each cell contributes one (H, PPL gen ) point. We restrict the visible window to 
+
+4.5 ≤ H ≤ 6.0 nats and PPL gen ≤ 500 to drop collapsed and degenerate configurations. S-FLM with k = 1 velocity does not depend on the temperature, so it appears as a single marker rather than a curve. 
+
+C.9 Additional Results on OpenWebText 
+
+Figure 10 shoes the Gen. PPL / Entropy front for NFEs ∈ { 32 , 64 , 128 , 256 , 512 , 1024 }.29 5.0 5.2 5.4 5.6 5.8                         
+
+> Entropy vs Gen. PPL — NFE = 32
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 4.8 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 64
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 128
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 4.8 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 256
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 4.8 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 512
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.) 4.8 5.0 5.2 5.4 5.6 5.8
+> Entropy vs Gen. PPL — NFE = 1024
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> MDLM
+> Duo
+> FLM
+> -FLM
+> -FLM ( -arch.)
+
+Figure 10: OpenWebText Gen. PPL versus per-sample unigram entropy for NFE ∈{32 , 64 , 128 , 256 , 512 , 1024 }. Each curve sweeps a sampling-temperature schedule. S-FLM (exact velocity and stochastic decoding) traces the Pareto frontier across every NFE budget, with the largest margin over MDLM, Duo, and FLM at low NFE. 
+
+## D Extended Related Work 
+
+S-FLM differs from prior work in three main ways. (1) It operates in continuous rather than discrete space, (2) defines the flow on the hypersphere rather than in Euclidean space, and (3) learns embeddings end-to-end instead of relying on pre-trained representations. 
+
+Discrete diffusion language models Discrete diffusion models for text [ 5, 9, 52 , 76 , 28 , 10 , 77 , 19 ,82 , 61 , 79 , 92 , 20 , 93 , 78 , 4] approach AR in Gen. PPL while enabling parallel generation, but require updating tokens independently at inference for tractability. Furthermore, because the sampling steps are not differentiable, gradient-based guidance [ 21 , 36 , 62 , 80 ] is harder than in the continuous case. 
+
+Continuous diffusion for language modeling Instead of operating in the discrete space of tokens, certain prior work use Gaussian diffusion [ 84 , 35 ] for language modeling. One approach is to apply Gaussian diffusion to embeddings and train end-to-end with CE [ 46 , 22 , 33 ]. Alternatively, others regress onto pre-trained embeddings [ 86 , 54 , 81 ]. The latter requires two training stages, and the sample quality is capped by the pre-trained embeddings. Instead of embeddings, recent work add 30 Gaussian noise to one-hot or simplex representations of the tokens [ 13 , 34 , 55 , 85 , 45 , 75 , 68 ]. This approach requires storing dense arrays L × |V| during training and sampling. Separately, Loopholing discrete diffusion [ 38 ] allows discrete diffusion models to propagate the latent representation of the denoiser across sampling steps. S-FLM is defined on the latent hypersphere. Therefore, it does not require the materialization of dense arrays L × |V| during training. We inject noise by rotating embeddings rather than adding Gaussian noise. 
+
+Representation learning on the hypersphere Hyperspherical representations are common in contrastive learning, where uniform spread in Sd−1 correlates with strong downstream performance [ 94 ]. Comparing word embeddings with cosine similarity performs better than using the Euclidean distance in high dimension [ 58 , 67 ]. Thus, cosine similarity underpins a large part of neural retrieval systems [ 74 , 40 ]. Training Variational Autoencoders with a latent prior in Sd−1 can be more stable than with Gaussian priors [ 16 , 96 ]. Normalizing activations and weights to Sd−1 can also improve the stability of AR models [ 50 ]. In Riemannian manifolds, predicting the clean endpoint can outperform regressing the velocity field [ 25 , 97 ]. Previous work extended CNFs and score-based diffusion to Riemannian Manifolds [ 51 , 56 , 8, 53 ]. However, they typically assume data already reside on the manifold. In contrast, we learn the token representation and the velocity on Sd−1 jointly. Fisher-Flow [ 17 ] maps one-hot vector on the positive orthant of the hypersphere, but this representation does not perform well on language modeling with large vocabularies [37]. 31
