@@ -1,0 +1,51 @@
+{
+  "label": "2026-05-14",
+  "date": "2026-05-14",
+  "generated_at": "2026-05-14T21:22:02",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202605/14/2605.12825v1-orthrus-memory-efficient-parallel-token-generation-via-dual-view-diffusion",
+      "section": "deep",
+      "title_en": "Orthrus: Memory-Efficient Parallel Token Generation via Dual-View Diffusion",
+      "authors": "Chien Van Nguyen, Chaitra Hegde, Van Cuong Pham, Ryan A. Rossi, Franck Dernoncourt, Thien Huu Nguyen",
+      "date": "2026-05-12",
+      "pdf": "https://arxiv.org/pdf/2605.12825v1",
+      "score": "10.0",
+      "evidence": "将自回归大语言模型与扩散模型的高速并行生成相结合",
+      "tldr": "Orthrus 是一种结合自回归（AR）与扩散模型的双视图框架，旨在解决 LLM 推理的串行瓶颈。它在冻结的 LLM 上添加轻量级扩散模块并共享 KV 缓存，由 AR 负责预填充，扩散模块负责并行生成。通过共识机制，该框架在仅增加极少参数和 O(1) 内存开销的前提下，实现了高达 7.8 倍的无损加速。",
+      "tags": "query:ardm",
+      "abstract_en": "We introduce Orthrus, a simple and efficient dual-architecture framework that unifies the exact generation fidelity of autoregressive Large Language Models (LLMs) with the high-speed parallel token generation of diffusion models. The sequential nature of standard autoregressive decoding represents a fundamental bottleneck for high-throughput inference. While diffusion language models attempt to break this barrier via parallel generation, they suffer from significant performance degradation, high training costs, and a lack of rigorous convergence guarantees. Orthrus resolves this dichotomy natively. Designed to seamlessly integrate into existing Transformers, the framework augments a frozen LLM with a lightweight, trainable module to create a parallel diffusion view alongside the standard autoregressive view. In this unified system, both views attend to the exact same high-fidelity Key-Value (KV) cache; the autoregressive head executes context pre-filling to construct accurate KV representations, while the diffusion head executes parallel generation. By employing an exact consensus mechanism between the two views, Orthrus guarantees lossless inference, delivering up to a 7.8x speedup with only an O(1) memory cache overhead and minimal parameter additions.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/14/2605.13382v1-blockvla-accelerating-autoregressive-vla-via-block-diffusion-finetuning",
+      "section": "deep",
+      "title_en": "BlockVLA: Accelerating Autoregressive VLA via Block Diffusion Finetuning",
+      "authors": "Ruiheng Wang, Shuanghao Bai, Haoran Zhang, Badong Chen, Xiangyu Xu",
+      "date": "2026-05-13",
+      "pdf": "https://arxiv.org/pdf/2605.13382v1",
+      "score": "9.0",
+      "evidence": "将自回归VLA骨干网络适配为机器人扩散策略",
+      "tldr": "针对自回归视觉语言动作模型（VLA）推理延迟高和长程任务误差累积的问题，本文提出BlockVLA框架。该框架通过块扩散（Block Diffusion）范式将预训练自回归模型转换为高效的离散扩散策略，在保持块间因果一致性的同时实现块内并行去噪。BlockVLA支持前缀KV缓存复用，显著提升了推理速度和训练效率，在LIBERO等基准测试中实现了3.3倍的加速，并展现出更强的长程任务处理能力。",
+      "tags": "query:genad",
+      "abstract_en": "While autoregressive (AR) Vision-Language-Action (VLA) models have demonstrated formidable reasoning capabilities in robotic tasks, their sequential decoding process often incurs high inference latency and may amplify error accumulation during long-horizon execution. Discrete Diffusion Language Models (dLLMs) provide a promising alternative through parallel token refinement, but their practical deployment in robotics remains limited by repeated denoising function evaluations (NFEs) and the difficulty of directly applying standard KV caching to bidirectional iterative decoding. To bridge these paradigms, we propose BlockVLA, a framework that adapts pretrained AR backbones into an efficient discrete diffusion policy through a block diffusion paradigm. BlockVLA maintains autoregressive dependencies at the block level while enabling parallel denoising within each block, thereby combining global causal coherence with local parallel generation. This design enables prefix KV-cache reuse across completed blocks, reduces the effective cost of iterative denoising, and provides a smoother transition from AR pretraining to diffusion-based policy fine-tuning. We conduct extensive evaluations on the LIBERO and SimplerEnv benchmarks. Experimental results demonstrate that our BlockVLA achieves a 3.3$\\times$ inference acceleration over standard discrete diffusion baselines. Furthermore, our model exhibits superior training efficiency, with success rates converging substantially faster than baselines, a gain that is particularly pronounced in complex, long-horizon tasks, where BlockVLA achieves significant performance gains in the early stages of training. This work establishes Block Diffusion as a robust bridge between large-scale pretrained AR models and efficient, high-frequency real-time robotic control.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/14/2605.12836v1-discrete-stochastic-localization-for-non-autoregressive-generation",
+      "section": "quick",
+      "title_en": "Discrete Stochastic Localization for Non-autoregressive Generation",
+      "authors": "Yunshu Wu, Jiayi Cheng, Longxuan Yu, Partha Thakuria, Rob Brekelmans, Evangelos E. Papalexakis, Greg Ver Steeg",
+      "date": "2026-05-13",
+      "pdf": "https://arxiv.org/pdf/2605.12836v1",
+      "score": "7.0",
+      "evidence": "用于非自回归生成的连续扩散模型",
+      "tldr": "本研究针对非自回归生成中连续扩散模型性能落后于离散掩码扩散模型的问题，提出了离散随机定位（DSL）框架。DSL采用单位球面上的连续状态表示，其贝叶斯最优去噪器对信噪比具有不变性。该方法支持多种采样路径，通过微调预训练模型，在OpenWebText上显著提升了生成质量，并实现了高效的混合采样，无需额外蒸馏或重训。",
+      "tags": "query:ardm",
+      "abstract_en": "Continuous diffusion is a natural framework for non-autoregressive generation but has generally lagged behind masked discrete diffusion models (MDMs) on discrete sequence generation. We argue that the bottleneck is not continuity itself, but a representation in which denoising depends on timestep-indexed noise regimes. We introduce \\emph{Discrete Stochastic Localization} (DSL), a continuous-state framework with unit-sphere token embeddings whose Bayes-optimal denoiser is invariant to the nominal signal-to-noise ratio (SNR) under the localization channel. One trained network then supports an entire family of per-token SNR paths, with endpoint masked-diffusion paths as a special case. Fine-tuning a pretrained MDLM checkpoint with DSL substantially improves distributional faithfulness (MAUVE) on OpenWebText across all step budgets from $T{=}128$ to $T{=}1024$, and the same checkpoint supports random-order autoregressive sampling, as well as a hybrid continuous-then-discrete sampler using as few as T=48 total steps -- without distillation or retraining.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

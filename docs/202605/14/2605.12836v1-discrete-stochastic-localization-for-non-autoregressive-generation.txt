@@ -1,0 +1,2061 @@
+Title: Discrete Stochastic Localization for Non-autoregressive Generation
+
+URL Source: https://arxiv.org/pdf/2605.12836v1
+
+Published Time: Thu, 14 May 2026 00:24:32 GMT
+
+Number of Pages: 39
+
+Markdown Content:
+# Discrete Stochastic Localization for Non-autoregressive Generation 
+
+Yunshu Wu 1 Jiayi Cheng 2 Longxuan Yu 1 Partha Thakuria 1
+
+Rob Brekelmans Evangelos E. Papalexakis 1 Greg Ver Steeg 11University of California Riverside 2New York University 
+
+{ywu380, ylong030, pthakuria, epapalex, greg.versteeg}@ucr.edu jiayi.cheng@nyu.edu rob.brekelmans@gmail.com 
+
+## Abstract 
+
+Continuous diffusion is a natural framework for non-autoregressive generation but has generally lagged behind masked discrete diffusion models (MDMs) on discrete sequence generation. We argue that the bottleneck is not continuity it-self, but a representation in which denoising depends on timestep-indexed noise regimes. We introduce Discrete Stochastic Localization (DSL), a continuous-state framework with unit-sphere token embeddings whose Bayes-optimal denoiser is invariant to the nominal signal-to-noise ratio (SNR) under the localization chan-nel. One trained network then supports an entire family of per-token SNR paths, with endpoint masked-diffusion paths as a special case. Fine-tuning a pretrained MDLM checkpoint with DSL substantially improves distributional faithfulness (MAUVE) on OpenWebText across all step budgets from T =128 to T =1024 , and the same checkpoint supports random-order autoregressive sampling, as well as a hybrid continuous-then-discrete sampler using as few as T=48 total steps—without distillation or retraining. 
+
+## 1 Introduction 
+
+Continuous diffusion has become a standard framework for high-dimensional generation, with strong results in image, video, and audio synthesis [ 5, 26 , 6, 9, 12 ]. For language, however, continuous diffusion over token embeddings has not delivered the same advantage: existing continuous diffusion language models have consistently lagged behind masked discrete diffusion models (MDMs) [ 1, 22 ,24 ]. This gap is puzzling. Continuous diffusion exposes the model to a continuum of finite-SNR states between the fully uninformative and nearly clean limits, which should in principle provide richer supervision than endpoint-like masked corruptions. Why, then, has this extra continuity not translated into stronger language generation? We argue that the missing ingredient is not continuity alone, but also representation choice. Standard embedding-space diffusion typically adopts Variance-Preserving (VP) or Variance-Exploding (VE) Gaussian noising. These parameterizations are probabilistically valid, but they represent the zero-information limit as isotropic Gaussian noise rather than as a mask-like token state. Moreover, the raw noisy embedding is generally not sufficient for clean-token prediction: the denoiser must also receive a timestep or noise-level label to calibrate how much token evidence the embedding contains. As a result, denoisers in this representation are highly sensitive to time conditioning to distinguish between masked versus uncertain states. This suggests a simple design goal: parameterize the corruption so that the noisy token state alone determines the clean-token posterior. We introduce Discrete Stochastic Localization (DSL), a contin-uous diffusion language model based on stochastic localization over unit-norm token embeddings. In DSL, the zero-SNR state is the zero vector, which can be identified with a [MASK] token, while the high-SNR limit recovers the clean token embedding. More importantly, we show that unit-norm    
+
+> Preprint.
+> arXiv:2605.12836v1 [cs.LG] 13 May 2026 A
+> B
+> C
+> D
+> E
+> z1
+> z2
+> z3
+> z4(a) DSL dynamics: each zi(t)localizes toward a symbol anchor over time.
+> (b) State summary: tokens span SNR 1.0–24 .3,from masked to hard decoding.
+
+Figure 1: Discrete Stochastic Localization (DSL) dynamically “localizes” to sample discrete tokens. 
+
+(Left) DSL dynamics on a cyclic toy sequence (ABCDE, BCDEA, . . . ); details in Appendix D. (Right) 
+
+State summary at one snapshot: each token occupies a different SNR regime, transitioning from masked to soft to hard decoding as SNR increases. stochastic-localization parameterization makes the Bayes-optimal clean-token posterior depend only on the noisy token state, not on the nominal SNR. DSL therefore uses a time-invariant denoiser: masked, uncertain finite-SNR, and near-clean token states are all denoised to clean-token posteriors without explicit time conditioning. This time-invariant denoiser gives DSL a simple inference-level consequence. Because the model is not tied to a global diffusion time, different positions can occupy different SNR levels and follow different update schedules. Masked refinement, random-order autoregressive decoding, and hybrid continuous-then-discrete sampling are therefore shown to be different ways of querying the same posterior estimator, rather than separate sampler-specific models. Thus DSL keeps the endpoint behavior and checkpoint compatibility of masked diffusion while adding continuous finite-SNR states for richer refinement. We instantiate DSL by fine-tuning from a pretrained MDLM checkpoint and evaluate multiple inference paths through the same model on OpenWebText. On a masked-refinement path with a ReMDM-family decoder, DSL substantially improves few-step MAUVE across sampling budgets from T = 128 to T = 1024 . The same checkpoint also supports random-order autoregressive sampling without retraining and a hybrid continuous-then-discrete sampler that produces coherent generations in as few as T = 48 steps. Together, these results support the central claim: endpoint revealing, masked refinement, and continuous/hybrid denoising can be served by one posterior estimator rather than by separate sampler-specific models. 
+
+Contributions. 
+
+• A continuous-state framework for discrete generation. We introduce DSL, a stochastic-localization channel over unit-sphere token embeddings whose Bayes-optimal denoiser is, by construction, a function of the noisy state alone rather than the nominal SNR. A single time-agnostic network can therefore support an entire family of per-token SNR paths. • A practical recipe. Mixed-support SNR sampling trains the same denoiser on endpoint and finite-SNR states, while a mixture-of-tokens converter turns the framework into a trainable objective over a standard Transformer/DiT backbone. • Evidence across paths. A single DSL checkpoint improves few-step OpenWebText generation under masked refinement, supports random-order AR and hybrid sampling without retraining, and is competitive on Text8 likelihood. 22 Discrete Stochastic Localization 
+
+This section develops DSL in three steps. We first set up the simplest version of the framework—a single Gaussian observation channel applied to the whole sentence at one global signal-to-noise ratio (§2.1). We then introduce DSL’s key design choice, placing clean token embeddings on the unit sphere, and show that under this geometry the Bayes-optimal denoiser depends only on the noisy token and not on the nominal SNR (§2.2). Because a single denoiser then suffices across all SNR regimes, we can let each token position evolve under its own SNR; this generalizes the channel to a continuous family of per-token SNR paths (§2.3). Finally, two exact NLL views justify the state support used by the training objective (§2.4). 
+
+2.1 A sentence-level continuous starting point 
+
+We start from the simplest version of DSL: a Gaussian observation channel applied to the whole sentence at a single global signal-to-noise ratio. This setup is the natural continuous analogue of standard diffusion and lets us derive the MMSE drift form that the rest of the section will build on. Let s = ( s1, . . . , s L) ∈ V L be a sentence of length L, and let each token be embedded as xi =enc( si) ∈ Rd. We write the full sentence embedding as x = [ x1; . . . ; xL] ∈ RLd . The sentence-level localization channel is 
+
+zt = t x + √t ϵ, x ∼ P (x), ϵ ∼ N (0, I).
+
+Dividing by t gives zt/t = x + ϵ/√t, so zt is equivalent in information to observing x through additive Gaussian noise of variance 1/t . The signal-to-noise ratio is therefore exactly t: at t = 0 the observation carries no information, and as t grows zt becomes progressively more informative about 
+
+x. This channel admits a simple SDE realization, 
+
+dzt = x dt + dw, x ∼ P (x), (1) which conditions on the unknown clean sentence and so cannot be used directly for generation. We seek an equivalent unconditional SDE—equivalent in the sense that both dynamics induce the same marginal on zt —whose drift depends only on zt:
+
+dzt = ˆ x(zt, t ) dt + dw, ˆx(zt, t ) := EPt(x|zt)[x]. (2) The drift that achieves this equivalence is the MMSE denoiser, the posterior mean of x given zt (proof in Appendix A.4). At this point DSL still resembles a standard continuous-denoising construction: one global SNR, one denoiser that nominally depends on t.
+
+2.2 Unit-norm token geometry gives a time-invariant denoiser 
+
+The key design choice in DSL is to constrain every clean token embedding to lie on the unit sphere, 
+
+∥xi∥2 = 1 for all i. This is a structural constraint built into the embedding geometry, not a regularizer on the loss. As we now show, the benefit of this construction is to remove the nominal SNR t from the Bayes-optimal denoiser. Under the localization channel Eq. 1, Pt(x | zt) ∝ P (x) exp 
+
+
+
+x · zt − t 
+
+> 2
+
+∥x∥22
+
+
+
+is the Bayes posterior factorization. The term t 
+
+> 2
+
+∥x∥22 is the only place the nominal SNR enters. Under unit-norm token embeddings, ∥x∥22 = L for every length-L sentence, so this term is sentence-independent and cancels after normalization. The posterior, and therefore the MMSE denoiser, depends only on zt:
+
+ˆx(z, t ) = EPt(x|z)[x] = EP (x)[xex·z ]
+
+.
+
+EP (x)[ex·z ] = ˆ x(z). (3) The SNR-invariance in Eq. 3 requires both the localization parameterization, which makes z a poste-rior natural coordinate with aτ /σ 2 
+
+> τ
+
+= 1 , and unit-sphere geometry, which makes ∥xi∥2 vocabulary-constant. Either condition alone is insufficient; their composition produces the structural cancellation. This SNR-invariance is the structural property that drives the rest of the paper. The Bayes denoiser does not need to know which t generated zt to denoise it optimally; it only needs the noisy token. A single network can therefore in principle serve every SNR regime at once. We give the full derivation in Appendix A.2; geometric consequences—an entropy envelope on the induced token posterior 
+
+p(xi | zt) and Lipschitz smoothness—are deferred to Section 4. 32.3 Arbitrary per-token SNR paths 
+
+The SNR-invariance from §2.2 lets us drop the assumption that all tokens share a single SNR. We can let each position i evolve under its own SNR: 
+
+zi = γi xi + √γi ϵi, ϵi ∼ N (0, I),
+
+and we allow each γi(t) to follow an arbitrary admissible path—continuous, non-decreasing, with 
+
+γi(0) = 0 and γi(t) → ∞ as t → ∞ .For these per-token paths, the data-conditioned and unconditional dynamics are 
+
+dzi = xi ˙γi dt + p ˙γi dwi, x ∼ P (x), (4) 
+
+dzi = ˆ xi(z) ˙ γi dt + p ˙γi dwi. (5) We show in Appendix A.4 that these two SDEs induce the same marginal on zt along any admissible per-token path. Combined with the SNR-invariance of ˆxi, this means a single trained denoiser can be sampled along arbitrary per-token SNR schedules without changing the target distribution. The path interpretation is then immediate. Driving one token from γ=0 to ∞ while holding others fixed corresponds to revealing that token in random-order autoregressive (ROAR) style; sending selected positions back to γ=0 before re-denoising corresponds to masked diffusion with remasking; jointly increasing all γi corresponds to standard continuous diffusion. Random-order AR generation, masked refinement, and continuous diffusion sampling are different paths through one shared family of per-token SNR configurations —and, by the argument above, can all be served by one trained DSL model. 
+
+2.4 Exact NLL views that motivate the training support 
+
+The DSL training objective is not chosen as a sampler heuristic. It is derived from two exact likelihood views of the same per-token SNR formalism: a continuous path-integral NLL over finite-SNR denoising states, and an endpoint ROAR NLL over mask/reveal states. These identities are the likelihood-level reason that the mixed-support loss in Section 3.1 places training mass on both state families. 
+
+Continuous path-integral view. For any admissible per-token SNR path C, DSL admits the path-integral identity 
+
+− log P (x) = 12
+
+Z
+
+> C
+
+E(x, γ ) · dγ, Ei(x, γ ) := Epγ (z|x)
+
+∥xi − ˆxi(z)∥22
+
+ (6) (derivation in Appendix A.3). Under the Bayes-optimal denoiser, this error field is conservative, so the integral is path-independent: every admissible path gives the same − log P (x). Intermediate continuous-SNR states are therefore not heuristic interpolants—they are the integration variables of an exact likelihood. 
+
+Endpoint (ROAR) view. A second exact view comes from configurations in which some positions are already fully revealed ( γ=∞) and the rest remain fully masked ( γ=0 ). In this regime the sentence likelihood reduces to an autoregressive-style decomposition, and averaging over the size of the revealed subset, the choice of revealed positions, and the next index to predict yields the random-order autoregressive estimator 
+
+− 1 
+
+> L
+
+log P (s) = −E(k,A,i )
+
+ log P (si | sA) (7) (derivation in Appendix A.6). This is the subset-conditioned objective used by masked-diffusion language models [22, 16]; here, it arises directly from the same DSL path formalism. 
+
+Bridge to mixed-support training. Eq. 6 and Eq. 7 are the two likelihood sources of the practical objective in Section 3.1. The former contributes intermediate finite-SNR states; the latter contributes endpoint mask/reveal states. Section 3 then implements this NLL-derived support with a single mixed cross-entropy objective. 
+
+## 3 DSL Training and Architecture 
+
+Section 2 identifies two exact likelihood views and their corresponding SNR paths. Turning them into a trainable recipe involves two design decisions: a mixed-support SNR sampler that covers both families under a single loss (§3.1), and a posterior-view converter that presents the corrupted state to the backbone neural network architecture in a form that matches the underlying geometry (§3.2). 4Algorithm 1 DSL training 
+
+Require: Sequence length L; mixing weight λ ∈ [0 , 1] ; ROAR endpoint values γmin , γ max ; log-normal parameters (μ, σ ); backbone fθ with converter; learning rate η. 
+
+> 1:
+
+for each training step do  
+
+> 2:
+
+Sample sentence s = ( s1, . . . , s L) ∼ Pdata ; embed xi = enc( si). 
+
+> 3:
+
+Draw u ∼ Unif[0 , 1] . 
+
+> 4:
+
+if u < 1 − λ then ▷ ROAR branch  
+
+> 5:
+
+Sample reveal-set size k ∼ Unif {0, . . . , L −1}, subset A ⊆ [L] with |A|=k. 
+
+> 6:
+
+Set γi ← γmax for i ∈ A, and γi ← γmin otherwise.  
+
+> 7:
+
+else ▷ Continuous path branch  
+
+> 8:
+
+Sample γi ∼ LogNormal( μ, σ 2) independently for each i ∈ [L]. 
+
+> 9:
+
+end if  
+
+> 10:
+
+Sample ϵi ∼ N (0, I); form noisy tokens zi ← γixi + √γi ϵi. 
+
+> 11:
+
+Compute converter outputs mconv  
+
+> i
+
+from each zi via Eq. 11.  
+
+> 12:
+
+Run backbone: pθ (· | z) ← fθ (mconv 1 , . . . , mconv  
+
+> L
+
+). 
+
+> 13:
+
+Update θ ← θ − η ∇θ
+
+PLi=1 − log pθ (si | z). 
+
+> 14:
+
+end for 
+
+3.1 Mixed-SNR training 
+
+To cover both state families in a single model, the DSL objective should place training mass on both, written as a convex combination 
+
+Ltheory = λ Lcont -NLL + (1 − λ) LROAR -NLL . (8) 
+
+One CE loss for both branches. LROAR -NLL is already a token-level categorical log-likelihood, so cross-entropy on Pθ (si | z) is its exact form. Lcont -NLL comes from the path-integral identity Eq. 6 and is naturally an embedding-space MSE on the Bayes denoiser ˆxi(z) = E[xi | z]. We parameterize this denoiser through a categorical token posterior, 
+
+ˆxθ,i (z) = X
+
+> v∈V
+
+Pθ (si = v | z) xv . (9) Minimizing token-level cross-entropy makes Pθ (· | z) match the true posterior P (· | z); at this optimum, the posterior mean above recovers the same Bayes denoiser that minimizes the path-integral MSE. Thus, for the continuous branch, CE is a posterior-matching surrogate for the exact MSE NLL rather than a separate heuristic. It also avoids embedding-space optimization pathologies known from prior continuous diffusion language models [3]. Full details are in Appendix A.7. 
+
+Implementation as mixed SNR sampling. Since both branches share the same CE loss, the 
+
+λ-weighted mixture of losses equals, in expectation, a single CE loss under a λ-mixture of SNR distributions. We implement the latter directly: with probability λ we draw token-wise SNRs from a continuous-path log-normal distribution, and with probability 1 − λ from a ROAR-style endpoint distribution concentrated near the low- and high-SNR extremes. Both branches are trained under 
+
+LCE = − E(s,z)∼qtrain 
+
+> L
+
+X
+
+> i=1
+
+log pθ (si | z), (10) realizing Eq. 8 as a single CE objective over a λ-mixed SNR support. We summarize the full training procedure in Algorithm 1; hyperparameters are listed in Appendix C.2. 
+
+3.2 Posterior-view converter and backbone 
+
+The DSL posterior lives in token-embedding geometry, while a Transformer backbone expects token-like inputs that interact stably under self-attention. We introduce a converter that maps each noisy token zi to a mixture-of-tokens representation, 
+
+qconv  
+
+> i
+
+(v | zi) = softmax τ
+
+ ⟨zi, xv ⟩ + bv
+
+, mconv  
+
+> i
+
+= X
+
+> v∈V∪{ [MASK ]}
+
+qconv  
+
+> i
+
+(v | zi) xv , (11) Here v indexes candidate token values, xv = enc( v), and τ > 0 is a learnable converter temperature hyperparameter. We feed the sequence (mconv 1 , . . . , mconv  
+
+> L
+
+) to a standard Transformer encoder / DiT-style denoiser. Intuitively, mconv  
+
+> i
+
+is a vocabulary-weighted combination of unit-norm token 540 20 0 20 40  
+
+> t-SNE dim 1
+> 40
+> 20
+> 0
+> 20
+> 40
+> 60
+> t-SNE dim 2
+> MASK
+> cat
+> dog
+> bird
+> fish
+> horse
+> one
+> two
+> three four
+> five
+> red blue
+> green
+> black
+> white
+> rice
+> bread
+> milk
+> cake
+> soup
+> love
+> fear
+> hope
+> pain
+> joy
+> Animal
+> Number
+> Color
+> Food
+> Emotion
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> SNR
+
+(a) 0.0      
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Mean top-1 recovery
+> 42024
+> log-SNR = ln(SNR)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Mean P(target)
+
+(b) 
+
+Figure 2: The DSL posterior decomposes into direction and norm axes. (a) t-SNE projection of converter outputs for 25 probe tokens spanning five semantic classes. Trajectories sweep zi = γ ev
+
+from [MASK] across γ ∈ [10 −2, 80] and are colored by SNR. (b) Mean top-1 token recovery and target-token probability as γ increases. embeddings: when zi is very noisy the mixture is broad, and as the SNR grows it concentrates on a single token. The converter has two properties required for the analysis in Section 4: ∥mconv  
+
+> i
+
+∥2 ≤ 1 for every zi re-gardless of SNR, and mconv  
+
+> i
+
+concentrates smoothly as SNR grows. Together these make the backbone see a stationary input geometry in which semantic preference is carried by direction and confidence grows by controlled radial motion. This mirrors the norm–direction posterior decomposition made explicit later in Equation (12). Finally, DSL uses no informative timestep input: for compatibility with pretrained masked-diffusion DiTs [ 22 ], we keep the timestep embedding module but feed t = 0 throughout training and sampling, consistent with Eq. 3 since zi and mconv  
+
+> i
+
+already encode the corruption regime. 
+
+## 4 Posterior Geometry and Pathwise Error Control 
+
+Sections 2–3 define DSL as a posterior-state framework: exact NLL views identify the continuous-SNR and endpoint state families, and mixed-SNR training places support on both. This section explains what DSL geometry buys us for finite models. In the unit-sphere localization channel, the Bayes target is not a family of time-indexed denoisers { ˆx(·, t )}t, but a single posterior-mean map 
+
+ˆx(z) = E[x | z]. Different inference paths therefore differ only in which realized states z they visit, and all query the same denoising map. We analyze this shared map below: its geometry separates token identity from confidence and yields bounded, smooth posterior motion, which helps control path-dependent approximation error. 
+
+Norm–direction posterior geometry. Fix a token position. Written as a function of the noisy token z, the induced token posterior is 
+
+p(v | z) ∝ πv exp  ⟨z, xv ⟩ = πv exp  ∥z∥2 cos θv
+
+, (12) where xv := enc( v) is the unit-norm embedding of token v, πv is its prior, and θv is the angle between 
+
+z and xv . Thus direction controls token preference while norm controls posterior concentration; this is a property of the unit-sphere channel, not a calibration objective. Figure 2 verifies that the trained converter follows this decomposition: trajectories organize by direction, and increasing SNR primarily increases concentration. 
+
+Bounded and Lipschitz posterior motion. The converter maps each noisy state to a bounded mixture-of-tokens input, and clean token embeddings are unit-norm. At fixed converter temperature, this bounds the achievable logit range and gives an entropy envelope for the token posterior. Moreover, the Bayes posterior-mean map m(z) := E[x | z] is 1-Lipschitz: 
+
+∥m(z1) − m(z2)∥2 ≤ ∥ z1 − z2∥2. (13) 6Table 1: OWT ( L = 1024 ) unconditional generation. We report MAUVE ↑ as the primary metric; the full table with MAUVE / GenPPL / SentEnt is deferred to Appendix F. Bold marks the best MAUVE in each column among non-reference rows. Rows marked ‡ are taken from [ 31 ]; rows marked §
+
+from [ 21 ]. All DSL-FT rows use the same DSL-finetuned checkpoint. DSL-FT + ROAR (naive) and DSL-FT + MDLM are non-refinement decoder ablations: tokens are committed once and never remasked. The ReMDM-family rows add iterative remasking refinement.                                                                  
+
+> Method T= 128 T= 256 T= 512 T= 1024
+> Data (reference) 1.000 1.000 1.000 1.000 AR (reference) –––0.760 SEDD (absorb) 0.007 0.008 0.009 0.008 MDLM ‡0.015 0.023 0.031 0.042 MDLM+FB ‡0.064 0.086 0.103 0.133 MDLM+DFM ‡0.041 0.098 0.168 0.254 ReMDM ‡0.057 0.216 0.350 0.403 PRISM ‡0.175 0.268 0.281 0.260 PRISM-loop ‡0.118 0.294 0.423 0.527 ADLM §0.140 0.349 0.573 0.699 DSL-FT + ROAR (naive) –––0.551 DSL-FT + MDLM 0.402 0.481 0.506 0.495 DSL-FT + ReMDM (confidence-based) 0.615 0.622 0.707 0.610 DSL-FT + ReMDM-loop (principled ηcap )0.639 0.661 0.651 0.722
+
+Thus local perturbations in noisy state cannot be amplified by the Bayes denoising field. Full entropy bounds are in Appendix A.9, and the proof of Eq. 13 is in Appendix A.10. 
+
+## 5 Experiments 
+
+We evaluate DSL on unconditional OpenWebText generation and Text8 likelihood. For OpenWebText, we separate the evaluation into three stages. First, we use simple non-refinement MDM decoders to isolate the effect of DSL training itself. Second, we add ReMDM-family masked refinement [ 31 ]to test whether stronger iterative samplers can further exploit the DSL-trained posterior. Third, we evaluate a hybrid continuous-then-MDM sampler to show that the same checkpoint can compose continuous and discrete inference stages. Unless otherwise stated, all DSL results use the same DSL-finetuned checkpoint. 
+
+5.1 Setup 
+
+We evaluate unconditional OpenWebText (OWT) generation under the MDLM/ReMDM protocol: GPT-2 BPE tokenization, sequence length L = 1024 , 5k samples, nucleus sampling with top-p = 0 .9
+
+where applicable, and MAUVE computed with GPT-2 Large embeddings and K = 500 clusters [ 22 ,31 ]. OWT is our checkpoint-compatibility setting: we fine-tune DSL from the official MDLM checkpoint, whereas Text8 uses from-scratch training. Full sampling protocols and diagnostic metrics are in Appendix F. 
+
+Primary metric. Following ReMDM, we use MAUVE as the primary OWT generation metric and report GenPPL/SentEnt only as diagnostics [ 31 ]. GenPPL can be reduced by narrowing the generation distribution and sacrificing entropy/diversity; MAUVE instead compares model and human text distributions via divergence frontiers [ 18 ]. Full MAUVE / GenPPL / SentEnt results are in Appendix F. 
+
+5.2 Training-side ablation with simple MDM decoders 
+
+Before evaluating iterative refinement, we first isolate the effect of DSL training itself. We decode the same DSL-finetuned checkpoint with two simple MDM-style samplers that do not remask or refine committed tokens. The first is the vanilla MDLM sampler from the official implementation of [22 ]: it monotonically converts masked positions into sampled tokens and never revisits them. The second is ROAR, a random-order autoregressive sampler that reveals one token at a time using the DSL denoiser as an MDM posterior estimator. Full ROAR details are given in Appendix C.5, and the shared OWT sampling protocol is specified in Appendix C.4. Table 1 shows that DSL already performs strongly under these non-refinement decoders. Replac-ing the MDLM checkpoint with the DSL-finetuned checkpoint under the same vanilla MDLM sampler raises MAUVE from 0.015 /0.023 /0.031 /0.042 to 0.402 /0.481 /0.506 /0.495 across T =128 , 256 , 512 , 1024 . This is the cleanest training-side comparison in the table: the sampler is the 7Algorithm 2 DSL sampling with ReMDM sampler. Adapted from [ 31 , Algorithm 1]; in DSL, the ReMDM mask state is represented by zero SNR. 
+
+Input: DSL denoiser xθ , sampling steps T , noise schedule αt, clean endpoint SNR max , remask schedule σt.
+
+Initialize: set every token embedding to the mask endpoint, i.e., SNR( zT ) = 0 .
+
+for i = T, T − 1, . . . , 1 do 
+
+t = i/T, s = ( i − 1) /T ; set αt, α s.Set σt ∈ [0 , σ max  
+
+> t
+
+], where σmax  
+
+> t
+
+= min {1, (1 − αs)/α t}.Predict clean-token posteriors bx = xθ (zt).Form the ReMDM endpoint posterior pθ (zs | zt) = qDSL 
+
+> σ
+
+ zs | zt, x = bx, where ReMDM’s mask atom is interpreted as SNR = 0 and its clean-token atom as SNR = SNR max .Sample zs ∼ pθ (zs | zt).Realize sampled clean tokens at SNR max ; realize remasked tokens by resetting their SNR to 0.Set zt ← zs.
+
+end for Output: decoded tokens from the final clean-endpoint latents. 
+
+standard monotone MDM decoder, so the improvement comes from the DSL-trained posterior rather than from remasking or self-correction. ROAR provides a complementary endpoint test. It performs a single random-order reveal pass with 
+
+T = L = 1024 , commits each token exactly once, and performs no confidence-based ordering, remasking, or iterative refinement. Even under this deliberately naive decoding path, DSL-FT + ROAR reaches MAUVE 0.551 , exceeding DSL-FT + MDLM at the same budget and also surpassing several prior refinement baselines. Together, the MDLM and ROAR ablations show that DSL improves the underlying clean-token posterior before any ReMDM-family refinement is added. 
+
+5.3 Masked refinement with ReMDM-family decoders 
+
+Algorithm 2 summarizes the primary masked-refinement sampler used for the main OWT results. The sampler starts from the zero-SNR mask state, repeatedly predicts clean-token posteriors, reveals a subset of masked positions, and optionally remasks committed tokens inside a ReMDM-loop window. The ReMDM-loop row in Table 1 instantiates this template with the step-budgeted capped schedule 
+
+ηcap (T ); the confidence-based row changes only the remasking policy. Vanilla MDLM, ROAR, and hybrid sampling details are deferred to Appendix C.4, Appendix C.5, and Appendix C.6. Having isolated the training-side gain with simple decoders, we next evaluate whether iterative masked refinement can further exploit the same DSL checkpoint. Table 1 compares DSL with ReMDM-family decoders against published diffusion baselines under the controlled OWT protocol. Both DSL refinement rows substantially improve MAUVE across step budgets from T = 128 to 
+
+T = 1024 . The confidence-based schedule performs best at T = 512 , reaching MAUVE 0.707 ,while the step-budgeted ReMDM-loop schedule with principled ηcap (T ) performs best at T = 128 ,
+
+T = 256 , and T = 1024 , reaching 0.639 , 0.661 , and 0.722 respectively. Table 2: Few-step OWT generation with the DSL hybrid continuous-then-MDM sampler. All rows use the same DSL-finetuned checkpoint. For each 
+
+(Tcont , T MDM ), we report a balanced σswitch from a small handoff sweep. The full sweep with MAUVE / GenPPL / SentEnt is in Appendix F.                             
+
+> Tcont TMDM NFE σswitch MAUVE ↑
+> 16 16 32 0.49 0.501 16 32 48 0.49 0.662 16 48 64 0.49 0.702 32 16 48 0.46 0.587 32 32 64 0.46 0.589 32 48 80 0.46 0.724
+
+The comparison with the preceding ablation rows separates training and sampling effects. DSL-FT + MDLM and DSL-FT + ROAR show that DSL training already improves non-refinement decoding. The ReMDM-family rows then show that iterative remasking fur-ther unlocks the same checkpoint, improving from DSL-FT + MDLM’s 0.495 and ROAR’s 
+
+0.551 at T = 1024 to 0.722 with ReMDM-loop. Thus DSL improves the denoiser first, and refinement policies further exploit the im-proved posterior. 
+
+5.4 Hybrid continuous-then-MDM sampling 
+
+We also evaluate a hybrid sampler that composes two inference regimes within the same DSL checkpoint. The sampler first runs a short continuous denoising stage, where each position carries soft finite-SNR token evidence, and then switches to an MDM-style endpoint stage that commits the remaining uncertainty into discrete tokens. This experiment is designed as a path-compatibility test: 8can one DSL checkpoint support both continuous intermediate states and discrete endpoint decoding in a single generation run? Table 2 reports few-step OWT generation with this hybrid path. At 48 total steps, the hybrid sampler reaches MAUVE 0.662 , already exceeding the non-refinement DSL-FT + MDLM result at T = 1024 .With 80 total steps, it reaches 0.724 , comparable to the best ReMDM-family result in Table 1. The allocation between continuous and discrete stages matters: at the same nominal 64-step budget, 
+
+(Tcont , T MDM ) = (16 , 48) reaches 0.702 , while (32 , 32) reaches 0.589 . We therefore view hybrid sampling as a promising DSL-specific inference path, but not yet as an exhaustively optimized decoding policy. 
+
+5.5 Likelihood-based evaluation on Text8 Table 3: Bits Per Character (BPC) on Text8 test set. Continuous diffu-sion entries (Plaid, DSL) are ELBO upper bounds; discrete diffusion and AR entries are exact NLL — direct numerical comparison across these categories is not meaningful                          
+
+> Method BPC ( ↓)
+> Continuous Diffusion
+> Plaid (MD4 impl.) ≤1.48 DSL (Ours) ≤1.45
+> Discrete Diffusion
+> Mult. Diffusion ≤1.72 D3PM Uniform ≤1.61 D3PM Absorb ≤1.45 SEDD Absorb ≤1.41 MDLM ≤1.40 MD4 ≤1.37
+> Autoregressive
+> Transformer AR 1.23
+> IAF/SCF 1.88 AR Argmax Flow 1.39 AR Discrete Flow 1.23
+> Any-order Autoregressive
+> ARDM ≤1.43 MAC ≤1.40
+
+The DSL framework admits two likelihood estimators follow-ing Section 2.4: the path-integral identity Eq. 6 and the ROAR estimator Eq. 7. Table 3 reports BPC on Text8. DSL achieves 
+
+≤ 1.45 BPC, the first continuous-state NLL estimate to ap-proach the masked-discrete-diffusion range (MDLM ≤ 1.40 ,MD4 ≤ 1.37 ). Continuous-state estimates are upper bounds via ELBO and so cannot match the exact NLL accessible to masked and AR models; the relevant comparison is to other continuous-state baselines, where DSL improves on Plaid by 
+
+≥ 0.03 BPC. Setup details in Appendix F. 
+
+## 6 Related Work 
+
+DSL connects two lines of work. Continuous diffusion LMs operate over noisy token embeddings and expose finite-SNR states, but typically rely on timestep/noise conditioning and have trailed masked discrete diffusion on language bench-marks [ 13 , 27 , 2, 3]. Masked diffusion and ReMDM decode through endpoint mask/reveal states, with remasking enabling revision of visible tokens [ 1, 22 , 24 , 31 ]. Related hybrid meth-ods connect discrete and Gaussian processes through loss-level mixtures or alignments [ 23 , 19 ]. DSL differs in that its stochastic-localization SDE constrains the entire intermediate path: posterior-mean drift plus Brownian noise gives finite-SNR states a path-level identity from masked to clean tokens. This SDE structure underlies the path-integral identity under the Bayes-optimal denoiser, whereas loss-level hybrids do not impose an analogous conservative field or path-independence guarantee. DSL is therefore comple-mentary: unit-sphere posterior coordinates make the Bayes denoiser SNR-invariant, so continuous denoising, ROAR revealing, and masked remasking become different per-token SNR paths through one time-agnostic model. 
+
+## 7 Conclusion 
+
+We introduced Discrete Stochastic Localization (DSL), a continuous-state framework for discrete sequence generation with unit-sphere token embeddings. By making the clean-token posterior only depend on the noisy state rather than a nominal timestep, DSL yields a time-agnostic denoiser and a mixture-of-tokens interface for standard Transformer/DiT backbones. A single DSL supports masked refinement, random-order AR, and hybrid continuous-then-MDM sampling, improving OpenWebText generation across paths and approaching the MDM likelihood range on Text8. These results suggest parameterizing continuous diffusion for language as posterior-state denoising over noisy tokens. 
+
+Limitations. Our evaluation is limited to OpenWebText generation and Text8 likelihood. The reported ReMDM-family and hybrid samplers are not the result of an exhaustive decoding-policy search; they are intended to test whether DSL training improves the underlying posterior and whether one checkpoint can be queried along multiple SNR paths. More optimized remasking schedules, hybrid handoff rules, larger models, longer contexts, and conditional generation remain important directions for future work. 9References 
+
+[1] Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Structured denoising diffusion models in discrete state-spaces. Advances in Neural Information Processing Systems , 34:17981–17993, 2021. [2] Sander Dieleman, Laurent Sartran, Arman Roshannai, Nikolay Savinov, Yaroslav Ganin, Pierre H Richemond, Arnaud Doucet, Robin Strudel, Chris Dyer, Conor Durkan, et al. Continu-ous diffusion for categorical data. arXiv preprint arXiv:2211.15089 , 2022. [3] Ishaan Gulrajani and Tatsunori B Hashimoto. Likelihood-based diffusion language models. 
+
+Advances in Neural Information Processing Systems , 36:16693–16715, 2023. [4] Dongning Guo, Shlomo Shamai, and Sergio Verdú. Mutual information and minimum mean-square error in gaussian channels. IEEE transactions on information theory , 51(4):1261–1282, 2005. [5] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in Neural Information Processing Systems , 33:6840–6851, 2020. [6] Jonathan Ho, Tim Salimans, Alexey Gritsenko, William Chan, Mohammad Norouzi, and David J Fleet. Video diffusion models. Advances in neural information processing systems ,35:8633–8646, 2022. [7] Emiel Hoogeboom, Alexey A Gritsenko, Jasmijn Bastings, Ben Poole, Rianne van den Berg, and Tim Salimans. Autoregressive diffusion models. arXiv preprint arXiv:2110.02037 , 2021. [8] Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forré, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. Advances in neural information processing systems , 34:12454–12465, 2021. [9] Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. arXiv preprint arXiv:2506.08009 ,2025. [10] Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine. Elucidating the design space of diffusion-based generative models. arXiv preprint arXiv:2206.00364 , 2022. [11] Xianghao Kong, Rob Brekelmans, and Greg Ver Steeg. Information-theoretic diffusion. In 
+
+International Conference on Learning Representations , 2023. [12] Zhifeng Kong, Wei Ping, Jiaji Huang, Kexin Zhao, and Bryan Catanzaro. Diffwave: A versatile diffusion model for audio synthesis. arXiv preprint arXiv:2009.09761 , 2020. [13] Xiang Li, John Thickstun, Ishaan Gulrajani, Percy S Liang, and Tatsunori B Hashimoto. Diffusion-lm improves controllable text generation. Advances in neural information processing systems , 35:4328–4343, 2022. [14] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In Forty-first International Conference on Machine Learning ,2024. [15] Matt Mahoney. Large Text Compression Benchmark. https://www.mattmahoney.net/dc/ text.html , 2006. Accessed: 2025-05-11. [16] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. arXiv preprint arXiv:2502.09992 , 2025. [17] Daniel P Palomar and Sergio Verdú. Gradient of mutual information in linear vector gaussian channels. IEEE Transactions on Information Theory , 52(1):141–154, 2005. [18] Krishna Pillutla, Swabha Swayamdipta, Rowan Zellers, John Thickstun, Sean Welleck, Yejin Choi, and Zaid Harchaoui. Mauve: Measuring the gap between neural text and human text using divergence frontiers. Advances in Neural Information Processing Systems , 34:4816–4828, 2021. 10 [19] Patrick Pynadath, Jiaxin Shi, and Ruqi Zhang. Candi: Hybrid discrete-continuous diffusion models. arXiv preprint arXiv:2510.22510 , 2025. [20] Hubert Ramsauer, Bernhard Schäfl, Johannes Lehner, Philipp Seidl, Michael Widrich, Thomas Adler, Lukas Gruber, Markus Holzleitner, Milena Pavlovi´ c, Geir Kjetil Sandve, et al. Hopfield networks is all you need. arXiv preprint arXiv:2008.02217 , 2020. [21] Litu Rout, Constantine Caramanis, and Sanjay Shakkottai. Anchored diffusion language model. 
+
+arXiv preprint arXiv:2505.18456 , 2025. [22] Subham Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. Advances in Neural Information Processing Systems , 37:130136–130184, 2024. [23] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin T Chiu, and Volodymyr Kuleshov. The diffusion duality. In ICLR 2025 Workshop on Deep Generative Model in Machine Learning: Theory, Principle and Efficacy .[24] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized masked diffusion for discrete data. Advances in neural information processing systems , 37:103131–103167, 2024. [25] Andy Shih, Dorsa Sadigh, and Stefano Ermon. Training and inference on any-order autoregres-sive models the right way. Advances in Neural Information Processing Systems , 35:2762–2775, 2022. [26] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising diffusion implicit models. arXiv preprint arXiv:2010.02502 , 2020. [27] Robin Strudel, Corentin Tallec, Florent Altché, Yilun Du, Yaroslav Ganin, Arthur Mensch, Will Grathwohl, Nikolay Savinov, Sander Dieleman, Laurent Sifre, et al. Self-conditioned embedding diffusion for text generation. arXiv preprint arXiv:2211.04236 , 2022. [28] Qiao Sun, Zhicheng Jiang, Hanhong Zhao, and Kaiming He. Is noise conditioning necessary for denoising generative models? arXiv preprint arXiv:2502.13129 , 2025. [29] Dustin Tran, Keyon Vafa, Kumar Agrawal, Laurent Dinh, and Ben Poole. Discrete flows: Invertible generative models of discrete data. Advances in Neural Information Processing Systems , 32, 2019. [30] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems , 30, 2017. [31] Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Remasking discrete diffusion models with inference-time scaling. arXiv preprint arXiv:2503.00307 , 2025. [32] Yunshu Wu, Yingtao Luo, Xianghao Kong, Evangelos E Papalexakis, and Greg V Steeg. Your diffusion model is secretly a noise classifier and benefits from contrastive training. Advances in Neural Information Processing Systems , 37:32370–32399, 2024. [33] Zachary Ziegler and Alexander Rush. Latent normalizing flows for discrete sequences. In 
+
+International Conference on Machine Learning , pages 7673–7682. PMLR, 2019. 11 Appendix Overview Appendix A: Mathematical Derivations 
+
+§A.1 Notation and Summary Table §A.2 Optimal Denoiser is SNR-Invariant §A.3 Exact Likelihood over Arbitrary SNR Paths §A.4 Equivalence of Conditional and Unconditional Dynamics §A.5 Autoregressive Contours as a Special Case §A.6 Exact ROAR Likelihood Decomposition and Estimator §A.7 Cross-Entropy as a Surrogate for the Path-Integral MSE §A.8 Posterior-State Matching and Inference-Time Error Correction §A.9 Confidence Geometry: Norm–Direction Decomposition and Bounded Entropy §A.10 Lipschitz Continuity of the Induced Posterior-Mean Map 
+
+## Appendix B: Continuous States Are Not Enough 
+
+Posterior Coordinates vs. Timestep-Conditioned Denoising 
+
+## Appendix C: Training and Sampling Details 
+
+§C.1 OWT Finetuning Settings §C.2 Mixed SNR Support Used in Training §C.3 Masked Refinement with a DSL Checkpoint §C.4 Sampling Settings on OWT §C.5 ROAR Sampler Details §C.6 Hybrid Sampler Details 
+
+## Appendix D: Mechanistic Analysis 
+
+§D.1 Cyclic Toy Setup and Correction Example §D.2 Why Targeted Remasking Matters §D.3 Robustness to Self-Generated Intermediate Drafts §D.4 Sampling Diagnostics and Over-Refinement 
+
+## Appendix E: Calibration and Endpoint-Smoothing Ablation 
+
+§E.1 Atomic vs. Smoothed ROAR Endpoints §E.2 Near-Clean Calibration §E.3 Downstream Step–Quality Tradeoff 
+
+## Appendix F: Additional Experiments 
+
+§F.1 OpenWebText Generation §F.2 Text8 Likelihood Evaluation 
+
+## Appendix G: Limitations and Broader Impacts Appendix H: Assets and Licenses 
+
+12 Appendix I: Additional Qualitative Samples 
+
+§I.1 Text8 Samples §I.2 OpenWebText Samples 
+
+## A Mathematical Derivations 
+
+This appendix collects the derivations underlying the DSL method in Section 2. The main text only uses three consequences of these results: (i) the denoiser is realized-state invariant under unit-sphere token geometry, (ii) exact likelihood views motivate both continuous and ROAR-style support in training, and (iii) the induced posterior-mean map is smooth. Here we provide the full proofs and auxiliary technical remarks. 
+
+A.1 Notation and Summary Table Symbol Description 
+
+i = 1 , . . . , L Index for sequences of length Lt ∈ [0 , ∞) Index for continuous time dynamics, equal to SNR 
+
+γi ∈ [0 , ∞) Per token SNR, defined on a contour or as function of tsi ∈ V i-th symbol/token from the vocabulary V
+
+xi = enc( si) ∈ Rd Embed token as vector on unit hyper-sphere surface ( ∥x∥ = 1 )
+
+zi ∈ Rd Noisy embedding of the i-th token at noise level tdz = x dt + dW Conditional SDE for dynamics 
+
+z = t x + √t ϵ Sample conditional marginal 
+
+z ∼ N (t x, t ) Alternate form to sample conditional marginal 
+
+dz = ˆ x(z) dt + dW Unconditional SDE with equivalent dynamics to conditional SDE 
+
+ˆx(z, t ) = E[x|z(t)] Optimal denoiser would generally depend on time or noise level 
+
+ˆx(z) = Ex[xex·z ]/Ex[ex·z ] Key result: optimal denoiser doesn’t depend on time for spherical em-beddings 
+
+ˆx(z) = ∇z LSE x∈D (z · x) For empirical distribution, relates to gradient of cumulant generating function, or modern Hopfield energy[20] 
+
+− log P (s) = − log P (x)= 1/2
+
+Z ∞
+
+> 0
+
+dt Ez(t)|x[∥x − ˆx(z)∥2] Probability relates to MMSE, for any one-to-one embedding [ 4 , 11 , 32 ]Table 4: Summary of notation and key relations. 
+
+A.2 Optimal Denoiser is SNR-Invariant 
+
+We now derive the optimal denoiser for the noise channel with per token SNR described in the main text. The denoiser is as follows, where we first re-write with Bayes rule, then expand the Gaussian noise channel. 
+
+ˆx(z, γ) ≡ Epγ (x|z)[x] = 
+
+P 
+
+> x
+
+pγ (z|x)P (x)x
+
+pγ (z) =
+
+P 
+
+> x
+
+pγ (z|x)P (x)x
+
+P 
+
+> ¯x
+
+pγ (z| ¯x)P ( ¯ x)=
+
+P 
+
+> x
+
+exp( −1/2∥z − γx ∥2/γ)/Z(γ)P (x)x
+
+P 
+
+> ¯x
+
+exp( −1/2∥z − γ ¯x∥2/γ)/Z(γ)P ( ¯ x)=
+
+P 
+
+> x
+
+exp( z · x)P (x)x
+
+P 
+
+> ¯x
+
+exp( z · ¯x)P ( ¯ x)ˆx(z, γ) = ˆ x(z) = Ex[xex·z ]/Ex[ex·z ]
+
+13 The division and multiplication between γ and z should be understood to be applied component-wise, per token. We canceled out the ∥z∥ term, and due to the normed embedding, exp( −1/2γ∥x∥2)
+
+terms become constant and cancel out, leaving us with no dependence on γ at all. The distribution 
+
+P (x)ez·x/Z(z) is sometimes referred to as an exponentially tilted distribution of P (x). This form also can be written as ∇z log Ex[ex·z ], which is a gradient of the cumulant generating function. The results above also hold for the simpler case where γi(t) = t, leading to a denoiser which is invariant to t. Recent work has also empirically noted that even for traditional diffusion models, noise conditioning is not always necessary or useful[28]. 
+
+A.3 Exact Likelihood over Arbitrary SNR Paths 
+
+We make use of the following theorem, re-stated with our setting and notation, from [ 17 ], to prove Equation (6). 
+
+Theorem A.1 ([17], Thm. 5) Consider the signal model 
+
+zi = γixi + √γiϵi,
+
+where x is arbitrarily distributed with finite second-order moments, and ϵi ∼ N (0 , I) is independent Gaussian noise. Then the gradient of the Kullback–Leibler divergence between the conditional output distribution 
+
+pγ (z|x) and the unconditional output distribution pγ (z) is 
+
+∇γ D pγ (z|x) ∥ pγ (z) = 1/2E(x, γ),
+
+where Ei(x, γ) ≡ Epγ (z|x)[∥xi − ˆxi(z)∥2], and ˆx(z) = Epγ (x|z)[x] is the MMSE estimator. 
+
+We use this theorem in conjunction with the fundamental theorem of calculus for line integrals to obtain the following. 
+
+Z
+
+> C
+
+dγ · ∇ γ D pγ (z|x) ∥ pγ (z) = 1/2
+
+Z
+
+> C
+
+dγ · E(x, γ) = D pγ (z|x) ∥ pγ (z) γ1
+
+> γ0
+
+(14) Here, γ0, γ1 define the endpoints of the contour, which must be piecewise smooth. Next, let’s consider some of the limits. 
+
+lim  
+
+> γ→0
+
+D pγ (z|x) ∥ pγ (z) = 0 (15) 
+
+lim  
+
+> γ→∞
+
+D pγ (z|x) ∥ pγ (z) = − log P (x) (16) The second limit can be observed as follows. 
+
+D pγ (z|x) ∥ pγ (z) = Epγ (z|x)
+
+
+
+log p(z|x)
+
+p(z)
+
+
+
+= Epγ (z|x)
+
+
+
+log P (x|z)
+
+P (x)
+
+
+
+= Epγ (z|x) [log P (x|z)] − log P (x) (17) Because P (x) is discrete, lim γ→∞ P (x | z) = 1 almost surely. Combining Equation (17) and Equation (14), we obtain the following. 
+
+− log P (x) = 1/2
+
+Z
+
+> Cγ
+
+d¯γ · E(x, ¯γ) − Epγ (z|x) [log P (x|z)] (18) Where the curve Cγ is piecewise smooth, begins at γ = 0 and ends at γ. We can use this result to obtain a path that starts at zero and ends at t, and Equation (6) when we let the end of the contour go to infinity. ■
+
+14 A.4 Equivalence of Conditional and Unconditional Dynamics 
+
+Consider the marginals generated conditioned on the data with the following noise channel. 
+
+pγ (z) ≡ X
+
+> x
+
+pγ (z|x)P (x)
+
+Where pγ (z|x) is a Gaussian noise channel, which could be defined as follows, 
+
+zi = γi xi + √γi ϵi, ϵ ∼ N (0 , I ).
+
+This is equivalent to the conditional SDE dynamics, 
+
+dzi = xi ˙γi dt + p ˙γidW i, x ∼ P (x), (19) as can be seen from direct integration. We can use the Fokker-Planck equation to understand the marginal dynamics of this process. Consider a particular contour, γ(t), as defined in the text, which goes from zero to infinity. At γ(0) = 0 , we have 
+
+pγ(0) (z) = δ(z).
+
+The Fokker-Planck equation gives the following for the conditional dynamics. 
+
+∂∂t pγ(t)(z | x) = − X
+
+> i
+
+∇zi · ( ˙ γi x pγ (z | x)) + X
+
+> i
+
+˙γi∆zi pγ (z | x)
+
+By marginalizing over P (x), get the following. 
+
+∂∂t pγ(t)(z) = X
+
+> x
+
+P (x) ∂∂t pγ(t)(z | x) (20) 
+
+= − X
+
+> i
+
+∇zi · ˙γi
+
+X
+
+> x
+
+P (x)xi pγ (z | x)
+
+!
+
++ X
+
+> i
+
+˙γi∆zi pγ (z) (21) 
+
+= − X
+
+> i
+
+∇zi · ( ˙ γi ˆxi(z) pγ (z)) + X
+
+> i
+
+˙γi∆zi pγ (z) (22) In the last line, we used the definition of the optimal denoiser in terms of the posterior mean. The goal is to design an unconditional dynamics that obeys the same evolution of the marginal. The unconditional dynamics are defined as follows. 
+
+dzi = ˆ xi(z) ˙ γi dt + p ˙γidW i, (23) Applying the Fokker-Planck equation to this expression directly matches Equation (22). ■
+
+A.5 Autoregressive Contours as a Special Case 
+
+The continuous SNR path formulation also recovers the standard autoregressive factorization as a special contour choice. In particular, when the contour reveals one token at a time while treating previously revealed tokens as effectively clean and future tokens as maximally corrupted, the path-integral likelihood reduces to the standard chain rule. For completeness, we isolate this argument here, since the main text only needs the high-level consequence. 
+
+Conditional denoisers Replacing P (x) above with P (x|y) gives the conditional denoiser, and we still get a result invariant to SNR. 
+
+ˆx(z, y, γ) = ˆ x(z, y ) = EP (x|y)[xex·z ]/EP (x|y)[ex·z ]
+
+We used the following result to show the connection between probability estimates using certain contours and autoregressive models. 
+
+− log P (x) = 12
+
+Z
+
+> CAR
+
+E(x, γ) · dγ = 12
+
+> L
+
+X
+
+> i=1
+
+Z
+
+> Ci
+
+E(x, γ) · dγ
+
+=
+
+> L
+
+X
+
+> i=1
+
+12
+
+Z ∞
+
+> 0
+
+dγ iEi(x, (∞, . . . , γ i, 0, . . . )) = −
+
+> L
+
+X
+
+> i=1
+
+log P (xi|x<i )
+
+15 To show this, we need to demonstrate the last equality explicitly. 
+
+− log P (xi | x<i ) = 12
+
+Z ∞
+
+> 0
+
+dγ i Ei (x, γ = ( ∞, . . . , γ i, 0, . . . )) (24) First, we rewrite the left hand side. 
+
+12
+
+Z ∞
+
+> 0
+
+dγ i Ei (x, γ = ( ∞, . . . , γ i, 0, . . . )) = 12
+
+Z ∞
+
+> 0
+
+dγ i Epγ (z|x)
+
+h
+
+∥xi − ˆxi(z)∥2i
+
+= 12
+
+Z ∞
+
+> 0
+
+dγ i Epγi (zi|xi)
+
+h
+
+∥xi − ˆxi(x<i , zi, 0, . . . )∥2i
+
+In the last line, we note that for tokens at SNR 0, there is no information, so the optimal denoiser will be conditioned on a constant, zero. For tokens with infinite SNR, z<i is equivalent in distribution to 
+
+x<i , which we replace in the argument, with a slight abuse of notation. Next, we see what happens when we try to write P (xi|x<i ), in terms of the optimal conditional denoiser for denoising only zi, using Equation (6), where the contours simplify to 1-d integrals as we only have one SNR, γi. In that case we know we can write the probability in terms of the conditional denoiser, which we will call ˜x(zi, x<i ) to distinguish from ˆx.
+
+− log P (xi|x<i ) = 12
+
+Z ∞
+
+> 0
+
+dγ i Epγi (zi|xi)[∥xi − ˜xi(zi, x<i )∥2]
+
+We can see that this matches the expression above, except for the denoisers. These denoisers are conditioned on the same information, and have to be MMSE denoisers for the same denoising problem, and therefore they must be equivalent, and equality of Equation (24) must hold. Conditional denoisers Replacing P (x) above with P (x|y) gives the conditional denoiser, and we still get a result invariant to SNR. 
+
+ˆx(z, y, γ) = ˆ x(z, y ) = EP (x|y)[xex·z ]/EP (x|y)[ex·z ]
+
+A.6 Exact ROAR Likelihood Decomposition and Estimator 
+
+This subsection derives the exact random-order conditional likelihood that motivates the ROAR-style endpoint branch in DSL training. The purpose is not to claim that the main experiments directly optimize this objective. Rather, it provides a second exact likelihood source, complementary to the continuous path-integral likelihood, and justifies including masking/reveal-like endpoint states in the training support. In DSL, we point out that masked diffusion modeling is equivalent to paths in SNR space where we completely denoise one variable (going from zero SNR to infinite SNR), conditioned on zero noise (infinite SNR) for the already “unmasked” variables and infinite noise (zero SNR) for the “masked” variables. If we choose our SNR paths to be the ROAR paths, then we just need to model conditional probabilities of the next variable, given previously unmasked variables, similar to masked diffusion models. However, this idea doesn’t exactly match up with practical implementations of masked diffusion models like [ 16 ] because they write their objective (Eq. 3 in [ 16 ] for example) in terms of probability of an unmasked set, conditioned on a masked set. Below, we derive a similar expression starting from the perspective that we are trying to model ROAR SNR paths. Unlike the result in [ 16 ], our derivation is path-based and makes no explicit mention of time. Consider a multivariate probability distribution, p(x1, . . . , x n). We can always decompose this distribution autoregressively as p(x1, . . . , x n) = Qni=1 p(xi|x1: i). We could in principle use any ordering of the variables for this decomposition. Let π be a permutation of {1, . . . , n }, indexed with vector notation. For n = 3 we could have π1:3 = (3 , 1, 2) , for example. For a particular permutation, 
+
+π, we could write the AR decomposition as follows. 
+
+p(x1, . . . , x n) = 
+
+> n
+
+Y
+
+> i=1
+
+p(xπi |xπ1: i−1 )
+
+There are n! permutations, so we can take the average over the set of all permutations, Sn, and switch to log probabilities for convenience. 
+
+log p(x1, . . . , x n) = 1
+
+n!
+
+X
+
+> π∈S n
+> n
+
+X
+
+> i=1
+
+log p(xπi |xπ1: i−1 ) (25) 16 Now, note that this expression has many equivalent terms that can be grouped together. We are summing over a total of n2n log probability terms, but terms like log p(x3|x1, x 2) = log p(x3|x2, x 1),i.e., the order of the conditioned information doesn’t matter. This suggests that we should re-write this sum in terms of sets. Let [n] = {1, . . . , n } and, for A ⊆ [n], write xA = {xi : i ∈ A}. We will have terms of the form log p(xi|xA) (where i is not in the subset A) and we need to count how many such terms appear in the original sum. The number of permutations where we have the |A|
+
+indices in A followed by i, followed by the remaining (n − | A| − 1) indices in arbitrary order is 
+
+|A|!( n − | A| − 1)! .
+
+log p(x1, . . . , x n) = X
+
+> A⊆[n]
+
+|A|!( n − | A| − 1)! 
+
+n!
+
+X
+
+> i∈[n]\A
+
+log p(xi|xA)=
+
+> n−1
+
+X
+
+> k=0
+
+nn
+
+X
+
+> A⊆[n]: |A|=k
+
+k!( n − k − 1)! 
+
+n!
+
+n − kn − k
+
+X
+
+> i∈[n]\A
+
+log p(xi|xA)= n
+
+> n−1
+
+X
+
+> k=0
+
+1
+
+n
+
+X
+
+> A⊆[n]: |A|=k
+
+k!( n − k)! 
+
+n!
+
+X
+
+> i∈[n]\A
+
+1
+
+n − k log p(xi|xA)
+
+(26) In the second line, we rewrite the sum over sets to a sum over subsets of size k, then a sum of k. We also introduce some factors of 1 which are re-arranged in the third line. The goal is to re-write this expression in terms of expectations to get a convenient Monte Carlo estimator. 
+
+1
+
+n log p(x1, . . . , x n) = 
+
+> n−1
+
+X
+
+> k=0
+
+1
+
+n
+
+| {z } 
+
+> Uniform over k
+
+X
+
+> A⊆[n]: |A|=k
+
+1
+
+nk
+
+| {z }   
+
+> Uniform over sets |A|=k
+
+X
+
+> i∈[n]\A
+
+1
+
+n − k
+
+| {z }     
+
+> Uniform over i∈[n]\A
+
+log p(xi|xA)
+
+(27) At this point, we can recognize that each sum corresponds to a sample over a uniform distribution. The number of indices i in the set [n] \ A is n − k, the number of subsets of [n] of size k is  nk
+
+, the number of subset sizes is n.
+
+1
+
+n log p(x1, . . . , x n) = EP (k,A,i )[log p(xi|xA)] 
+
+P (k) = Unif {0, 1, . . . , n − 1}
+
+P (A|k) = Unif {A ⊆ [n] : |A| = k}
+
+P (i|A, k ) = Unif {[n] \ A}
+
+(28) This gives us a concrete procedure for obtaining an unbiased estimator of the log likelihood that only requires evaluating probabilities of marginals, conditioned on sets of variables. This is exactly what our denoiser is trained to do. For discrete random variables, the inner expectation is just the mean cross entropy per variable of unmasked variables conditioned on masked ones, as seen in the LLADA estimator. We construct a Monte Carlo estimate by sampling over subsets of A. Training with this objective is simple as each Monte Carlo sample is a simple cross entropy. We summarize the procedure in Alg. 3. 
+
+Algorithm 3 ROAR NLL Estimator 
+
+Require: Sample, x. Model giving marginal prob-abilities, p(xi|xA) for any subset of unmasked tokens, A. 
+
+> 1:
+
+Sample k and set A of size k uniformly  
+
+> 2:
+
+Average cross entropy per variable of masked to-kens conditioned on unmasked token set, A  
+
+> 3:
+
+return NLL estimate (bits per token) 
+
+A.7 Cross-entropy as a surrogate for the path-integral MSE 
+
+This appendix justifies the choice of token-level cross-entropy on the continuous-SNR branch of DSL training. The path-integral identity Eq. 6 expresses − log P (x) as a contour integral of the squared 17 embedding error 
+
+Ei(x, γ ) = Epγ (z|x)
+
+∥xi − ˆxi(z)∥22
+
+,
+
+where ˆxi = E[xi | z] is the Bayes-optimal denoiser. A direct continuous-NLL training scheme would parameterize a denoiser ˆxi,θ in embedding space and minimize this MSE. We argue that DSL should instead minimize a token-level cross-entropy objective that has the same Bayes-optimal solution but avoids three concrete pathologies of embedding-space MSE. 
+
+Same Bayes-optimal solution. Under the unit-sphere constraint, the Bayes denoiser admits the closed form 
+
+ˆx(z) = EP (x)
+
+x ex·z  / EP (x)
+
+ex·z  = X
+
+> v∈V
+
+p(x=v | z) ev ,
+
+i.e., a vocabulary-weighted average of unit-norm embeddings under the induced token posterior 
+
+p(x=v | z). Embedding-space MSE is minimized when ˆxθ (z) matches this posterior mean. Token-level cross-entropy on pθ (x=v | z) is minimized when pθ (· | z) = p(· | z). Both objectives therefore identify the same Bayes-optimal solution: at the global minimum, the CE-trained model recovers p(· | z), and reading off its posterior mean recovers ˆx(z). We use cross-entropy because, away from the global minimum, embedding-space MSE has structurally worse optimization geometry, as we explain next. 
+
+Embedding collapse under jointly learned embeddings. [3] observe that direct ℓ2 regression in embedding space is ill-posed when the embedding matrix Wemb is jointly trained with the denoiser: setting Wemb → 0 together with ˆxθ → 0 achieves zero loss for any noisy input z, yielding a degenerate solution. Prior continuous diffusion language models address this only with handcrafted embeddings or auxiliary regularizers [ 13 , 2]. DSL constrains every clean embedding to lie on the unit sphere ( ∥xi∥2 = 1 ), which already rules out exact collapse, but the corresponding low-rank near-collapsed configurations remain reachable by gradient descent on embedding-space MSE. Cross-entropy on a softmax over fixed unit-norm embeddings does not exhibit this pathology: the cross-entropy minimum requires the predicted distribution to actually concentrate on the correct token, not merely shrink the predicted embedding. 
+
+Low-SNR memorization burden. [3] also note that a denoiser trained directly with embedding MSE must, at low noise, output the clean embedding vectors to high precision—effectively memo-rizing Wemb inside the network parameters. They mitigate this by reparameterizing the denoiser as a softmax over token logits, then averaging embeddings weighted by that softmax, an architectural change motivated by exactly this observation. The DSL converter Eq. 11 adopts the same architectural shape, and CE training is the natural objective for the resulting categorical head: the network’s job is to assign probability mass over V, not to reconstruct embedding coordinates. 
+
+Mean-seeking shortcuts on multi-modal posteriors. At intermediate SNR, the token posterior 
+
+p(· | z) is generically multi-modal: several tokens have non-trivial probability. The MMSE estimator 
+
+ˆx = P 
+
+> v
+
+p(v | z)ev is the posterior mean—an average of the candidate embeddings—which under unit-sphere geometry is itself non-unit-norm and lies in the interior of the embedding simplex. A finite-capacity denoiser trained on embedding MSE can approach this mean by outputting a generic interior vector that does not commit to any particular token, lowering raw MSE without producing useful posterior structure. The cross-entropy objective penalizes such non-committal outputs because they correspond to entropic predicted distributions; the optimizer is pushed toward distributions that match the actual posterior shape. In summary, cross-entropy and embedding MSE share the same Bayes-optimal solution under Eq. 6, but cross-entropy is preferred for three operational reasons rooted in prior work [ 3]: it eliminates joint-embedding collapse, eliminates the low-SNR memorization burden, and avoids mean-seeking shortcuts on multi-modal posteriors. This is what makes cross-entropy a practical surrogate for the path-integral MSE on the continuous-SNR branch of DSL training. 
+
+A.8 Posterior-State Matching and Inference-Time Error Correction 
+
+A useful way to understand why DSL can open a correction window is through a minimal two-bit manifold example. Consider sequences (x1, x 2) ∈ { 0, 1}2 whose data distribution is supported only 18 on 
+
+M = {(0 , 0) , (1 , 1) }, P  (0 , 0)  = P  (1 , 1)  = 1/2. (29) Thus, inconsistent states such as (0 , 1) or (1 , 0) are off-manifold: they may arise as intermediate draft errors, but they are not valid solutions. Embed the two symbols on the unit sphere by 
+
+enc(0) = −1, enc(1) = +1 , (30) so the two valid clean sequence embeddings are 
+
+x(−) := ( −1, −1) , x(+) := (+1 , +1) . (31) Under the DSL localization channel, a corrupted state is 
+
+z = γx + √γ ϵ, ϵ ∼ N (0 , I2), x ∈ { x(−), x(+) }. (32) Because the prior is uniform and the clean embeddings are unit norm, the posterior over the two valid hypotheses is 
+
+P  x = x(+) | z = exp( z⊤x(+) )exp( z⊤x(+) ) + exp( z⊤x(−)) = exp( z1 + z2)exp( z1 + z2) + exp( −(z1 + z2)) , (33) 
+
+P  x = x(−) | z = exp( z⊤x(−))exp( z⊤x(+) ) + exp( z⊤x(−)) = exp( −(z1 + z2)) exp( z1 + z2) + exp( −(z1 + z2)) . (34) Equivalently, 
+
+P  x = x(+) | z = σ 2( z1 + z2), P  x = x(−) | z = 1 − σ 2( z1 + z2). (35) Hence the decision boundary is not determined token-by-token, but by the joint statistic 
+
+z1 + z2 = 0 . (36) The posterior-mean denoiser is 
+
+ˆx(z) = E[x | z] = P  x = x(+) | zx(+) + P  x = x(−) | zx(−)
+
+=
+
+
+
+P  x = x(+) | z − P  x = x(−) | z
+
+(1 , 1) = tanh( z1 + z2) (1 , 1) . (37) Equation 37 is the key point: the denoising field points toward the correct manifold as long as the corrupted state remains on the correct side of the joint decision boundary. To make this concrete, suppose the ground-truth sequence is (1 , 1) , but an intermediate draft contains a local inconsistency resembling (1 , 0) . In continuous state space, this corresponds to a region such as 
+
+Rcorr 11 := {z ∈ R2 : z1 > 0, z 2 < 0, z 1 + z2 > 0}. (38) Inside Rcorr 11 , the second coordinate looks locally wrong, but the joint posterior still favors x(+) =(1 , 1) because z1 + z2 > 0. Therefore, the denoising update in Eq. 37 continues to point toward (1 , 1) 
+
+rather than amplifying the local error. This is the correction window : an off-manifold draft can still be revised if its induced posterior state remains inside the attraction region of the correct solution. This example also clarifies what DSL does not claim. DSL does not guarantee correction for every erroneous draft. If the state crosses the wrong side of the boundary, i.e. 
+
+z1 + z2 < 0, (39) then the posterior collapses toward x(−) = (0 , 0) and the denoising field points to the wrong manifold. Thus, posterior-state matching opens a correction window, but does not guarantee that inference remains inside it. This toy case explains why mixed-corruption DSL training can help. Training does not need to reproduce the exact symbolic error (1 , 0) as a raw state. Instead, it is sufficient that the corruption distribution exposes the model to continuous states whose induced posterior geometry overlaps with 19 revisable regions such as Eq. 38. In that case, some imperfect self-generated drafts at inference time are less out-of-distribution, and the model is more likely to produce a denoising field that still points back toward a valid solution manifold. By contrast, standard autoregressive decoding and plain absorbing masked diffusion do not naturally realize this mechanism. For autoregressive decoding, 
+
+ˆx1 = arg max 
+
+> x∈{ 0,1}
+
+pθ (x1 = x), ˆx2 = arg max 
+
+> x∈{ 0,1}
+
+pθ (x2 = x | ˆx1), (40) so once ˆx1 is emitted, later steps condition on a hard prefix and do not revise it. Likewise, in plain absorbing masked diffusion, visible tokens are effectively frozen once unmasked, so a visible-but-wrong token is not naturally moved back toward the correct manifold unless an explicit remasking mechanism is introduced. DSL is therefore complementary to remasking-based samplers: remasking reopens a visible token for revision, while DSL increases the chance that the reopened state still lies in a posterior region where the denoising field points back toward the correct solution. The lesson of this example is that correction is not explained by “many possible contexts” alone. What matters is whether these possibilities are organized into a posterior geometry whose mass still overlaps the correct solution and whose denoising field still points toward it. DSL helps precisely by broadening the posterior states seen during training, thereby making some refinement-time erroneous drafts less out-of-distribution and more revisable. 
+
+A.9 Confidence Geometry: Norm–Direction Decomposition and Bounded Entropy 
+
+With the posterior written as a function of the realized state alone, its geometry becomes transpar-ent. Throughout this subsection we use the unit-sphere token geometry of DSL: each clean token embedding satisfies ∥ev ∥2 = 1 for v ∈ V .
+
+Proposition A.1 (Norm–direction decomposition) For any nonzero state z and any unit-norm token embedding ei, the score of token i induced by z satisfies 
+
+si(z) := ⟨z, ei⟩ = ∥z∥2 cos θi, (41) 
+
+where θi is the angle between z and ei. At z = 0 , all scores are zero and the posterior reduces to the base measure. 
+
+Proof A.1 For z̸ = 0 , the cosine identity gives 
+
+cos θi = ⟨z, ei⟩∥z∥2∥ei∥2
+
+.
+
+Since ∥ei∥2 = 1 , this implies ⟨z, ei⟩ = ∥z∥2 cos θi.
+
+Proposition A.1 separates two roles that are entangled in unconstrained logits: the angular term determines which token is preferred, whereas the radial term determines how concentrated the posterior is around that preference. This yields the discrete hyperspherical posterior 
+
+p(x = i | z) = πi exp  ∥z∥2 cos θi
+
+P 
+
+> j∈V
+
+πj exp  ∥z∥2 cos θj
+
+ . (42) 
+
+Entropy envelope at bounded radius. For any finite radius cap β < ∞, write z = βu with 
+
+∥u∥2 ≤ 1. The corresponding bounded-radius posterior family is 
+
+qβ (v | u) = πv exp  β⟨u, ev ⟩P 
+
+> j∈V
+
+πj exp  β⟨u, ej ⟩ , ∥u∥2 ≤ 1, ∥ev ∥2 = 1 . (43) Since ⟨u, ev ⟩ ∈ [−1, 1] , the logits can only tilt away from the base measure π within a finite band controlled by β. Hence the achievable posterior entropy over this bounded-radius family is confined to the interval 
+
+Hmin (β, π ) ≤ H(qβ (· | u)) ≤ Hmax (β, π ), (44) where 
+
+Hmin (β, π ) := min  
+
+> ∥u∥2≤1
+
+H(qβ (· | u)) , Hmax (β, π ) := max  
+
+> ∥u∥2≤1
+
+H(qβ (· | u)) . (45) Thus, within a finite-SNR or bounded-converter regime, β controls how sharp the posterior may become, while π sets the baseline non-uniformity of token probabilities. Without such a finite radius cap, the Bayes posterior can become arbitrarily sharp as ∥z∥2 grows. 20 Smoothness as a supporting property. The same hyperspherical geometry also induces a smooth Bayes posterior-mean map 
+
+m(z) := E[ex | z]. (46) When the clean-token distribution is supported on unit-norm embeddings, this Bayes posterior-mean map is 1-Lipschitz: 
+
+∥m(z1) − m(z2)∥2 ≤ ∥ z1 − z2∥2. (47) We treat this as a supporting geometric property: it suggests that DSL refinement is well-behaved by construction, but in practice the decisive mechanism is whether confidence remains informative on refinement-time draft errors. 
+
+A.10 Lipschitz Continuity of the Induced Posterior-Mean Map 
+
+The main text treats smoothness as a supporting geometric property rather than a core mechanism. We therefore defer the full proof here. The result shows that the posterior-mean refinement map induced by DSL is 1-Lipschitz under unit-sphere token geometry. 
+
+Lemma A.1 Let the induced posterior-mean map (MMSE denoiser) of the unconditional SDE be defined by 
+
+ˆx(z) = EP (x)[xex·z ]/EP (x)[ex·z ] z ∈ Rd,
+
+where the data distribution p(x) is supported on the unit sphere ∥x∥ = 1 . Then ˆx(·) is 1-Lipschitz; that is, 
+
+∀z1, z2 ∈ Rd : ∥ ˆx(z1) − ˆx(z2)∥ ≤ ∥ z1 − z2∥.
+
+Define the log–partition function 
+
+ϕ(z) = log Ep(x)
+
+ex·z ,
+
+so that ˆx(z) = ∇z ϕ(z).Because ex·z is convex in z and the expectation preserves convexity, ϕ is convex. Its Hessian equals the covariance of x under the Gibbs posterior p(x | z) ∝ p(x)ex·z :
+
+H(z) = ∇2 
+
+> z
+
+ϕ(z) = Cov p(x|z)
+
+ x.
+
+For any unit vector v ∈ Rd,
+
+v⊤H(z) v = Ep(x|z)
+
+(v · x)2 −
+
+
+
+Ep(x|z)[v · x]
+
+2
+
+≤ Ep(x|z)
+
+(v · x)2 ≤ ∥ v∥2 = 1 ,
+
+where the last inequality uses ∥x∥ = 1 , therefore, spectral norm satisfies ∥H(z)∥ ≤ 1.Since ∇2 
+
+> z
+
+ϕ is bounded by 1 everywhere, the gradient ∇z ϕ = ˆ x is 1-Lipschitz: 
+
+∥ ˆx(z1) − ˆx(z2)∥ ≤ 
+
+Z 10
+
+H z2 + t(z1 − z2) ∥z1 − z2∥ dt ≤ ∥ z1 − z2∥.
+
+This proves non-expansiveness of the Bayes posterior-mean map. Empirical estimates with K < 1 are consistent with this bound, but are stronger than what the lemma guarantees. ■
+
+## B Continuous States Are Not Enough: Posterior Coordinates vs. Timestep-Conditioned Denoising 
+
+This appendix clarifies the distinction between DSL and prior continuous diffusion language models. Prior continuous diffusion LMs already introduce continuous finite-SNR states between noise and clean token embeddings [ 13 , 2, 3, 27 ]. Thus, the key difference is not the mere existence of continuous intermediate states. Rather, the difference is how those states are parameterized and interpreted by the denoiser. In prior continuous diffusion LMs, a noisy token state is usually interpreted together with an external nominal noise level or timestep. Consequently, denoising at different SNRs is presented to the model as a family of timestep-indexed tasks. DSL instead represents noisy token states in posterior natural coordinates under unit-sphere token geometry, so the realized state itself determines the token posterior. This turns different SNR regimes into different regions of one posterior-state space, enabling mixed continuous/endpoint training and arbitrary per-token SNR paths with a single denoiser. 21 A generic continuous diffusion posterior. Consider a generic continuous Gaussian corruption for one token embedding: 
+
+yτ = aτ x + στ ϵ, ϵ ∼ N (0, I), (48) where τ denotes the nominal diffusion time, and aτ , σ τ are the signal and noise scales. Let ev =enc( v) be the embedding of token v ∈ V , and let πv denote the context-dependent prior probability of token v. Then the Bayes posterior induced by Eq. 48 has the form 
+
+P (x = ev | yτ , τ ) ∝ πv exp 
+
+ aτ
+
+σ2
+
+> τ
+
+⟨yτ , ev ⟩ − a2
+
+> τ
+
+2σ2
+
+> τ
+
+∥ev ∥22
+
+
+
+. (49) Therefore, in general, the posterior is a function of the pair (yτ , τ ). Even if the token embeddings are normalized so that the norm term in Eq. 49 cancels across vocabulary items, the natural posterior coordinate is not the raw noisy state yτ , but the rescaled state 
+
+˜zτ = aτ
+
+σ2
+
+> τ
+
+yτ . (50) Thus a timestep-conditioned continuous denoiser is naturally written as 
+
+fθ (yτ , τ ), (51) where the timestep label tells the network how to interpret the scale and semantics of the noisy embedding. This observation is not a criticism of continuous diffusion as a probabilistic model. The posterior information is present in the pair (yτ , τ ). The issue is representational: different noise levels are exposed to the neural network as different denoising regimes indexed by τ .
+
+DSL uses posterior natural coordinates directly. DSL chooses a different parameterization of the Gaussian observation. For each token position, 
+
+zi = γixi + √γi ϵi, ϵi ∼ N (0, I). (52) Here the signal coefficient is γi and the noise variance is also γi. Equivalently, in the notation of Eq. 48, DSL sets 
+
+aγi = γi, σ2 
+
+> γi
+
+= γi, aγi
+
+σ2
+
+> γi
+
+= 1 .
+
+Thus the realized state zi is already in the posterior natural coordinate. Under the unit-sphere constraint ∥ev ∥2 = 1 , the token-dependent norm term cancels, giving 
+
+P (xi = ev | z, γ) = P (xi = ev | z) ∝ πv exp( ⟨zi, ev ⟩) . (53) Consequently, the Bayes-optimal denoiser is SNR-invariant: 
+
+ˆx(z, γ) = EPγ (x|z)[x] = EP (x)[xex·z ]
+
+.
+
+EP (x)[ex·z ] = ˆ x(z). (54) The learning problem is therefore different. Instead of learning a timestep-indexed family of denoising maps, DSL learns one posterior map: 
+
+fθ (z) ≈ P (xi | z) or ˆxi(z). (55) Low-SNR, intermediate-SNR, and high-SNR states are no longer separate tasks labeled by time. They are different regions of the same token-posterior space. 
+
+Comparison summary. Table 5 summarizes the main conceptual differences. 
+
+Why this matters for training. The distinction above changes what it means to train across corruption levels. In a timestep-conditioned continuous diffusion LM, training across τ asks the model to learn how to denoise under many externally labeled regimes. In DSL, training across SNRs asks the model to cover a single posterior-state space. This is why continuous finite-SNR states and endpoint-like ROAR states can be combined under the same cross-entropy posterior-matching objective in Section 3.1. Both branches provide training mass for the same map pθ (si | z), rather than defining separate denoising tasks. This also explains why per-token SNR paths are natural in DSL. Once the denoiser is no longer tied to one global nominal timestep, there is no structural requirement that every token in a sequence share the same SNR. A sequence can contain positions near the mask endpoint, positions near the clean endpoint, and positions at intermediate posterior states, all interpreted by the same denoiser. This is the mechanism behind the statement in Section 2.3 that AR-style revealing, masked diffusion, and remasking are different paths through a single space of per-token SNR configurations. 22 Table 5: Prior continuous diffusion LMs vs. DSL. Both use continuous finite-SNR states. The difference is how those states are parameterized, interpreted, and exposed to the denoiser. 
+
+Aspect Prior continuous diffusion LMs DSL 
+
+Intermediate states Use continuous finite-SNR noisy embed-dings. Also uses continuous finite-SNR noisy embeddings. Posterior input The token posterior is naturally a func-tion of the pair (yτ , τ ).The token posterior is a function of the realized state z alone. Denoiser form Typically learns a timestep-conditioned map fθ (yτ , τ ).Learns one time-agnostic map fθ (z).Role of SNR / time The nominal timestep helps the model interpret the noisy embedding. SNR is absorbed into the posterior natu-ral coordinate. Interpretation across noise levels Different noise levels behave like a fam-ily of timestep-indexed denoising tasks. Different noise levels are regions of one posterior-state space. Token geometry Usually does not enforce the unit-sphere geometry needed to cancel token-dependent norm terms. Unit-sphere token embeddings make the Bayes posterior SNR-invariant. Uncertainty Uncertainty can be represented by the network, but its interpretation is typically timestep-conditioned. Uncertainty is geometrically explicit: di-rection controls token preference and concentration controls confidence. Training support Usually trained along a continuous global noise schedule. Trained on mixed support: continu-ous finite-SNR states and endpoint-like mask/reveal states. Discrete interface Noisy embeddings may be numerically well-scaled, but are not necessarily ex-posed as token-posterior states. A posterior-view converter maps zi to a bounded mixture-of-tokens input com-patible with self-attention. Sampling paths Typically tied to a chosen global diffu-sion schedule. Supports arbitrary per-token SNR paths; AR revealing, masked diffusion, and re-masking are special cases. 
+
+Why the converter is not just a normalization trick. The posterior-view converter in Eq. 11 should not be understood merely as a fix for exploding input norms. Many VP-style continuous diffusion parameterizations keep noisy embeddings numerically well-scaled. The purpose of the converter is different: DSL’s zi is a posterior natural parameter whose scale reflects posterior concentration, and this state must be presented to a Transformer through a stable token-like interface. The converter maps zi into a bounded mixture of token embeddings, preserving the posterior-view interpretation while making the input compatible with self-attention. 
+
+What this comparison does not claim. We do not claim that prior continuous diffusion LMs lack posterior meaning or uncertainty. Any Gaussian corruption model defines a posterior P (x | yτ , τ ).We also do not claim that their noisy embeddings are necessarily numerically unstable. The claim is instead that DSL explicitly chooses a posterior natural coordinate in which the realized state alone determines the token posterior, and then builds the training distribution and Transformer interface around this posterior-state view. In short, prior continuous diffusion LMs typically perform 
+
+timestep-conditioned continuous denoising , whereas DSL performs posterior-state denoising in natural coordinates .
+
+## C Training and Sampling Details 
+
+This appendix documents the practical choices used in the main experiments. The main text focuses on the method-level design: mixed-support CE posterior matching and a posterior-view converter. Here we give the concrete training and decoding settings needed for reproducibility. 
+
+C.1 OWT Finetuning Settings 
+
+We exactly follow MDLM’s [22] training configurations. 23 Data and sequence length. We fine-tune on OpenWebText using the openwebtext-split dataset. All training samples are truncated/padded to a fixed sequence length L = 1024 tokens. 
+
+Backbone and parameterization. We use the DiT backbone in official MDLM GitHub repository [22] with token embedding dimension 64. Training is conducted in full precision (FP32). 
+
+Optimization and batching. We train for a maximum of 100,000 optimizer steps with no learning-rate warmup ( num_warmup_steps =0). Everything else in training setting is the same as MDLM training setting. 
+
+Compute resources. All experiments were run on NVIDIA GPUs. Text8 experiments were run on 2 H100s, and sampling/evaluation took approximately 1 hour. OpenWebText training and sampling evaluation used 2 H100s, with 5000 generated samples per configuration. The hybrid-sampler sweeps required approximately 2 hours in total, including preliminary hyperparameter searches. No additional large-scale pretraining was performed beyond fine-tuning/evaluating the checkpoints described above. 
+
+C.2 Mixed SNR Support Used in Training 
+
+This subsection specifies the practical mixed-support training distribution used in DSL. A subset of token positions is sampled from a ROAR-style endpoint branch, while the remainder is sampled from a continuous log-normal SNR branch. This construction is the practical instantiation of the two exact likelihood views in the main text. We denote by γ the signal-to-noise ratio (SNR) used in the training corruption process. We use a 
+
+mixed SNR path: with probability 
+
+pROAR = 1
+
+k = 0 .1, (56) we draw γ from the ROAR path sampler, where mask is represented by γ = 0 , and clean token is approximated by γmax = 100 ; with probability 1 − pROAR we draw γ from a lognormal sampler. Concretely, for the lognormal continuous SNR branch we sample 
+
+γ ∼ LogNormal( μ, σ 2), μ = 1 .65 , σ = 0 .9, (57) and there is no γmax cut-off for this lognormal continuous training schedule. Throughout training, γ
+
+denotes SNR and is distinct from the decoding progress variable τ used in sampling. 
+
+We summarize DSL training in Algorithm 1. Each step samples a sentence from the data, draws a per-token SNR vector γ from one of two branches (ROAR with probability 1−λ, continuous-path with probability λ), produces noisy embeddings z, runs the converter and backbone to obtain token posteriors pθ (· | z), and updates parameters via cross-entropy against the clean tokens. 
+
+C.3 Masked Refinement with a DSL Checkpoint 
+
+The first decoding family used in the paper pairs a trained DSL checkpoint with a ReMDM-style masked-refinement schedule. Its role is to test the primary empirical claim of the paper: whether mixed-support DSL training improves refinement robustness and step-efficiency under a fixed masked decoder family. Algorithm 4 gives the high-level procedure, while all schedule hyperparameters are listed in Section C.4. 
+
+C.4 Sampling Settings on OWT 
+
+This section fully specifies the decoding schedules used in Section 5 and defines the rewrite-count statistics and diagnostics reported throughout the paper. 
+
+Common evaluation protocol (all rows in Table 1). Unless otherwise stated, all methods are evaluated with the same tokenizer (GPT-2 BPE), sequence length L = 1024 , nucleus sampling (top-
+
+p = 0 .9), sample count (5k), and MAUVE configuration (GPT-2 Large embeddings with K = 500 
+
+buckets) on the same held-out OWT split. GenPPL is computed as perplexity under the same GPT-2 24 Algorithm 4 DSL sampling with ReMDM sampler. Adapted from [ 31 , Algorithm 1]; in DSL, the ReMDM mask state is represented by zero SNR. 
+
+Input: DSL denoiser xθ , sampling steps T , noise schedule αt, clean endpoint SNR max , remask schedule σt.
+
+Initialize: set every token embedding to the mask endpoint, i.e., SNR( zT ) = 0 .
+
+for i = T, T − 1, . . . , 1 do 
+
+t = i/T, s = ( i − 1) /T ; set αt, α s.Set σt ∈ [0 , σ max  
+
+> t
+
+], where σmax  
+
+> t
+
+= min {1, (1 − αs)/α t}.Predict clean-token posteriors bx = xθ (zt).Form the ReMDM endpoint posterior pθ (zs | zt) = qDSL 
+
+> σ
+
+ zs | zt, x = bx, where ReMDM’s mask atom is interpreted as SNR = 0 and its clean-token atom as SNR = SNR max .Sample zs ∼ pθ (zs | zt).Realize sampled clean tokens at SNR max ; realize remasked tokens by resetting their SNR to 0.Set zt ← zs.
+
+end for Output: decoded tokens from the final clean-endpoint latents. 
+
+Large autoregressive oracle LM. Sentence entropy is computed as the average Shannon entropy of the token-ID histogram within each generated sequence (prior to text decoding). This matches the MDLM/ReMDM evaluation protocol and ensures baseline parity. 
+
+Time parameterization (matches logged t). We index a T -step decode by a 0-based step counter 
+
+k = 0 , . . . , T − 1 and use normalized time 
+
+tk ≜ 1 − kT ∈
+
+ 1
+
+T , 1
+
+
+
+. (58) Thus decoding progresses from t0 = 1 (fully masked/noisy) to tT −1 = 1 /T (near-clean). This convention matches the sampler logs (e.g., for T = 128 , the final logged t ≈ 0.0078 ≈ 1/128 ). 
+
+Mask ratio schedule and reveal fraction. Let Mk ⊆ [L] denote the masked positions at step k
+
+(i.e., positions whose visible token is [MASK] ). We log the realized masked ratio 
+
+r(tk) ≜ |Mk|
+
+L . (59) We additionally report the reveal fraction (newly unmasked mass) per step, 
+
+∆r(tk) ≜ r(tk) − r(tk+1 ) (k < T − 1) , (60) which indicates how aggressively the schedule transitions from global drafting (large ∆r early) to local refinement (small ∆r late). 
+
+ReMDM-loop and the loop window. Our main step-budgeted protocol uses the ReMDM-loop variant (for all T ) with the official loop defaults: 
+
+ton = 0 .55 , toff = 0 .05 , αloop = 0 .9, refresh_unmasked = true . (61) Conceptually, decoding consists of (i) a standard MDLM-style reveal phase, (ii) a loop phase over the time window [ton , t off ) with ton > t off , and (iii) a final reveal phase that anneals to the near-clean endpoint. During the loop phase, the noise level is held fixed at αloop so that repeated self-correction operates under a stable context quality. 
+
+Capped remasking intensity (ReMDM-cap inside the loop). When remasking is active (i.e., within the loop window), ReMDM remasks a subset of currently unmasked tokens to avoid early lock-in. We use ReMDM’s capped schedule: 
+
+q(t) = min 
+
+
+
+1, η(t)1 − r(t)
+
+
+
+, η(t) = ηcap 
+
+α(t)1 − α(t) , (62) where q(t) is the per-token remask probability among unmasked positions and α(t) is ReMDM’s noise schedule. Outside the loop window, we set q(t) = 0 (no remasking). 25 Step budget T 128 256 512 1024                                  
+
+> ηcap (T)0.010 0.008 0.008 0.002 top-pnucleus 0.9 Tokenizer / LGPT-2 BPE / 1024 MAUVE embed / KGPT-2 Large / 500 GenPPL oracle GPT-2 Large SNR schedule linear, snr_min = 10 −3,snr_max = 100 ,ρ= 7 ,γ= 4
+> σschedule Karras, σmin = 0 .01 ,σmax = 1 .0,ρ= 7
+> Loop window [ton , t off ) = [0 .55 ,0.05)
+> αloop 0.9
+
+Table 6: Decoding hyperparameters for OWT experiments under our step-budgeted ReMDM-loop protocol. All settings are identical across T except ηcap (T ).            
+
+> Tηcap (T)mean rewrites-per-token (E[Ri])
+> 128 0.010 0.579834 256 0.008 0.924500 512 0.008 1.610600 1024 0.002 1.848940
+
+Table 7: Rewrite statistics for the step-budgeted ReMDM-loop protocol (computed from Eq. 64, averaged over 5k samples). 
+
+Step-budget-aware choice of ηcap (T ) (as used in our logs). For the step-budgeted schedule used in Table 1 (DSL-FT + ReMDM-loop), we set 
+
+ηcap (128) = 0 .010 , ηcap (256) = 0 .008 , ηcap (512) = 0 .007 , ηcap (1024) = 0 .004 , (63) and keep all other ReMDM-loop hyperparameters identical to the official setting. This is a minimal, reproducible adaptation that controls rewrite counts while front-loading corrections. 
+
+Rewrite-count statistics. Let x(k) ∈ V L be the sampled sequence after step k (with [MASK] treated as a valid symbol during decoding). We define the per-position rewrite count 
+
+Ri ≜ 
+
+> T−1
+
+X
+
+> k=1
+
+1
+
+h
+
+x(k)
+
+> i
+
+̸ = x(k−1) 
+
+> i
+
+i
+
+, i ∈ [L], (64) and report the mean rewrite count 1
+
+> L
+
+PLi=1 Ri (equivalently “Rewrites-per-token” in our logs), averaged over the 5k generated samples. 
+
+Logged posterior sharpness checkpoints (sanity check for Section D.4). To connect the sampler to the diagnostics in §D.4, we also log (i) the average per-token maximum probability (“mean_max_prob”) and (ii) the average top-p nucleus size (“nucleus size”) at selected steps. A representative subset of checkpoints is shown below; the strong monotone sharpening (early diffuse 
+
+→ late near-deterministic) is consistent across step budgets. 
+
+C.5 ROAR Sampler Details 
+
+The random-order autoregressive (ROAR) sampler instantiates the ROAR endpoint configurations of Eq. 7 as a single-pass inference path on the same DSL-finetuned checkpoint. The sampler reveals one token at a time in a uniformly random order; each position is denoised exactly once, with no remasking, revisits, or self-correction. It requires no retraining or sampler-specific finetuning—it is an alternative decoding rule applied to the same checkpoint used for iterative refinement. Algorithm 5 gives the procedure. 
+
+State representation. At each step, the input z ∈ RL×d is composed position-by-position accord-ing to the current reveal status. Unrevealed positions i / ∈ A are set to zi = 0, corresponding to 
+
+γi = 0 in the DSL channel. Revealed positions i ∈ A are set to zi = γmax enc( si) with γmax = 100 ,providing the denoiser with the same near-clean signal it sees at training time on the ROAR endpoint 26 T step k tk mean_max_prob ↑ nucleus size (top-p=0 .9) ↓
+
+128 0 1.0000 0.0398 10268.59 128 56 0.5625 0.9391 12.17 128 71 0.4453 0.9585 8.72 128 127 0.0078 0.9928 1.74 256 0 1.0000 0.0398 10268.59 256 113 0.5586 0.9455 8.72 256 142 0.4453 0.9603 7.06 256 255 0.0039 0.9952 1.33 512 0 1.0000 0.0398 10268.59 512 227 0.5566 0.9466 9.85 512 284 0.4453 0.9632 6.21 512 511 0.0020 0.9973 1.04 1024 0 1.0000 0.0398 10268.59 1024 455 0.5557 0.9482 8.75 1024 568 0.4453 0.9640 4.83 1024 1023 0.0010 0.9980 1.17 
+
+Table 8: Logged posterior sharpness checkpoints from the sampler logs (“ReMDM logits stats” and “ReMDM nucleus size”). branch (§3.1, Appendix C.2). The sampler thus operates on the exact endpoint support the model was explicitly trained to cover; revealed positions act as conditioning context, unrevealed positions act as targets for the next prediction. 
+
+Reveal order. For each generation batch, we draw a single permutation π of [L] uniformly at random and process positions in the order π1, π 2, . . . , π L. The same permutation is shared across all sequences in the batch but resampled across batches. We do not use confidence-based or content-aware reveal orders, preserving the unbiased random-order structure of the ROAR estimator Eq. 7. The sampler also exposes a causal=True option that fixes π to the identity ( πk = k), recovering strict left-to-right autoregressive decoding; our reported results use the random-order setting. 
+
+Per-step prediction. At step k, the sampler queries the converter and backbone on the current partial state z to obtain token posteriors pθ (· | z) at every position, reads the marginal at position 
+
+πk, and samples sπk from this marginal using nucleus sampling. Position πk is then added to A, and 
+
+zπk is updated to γmax enc( sπk ) for use in subsequent steps. The remaining L − 1 positions are recomputed in the next forward pass under the updated z, but each position i is itself only committed 
+
+(sampled) once, namely at step k such that πk = i.
+
+Hyperparameters. For OWT we use L = 1024 , γmax = 100 , top-p = 0 .9, and run T = L = 1024 
+
+reveal steps per sample. 
+
+Algorithm 5 DSL ROAR sampler (single pass, random-order) 
+
+Require: Sequence length L; reveal-time SNR γmax ; nucleus parameter top-p; causal flag (default False ).  
+
+> 1:
+
+A ← ∅  
+
+> 2:
+
+zi ← 0 for all i ∈ [L] ▷ All positions start at γi = 0  
+
+> 3:
+
+if causal then  
+
+> 4:
+
+π ← (1 , 2, . . . , L ) 
+
+> 5:
+
+else  
+
+> 6:
+
+π ∼ Unif( SL) ▷ Single permutation shared across the batch  
+
+> 7:
+
+end if  
+
+> 8:
+
+for k = 1 , . . . , L do  
+
+> 9:
+
+Compute token posteriors pθ (· | z) via converter and backbone  
+
+> 10:
+
+sπk ∼ nucleus (pθ (· | z)πk ; top-p) 
+
+> 11:
+
+zπk ← γmax enc( sπk ) 
+
+> 12:
+
+A ← A ∪ { πk } 
+
+> 13:
+
+end for  
+
+> 14:
+
+return s = ( s1, . . . , s L)
+
+27 C.6 Hybrid Sampler Details 
+
+The hybrid sampler combines continuous-state EDM-style denoising with discrete masked refinement, both executed on the same DSL-finetuned checkpoint. The high-level idea is that continuous denoising provides a low-cost global initialization across all L token positions in parallel, after which a short discrete refinement stage commits the final tokens. Algorithm 6 gives the procedure; we describe the three stages below. 
+
+Stage 1: Continuous EDM denoising to σswitch . We follow the standard EDM [ 10 ] parameteriza-tion with a Karras σ schedule, but truncate the schedule at an intermediate switching point σswitch 
+
+rather than running it all the way to σmin . Throughout the continuous stage we maintain two views of the state: the physical state yt ∈ RL×d and its rescaled form zt = yt/σ 2 
+
+> t
+
+, which matches the SNR-parameterized input the DSL denoiser was trained on (§2.1). Initialization is y0 = σmax ϵ with 
+
+ϵ ∼ N (0, I). At each step we form zt = yt/σ 2 
+
+> t
+
+, query the converter and backbone to obtain ˆx(zt),and update yt via either an Euler or Heun step, 
+
+yt+1 = yt + ( σt+1 − σt) yt − ˆx(zt)
+
+σt
+
+(Euler ), (65) with the Heun second-order correction applied analogously. We optionally inject EDM-style stochas-tic churn [10] within a configurable σ band to improve sample diversity. 
+
+Stage 2: Projection to discrete tokens at σswitch . At the switching point, we read out token logits from the backbone applied to zT = yT /σ 2 
+
+> T
+
+and sample an initial discrete sequence using nucleus sampling with parameters top-p and temperature. This produces an initial token sequence 
+
+s(0) = ( s(0) 1 , . . . , s (0)  
+
+> L
+
+) that captures the global structure resolved by the continuous stage but may contain locally inconsistent tokens. 
+
+Stage 3: Discrete masked refinement. We refine s(0) with Tmdlm steps of MDLM-style remasking. Tokens are mapped to high-SNR continuous states zi = γmax enc( si) with γmax = 100 to provide the denoiser with a near-clean input at unmasked positions. At each refinement step, the most uncertain tokens—ranked by 1 − max v pθ (v | zi)—are remasked (their zi set to 0) and resampled conditioned on the remaining tokens. The mask ratio decays from an adaptive initial value r0 to a target rend via a cosine schedule. The initial ratio r0 is set from the mean per-token uncertainty at the switching point, clipped to [rmin , r max ], so sequences with sharper switching-point posteriors begin refinement with less aggressive remasking. 
+
+Hyperparameters. The configurations reported in Table 2 use the Karras σ schedule with σmax =10 , σmin = 0 .01 , ρ = 7 , Heun solver, EDM churn = 1 .41 within the band [σmin , σ max ], and 
+
+σswitch = 0 .3. The discrete stage uses top-p = 0 .9, temperature 0.8, γmax = 100 , mask ratio bounds 
+
+[rmin , r max ] = [0 .2, 0.8] , and rend = 0 .28 Algorithm 6 DSL hybrid continuous-then-discrete sampler 
+
+Require: Sequence length L; continuous step count Tcont ; discrete step count Tmdlm ; sigma schedule 
+
+{σt}Tcont  
+
+> t=0
+
+with σ0 = σmax and σTcont = σswitch ; nucleus parameters (top-p, τ ); refinement parame-ters (γmax , r min , r max , r end ). 
+
+> 1:
+
+y0 ← σmax ϵ, ϵ ∼ N (0, IL×d) ▷ Stage 1: continuous EDM  
+
+> 2:
+
+for t = 0 , . . . , T cont − 1 do  
+
+> 3:
+
+zt ← yt/σ 2 
+
+> t
+> 4:
+
+ˆxt ← DSL denoiser (zt) ▷ converter → backbone  
+
+> 5:
+
+Update yt+1 via Heun step on (yt − ˆxt)/σ t (with optional churn)  
+
+> 6:
+
+end for  
+
+> 7:
+
+zTcont ← yTcont /σ 2 
+
+> Tcont
+
+▷ Stage 2: project to tokens  
+
+> 8:
+
+Compute logits ℓi at each position; set ui ← 1 − max v softmax( ℓi)v 
+
+> 9:
+
+Sample s(0)  
+
+> i
+
+∼ nucleus (ℓi; top-p, τ ) for all i 
+
+> 10:
+
+r0 ← clip(¯ u, r min , r max ) where ¯u is the mean of {ui} 
+
+> 11:
+
+for k = 0 , . . . , T mdlm − 1 do ▷ Stage 3: discrete refinement  
+
+> 12:
+
+rk ← rend + 12 (r0 − rend )(1 + cos( πk/T mdlm ))  
+
+> 13:
+
+Select ⌈rk L⌉ positions with highest current uncertainty; mask them  
+
+> 14:
+
+Set zi ← 0 at masked positions, zi ← γmax enc( s(k) 
+
+> i
+
+) otherwise  
+
+> 15:
+
+Resample s(k+1)  
+
+> i
+
+at masked positions from DSL denoiser logits  
+
+> 16:
+
+end for  
+
+> 17:
+
+return s(Tmdlm )
+
+## D Mechanistic Analysis 
+
+The main text only briefly summarizes why DSL works in practice. This appendix provides supporting mechanistic evidence. The central message is that DSL improves refinement when training exposes the denoiser to the posterior states encountered under self-generated drafts, and that useful uncertainty is more important than mere local smoothness. 
+
+D.1 Cyclic Toy Setup and Correction Example 
+
+We use a simple synthetic discrete dataset to illustrate how DSL handles both masked tokens and visible-but-wrong tokens within a single framework. Fix an integer K and consider the dataset consisting of all cyclic shifts of a base sequence: 
+
+x(0) = [0 , 1, . . . , K − 1] , x(i) = roll( x(0) , i ), i = 0 , . . . , K − 1.
+
+For visualization, each token is embedded in R2 on the unit circle with equal angular spacing, yielding a symmetric geometry in which posterior trajectories can be plotted directly. To illustrate correction, suppose the true sequence is ABCDEFG , but the input contains both masked and garbled positions: Original: A B C D E F G
+
+Input: _
+
+|{z} 
+
+> masked
+
+_
+
+|{z} 
+
+> masked
+
+C|{z} 
+
+> correct
+
+D|{z} 
+
+> correct
+
+B|{z} 
+
+> garbled
+
+F|{z} 
+
+> correct
+
+F|{z} 
+
+> garbled
+
+In DSL, masked positions can be assigned SN R i = 0 , while visible but uncertain positions can be assigned small positive SNR. This allows the model to use partial signal without forcing visible tokens to remain fixed. In our cyclic toy, this lets the same dynamics both fill masked positions and revise garbled visible ones. 
+
+D.2 Why Targeted Remasking Matters 
+
+The toy reveals a key asymmetry: masked positions are already mutable, whereas visible-but-wrong positions must first be remasked before they can be corrected. This is exactly why refinement-time uncertainty must remain informative. If the model cannot identify which visible tokens should become mutable again, then self-correction stalls. Conversely, once posteriors have already sharpened, late remasking tends to induce churn rather than useful revision. 29 (a) Masked + garbled input (b) Reconstruction 
+
+Figure 3: DSL correction under masked and garbled inputs. The input contains both masked positions and visible-but-wrong tokens. DSL can assign zero SNR to masked tokens and small positive SNR to uncertain visible tokens, allowing the same refinement dynamics to both fill missing values and correct garbled ones. 
+
+D.3 Robustness to Self-Generated Intermediate Drafts 
+
+Two complementary ingredients explain DSL’s robustness to imperfect self-generated drafts. 
+
+(1) Exposure to rollout-like partially corrupted contexts. Refinement-time drafts mix masked gaps with model-made mistakes that remain visible. DSL trains the denoiser under a mixed-support corruption distribution that covers both endpoint-like masked contexts and intermediate partially corrupted drafts. This broadens the support of training contexts and reduces brittleness when the model conditions on imperfect self-generated states. 
+
+(2) Smoothness can help, but remasking requires informative confidence. A plausible supporting factor is geometric smoothness in continuous embedding space: a denoiser that behaves smoothly across nearby contexts may generalize better across partially-correct drafts. However, in a ReMDM-style discrete sampler, correction is bottlenecked by which tokens get remasked . Thus the decisive property is not just smooth interpolation, but whether confidence remains informative enough to identify low-confidence visible tokens that should be revised. 
+
+D.4 Sampling Diagnostics and Over-Refinement 
+
+We track uncertainty, posterior sharpness, and repair workload in order to diagnose when iterative refinement remains productive and when it begins to over-refine. 
+
+Token uncertainty and entropy. Let pθ,t (xi) be the categorical distribution at token position i and sampling step t. Define average uncertainty and entropy by 
+
+ut := 1
+
+L
+
+> L
+
+X
+
+> i=1
+
+
+
+1 − max  
+
+> v
+
+pθ,t (xi = v)
+
+
+
+, (66) 
+
+Ht := 1
+
+L
+
+> L
+
+X
+
+> i=1
+
+
+
+− X
+
+> v
+
+pθ,t (xi = v) log pθ,t (xi = v)
+
+
+
+. (67) A rapid drop in (ut, H t) indicates posterior sharpening and the onset of a local-repair regime. 30 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> decoding progress 1 t
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> masked ratio
+> T=128: masking & reveal
+> loop: masked ratio
+> cap: masked ratio
+> loop: reveal fraction
+> cap: reveal fraction
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> reveal fraction
+
+(a) Masking & reveal 0.0 0.2 0.4 0.6 0.8 1.0   
+
+> decoding progress 1 t
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> remask intensity
+> T=128: remasking / rewrite rate
+> loop: remask | unmasked
+> cap: remask | unmasked
+> loop: rewrites/token (step)
+> cap: rewrites/token (step)
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> rewrites/token (per step)
+
+(b) Remasking / rewrite rate 0.0 0.2 0.4 0.6 0.8 1.0   
+
+> decoding progress 1 t
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> mean max prob
+> T=128: posterior sharpness
+> loop: mean max prob
+> cap: mean max prob
+> loop: nucleus size (p=0.9)
+> cap: nucleus size (p=0.9)
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> 10 4
+> top-p nucleus size (log)
+
+(c) Posterior sharpness 
+
+Figure 4: Sampling diagnostics under a fixed step budget. (a) Masking and reveal schedule. (b) Remasking intensity and realized rewrites per token. (c) Posterior sharpening measured by mean max-probability and top-p nucleus size. 
+
+Nucleus size as a sharpness proxy. For a fixed top-p threshold (e.g. p = 0 .9), define 
+
+kt := 1
+
+L
+
+X
+
+i
+
+|TopP( pθ,t (xi), p )|. (68) Large kt corresponds to broad uncertainty; small kt indicates sharp, near-deterministic posteriors. 
+
+Repair workload and diminishing returns. Let Mt be the set of positions remasked or rewritten at step t. We track the remask ratio and realized token-change rate: 
+
+rt := |M t|/L, ∆t := 1
+
+L
+
+LX
+
+i=1 
+
+I[x(t)
+
+i̸ = x(t−1) 
+
+i ]. (69) Over-refinement is characterized by non-trivial rt but tiny ∆t, indicating diminishing returns. 
+
+Over-refinement hurts coverage. After posteriors sharpen, the sampler may still apply non-trivial remasking while realizing little actual change. This corresponds to diminishing returns: local likelihood proxies may keep improving while distributional coverage degrades. This explains the sweet spot observed in the main OWT experiments. 
+
+## E Calibration and Endpoint-Smoothing Ablation 
+
+This appendix supports one of the paper’s main practical conclusions: endpoint-like support is necessary, but endpoint-only training is insufficient. To obtain usable refinement-time uncertainty, the ROAR-style endpoint branch should be smoothed rather than concentrated entirely on atomic extremes. 
+
+E.1 Atomic vs. Smoothed ROAR Endpoints 
+
+DSL uses a ROAR-style endpoint branch to expose the denoiser to masking/reveal-like states. A natural baseline is atomic endpoint sampling, where ROAR tokens are assigned only the two extreme values 
+
+γ ∈ { 0, γ max }.
+
+In contrast, our smoothed endpoint variant samples from two narrow endpoint ranges, 
+
+γ ∼ Unif(0 , γ min ) or γ ∼ Unif( cγ max , γ max ),
+
+with equal probability. The motivation is practical. Atomic endpoints preserve the masking/reveal semantics, but make the endpoint branch too degenerate: near the fully masked and near-clean limits, corruption becomes almost deterministic, reducing local variation in training contexts. Smoothed endpoints preserve the same semantics while broadening the support near both extremes. 31 70 80 90 95 100 
+
+> SNR
+> 0.0008
+> 0.0010
+> 0.0012
+> 0.0014
+> 0.0016
+> ECE
+> Token ECE vs SNR (high endpoint neighborhood)
+> Atomic ROAR
+> Smoothed ROAR
+
+(a) ECE at large SNRs 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Average confidence (bin)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Empirical accuracy (bin)
+> Reliability diagram at SNR=100 (all_corrupted)
+> Perfect calibration
+> DSL smoothed (SNR=100)
+> DSL atomic (SNR=100)
+
+(b) Reliability at SNR = 100 
+
+Figure 5: Endpoint smoothing improves near-clean calibration. We compare atomic ROAR endpoints ( γ ∈ { 0, γ max }) to smoothed endpoint ranges. Smoothing reduces ECE at large SNR and yields reliability curves closer to the diagonal near the clean limit. 128 256 512 1024  
+
+> Steps (T)
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> MAUVE
+> Speed-quality: MAUVE vs steps
+> Smoothed ROAR Atomic ROAR
+
+(a) MAUVE vs. sampling steps 128 256 512 1024 
+
+> Steps (T)
+> 40
+> 45
+> 50
+> 55
+> 60
+> GenPPL
+
+Speed-quality: GenPPL vs steps   
+
+> Smoothed ROAR Atomic ROAR
+
+(b) GenPPL vs. sampling steps 
+
+Figure 6: Endpoint smoothing improves the step–quality tradeoff under fixed decoding. Using the same ReMDM-style sampler with identical schedules, smoothed-endpoint checkpoints achieve stronger MAUVE across step budgets while maintaining comparable or better GenPPL. 
+
+E.2 Near-Clean Calibration 
+
+We evaluate calibration under teacher forcing on held-out corrupted inputs. Compared with atomic ROAR endpoints, smoothed endpoints improve calibration precisely in the near-clean regime where refinement decisions are made. These results indicate that endpoint-only support is insufficient. A denoiser trained only on atomic extremes can become poorly calibrated near the clean limit, even though those are exactly the states where refinement-time confidence must be trusted. 
+
+E.3 Downstream Step–Quality Tradeoff 
+
+Improved near-clean calibration translates into better downstream refinement under the same decoder family. Together, these results support the practical point made in the main text: endpoint coverage is necessary because masking/reveal states are part of the likelihood family used by refinement, but collapsing training entirely onto atomic endpoints hurts calibration on intermediate and near-clean draft states. Smoothing the endpoint branch improves the quality of refinement-time uncertainty and thereby improves downstream step-efficient decoding. 
+
+## F Additional Experiments 
+
+This section provides additional experimental details and diagnostics omitted from the main text for space. We report full OpenWebText generation results for masked-refinement decoders and hybrid continuous-then-discrete sampling, including GenPPL and sentence-entropy diagnostics in addition 32 Table 9: OWT ( L = 1024 ) unconditional generation under masked-refinement decoders. Each entry is MAUVE ↑ / GenPPL ↓ / SentEnt ↑; bold marks per-column best MAUVE among non-reference rows. Rows marked ‡ are taken from [ 31 ]; rows marked § from [ 21 ]. All other rows use our protocol. The two DSL rows use the same DSL-finetuned checkpoint with different ReMDM-family remasking schedules.                                                                      
+
+> Method T= 128 T= 256 T= 512 T= 1024
+> Data (reference) 1.000 / 14.8 / 5.44 1.000 / 14.8 / 5.44 1.000 / 14.8 / 5.44 1.000 / 14.8 / 5.44 AR (reference) –––0.760 / 12.1 / 5.22 SEDD (absorb) 0.007 / 119.2 / 5.65 0.008 / 112.9 / 5.63 0.009 / 107.8 / 5.62 0.008 / 104.7 / 5.62 MDLM ‡0.015 / 61.5 / 5.52 0.023 / 55.8 / 5.49 0.031 / 53.0 / 5.48 0.042 / 51.3 / 5.46 MDLM+FB ‡0.064 / 42.8 / 5.44 0.086 / 39.0 / 5.41 0.103 / 37.0 / 5.40 0.133 / 33.8 / 5.35 MDLM+DFM ‡0.041 / 37.9 / 5.31 0.098 / 31.2 / 5.30 0.168 / 24.2 / 5.26 0.254 / 21.7 / 5.20 ReMDM ‡0.057 / 42.5 / 5.43 0.216 / 30.5 / 5.34 0.350 / 21.1 / 5.21 0.403 / 28.6 / 5.38 PRISM ‡0.175 / 17.9 / 5.10 0.268 / 16.2 / 5.07 0.281 / 15.4 / 5.04 0.260 / 15.0 / 5.02 PRISM-loop ‡0.118 / 21.5 / 5.18 0.294 / 18.0 / 5.15 0.423 / 16.4 / 5.12 0.527 / 15.3 / 5.10 ADLM §0.140 / 52.5 / 5.52 0.349 / 39.9 / 5.46 0.573 / 31.6 / 5.40 0.699 / 25.4 / 5.35 DSL-FT + ROAR (naive) –––0.551 / 47.4 / 5.19 DSL-FT + MDLM 0.402 / 54.2 / 5.25 0.481 / 50.5 / 5.22 0.506 / 49.4 / 5.21 0.495 / 48.3 / 5.20
+> DSL-FT + ReMDM (confidence-based) 0.615 / 68.0 / 5.36 0.622 / 61.6 / 5.32 0.707 / 57.2 / 5.28 0.610 / 55.3 / 5.25
+> DSL-FT + ReMDM-loop (principled ηcap )0.639 / 59.7 / 5.34 0.661 / 49.0 / 5.27 0.651 / 41.0 / 5.18 0.722 / 45.3 / 5.20
+
+Table 10: Full diagnostics for the selected DSL hybrid continuous-then-MDM sampler configurations on OWT. All rows use the same DSL-finetuned checkpoint. The main text reports MAUVE only; here we include GenPPL and sentence entropy diagnostics for the selected handoff configurations. 
+
+Tcont TMDM NFE σswitch GenPPL ↓ MAUVE ↑ SentEnt ↑
+
+16 16 32 0.49 60.3545 0.5008 5.0521 16 32 48 0.49 52.4820 0.6619 5.0664 16 48 64 0.49 49.0116 0.7017 5.0604 32 16 48 0.45 62.3669 0.5872 5.1147 32 32 64 0.46 53.7585 0.5891 5.1061 32 48 80 0.46 51.4659 0.7240 5.1033 
+
+to MAUVE. We also provide supplementary Text8 likelihood results and implementation details for reproducibility. 
+
+F.1 OWT 
+
+Here we report the full OpenWebText generation tables. Table 9 compares DSL-finetuned checkpoints with masked-refinement baselines across sampling budgets. Table 10 reports diagnostics for the selected DSL hybrid continuous-then-MDM handoff configurations used in the main text. 
+
+F.2 Text8 Dataset We test DSL on Text8 dataset [ 15 ], a relatively small-scale, character-level text modeling benchmark extracted from English Wikipedia. 
+
+Training Setups Following the previous work [ 3 , 1 , 14 , 24 ], we evaluated all models on short text chunks of length 256, and also follow the same dataset split and transformer model size to parameterize the denoising models. For all the models including our method and baselines, we follow the common practice of using 12-layer transformers similar to GPT2-small scale [ 24 ]. Our transformer has the same number of heads (12) and hidden dimension (784) as in [ 22 ]. Note that all baseline diffusion language models are trained for a million steps, except for our model is trained for half a million. 
+
+Baselines We compare DSL against state-of-the-art continuous and discrete diffusion models, and autoregressive models [ 30 ]. Continuous diffusion baselines include Plaid [ 3 ], CDCD [ 2 ]. Discrete diffusion baselines include Discrete Diffusion Model (D3PM) [ 1], Score Entropy Discrete Diffusion (SEDD) [14], Masked Diffusion Language Model (MDLM) [22] and MD4 [24]. For autoregressive models, we choose Any-order Autoregressive Models ARDM [ 7 ] and MAC [ 25 ], and flow-based methods IAF/SCF [33], AR Argmax Flow [8], Discrete Flow [29], and Multinomial Diffusion. 33 G Limitations and Broader Impacts 
+
+DSL is a foundational method for diffusion-based language generation. Potential positive impacts include improving the efficiency, controllability, and flexibility of non-autoregressive text generation systems. At the same time, improvements in text generation quality may increase risks associated with synthetic text, including spam, misinformation, impersonation, or other harmful content generation. We do not release a deployed model or user-facing system, and we encourage future applications of DSL-style methods to follow standard safeguards for generative models, including misuse monitoring, content filtering, and careful release practices. 
+
+## H Assets and Licenses 
+
+Table 11 summarizes the existing assets used in this work. We use these assets only for research purposes and follow their stated licenses and terms of use. Table 11: Existing assets used in this work.       
+
+> Asset License / terms of use OpenWebText Public research dataset used for open-ended text generation evaluation; we cite the original release and follow its terms. Text8 Public benchmark dataset used for character-level likelihood evaluation. LLaDA / MDLM checkpoints Pretrained checkpoints used for initialization and/or baseline comparison; we cite the original releases and follow their model-use terms. MAUVE Evaluation metric for open-ended text generation; we cite the original paper/package and follow the package license. GPT-2 tokenizer / evaluator Used for tokenization and GenPPL evaluation; we cite the original release and follow the corresponding terms.
+
+## I Additional Qualitative Samples 
+
+I.1 Text8 Example 1: [BOS]s to some anarchists to view the betrayal of destiay and show that the essential character of dut theme survived felled to before nine zero bc and were replaced most of all knightnote have changed dramatically basing on edmund lynn s name death on body f[EOS] 
+
+Example 2: [BOS]ics at a grant university s trade psychology marketing a statement us by saddam is an example of the abortion of aids most modern reputation says the body agrees to the pope whose arm is considered one of the most intrigued piecses of his body see also c[EOS] 
+
+Example 3: [BOS]h the irish protectors caused margraves and other powerful men and hence to present a confusingly successful tour the quotes more interpreted by mary newton puts the rejection of religion lewis and wats honored having led radcliffe men to question the la[EOS] 
+
+I.2 OWT 
+
+The following examples are generated from DSL finetuned checkpoint, with ReMDM-loop (principled 
+
+ηcap (T )). 
+
+Example with T = 128 .
+
+BIP that only need the hard press. Now I think it works very well against your blindness. At RT11 Here’s how it works. I’ve adjusted the fast slider to go above the 60’s. Eventually, myshoot rate is now 4 percent. It works all on the T-Mobile bands. If I’m too low, I can cross it up the corner, but if it’s with a stick hand (Carl Rasmus could cut), I infrotm a little near the edge of the box. If I’m going too low, I’ll have the ability to adjust target angles and will still only know what it looks like. 34 The perfect, though disappointing feeling. Links: Lettered September 29st, 2014 are your no planning? no planning is a natural lifestyle @khovgeksriumki forgo where the night of day breaks -go to Eavriumki is going to start the week. hahahaha no a bet on the day. Daily is on the off right right now. From that I look at the page of his resume and ask if you can break the week, so if the week is fast, I don’t have real hassle asking if he’s going to break it. So I think he’s going to start to go slow, maybe a couple may be there. Signed on September 29st, 2014 and he’s not going to go after that week. (out/of-in his catalog) On this week’s 2nd, I had a lot of green green warning about my start of the weekend so I knew I’m going to lose. I didn’t want to lose any extra weight or anything else, I just wanted to the rest time. At a point in the day I got nothing, I could get anything, but the end of the 60’s was not what I wanted to go. I got myself on track so let’s do a routine at 20am. Before I could wake 20am, I realized I needed to wake up at 20am. It didn’t seem a good day. Before I had it the next day, I bought a new SIM card, and I spent this week backwards when I was fixed. It was just not a good thing, but I kept the bell circle off for both days. So it took about 7 minutes to go to work, then 5 minutes on the field between 8 and 7, and had a weight roll out around 5 minutes later. Then the clock on the card still constantly waiting for a delay in the middle of the weight world. A couple of times, people say, “You don’t have time for this” or “well.” I’m able to stream people and online, listening to radio stations and live. I’m able to tell a lot of people, “Yes, you were able to track people down in front of you today. And I’m thankful I had told myself to do a few things a year and a half.” For me, I get hundreds of texts and messages every day, so it’s right to get to people. NOLOM feel good It kind of feels better having spoken to someone now. I’m hungry, but he’s going to do it already. He, I found him happy but I’m halfway through it right now. I’ll bet upon everything from I could buy a couple PTTs from a Gdigy and a T-Mobile, and I don’t want to buy. The coolest thing now is the ability to fly, long distances, making swimmers with taking pictures. I could do not shoot a flyw if I would like to let it shoot a kmm for me, still out there, still at least where I am. I’ll have got something to show. I don’t worry about a flyw that I shoot for when it’s nowhere. I could have shoot a group that’s not certain I can shoot, but I come to the angle I have to shoot and where my camera moves it. When I do shoot, I’m going to search, so I can see where a wave’s coming and see if it’s coming on right. Writing and writing is a way to be free from ideas and scrubbing from thought. I drive a slow car. I’ll take the drive over it and drag it into a right. If I can take it it, I bend my head, and I’m going to take it. And 
+
+Example with T = 256 .
+
+NASts from age 19 to Cuba for Cuba and Cuba for Cuba with the exception of the house in Havana, a tourism official says. Fiesta Fiaza is missing from ages 11 and 12 at the time she was conceived, but she happily adopted her younger daughter and adopted her at age. “The best question we have right now is how much she wants to give away,” says Arushal Chomam, Managing Director of Case & Privacy with the 35 International Investigations Center. “We will give a guess and as soon as we are certified certified, please check for us for some time.” See also: Cruise Cruise Cruise of Banks Search for MissingFiesta Fiaza – At $15. Ft Ft : $15. Ft Ft -Offer Nov. Nov. (1601) Grand Competition Winner Contest Winner New Original Siftth-Officile by an Italian Pararonous Unit Generally, Fume does handcrafted, and she takes away from her collection. Even though she has not used her collection’s collection or design, she says she’ll put on any of her first set Grashinaza, something that won’t be used again with her collection for years. Not too much is said and given what she will be buying in the amount of time. Fume’s collection is also in an eye of local cultural heritage. “It’s disappointing and whether there are more or more examples of local heritage, but I just said there is something kind of African heritage there that is indicative of people who love Bayay Surplitia,” she says. In addition to an appreciation of culturals and historical traditions, Fume has an appreciation of indigenous cultures as a part of her collection. She, too, will showcase their cultures across color, ethnicity, art, design, and indigenous traditions. “When I’ll give out, I hope my collection will be just as unique,” she says. “You know, when I come out and when I give out, my collection is just as strong,” she continues. “I’m surprised we have a green color, a dark color, or a black color, or something. It’s just what I hope is a positive experience.” Fume currently holds about 100 pieces of Tokara Kirara Suguiaiko just out of $12,002 in Albany, N.Y. “It’s a mixed-together piece, there are a few strokes of stroke or the nib brush that give an impression, but it’s also so beautiful, it’s so cute and I think is so deeply related. My style is the inner hybrid of a stylistic mixed-together piece, not that or anything. It makes me feel comfortable and relaxed. It really feels like a marriage of something and the nuance of something you’ve been doing and done. It feels like fun and it feels like a touch in the room. It’s not very dark when you’re trying to make this touch with a different color palette as it does and sometimes you’re so distracted when you want to wake up and enjoy it. It’s fun and it inspires me as much as I want to do, and I am proud of my time and my work.” All artwork which comes from a detailed dark coloring color tones to a subtle dark colored background scheme. Estimated 1 12,013 Estimated 1 12,n1 12,013 (approximately $100) Approximately 100 pieces of Tokara Suguiaiko Grashinaza hand-crafted of Tokara Suguiaiko Details: As follows Price: All sales, and pricing may vary and is a requirement for normal times. As soon as this site is on lockdown we will do an FAQ tour in stores for up to $50. Cost: Available online (approx $8 + $9) when you can order order online. For more details what we can think we know by which orders ship on eBay. There’s a web form in which you can just print the details, grab something else you can use to sign or keep one of your items on eBay page. You’ll see some really nice zilzali, Mugabe, Picasso, and a stock, but you can have a strategy of ordering or keeping one of the items shipped directly to eBay. • CY CYV Custom Design (rounded by This is where you’ll get sketches, drawings, and your own delivery information. What went wrong? This is where we say I’ll go see my own artist drawings. This is where CY CYV Custom Design/aka delivery info here for an overview of what you can choose for whom you can use to construct a shop of the 
+
+Example with T = 512 .
+
+See also: California is not trying to impose taxes on other states. Instead, states actually adopt the California tax code. The best form of arguments already makes the great news when comparing taxes, local payouts, local profits, and national profits. But those arguments are too far from explaining how it works and are too far from explaining basic science of how well it works. 36 I have heard a lot stories about the Corporate Sales Tax. It is that big smaller corporations were forced to tax because they had no enough to pay taxes, other big corporations did not pay taxes because they deduct the taxes for other things like sales. It is called no taxation: tax, corporate tax, the income is more than a dollar, more than a ‘ with a few multimillionaires and no place in society. It is that you don’t have to pay your taxes all of the time. Hawking Taxes in the US: Corporations (usually big corporations) have learned how no taxation is the best way to live life. Big companies don’t do things that kind of, people, have to pay the taxes, just by converting them to the US. They do other things that kind of: big corporations like being bailed out of the US. Instead of having to make a profit, they get paid. There is a way in the world, a baker, not baker at all, where they are in trouble. It is because people have to think big corporations can get paid, because those companies hate the system and are trying to hide it. If you become an investor, you get paid. Think of 0.8 Raising is the most important thing in the economy. It is it it that you aren’t buying for $1.00 but if you pay the taxes only for the second one, it becomes 25% of your income. If you pay the taxes only, but according to the law, the rest will not stay on your income until it becomes 25% of your income. If you deduct a couple of deductions for that number, it won’t stay on your taxable income, or the total, until the income tax is paid. You don’t see any gains from the tax until $1 million. By that time you get 25% of your income, the tax that now has reinvested into your. You can spend the dividends, save your taxes, and use it to retirement. And of course, the money used to pay the tax doesn’t change it needs to go up or higher. But the more the tax is paid, the more money it needs to spend. Then the car gets paid off for the insurance, what the $2.50 gets and the $2.50 gets are not additional taxes. But the amount that gets paid by less than the person gets charged. Tax taxes are taxed on some of the earns a person. The big difference is that this is how the real income gets taxed. Corporate income is one of the highest levels of taxation. The real income income can be easily derived from the excise tax and the chained tax. Compensation Ductes: Say you spend money on on a business and you earn the capital to ship it. You pay taxes on ‘the corporate owner (or local company)’ and you earn the same amount of capital costs to ship it. You say your industry is money capital which consists of lots of money from other companies. First you own the profits. Then you give it to the government and use it to others. This is not true. You owe billions of dollars in income tax taxes to them. No profit government for ‘gas makers’, no taxes for ‘gas makers.’ The capital dividend is not something that they use. If they trade with the people of capital, they pay them not, but that capital equals it. Digid Benefit Ductes: America float these profits from the coffers of corporations to pay their taxes. They can and collect at the same time the rate of interest rates that they do. Let’s wait until we don’t realize how much of a nuisance we don’t need to pay our taxes. Do we need to pay our taxes with a 2.5 trillion hole? A couple of months ago we were actually paying taxes on a company that would provide to certain people id any ill. Another company had fixed higher tax rates for individual hospitals and other hospitals and hospitals, while another company had fixed 40 times the rate of federal tax rates for individual insurers, services and other health care providers, while another company had fixed more than 37 Example with T = 1024 .
+
+ongs of Africans played a role in determining population status, family structure, political etc. Traditionally, Africa was political symbol of each person of their own, ethnic or ethnic status. Instead, Africa was political symbol of goodwill for U.S. citizens of all races and cultures. In this case, African Americans have not looked back to the 1950s. The split isn’t because very few Africans (both present and later) arrived in the U.S. History does not necessarily fix the split. An analysis of “African Remnantss” discovered that far fewer African Americans arrived in the U.S than they did in the mid-9.01% of today’s population from today. The split is primarily due to the influx of Chinese people. The Chinese people from the past are not migrants who traveled to coast and coast. It may indeed have been allowed to enter the U.S. under open borders. This is probably partially, since the Chinese people are nowhere fully integrated into the U.S., and the borders for the past 25 years are still porous. Under open borders, the nation still belong to the Republic of Somalia. I would suggest that it was the nation of its own or its neighbors who made the decision. Certainly the nation’s productivity has not been a positive. One scholar whose family was Awaisan Ahmed told Al-Sal Al we have a “culture of immigrants originating from the founders of the Somali Republic of Somalia.” Another former head of Oshala College concluded that the nation’s productivity fell by an average 3.3% in 2013. That’s what I’d guess from a fellow Al-Sahala college scholar and the Al-Qaeda fundamentalist. That’s not to say that the nation is a good neighbor — that the U.S. is a state that cares for all. As adjusted capita employment levels and as indexed adjusted income, productivity has fallen 15% since then. In addition, the new state provides health assistance for women, the elderly and all except for the state basic health care. How has the income fallen by nearly 15% in the rest of the country? So has the working class. Let me begin with the opportunity of success in the U.S. as a nation nation – just from being considered a great nation and having a heart, but being able to get the heart that can go anywhere else. I’m a proud American born in the U.S., my life has gone through periods of war, occupation, occupation, employment as a citizen, as a city, elected as a citizen and a citizen of government. In World War II, America had only due to Russia and Russia in an effort to preserve, build and expand its bases to bring it up as a nation with a rich tradition of generosity and generosity. In the U.S., I salute the great fathers as an instrumental to bring the world again. One that truly belongs to all Americans. Today, I must formally recognize my power that U.S.-centric solutions must not simply solve the world’s problems. As many southern American countries where I am live, I must recognize what I am doing – as a citizen – and our God Spirit to bring us closer to America. The U.S. Federal Government (Fed-Fed) Everything Doesn’t (CNN Talk Anything) Fox News News If statements from the 9/11/11 and 13/11 attacks are accurate, the hijackers or any false theories are simply going to blow up. Shortly after attempting 9/9/11 to obtain documents from the CIA, they began questioning whether the hijackers, or if they wanted the documents. The Pentagon 9/11acking conspiracy was a rum being featured on a CNN show. Why have America’s world stature shift people’s attention to credible answers? Some of the stories are simply nuts. One 9/9/11 theory that has been spun on to be “fabged” by CIA’s secret secret operations (something U.S. authorities were able to track back), in theory it may have been planted by CIA. This story remains kept wraps ever after leaked 9/9/11 video Video Goes Be Allenged - Message to President Obama. The narrative of the ongoing 9/9/11 is anything but false and remains as the mainstream media reporting has been consistent. 38 On Friday, a statement from the White House said that U.S. intelligence personnel were being intercepted by a computer used to collect them between January and October in 9/9/11. The statement said that data collected when retrieving them from US intelligence operations operating in Moscow is classified because no records exist. Why don’t we know that there are so many no records? i.e. the CIA’s no records? It seems like President Obama himself 39

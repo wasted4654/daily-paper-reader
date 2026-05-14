@@ -1,0 +1,134 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-14T21:21:04.634139+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2605.12825v1",
+      "title": "Orthrus: Memory-Efficient Parallel Token Generation via Dual-View Diffusion",
+      "abstract": "We introduce Orthrus, a simple and efficient dual-architecture framework that unifies the exact generation fidelity of autoregressive Large Language Models (LLMs) with the high-speed parallel token generation of diffusion models. The sequential nature of standard autoregressive decoding represents a fundamental bottleneck for high-throughput inference. While diffusion language models attempt to break this barrier via parallel generation, they suffer from significant performance degradation, high training costs, and a lack of rigorous convergence guarantees. Orthrus resolves this dichotomy natively. Designed to seamlessly integrate into existing Transformers, the framework augments a frozen LLM with a lightweight, trainable module to create a parallel diffusion view alongside the standard autoregressive view. In this unified system, both views attend to the exact same high-fidelity Key-Value (KV) cache; the autoregressive head executes context pre-filling to construct accurate KV representations, while the diffusion head executes parallel generation. By employing an exact consensus mechanism between the two views, Orthrus guarantees lossless inference, delivering up to a 7.8x speedup with only an O(1) memory cache overhead and minimal parameter additions.",
+      "authors": [
+        "Chien Van Nguyen",
+        "Chaitra Hegde",
+        "Van Cuong Pham",
+        "Ryan A. Rossi",
+        "Franck Dernoncourt",
+        "Thien Huu Nguyen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-12T23:47:35+00:00",
+      "link": "https://arxiv.org/pdf/2605.12825v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "unifies autoregressive LLMs with high-speed parallel token generation of diffusion models",
+      "llm_evidence_cn": "将自回归大语言模型与扩散模型的高速并行生成相结合",
+      "llm_evidence": "将自回归大语言模型与扩散模型的高速并行生成相结合",
+      "canonical_evidence": "将自回归大语言模型与扩散模型的高速并行生成相结合",
+      "llm_tldr_en": "Introduces Orthrus, a framework unifying autoregressive fidelity with diffusion-based parallel generation.",
+      "llm_tldr_cn": "引入Orthrus框架，将自回归的保真度与扩散模型的并行生成能力相结合。",
+      "llm_tldr": "引入Orthrus框架，将自回归的保真度与扩散模型的并行生成能力相结合。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.13382v1",
+      "title": "BlockVLA: Accelerating Autoregressive VLA via Block Diffusion Finetuning",
+      "abstract": "While autoregressive (AR) Vision-Language-Action (VLA) models have demonstrated formidable reasoning capabilities in robotic tasks, their sequential decoding process often incurs high inference latency and may amplify error accumulation during long-horizon execution. Discrete Diffusion Language Models (dLLMs) provide a promising alternative through parallel token refinement, but their practical deployment in robotics remains limited by repeated denoising function evaluations (NFEs) and the difficulty of directly applying standard KV caching to bidirectional iterative decoding. To bridge these paradigms, we propose BlockVLA, a framework that adapts pretrained AR backbones into an efficient discrete diffusion policy through a block diffusion paradigm. BlockVLA maintains autoregressive dependencies at the block level while enabling parallel denoising within each block, thereby combining global causal coherence with local parallel generation. This design enables prefix KV-cache reuse across completed blocks, reduces the effective cost of iterative denoising, and provides a smoother transition from AR pretraining to diffusion-based policy fine-tuning. We conduct extensive evaluations on the LIBERO and SimplerEnv benchmarks. Experimental results demonstrate that our BlockVLA achieves a 3.3$\\times$ inference acceleration over standard discrete diffusion baselines. Furthermore, our model exhibits superior training efficiency, with success rates converging substantially faster than baselines, a gain that is particularly pronounced in complex, long-horizon tasks, where BlockVLA achieves significant performance gains in the early stages of training. This work establishes Block Diffusion as a robust bridge between large-scale pretrained AR models and efficient, high-frequency real-time robotic control.",
+      "authors": [
+        "Ruiheng Wang",
+        "Shuanghao Bai",
+        "Haoran Zhang",
+        "Badong Chen",
+        "Xiangyu Xu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-13T11:37:51+00:00",
+      "link": "https://arxiv.org/pdf/2605.13382v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "adapting autoregressive VLA backbones into diffusion policies for robotics",
+      "llm_evidence_cn": "将自回归VLA骨干网络适配为机器人扩散策略",
+      "llm_evidence": "将自回归VLA骨干网络适配为机器人扩散策略",
+      "canonical_evidence": "将自回归VLA骨干网络适配为机器人扩散策略",
+      "llm_tldr_en": "BlockVLA converts autoregressive vision-language-action models into efficient block diffusion policies.",
+      "llm_tldr_cn": "BlockVLA将自回归视觉-语言-动作模型转换为高效的块扩散策略。",
+      "llm_tldr": "BlockVLA将自回归视觉-语言-动作模型转换为高效的块扩散策略。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.12836v1",
+      "title": "Discrete Stochastic Localization for Non-autoregressive Generation",
+      "abstract": "Continuous diffusion is a natural framework for non-autoregressive generation but has generally lagged behind masked discrete diffusion models (MDMs) on discrete sequence generation. We argue that the bottleneck is not continuity itself, but a representation in which denoising depends on timestep-indexed noise regimes. We introduce \\emph{Discrete Stochastic Localization} (DSL), a continuous-state framework with unit-sphere token embeddings whose Bayes-optimal denoiser is invariant to the nominal signal-to-noise ratio (SNR) under the localization channel. One trained network then supports an entire family of per-token SNR paths, with endpoint masked-diffusion paths as a special case. Fine-tuning a pretrained MDLM checkpoint with DSL substantially improves distributional faithfulness (MAUVE) on OpenWebText across all step budgets from $T{=}128$ to $T{=}1024$, and the same checkpoint supports random-order autoregressive sampling, as well as a hybrid continuous-then-discrete sampler using as few as T=48 total steps -- without distillation or retraining.",
+      "authors": [
+        "Yunshu Wu",
+        "Jiayi Cheng",
+        "Longxuan Yu",
+        "Partha Thakuria",
+        "Rob Brekelmans",
+        "Evangelos E. Papalexakis",
+        "Greg Ver Steeg"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-05-13T00:12:24+00:00",
+      "link": "https://arxiv.org/pdf/2605.12836v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Continuous diffusion for non-autoregressive generation",
+      "llm_evidence_cn": "用于非自回归生成的连续扩散模型",
+      "llm_evidence": "用于非自回归生成的连续扩散模型",
+      "canonical_evidence": "用于非自回归生成的连续扩散模型",
+      "llm_tldr_en": "Introduces Discrete Stochastic Localization to improve continuous diffusion for discrete sequence generation.",
+      "llm_tldr_cn": "引入离散随机定位框架，提升连续扩散模型在离散序列生成中的表现。",
+      "llm_tldr": "引入离散随机定位框架，提升连续扩散模型在离散序列生成中的表现。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
