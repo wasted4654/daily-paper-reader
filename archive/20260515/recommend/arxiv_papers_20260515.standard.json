@@ -1,0 +1,281 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-15T21:15:37.996051+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2605.14368v1",
+      "title": "Where Should Diffusion Enter a Language Model? Geometry-Guided Hidden-State Replacement",
+      "abstract": "Continuous diffusion language models lag behind autoregressive transformers, partly because diffusion is applied in spaces poorly suited to language denoising and token recovery. We propose DiHAL, a geometry-guided diffusion-transformer hybrid that asks where diffusion should enter a pretrained transformer. DiHAL scores layers with geometry-based proxies, selects a diffusion-friendly hidden-state interface, and replaces the lower transformer prefix with a diffusion bridge while retaining the upper layers and original LM head. By reconstructing the selected-layer hidden state rather than tokens, DiHAL avoids direct continuous-to-discrete recovery. Experiments on 8B-scale backbones show that the geometry score predicts effective shallow insertion layers under a fixed bridge-training protocol and that hidden-state recovery improves over continuous diffusion baselines in a diagnostic comparison matching the diffusion/recovery training budget. These results suggest that hidden-state geometry helps identify where diffusion-based replacement is feasible inside pretrained language models.",
+      "authors": [
+        "Injin Kong",
+        "Hyoungjoon Lee",
+        "Yohan Jo"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-14T04:47:54+00:00",
+      "link": "https://arxiv.org/pdf/2605.14368v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "diffusion-transformer hybrid replacing autoregressive prefix",
+      "llm_evidence_cn": "扩散-Transformer 混合模型替换自回归前缀",
+      "llm_evidence": "扩散-Transformer 混合模型替换自回归前缀",
+      "canonical_evidence": "扩散-Transformer 混合模型替换自回归前缀",
+      "llm_tldr_en": "Proposes a hybrid model that integrates diffusion into pretrained transformers for better language generation.",
+      "llm_tldr_cn": "提出一种将扩散集成到预训练 Transformer 中的混合模型，以实现更好的语言生成。",
+      "llm_tldr": "提出一种将扩散集成到预训练 Transformer 中的混合模型，以实现更好的语言生成。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.14531v1",
+      "title": "Language Generation as Optimal Control: Closed-Loop Diffusion in Latent Control Space",
+      "abstract": "This work reformulates language generation as a stochastic optimal control problem, providing a unified theoretical perspective to analyze autoregressive and diffusion models and explain their limitations (Efficiency-Fidelity Paradox, Irreversibility Error Propagation, Optimization Tractability and Fidelity) in terms of combination of trajectory singularity, adjoint state vanishing, and gradient absence. To address these issues, we approximate the solution to the Hamilton-Jacobi-Bellman (HJB) equation, yielding an optimal policy that acts as a closed-loop controller. To bypass the intractability of directly solving the HJB PDE, we employ Flow Matching as the optimal trajectory solver within the rectified latent control space. This allows our Manta-LM with Global Integral Operator to approximate the global vector field, effectively realizing a model that simultaneously achieves high-fidelity text generation and efficient, low-cost parallel sampling. Empirically, our method achieves strong performance on language modeling and conditional generation tasks, while exhibiting improved stability, efficiency, and controllability.",
+      "authors": [
+        "ZiYi Dong",
+        "Yuliang Huang",
+        "Weijian Deng",
+        "Xiangyang Ji",
+        "Liang Lin",
+        "Pengxu Wei"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-14T08:13:43+00:00",
+      "link": "https://arxiv.org/pdf/2605.14531v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Unified theoretical perspective to analyze autoregressive and diffusion models",
+      "llm_evidence_cn": "分析自回归和扩散模型的统一理论视角",
+      "llm_evidence": "分析自回归和扩散模型的统一理论视角",
+      "canonical_evidence": "分析自回归和扩散模型的统一理论视角",
+      "llm_tldr_en": "Reformulates language generation as optimal control to unify and improve autoregressive and diffusion models.",
+      "llm_tldr_cn": "将语言生成重新表述为最优控制问题，以统一并改进自回归和扩散模型。",
+      "llm_tldr": "将语言生成重新表述为最优控制问题，以统一并改进自回归和扩散模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.15141v1",
+      "title": "Causal Forcing++: Scalable Few-Step Autoregressive Diffusion Distillation for Real-Time Interactive Video Generation",
+      "abstract": "Real-time interactive video generation requires low-latency, streaming, and controllable rollout. Existing autoregressive (AR) diffusion distillation methods have achieved strong results in the chunk-wise 4-step regime by distilling bidirectional base models into few-step AR students, but they remain limited by coarse response granularity and non-negligible sampling latency. In this paper, we study a more aggressive setting: frame-wise autoregression with only 1--2 sampling steps. In this regime, we identify the initialization of a few-step AR student as the key bottleneck: existing strategies are either target-misaligned, incapable of few-step generation, or too costly to scale. We propose \\textbf{Causal Forcing++}, a principled and scalable pipeline that uses \\emph{causal consistency distillation} (causal CD) for few-step AR initialization. The core idea is that causal CD learns the same AR-conditional flow map as causal ODE distillation, but obtains supervision from a single online teacher ODE step between adjacent timesteps, avoiding the need to precompute and store full PF-ODE trajectories. This makes the initialization both more efficient and easier to optimize. The resulting pipeline, \\ours, surpasses the SOTA 4-step chunk-wise Causal Forcing under the \\textit{\\textbf{frame-wise 2-step setting}} by 0.1 in VBench Total, 0.3 in VBench Quality, and 0.335 in VisionReward, while reducing first-frame latency by 50\\% and Stage 2 training cost by $\\sim$$4\\times$. We further extend the pipeline to action-conditioned world model generation in the spirit of Genie3. Project Page: https://github.com/thu-ml/Causal-Forcing and https://github.com/shengshu-ai/minWM .",
+      "authors": [
+        "Min Zhao",
+        "Hongzhou Zhu",
+        "Kaiwen Zheng",
+        "Zihan Zhou",
+        "Bokai Yan",
+        "Xinyuan Li",
+        "Xiao Yang",
+        "Chongxuan Li",
+        "Jun Zhu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-14T17:46:36+00:00",
+      "link": "https://arxiv.org/pdf/2605.15141v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive diffusion distillation for video generation",
+      "llm_evidence_cn": "用于视频生成的自回归扩散蒸馏",
+      "llm_evidence": "用于视频生成的自回归扩散蒸馏",
+      "canonical_evidence": "用于视频生成的自回归扩散蒸馏",
+      "llm_tldr_en": "Proposes Causal Forcing++ for efficient few-step autoregressive diffusion in real-time video generation.",
+      "llm_tldr_cn": "提出了 Causal Forcing++，用于实现实时视频生成中的高效少步自回归扩散蒸馏。",
+      "llm_tldr": "提出了 Causal Forcing++，用于实现实时视频生成中的高效少步自回归扩散蒸馏。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.15190v1",
+      "title": "RAVEN: Real-time Autoregressive Video Extrapolation with Consistency-model GRPO",
+      "abstract": "Causal autoregressive video diffusion models support real-time streaming generation by extrapolating future chunks from previously generated content. Distilling such generators from high-fidelity bidirectional teachers yields competitive few-step models, yet a persistent gap between the history distributions encountered during training and those arising at inference constrains generation quality over long horizons. We introduce the Real-time Autoregressive Video Extrapolation Network (RAVEN), a training-time test framework that repacks each self rollout into an interleaved sequence of clean historical endpoints and noisy denoising states. This formulation aligns training attention with inference-time extrapolation and allows downstream chunk losses to supervise the history representations on which future predictions depend. We further propose Consistency-model Group Relative Policy Optimization (CM-GRPO), which reformulates a consistency sampling step as a conditional Gaussian transition and applies online Reinforcement Learning (RL) directly to this kernel, avoiding the Euler-Maruyama auxiliary process adopted in prior flow-model RL formulations. Experiments demonstrate that RAVEN surpasses recent causal video distillation baselines across quality, semantic, and dynamic degree evaluations, and that CM-GRPO provides further gains when combined with RAVEN.",
+      "authors": [
+        "Yanzuo Lu",
+        "Ronglai Zuo",
+        "Jiankang Deng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-14T17:59:30+00:00",
+      "link": "https://arxiv.org/pdf/2605.15190v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "causal autoregressive video diffusion models",
+      "llm_evidence_cn": "因果自回归视频扩散模型",
+      "llm_evidence": "因果自回归视频扩散模型",
+      "canonical_evidence": "因果自回归视频扩散模型",
+      "llm_tldr_en": "Introduces RAVEN for real-time autoregressive video extrapolation using consistency models.",
+      "llm_tldr_cn": "引入 RAVEN，利用一致性模型实现实时自回归视频外推。",
+      "llm_tldr": "引入 RAVEN，利用一致性模型实现实时自回归视频外推。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive diffusion models research progress",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.10218v1",
+      "title": "Relative Score Policy Optimization for Diffusion Language Models",
+      "abstract": "Diffusion large language models (dLLMs) offer a promising route to parallel and efficient text generation, but improving their reasoning ability requires effective post-training. Reinforcement learning with verifiable rewards (RLVR) is a natural choice for this purpose, yet its application to dLLMs is hindered by the absence of tractable sequence-level log-ratios, which are central to standard policy optimization. The lack of tractable sequence-level log-ratios forces existing methods to rely on high-variance ELBO-based approximations, where high verifier rewards can amplify inaccurate score estimates and destabilize RL training. To overcome this issue, we propose \\textbf{R}elative \\textbf{S}core \\textbf{P}olicy \\textbf{O}ptimization (RSPO), a simple RLVR method that uses verifiable rewards to calibrate noisy likelihood estimates in dLLMs. The core of our algorithm relies on a key observation: a reward advantage can be interpreted not only as an update direction, but also as a target for the relative log-ratio between the current and reference policies. Accordingly, RSPO calibrates this noisy relative log-ratio estimate by comparing its reward advantage with the reward-implied target relative log-ratio, updating the policy according to the gap between the current estimate and the target rather than the raw advantage alone. Experiments on mathematical reasoning and planning benchmarks show that RSPO yields especially strong gains on planning tasks and competitive mathematical-reasoning performance.",
+      "authors": [
+        "Zichao Yu",
+        "Shengze Xu",
+        "Bingqing Jiang",
+        "Wenyi Zhang",
+        "Difan Zou"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-11T08:58:40+00:00",
+      "link": "https://arxiv.org/pdf/2605.10218v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "policy optimization for diffusion language models",
+      "llm_evidence_cn": "扩散语言模型的策略优化",
+      "llm_evidence": "扩散语言模型的策略优化",
+      "canonical_evidence": "扩散语言模型的策略优化",
+      "llm_tldr_en": "Introduces RSPO to improve reasoning in diffusion language models via reinforcement learning.",
+      "llm_tldr_cn": "引入 RSPO 算法，通过强化学习提升扩散语言模型的推理能力。",
+      "llm_tldr": "引入 RSPO 算法，通过强化学习提升扩散语言模型的推理能力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.13316v1",
+      "title": "Test-time Sparsity for Extreme Fast Action Diffusion",
+      "abstract": "Action diffusion excels at high-fidelity action generation but incurs heavy computational costs owing to its iterative denoising nature. Despite current technologies showing promise in accelerating diffusion transformers by reusing the cached features, they struggle to adapt to policy dynamics arising from diverse perceptions and multi-round rollout iterations in open environments. We propose test-time sparsity to tackle this challenge, which aims to accelerate action diffusion by dynamically predicting prunable residual computations for each model forward at test time. However, two bottlenecks remain in this paradigm: 1) repetitive conditional encoding and pruning offset most potential speed gains, and 2) the features cached from previous denoising timesteps cannot constrain large pruning errors under aggressive sparsity. To address the first bottleneck, we design a highly parallelized inference pipeline that minimizes the non-decoder delay to milliseconds. Specifically, we first design a lightweight pruner that shares the encoder with the diffusion transformer. Then, we decouple the encoding and pruning from the autoregressive denoising loop by processing all denoising timesteps in parallel, and overlap the pruner with the decoder forward inference through asynchronism. To overcome the second bottleneck, we introduce an omnidirectional reusing strategy, which achieves 95% sparsity by selectively reusing features cached from the current forward, previous denoising timesteps, and earlier rollout iterations. To learn the rollout-level reusing strategies, we sample a few action trajectories to supervise the sparsified diffusion step by step. Extensive experiments demonstrate that our method reduces FLOPs by 92% and accelerates action generation by 5x, achieving lossless performance with an inference frequency of 47.5 Hz. Our code is available at https://github.com/ky-ji/Test-time-Sparsity.",
+      "authors": [
+        "Kangye Ji",
+        "Yuan Meng",
+        "Jianbo Zhou",
+        "Ye Li",
+        "Chen Tang",
+        "Zhi Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-13T10:28:50+00:00",
+      "link": "https://arxiv.org/pdf/2605.13316v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Action diffusion for high-fidelity action generation and policy dynamics",
+      "llm_evidence_cn": "用于高保真动作生成和策略动态的动作扩散模型",
+      "llm_evidence": "用于高保真动作生成和策略动态的动作扩散模型",
+      "canonical_evidence": "用于高保真动作生成和策略动态的动作扩散模型",
+      "llm_tldr_en": "Proposes test-time sparsity to accelerate action diffusion models for efficient robot policy execution.",
+      "llm_tldr_cn": "提出测试时稀疏化方法，以加速用于机器人策略执行的动作扩散模型。",
+      "llm_tldr": "提出测试时稀疏化方法，以加速用于机器人策略执行的动作扩散模型。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.14530v1",
+      "title": "Mitigating Mask Prior Drift and Positional Attention Collapse in Large Diffusion Vision-Language Models",
+      "abstract": "Large diffusion vision-language models (LDVLMs) have recently emerged as a promising alternative to autoregressive models, enabling parallel decoding for efficient inference and leveraging bidirectional attention for global context. Despite these advances, their behavior under long-form generation remains underexplored. In this work, we show that existing LDVLMs suffer from repetitive generation and degraded visual grounding, and identify two underlying causes. First, repetitive generation originates from a mask token prior: since generation tokens are initialized as mask tokens, their hidden representations progressively drift toward a shared prior direction over generation steps. Second, a fundamental misalignment between the positional attention bias and the iterative unmasking process suppresses attention toward informative visual tokens, degrading visual grounding. Based on these insights, we propose a training-free approach, introducing Mask Prior Suppression and Monotonic RoPE Scaling to mitigate mask prior drift and positional attention collapse during decoding. Experiments on general multimodal benchmarks and visual grounding tasks demonstrate improvements over baseline LDVLMs, with robust gains on long-form description benchmarks. Our results show that these failures can be effectively addressed with a lightweight, plug-and-play strategy that requires no additional training and generalizes across diverse LDVLM architectures.",
+      "authors": [
+        "Sujung Hong",
+        "Chanyong Yoon",
+        "Seongjae Hwang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-14T08:11:32+00:00",
+      "link": "https://arxiv.org/pdf/2605.14530v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Diffusion vision-language models as an alternative to autoregressive models",
+      "llm_evidence_cn": "扩散视觉语言模型作为自回归模型的替代方案",
+      "llm_evidence": "扩散视觉语言模型作为自回归模型的替代方案",
+      "canonical_evidence": "扩散视觉语言模型作为自回归模型的替代方案",
+      "llm_tldr_en": "This paper addresses repetitive generation issues in large diffusion vision-language models for long-form content.",
+      "llm_tldr_cn": "本文解决了大型扩散视觉语言模型在长文本生成中的重复生成和视觉接地退化问题。",
+      "llm_tldr": "本文解决了大型扩散视觉语言模型在长文本生成中的重复生成和视觉接地退化问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
