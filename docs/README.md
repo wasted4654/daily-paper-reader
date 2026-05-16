@@ -6,43 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-15
-- 运行时间：2026-05-15 21:16:33 UTC
+- 最新运行日期：2026-05-16
+- 运行时间：2026-05-16 19:48:43 UTC
 - 运行状态：成功
-- 本次总论文数：7
-- 精读区：4
-- 速读区：3
+- 本次总论文数：6
+- 精读区：2
+- 速读区：4
 
 ### 今日简报（AI）
-今日聚焦扩散模型与语言模型的深度融合，7 篇前沿论文带你探索生成技术的新边界。
-两篇 9.0 分力作揭示了几何引导的隐藏状态替换与潜空间闭环控制，是理解扩散模型切入 NLP 底层逻辑的必读之作。
-建议优先研读高分精读篇目，掌握扩散技术如何通过架构演进实现更精准、高效的语言生成。
-- 详情：[/202605/15/README](/202605/15/README)
+今日深度解析自动驾驶与长视频生成前沿，MindVLA-U1 与 Head Forcing 凭借 9.0 高分领跑。
+核心结论显示 VLA 统一流式架构在智驾表现上已超越 VA，而头部异构性技术则成功突破了长视频自回归生成的瓶颈。
+推荐关注掩码扩散模型与轨迹建模的效率优化，这是提升多模态生成性能的关键路径。
+- 详情：[/202605/16/README](/202605/16/README)
 
 ### 精读区论文标签
-1. [Where Should Diffusion Enter a Language Model? Geometry-Guided Hidden-State Replacement](/202605/15/2605.14368v1-where-should-diffusion-enter-a-language-model-geometry-guided-hidden-state-replacement)  
+1. [MindVLA-U1: VLA Beats VA with Unified Streaming Architecture for Autonomous Driving](/202605/16/2605.12624v1-mindvla-u1-vla-beats-va-with-unified-streaming-architecture-for-autonomous-driving)  
+   标签：评分：9.0/10、query:genad
+   evidence：用于端到端自动驾驶的统一流式VLA架构
+2. [Head Forcing: Long Autoregressive Video Generation via Head Heterogeneity](/202605/16/2605.14487v1-head-forcing-long-autoregressive-video-generation-via-head-heterogeneity)  
    标签：评分：9.0/10、query:ardm
-   evidence：扩散-Transformer 混合模型替换自回归前缀
-2. [Language Generation as Optimal Control: Closed-Loop Diffusion in Latent Control Space](/202605/15/2605.14531v1-language-generation-as-optimal-control-closed-loop-diffusion-in-latent-control-space)  
-   标签：评分：9.0/10、query:ardm
-   evidence：分析自回归和扩散模型的统一理论视角
-3. [Causal Forcing++: Scalable Few-Step Autoregressive Diffusion Distillation for Real-Time Interactive Video Generation](/202605/15/2605.15141v1-causal-forcing-scalable-few-step-autoregressive-diffusion-distillation-for-real-time-interactive-video-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于视频生成的自回归扩散蒸馏
-4. [RAVEN: Real-time Autoregressive Video Extrapolation with Consistency-model GRPO](/202605/15/2605.15190v1-raven-real-time-autoregressive-video-extrapolation-with-consistency-model-grpo)  
-   标签：评分：9.0/10、query:ardm
-   evidence：因果自回归视频扩散模型
+   evidence：自回归视频扩散模型架构
 
 ### 速读区论文标签
-1. [Relative Score Policy Optimization for Diffusion Language Models](/202605/15/2605.10218v1-relative-score-policy-optimization-for-diffusion-language-models)  
+1. [Normalizing Trajectory Models](/202605/16/2605.08078v2-normalizing-trajectory-models)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：在扩散步骤中使用条件归一化流进行轨迹建模
+2. [Understanding and Accelerating the Training of Masked Diffusion Language Models](/202605/16/2605.13026v1-understanding-and-accelerating-the-training-of-masked-diffusion-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型的策略优化
-2. [Test-time Sparsity for Extreme Fast Action Diffusion](/202605/15/2605.13316v1-test-time-sparsity-for-extreme-fast-action-diffusion)  
-   标签：评分：7.0/10、query:genad
-   evidence：用于高保真动作生成和策略动态的动作扩散模型
-3. [Mitigating Mask Prior Drift and Positional Attention Collapse in Large Diffusion Vision-Language Models](/202605/15/2605.14530v1-mitigating-mask-prior-drift-and-positional-attention-collapse-in-large-diffusion-vision-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：扩散视觉语言模型作为自回归模型的替代方案
+   evidence：掩码扩散模型与自回归模型的对比
+3. [Discrete MeanFlow: One-Step Generation via Conditional Transition Kernels](/202605/16/2605.12805v1-discrete-meanflow-one-step-generation-via-conditional-transition-kernels)  
+   标签：评分：6.0/10、query:ardm
+   evidence：通过转移核进行离散状态空间生成
+4. [SANA-WM: Efficient Minute-Scale World Modeling with Hybrid Linear Diffusion Transformer](/202605/16/2605.15178v1-sana-wm-efficient-minute-scale-world-modeling-with-hybrid-linear-diffusion-transformer)  
+   标签：评分：6.0/10、query:genad
+   evidence：用于视频和轨迹控制的生成式世界模型
 
 
 <div class="dpr-home-promo-card">

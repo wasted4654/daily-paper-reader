@@ -1,0 +1,2567 @@
+Title: Understanding and Accelerating the Training of Masked Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2605.13026v1
+
+Published Time: Thu, 14 May 2026 00:46:33 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+# Understanding and Accelerating the Training of Masked Diffusion Language Models 
+
+Chunsan Hong 1∗ Sanghyun Lee 1∗ Chieh-Hsin Lai 2 Satoshi Hayakawa 3
+
+Yuhta Takida 2 Yuki Mitsufuji 2,4 Seungryong Kim 1† Jong Chul Ye 1†
+
+> 1
+
+KAIST 2Sony AI 3University of Tokyo 4Sony Group Corporation 
+
+## Abstract 
+
+Masked diffusion models (MDMs) have emerged as a promising alternative to au-toregressive models (ARMs) for language modeling. However, MDMs are known to learn substantially more slowly than ARMs, which may become problematic when scaling MDMs to larger models. Therefore, we ask the following question: how can we accelerate standard MDM training while maintaining its final perfor-mance? To this end, we first provide a detailed analysis of why MDM training is slow. We find that the main factor is the locality bias of language: the predictive information for a token is concentrated in nearby positions. We further investigate how this bias slows learning and suggest a simple yet effective remedy: bell-shaped time sampling as a training strategy. Notably, MDMs trained with our training recipe reach the same validation negative log-likelihood (NLL) up to ∼ 4× faster than standard training on One Billion Word Benchmark (LM1B). We also show faster improvements in generative perplexity, zero-shot perplexity, and downstream task performance on various benchmarks. 𝒙 𝟏 𝒙 " 𝒙 #$% 𝒙 # 𝒙 #&% 𝒙 '$% 𝒙 '… …  
+
+> Strongly Correlated
+> Weakly Correlated
+
+Locality Bias 
+
+In Language     
+
+> Masked diffusion models allow any -order generation, but are difficult to train due to locality bias in natural language .
+
+Training Batch 
+
+of ARMs 
+
+Training Batch 
+
+of MDMs                  
+
+> Masked diffusion models allow any -order generation, but are difficult to train due to locality bias in natural language .
+> Masked diffusion models allow any -order generation, but are difficult to train due to locality bias in natural language .
+> Masked diffusion models allow any -order generation , but are difficult to train due to locality bias in natural language .
+> 𝒙 #$"𝒙 #&"
+
+Figure 1: Locality bias in language makes MDMs slow learners. The red box illustrates the concept of locality bias: a token is influenced more strongly by nearby tokens and more weakly by distant ones. During training, ARMs learn to predict the target token from left-filled sequences, where an appropriate amount of local information is always available; in contrast, MDMs learn to predict the target token from arbitrary masked contexts, which may include cases where local information is either extremely scarce or extremely abundant, as highlighted by the red boxes. Our analysis suggests that these two regimes may be among the critical factors underlying the slow training of MDMs. 
+
+## 1 Introduction 
+
+Recently, discrete diffusion models [ 39 , 2] have rapidly emerged as a compelling framework for language modeling. They can be broadly divided into uniform discrete diffusion models [ 39 , 57 ]
+
+> ∗
+
+Equal contribution. Correspondence to: {hoarer,lsh83210}@kaist.ac.kr .
+
+> †
+
+Corresponding authors. Preprint. 
+
+> arXiv:2605.13026v1 [cs.LG] 13 May 2026
+
+and masked diffusion models (MDMs) [ 62 , 39 , 56 , 48 ], with various frameworks [ 67 , 38 , 17 ,32 , 75 , 78 , 53 , 51 , 23 ] further developed from these two families. Among this wide range of studies, the most basic MDM framework [48 , 56 ] remains the most widely adopted in real-world applications precisely because of its simplicity. Large-scale models, such as LLaDA [ 47 ], Seed Diffusion [ 63 ], and Dream [ 70 ], ultimately follow the most standard generation scheme, in which model predictions are used to gradually convert a fully masked sentence into tokens. Various inference-time techniques [ 35 , 18 ], reinforcement learning methods [ 22 , 74 ], and even retrieval-augmented generation [71, 30] are built upon this basic MDM framework. Recent evidence suggests standard MDMs can become competitive with autoregressive models (ARMs). For general-purpose models, MDMs such as LLaDA [ 47 ] and Dream [ 70 ] have surpassed same-sized ARM counterparts such as LLaMA 3 8B [ 14 ], while for coding models, DiffuCoder [ 13 ]and Dream-Coder [ 68 ] have matched same-sized Qwen2.5-Coder [ 25 ]. Prior work [ 52 ] further suggests that given sufficiently long training, MDMs can eventually match the performance of ARMs. However, the main bottleneck of MDMs is that they learn much more slowly than ARMs. Specifically, MDMs are known to require ∼ 16 × training compute to reach the same validation loss of ARMs [ 52 ,58 ]. This becomes a major obstacle when scaling MDMs to real-world LLMs, since the training cost of LLMs is extremely high; for example, even ARM-based LLaMA 3.1 405B spent ∼30M H100 GPU hours for training. Differences in training efficiency can translate into enormous differences in both cost and time. In this context, we raise a key question that has been overlooked in prior works: 
+
+How can we accelerate standard MDM training while maintaining its final performance? 
+
+To this end, we first analyze why MDM training is slow. Stepping back from MDM, we begin by separating two possible causes of slow any-order learning. The first is the locality bias of language: each token in natural language is influenced much more strongly by nearby tokens than by distant ones [ 10 ]. Since any-order generation includes orders beyond left-to-right (L2R), locality bias can shape its training dynamics differently. The second is the large order-space complexity of the any-order generation problem: unlike a fixed L2R order, models must learn a vastly larger family of generation problems. We show that the former factor, locality bias, has a substantially greater impact on training speed. Furthermore, we analyze why the locality bias slows MDM training, and find that both high-context (almost no masked) and low-context (almost fully masked) samples waste training budget. Although L2R bias, closely related to locality bias, has been pointed out as a challenge in many prior works [31, 69], there has been little detailed analysis of how it slows down training. Our second contribution is to introduce a simple, effective, and generalizable technique for accelerating MDM training . Motivated by our analysis of why MDMs learn slowly, we propose 
+
+bell-shaped time sampling , which increases the probability of sampling t from the middle-context region, and show that this significantly speeds up MDM training. Notably, bell-shaped time sampling achieves up to ∼ 4× faster training in reaching the same NLL on LM1B [ 5]. We show that it also leads to faster improvements in generative perplexity (PPL), and zero-shot PPL for models trained on OpenWebText [ 11 ]. Finally, we show that our method remains effective even in the continual pretraining with ARM initialization [ 12 ] setting commonly adopted for large-scale MDMs [ 3 ], and can further improve downstream task performance. 
+
+## 2 Background 
+
+2.1 Preliminaries 
+
+To analyze why MDMs are slow learners, we compare various classes of language models. We briefly explain those frameworks and objectives. Refer to Appendix A for details and related works. 
+
+Notation. Let x be a categorical sample with L dimensions and xi ∈ { 1, . . . , V } be the i-th dimension of x. We define special mask state as m = V + 1 . Let e denote the standard basis of RV +1 .Thus, each token is represented by a one-hot vector ei in RV +1 . Let Cat( π) denote the categorical distribution over V +1 classes with π ∈ ∆V +1 , the (V + 1) -simplex. We denote a noised sequence at time t by xt. We further define a mask indicator M ∈ { 0, 1}L and the masked sequence x[M] that is obtained by replacing xi with m whenever M i = 1 , while leaving it unchanged whenever M i = 0 .Let Mn denote a mask indicator with mask number of n and Mn as set of all possible combinatorial 
+
+Mn. For ARM, let x<i := ( x1, . . . , x i−1). We write uniform distribution as U( ·).2Masked diffusion models. MDM [ 56 , 62 ] defines the forward corruption process using the absorbing mask strategy: once a token is masked, it remains masked throughout the remaining process. For the diffusion process, define the time interval as t ∈ T = [0 , 1] where we corrupt the data from 
+
+t = 0 (original data) to t = 1 (completely masked). Formally, the forward process at time t is defined as qt|0(xit | x) = Cat( ·; αtexi + (1 − αt)em), where the forward process gradually adds noise as t grows. In this regard, the noise scheduler is typically set to αt = 1 − t. To mimic the true posterior induced from the forward process, the parametrized reverse process is designed as 
+
+pθ (xis | xt) = 1(xit̸ = m) · Cat( exit ) + 1(xit = m) · Cat( 1−αs 
+
+> 1−αt
+
+em + αs−αt 
+
+> 1−αt
+
+μiθ (xt, t )) where s < t 
+
+and 1(·) denotes indicator function. The diffusion network μiθ (xt, t ) ∈ ∆V +1 here predicts the clean token xi over the vocabulary. The reverse process is defined as a token-wise conditionally independent distribution, i.e ., pθ (xs | xt) = QLi=1 pθ (xis | xt). The NELBO is then: 
+
+LMDM = R 10 
+
+> −α′
+> t
+> 1−αt
+
+Ex∼pdata ,xt∼qt|0
+
+hP 
+
+> i:xit=m
+
+− log pθ (xi|xt, t )
+
+i
+
+dt. (1) 
+
+Autoregressive models. A standard ARM factorizes the joint distribution in the L2R order: 
+
+pARM  
+
+> θ
+
+(x) = QLi=1 pARM 
+
+> θ
+
+ xi | x<i  , LARM = Ex∼pdata [PLi=1 − log pARM  
+
+> θ
+
+(xi|x<i )] . (2) 
+
+σ-ARMs and any-order ARMs. Typical ARMs factorize the joint distribution in the fixed L2R order, yet we consider a fixed-permutation ARM, where a single random permutation σ is sampled once and kept fixed throughout training. For brevity, we refer to this variant as σ-ARM. Formally, fix any random permutation σ ∈ SL where SL denotes the set of all possible permutations of [L].
+
+σ-ARMs then factorize joint probability as pσ-ARM  
+
+> θ
+
+(x) = QLr=1 pσ-ARM  
+
+> θ
+
+(xσr | x<σ r ). Besides, Any-order ARMs (AoARMs) [ 69 ] factorize joint probability with variable (not fixed) random orders as 
+
+pAoARM  
+
+> θ
+
+(x) = Eσ∼U (SL)
+
+QLr=1 pAoARM  
+
+> θ
+
+(xσr | x<σ r , σ ). The objective of AoARM is then: 
+
+LAoARM = Ex∼pdata ,σ ∼U (SL)
+
+hPLr=1 − log pAoARM  
+
+> θ
+
+(xσr | x<σ r , σ )
+
+i
+
+. (3) Both MDM and AoARM share the same philosophy of performing any-order generation . This connection also extends to the NELBO [ 31 ]: if the MDM model is time-agnostic and the AoARM model is σ-agnostic, then LAoARM (Eq. (3)) is theoretically equivalent to LMDM (Eq. (1)). The practical difference is that AoARM utilizes causal attention such that the model is aware of its currently generated order, while MDM utilizes full attention, which is agnostic of generated order. 
+
+2.2 Shared Format of Learning Objectives Across Various Frameworks 
+
+Although MDM, ARM, σ-ARM, and AoARM arise from different frameworks, all of these objectives can be viewed through the same lens: first choose the number of context ( i.e ., observed) tokens, then construct a partially observed context, and finally predict one target token from that context. Formally, let Nc ∈ { 0, . . . , L − 1} denote the number of context tokens, let z denote the resulting partially observed context, and let pF (z | x, N c) and pF (i | x, zNc ) denote the framework-specific distributions for constructing the context and selecting the target position, respectively. Then, for each F ∈ { MDM , ARM , σ −ARM , AoARM }, the loss can be written in the shared form: 
+
+LF = PL−1 
+
+> Nc=0
+
+LNc 
+
+> F
+
+, LNc 
+
+> F
+
+:= Ex∼pdata ,zNc ∼pF (z|x,N c),i ∼pF (i|x,zNc )[− log pθ (xi | zNc )] . (4) Refer to Appendix A.2 for a full explanation. Therefore, the essential distinction between these frameworks does not lie in the token-level cross-entropy itself, but in how they define the distribution over contexts and target positions. For example, in ARM, zNc is the prefix x<N c+1 and i is deterministically the next position, Nc + 1 . In MDM, zNc is a masked sequence with Nc context tokens ( L − Nc masks), while i is sampled from U (i : ziNc = m). For simplicity, we omit the framework-specific sampling distributions in LNc 
+
+> F
+
+and write Ex,zNc ,i [− log pθ (xi | zNc )] .
+
+## 3 Why Masked Diffusion Models Learn Slowly 
+
+We now analyze why MDMs are slow learners. While many prior works focus on the L2R bias of language, we instead consider the broader notion of locality bias [10 ]: in natural language, each 3token is influenced much more strongly by nearby tokens than by distant ones. We show here that this locality bias is indeed a critical factor in the slow training of MDMs. Furthermore, we show that low- and high-context samples impair MDM training for different reasons, both arising from locality bias. All experimental details for analysis in this section are in Appendix C.1. 
+
+3.1 Why Learning Any-order Language Generation is Hard 0.2M 0.4M 0.6M 0.8M 
+
+> Step
+> 3.5
+> 4.0
+> NLL
+> σ-ARM
+> AoARM
+> ARM
+
+Figure 2: Training curve on LM1B. Blue region for σ-ARM is 1-sigma band for 5 distinct σ, and the solid line is the mean. Before analyzing why MDMs train slowly, we first ask a broader question: why is learning any-order language gen-eration difficult in the first place? Among several possible factors, we focus on two main possibilities: whether the difficulty primarily arises from the large order-space com-plexity of any-order generation itself, or from the locality bias of natural language. Since MDMs differ fundamen-tally from ARMs in architecture, we isolate this question here by comparing ARM, σ-ARM, and AoARM instead: ARM follows the L2R order and is therefore relatively aligned with the locality structure of language. In contrast, 
+
+σ-ARM uses a single fixed random order, which removes the large order-space complexity of any-order generation but still forces the model to predict tokens from contexts that are often misaligned with local linguistic dependencies. AoARM further exposes the model to unfixed random orders, and therefore combines locality mismatch with the full order-space complexity of any-order generation. We compare ARM, σ-ARM and AoARM on LM1B [ 5 ] with sequence length 128 for 1M training steps. For σ-ARM, we fix a single random permutation throughout training, while AoARM is trained with non-fixed random permutations and is therefore exposed to a much larger family of generation orders. The results are shown in Fig. 2. If the primary difficulty of any-order generation came mainly from the order-space complexity, then σ-ARM should be substantially easier to optimize than AoARM. However, while AoARM appears slightly slower in the early stage of training, it eventually matches σ-ARM, suggesting that order-space complexity might not be the main problem. Meanwhile, ARM substantially outperforms both models. These results lead to the following conclusion: 
+
+Finding 1. Locality bias appears to be an important factor in the difficulty of learning any-order generation, beyond the large order-space complexity of the generation problem. 
+
+3.2 Why Locality Bias in the Low-Context Region Makes MDM a Slow Learner 
+
+We next analyze why MDMs are slow learners, and why locality bias makes MDMs particularly difficult to optimize. A natural intuition is that locality bias slows down MDM training because MDMs inherently include the task of predicting targets in the low-context regime, where little local information is available. More specifically, one might expect training to be difficult because LNc
+
+> MDM
+
+is hard to reduce when Nc is small. However, we find the opposite. The low-context region is, in fact easy to learn; rather, the problem is that MDMs waste training budget on easy low-context regions .A common misconception is that a task yielding high loss means the task itself is difficult to train. However, the problem should be separated: (1) what is the optimal lower bound of the LNc 
+
+> F
+
+, and (2) what is the gap between observed loss and optimal loss . We suggest that the difficulty of a task is determined by the latter, not the former. With this distinction in mind, we further provide the following statement: 
+
+Proposition 3.1. With infinite model capacity, the optimal loss for any framework F ∈{ARM , MDM , σ −ARM , AoARM } is equal to the entropy of the data distribution: 
+
+min  
+
+> θ
+
+LF = H(X), H(X) := −Ex∼pdata 
+
+ log pdata (x). (5) 
+
+Furthermore, letting I denote the random target index, LNc 
+
+> F
+
+can be decomposed as 
+
+LNc 
+
+> F
+
+(θ) = HF (XI | ZNc , I ) + EZNc ,I KL( pdata ,F (· | ZNc , I ) ∥ pθ (· | ZNc , I )) .
+
+where the conditional entropy is induced by pdata .
+
+40 16 32 48 64 80 96 112                        
+
+> 2
+> 4
+> 6
+> Nc
+> 
+> ARM
+> MDM
+> 016 32 48 64 80 96 112
+> 0
+> 2
+> 4
+> 6
+> 8
+> −Δ Nc
+> 
+> 0 → 10K
+> 016 32 48 64 80 96 112
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 10K → 100K
+> 016 32 48 64 80 96 112
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 100K → 1M
+> Nc(# of Context Tokens)
+> 1M NLL NLL Improvement Across Training Stages
+
+Figure 3: Left: NLL per number of context tokens on LM1B after 1M training steps. ARM shows an approximately uniform distribution, whereas MDM shows a clearly uneven one. Right: NLL drop across context token numbers for ARM and MDM over different training stages on LM1B. For 
+
+Nc = 0 , MDM has already converged to the optimal loss by 10K steps . Since MDM models the joint distribution as a product of independent conditional distributions, the optimal prediction for a fully masked sentence reduces to the dataset vocabulary distribution. Here, the NLL of the vocabulary distribution exactly matches the NLL of the 10K-step MDM on fully masked sentences, namely 7.02. See Appendix B.1 for the full proof. From the proposition, ARM and MDM share the same optimal loss . What differs, however, is how this optimal loss is distributed across the number of context tokens. Depending on the generation order in language modeling, the lower bound of LNc 
+
+> F
+
+, namely the conditional entropy of data , varies with Nc, while only the lower bound of their sum remains fixed. 
+
+Which region is hard to train? A high conditional loss at small Nc does not by itself imply that the region is hard to learn; rather, it means that the irreducible conditional entropy of data is higher. Intuitively, the low-context region lacks visible context, and therefore there is no deterministic answer that would make the conditional entropy low. The hard-to-train region is instead the region where the difference between the true data and the model distribution remains high. Even if the observed loss is smaller than in other regions, if there remains a large gap between the conditional entropy and the observed loss, then the region should be regarded as hard to learn. 
+
+Empirical observations. We first identify where the lower bound of LNc 
+
+> F
+
+is high . In Fig. 3 ( left ), we plot LNc 
+
+> F
+
+using ARM and MDM trained on LM1B for 1M steps. Although these models are not fully optimal, the NLL improvement from 100K to 1M steps is small relative to the 1M-step NLL itself, suggesting that the 1M-step curves capture the overall shape of the lower bound. ARM exhibits an approximately uniform curve, whereas MDM shows a highly uneven one: its loss is much larger in the low-context region and decreases as Nc increases. We attribute this difference to locality bias. As illustrated in Fig. 1, ARM always predicts under the same asymmetric context structure, where the left side is observed and the right side is unobserved. In contrast, MDM changes the local context structure with Nc: in the low-context region, nearby tokens on both sides are mostly unobserved, while in the high-context region, they are mostly observed. Thus, the lower bound of LNc 
+
+> ARM
+
+remains nearly flat, whereas that of LNc 
+
+> MDM
+
+becomes strongly skewed toward small Nc.We now identify whether the low-context region is difficult to learn or not . The extreme case 
+
+Nc = 0 gives the most reliable and interpretable results: as detailed in the caption of Fig. 3, MDM has already reached the optimal fully masked prediction by 10K steps. Thus, the remaining high loss at Nc = 0 is not reducible model error, but irreducible conditional entropy. More broadly, under locality bias, low-context samples often provide little nearby information about the target token, and thus are expected to contain only limited learnable signal beyond this irreducible component. Consistent with this view, Fig. 3 ( right ) shows that low-context samples yield almost no further NLL improvement from 10K to 1M steps, while most of the remaining learning occurs in regions with more context. Therefore, low-context samples have high loss mainly because their conditional entropy is intrinsically high, not because the model still has much to learn from them. Consequently, standard MDM training repeatedly samples low-context problems that provide little additional learning signal, thereby wasting training budget. We summarize this observation as follows: 
+
+Finding 2. Low-context samples are not hard to learn; they are learned early and then waste the training budget of MDM. 5Table 1: Cosine similarity between gradients before and after masking 8 tokens within radius. Radius r 4 8 16 32 128 Cos. Sim. 0.108 0.463 0.685 0.839 0.935 Table 2: Cosine similarity between the joint-mask gradient and the sum of single-mask gradients. # of Masks 2 4 8 16 32 Cos. Sim. 0.999 0.997 0.994 0.985 0.976 
+
+3.3 Why Locality Bias in the High-Context Region Also Makes MDM a Slow Learner 
+
+We have shown that low-context samples are training-inefficient due to locality bias. We now consider the opposite: we show that high-context samples are also training-inefficient due to locality bias. When learning pθ (xi|xt, t ), the model learns to predict the masked token while using the observed real tokens to build representations. The problem is that, due to locality bias, real tokens that are far from the mask contribute very little useful information to this learning process. We first show that real tokens far from a mask have little effect on the learning signal. For a controlled experiment, using an MDM trained for 1M steps, we randomly select one center mask and analyze the gradient of this center mask with and without additionally masking nearby real tokens. More specifically, we set several radii r and randomly replace 8 tokens within each region with masks. As shown in Table 1: the cosine similarity is 0.108 when r = 4 , but increases to 0.935 when r = 128 .This indicates that real tokens farther from the mask have little impact on the learning signal. We next show that the gradient of high-context samples can be replaced by that of middle-context samples. Fix the number of masks k, and randomly sample k distinct single-mask patterns, i.e ., M1.We then construct Mk by taking the union of all masked positions. For the same sequence x, we measure the cosine similarity between the sum of the gradients obtained from the k single-mask patterns and the gradient obtained from a single Mk, and report the results in Table 2. The cosine similarity remains very high across different values of k, suggesting that high-context samples are training-inefficient and can be effectively replaced by middle-context samples. These results imply that many observed tokens in high-context samples do not introduce notable new learning signals, and middle-context samples can replace them. Consequently, even high-context training can be inefficient: although more tokens are observed, they waste the training budget :
+
+Finding 3. Under locality bias, high-context samples waste the training budget of MDM. 
+
+## 4 Mitigating the Locality Bias Problem in Masked Diffusion Models 
+
+4.1 Training MDM with Bell-Shaped Time Sampling 
+
+Sec. 3 naturally suggests that MDM training can be improved by focusing more on middle-context problems. We propose the most straightforward way to achieve this: directly sampling more training points around t = 0 .5, i.e ., the middle-context region. We first define a bell-shaped distribution: 
+
+Definition 4.1. A probability distribution π over [0 , 1] is called bell-shaped if Pt∼π (t ∈ [a, 1 − a]) ≥
+
+Pt∼U([0 ,1]) (t ∈ [a, 1 − a]) for all a ∈ [0 , 1/2) , and the inequality is strict for at least one a ∈ [0 , 1/2) .Given a bell-shaped time distribution π, we train MDMs with the following objective: 
+
+ˆLπ = Ex∼pdata , t ∼π, xt∼qt|0(·| x)
+
+h
+
+− P 
+
+> i:xit=m
+
+log pθ (xi | xt, t )
+
+i
+
+. (6) This objective is clearly different from the theoretical NELBO in Eq. (1): it samples t from the tilted distribution π, and it does not include the coefficient α′
+
+> t
+
+/(1 − αt) in the integrand. Nevertheless, the change does not alter the target optimizer under the standard time-agnostic parameterization [ 56 ,47 , 70 , 23 ]. In fact, the following statement is stronger: the optimizer is preserved not only for bell-shaped distributions, but for any time-sampling distribution with nonzero mass on (0 , 1) :
+
+Proposition 4.2. With infinite-capacity and time-agnostic model θ, for any probability distribution ρ
+
+over [0 , 1] satisfying Pt∼ρ (t ∈ (0 , 1)) > 0, the minimizers of LMDM and ˆLρ are equal. 
+
+See Appendix B.2 for proof and note that Pt∼π (t ∈ (0 , 1)) > 0 follows from Definition 4.1. In this regard, our objective is to obtain arg min θ LMDM by learning ˆLπ , which magnifies a learning signal 6Table 3: Various time-sampling distributions on [0 , 1] explored for MDM training. For Dirac-delta, Gaussian, and Laplace, they satisfy the definition of a bell-shaped distribution when μ = 1 /2.                              
+
+> Uniform Dirac-delta Truncated Gaussian Truncated Laplace
+> π(t) = 1 π(t) = δμπ(t)∝exp
+> 
+> −(t−μ)2
+> 2σ2
+> 
+> π(t)∝exp
+> 
+> −|t−μ|
+> b
+> 020 40 60 80 100 120
+> Nc(# of Context Tokens)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability Mass
+> ℙ(ML−Nc∉k)
+> k=5
+> k=10
+> k=15
+> k=20
+> 510 15 20
+> k
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Probability Mass
+> ℙ(M∉k|t∼π)
+> Uniform
+> Dirac-delta
+
+Figure 4: Left: Probability that a uniformly sampled mask pattern with exactly L − Nc masks avoids 
+
+k-inefficient set Ek. Right: Probability that each uniform and Dirac-delta time sampling avoids Ek.on the middle-context region. As shown in Table 3, we consider several simple distributions with varying hyperparameters to understand which time sampling laws are beneficial. 
+
+4.2 Theoretical Analysis 
+
+We now investigate which training samples are emphasized by bell-shaped time sampling. Recall that 
+
+Mn is a mask indicator with n masked positions, and Mn denotes the set of all possible Mn.
+
+Definition 4.3 (k-inefficient set Ek). If M contains k consecutive masks or k consecutive non-masks, we call M a k-inefficient mask pattern. We denote the set of all such k-inefficient patterns by Ek.The value of meaningful k may vary depending on 1) the intrinsic local bias of the language data, or 2) the model’s capacity to exploit local information. Under locality bias, we regard samples from 
+
+Ek as training-inefficient : if we flip masks on the samples from Ek, we might obtain a sample that gives a more diverse training signal. This is supported by Sec. 3.2, where we show that low-context samples converge quickly, and Sec. 3.3, where we directly show that middle-context samples can effectively replace high-context samples. We visualize P(ML−Nc /∈ E k | ML−Nc ∼ U( ML−Nc )) 
+
+in Fig. 4 ( left ), where Ek has substantial probability mass for low- and high-context regions. Now we show the following: 
+
+Proposition 4.4. For any L, 2 ≤ k ≤ L, and any bell-shaped time distribution π, the following statement always holds: 
+
+P M /∈ E k | t ∼ U([0 , 1]) , M i ∼ Bernoulli( t) < P M /∈ E k | t ∼ π, M i ∼ Bernoulli( t).
+
+See Appendix B.3 for the full proof. The above proposition implies that, when sampling with any bell-shaped distribution π, training observes fewer k-inefficient samples than under conventional MDM sampling. We further visualize two variants, π = U([0 , 1]) and π = δ0.5, in Fig. 4. As shown in Fig. 4 ( right ), P(M /∈ E k | t ∼ δ0.5) is much higher than with uniform sampling, suggesting that bell-shaped time sampling significantly filters out k-consecutive inefficient samples. 
+
+## 5 Experiments 
+
+5.1 Training Dynamics of MDM with Various Time Sampling Distributions 
+
+To confirm our understanding, we first analyze the trends exhibited by the various time sampling distributions in Table 3. We train models on sentence-packed LM1B [ 5 ] and measure validation NLL bound based on Eq. (1). We follow prior works [56, 62] for the model architecture ( ∼100M scale). The results are shown in Fig. 5. In the left panel, all bell-shaped distributions substantially outperform the standard MDM baseline , while the specific class of distribution is not particularly important. The Dirac-delta, however, shows less stable dynamics. In the middle panel, the smaller variance ( σ = 0 .1) outperforms σ=0 .2 and uniform, indicating the power of bell-shaped time 70 0.1 0.2 0.3 0.4 0.5 
+
+> 3.4
+> 3.6
+> 3.8
+> 4.0
+> 4.2
+> NLL
+
+Distribution Comparison      
+
+> Base
+> Gaussian(0.5, 0.1)
+> Laplace(0.5, 0.1)
+> Delta(0.5)
+> 00.1 0.2 0.3 0.4 0.5
+> Steps (M)
+
+Std Comparison      
+
+> Base
+> Gaussian(0.5, 0.1)
+> Gaussian(0.5, 0.2)
+> Uniform
+> 00.1 0.2 0.3 0.4 0.5
+
+Mean Comparison 
+
+> Base
+> Gaussian(0.5, 0.1)
+> Gaussian(0.4, 0.1)
+> Gaussian(0.6, 0.1)
+
+Figure 5: Validation NLL curves on LM1B for models trained with various time distributions listed in Table 3. Left : comparison across distribution families ( μ=0 .5). Middle : effect of variance where uniform can be treated as an extreme case. Right : effect of the mean μ under fixed σ=0 .1. Here, “Base” denotes the conventional MDM trained with LMDM (Eq. (1)) and is shown in red in all panels. Unlike “Uniform” with ˆLπ (Eq. (6)), “Base” includes the α′
+
+> t
+
+/(1 − αt) weighting in the loss integrand. 0.0 0.2 0.4 0.6 0.8 1.0   
+
+> 3.4
+> 3.6
+> 3.8
+> 4.0
+> 4.2
+> NLL
+> ∼3.86 ×Faster
+
+LM1B (Packed)        
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Steps (M)
+> 3.5
+> 4.0
+> 4.5
+> ∼2.32 ×Faster
+
+LM1B (No Packing)        
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> 3.2
+> 3.3
+> 3.4
+> ∼1.78 ×Faster
+
+OWT 
+
+> Gaussian
+> Base
+
+Figure 6: Validation NLL curves on various language modeling benchmarks. “Base” denotes base (standard) MDM, and “Gaussian” denotes MDM trained with ˆLN (0 .5,0.1) .sampling. In the right panel, shifting the mean toward the low-context region ( μ=0 .6) yields the worst result. Based on these observations, we adopt a Gaussian with μ=0 .5, σ =0 .1 as our default, offering stable training and natural centering at the middle-context region. Refer to Appendix C.1 for detailed experimental settings and Appendix C.2 for further results with various hyperparameters. 
+
+5.2 Evaluating Bell-Shaped Time Sampling Across Multiple Pretraining Benchmarks Experimental settings. We train an MDM with Gaussian time sampling and a base MDM on three datasets, including One Billion Words dataset (LM1B) [ 5 ] with/without sentence packing, and OpenWebText (OWT) [ 11 ]. We generally follow the widely adopted experimental settings in discrete diffusion language modeling [ 57 , 1 ]: 1) validation NLL for models trained on LM1B and OWT, and 2) zero-shot PPL and generative PPL for models trained on OWT. See Appendix C.1 for details. 
+
+Results. The main results are shown in Fig. 6. As shown in Fig. 6, Gaussian time sampling consis-tently accelerates MDM training across all language modeling benchmarks. Using the validation NLL achieved by the base MDM after 1M training steps as the target, Gaussian time sampling reaches the same NLL about 3.86 × faster on sentence-packed LM1B, 2.32 × faster on LM1B without packing, and 1.78 × faster on OWT. These results indicate that the benefit of bell-shaped time sampling is robust across different data settings rather than being limited to a specific benchmark. The same trend also appears in zero-shot PPL and generative PPL evaluations; refer to Appendix C.3. 
+
+5.3 Scaling Up to Billion-Scale Masked Diffusion Models 
+
+Recent large-scale MDM [ 70 , 3, 9, 65 ] training recipes have increasingly shifted toward continual pretraining (CPT) from ARM. In brief, this approach [ 12 ] initializes the MDM with weights from the pretrained ARM and then continues with MDM pretraining. In this regard, we show that our method can scale to a real-world MDM training recipe as well. We adopt the most conventional CPT [ 12 ]and use pretrained GPT-2 Large at ∼0.7B parameter scale. Details are in Appendix C.1. 
+
+Language understanding and completion benchmarks. We evaluate on multiple-choice bench-marks such as HellaSwag [ 72 ], OpenBookQA(Obqa) [ 43 ], PIQA [ 4], TriviaQA(TriQA) [ 28 ], Social IQA(SIQA) [ 61 ], and WinoGrande [ 59 ], as well as last-word prediction on LAMBADA [ 49 ] and 8Table 4: Language understanding and completion benchmark results for continual pretraining (CPT)-only and supervised fine-tuned (SFT) models. CPT was performed on GPT-2 Large (0.7B) for 100K steps, and SFT was performed for 10K steps. Gray rows indicate models learned by CPT with Gaussian time sampling. Boldface denotes the best result within each section. The colored values in parentheses indicate the absolute change relative to the corresponding Base row within each section. Results are averaged over evaluation with 5 random seeds, where ± denotes one standard deviation. Training Benchmarks CPT SFT LAMBADA (%) Obqa (%) Wino (%) PIQA (%) SIQA (%) Infilling TriQA(%) HellaSwag (%)                                                                                                                                                                   
+
+> Continual Pretraining
+> Base —2.15 ±0.43 17.00 ±0.472 49.49 ±1.20 52.12 ±0.36 35.72 ±0.46 6.94 ±0.09 0.8 ±0.09 28.87 ±1.31
+> Gaussian —10.25 ±0.29 (+8.10) 20.00 ±1.68 (+3.00) 49.49 ±0.33 (+0.00) 53.75 ±1.10 (+1.63) 37.05 ±1.11 (+1.33) 7.31 ±0.20 (+0.37) 1.3 ±1.02 (+0.5) 34.70 ±1.44 (+5.83)
+> Continual Pretraining + Supervised Fine-tuning
+> Base Base 5.82 ±0.15 18.20 ±0.28 50.59 ±0.67 56.80 ±0.23 38.95 ±0.80 9.87 ±0.15 6.4 ±0.19 32.59 ±1.24
+> Base Gaussian 5.65 ±0.05 20.00 ±0.42 48.15 ±0.39 56.47 ±0.92 38.54 ±0.47 9.48 ±0.21 7.6 ±0.06 32.95 ±1.14
+> Gaussian Base 15.54 ±0.36 24.6 ±0.57 50.36 ±1.95 59.30 ±0.38 41.04 ±0.18 12.18 ±0.21 27.4 ±0.07 39.29 ±1.33
+> Gaussian Gaussian 17.89 ±0.37 (+12.07) 23.4 ±1.41 (+5.2) 49.80 ±1.12 (-0.79) 59.30 ±0.88 (+2.50) 42.07 ±0.04 (+3.12) 12.62 ±0.38 (+2.75) 27.8 ±0.06 (+21.4) 39.84 ±1.21 (+7.25)
+
+story infilling on ROCStories [ 44 ], evaluated using ROUGE score [ 37 ]. We report results both after CPT only and after subsequent supervised fine-tuning (SFT) in Table 4. Gaussian time sampling significantly outperforms the baseline across most tasks both for CPT only and SFT setup. Table 5: Win rate of Gaussian time sampling compared to base MDM, judged by GPT-4o. Results are av-eraged over 5 random seeds, with ±
+
+denoting one standard deviation. 
+
+Benchmark WR (%) 
+
+AlpacaEval 2.0(WR) 78 .27 ± 1.37 
+
+AlpacaEval 2.0(LC) 78 .61 ± 1.42 
+
+MT-Bench (non-tie) 84 .34 ± 7.26 
+
+Open-ended instruction-following benchmark. Beyond NLL-based metrics and multiple-choice QA accuracy, we further evaluate whether Gaussian time sampling improves the actual conditional generation quality. To this end, we evaluate models on two instruction-following benchmarks, MT-Bench [ 77 ] and AlpacaEval 2.0 [ 36 ]. We report win rates (WR) judged by GPT-4o [ 26 ] under the non-tie protocol; for AlpacaEval 2.0, we additionally report the length-controlled win rate (LC). We fine-tune the model on the ShareGPT dataset to equip it with conversational ability. Table 5 reports the results, where the model trained with Gaussian time sam-pling significantly outperforms the baseline. This indicates that the benefits of bell-shaped time sampling extend beyond NLL-based metrics and translate into improved generation quality required in the real world. Qualitative examples are in Appendix E. To sum up, our bell-shaped time sampling can (i) scale to billion-parameter-scale models, (ii) generalize to CPT with ARM initialization, and (iii) boost downstream task performance. 
+
+5.4 Other Alternatives Explored for Focusing Training on the Middle-Context Region 
+
+We analyze other ways to bias MDM training toward the middle-context region. 0.0 0.1 0.2 0.3 0.4 0.5 
+
+Training Steps (M) 
+
+> 3.50
+> 3.75
+> 4.00
+> 4.25
+> 4.50
+> NLL
+> Middle-Flat Scheduler
+> Importance Sampling
+> Bell-Shaped Time Sampling
+> Base
+
+Figure 7: Training curve on LM1B. 
+
+Middle-flat noise scheduler. One can flatten the noise sched-uler around αt = 0 .5 in LMDM , so that the model naturally encounters more middle-context samples during training. The key difference from bell-shaped sampling is whether the tar-get cross-entropy loss is reweighted. Under the theoretical NELBO, the scaling factor is smallest around t = 0 .5 and increases as t moves away from the center. As a result, the objective is theoretically equivalent to the standard MDM loss with αt = 1 − t [ 62 , 56 ]. Thus, although the model observes more middle-context during training, the learning signal as-signed to each Nc remains the same as in the original LMDM .
+
+Importance sampling. Another option is to sample masks uniformly, as in conventional MDMs, while assigning a larger scaling factor to the middle region. Specifically, we train with 
+
+R 10 w(t)Ex∼pdata , xt∼qt|0
+
+− P
+
+i:xit=m log pθ (xi | xt, t )dt , where w(t) is chosen to be largest near the center. In this case, the learning signal is similar to that of bell-shaped time sampling, but the model does not actually encounter middle-context samples more frequently during training. We found that only the MDM trained with bell-shaped time sampling learns faster than the base MDM, while importance sampling achieves the same training speed, and the middle-flat scheduler 9even leads to worse performance. See Appendix C.4 for detailed experimental settings and our interpretation of the corresponding results. 
+
+## 6 Conclusion 
+
+We studied why masked diffusion language models learn slowly and identified locality bias as a key factor behind their inefficient training dynamics. Motivated by this analysis, we propose bell-shaped time sampling, a simple training strategy that emphasizes the middle-context region, and show that it consistently accelerates MDM training and improves performance across various language modeling tasks. Although this may appear similar to bell-shaped time sampling in continuous diffusion models [ 15 , 29 , 8], Sec. 3 and 5.4 show that our contribution is a non-trivial parallel contribution. We provide a detailed discussion of this difference in Appendix A, and limitations in Appendix D. 
+
+## References 
+
+[1] Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregressive and diffusion language models. In International Conference on Learning Repre-sentations (ICLR) , 2025. [2] Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel Tarlow, and Rianne Van Den Berg. Struc-tured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems (NeurIPS) , volume 34, pp. 17981–17993, 2021. [3] Tiwei Bie, Maosong Cao, Kun Chen, Lun Du, Mingliang Gong, Zhuochen Gong, Yanmei Gu, Jiaqi Hu, Zenan Huang, Zhenzhong Lan, et al. Llada2. 0: Scaling up diffusion language models to 100b. arXiv preprint arXiv:2512.15745 , 2025. [4] Yonatan Bisk, Rowan Zellers, Jianfeng Gao, Yejin Choi, et al. Piqa: Reasoning about phys-ical commonsense in natural language. In Proceedings of the AAAI conference on artificial intelligence , volume 34, pp. 7432–7439, 2020. [5] Ciprian Chelba, Tomas Mikolov, Mike Schuster, Qi Ge, Thorsten Brants, Phillipp Koehn, and Tony Robinson. One billion word benchmark for measuring progress in statistical language modeling. In Interspeech 2014 , pp. 2635–2639, 2014. doi: 10.21437/Interspeech.2014-564. [6] Jooyoung Choi, Jungbeom Lee, Chaehun Shin, Sungwon Kim, Hyunwoo Kim, and Sungroh Yoon. Perception prioritized training of diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 11472–11481, 2022. [7] Arman Cohan, Franck Dernoncourt, Doo Soon Kim, Trung Bui, Seokhwan Kim, Walter Chang, and Nazli Goharian. A discourse-aware attention model for abstractive summarization of long documents. In Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short Papers) , pp. 615–621, 2018. doi: 10.18653/v1/N18-2097. URL https://aclanthology. org/N18-2097/ .[8] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. Scaling rectified flow trans-formers for high-resolution image synthesis. In International Conference on Machine Learning (ICML) , 2024. [9] Chenghao Fan, Wen Heng, Bo Li, Sichen Liu, Yuxuan Song, Jing Su, Xiaoye Qu, Kai Shen, and Wei Wei. Stable-diffcoder: Pushing the frontier of code diffusion large language model. 
+
+arXiv preprint arXiv:2601.15892 , 2026. [10] Richard Futrell. Information-theoretic locality properties of natural language. In Pro-ceedings of the First Workshop on Quantitative Syntax (Quasy, SyntaxFest 2019) , pp. 2– 15. Association for Computational Linguistics, 2019. doi: 10.18653/v1/W19-7902. URL 
+
+https://aclanthology.org/W19-7902/ .[11] Aaron Gokaslan, Vanya Cohen, Ellie Pavlick, and Stefanie Tellex. Openwebtext corpus. 
+
+http://Skylion007.github.io/OpenWebTextCorpus , 2019. 10 [12] Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao, Wei Bi, Jiawei Han, Hao Peng, and Lingpeng Kong. Scaling diffusion language models via adaptation from autoregressive models. In International Conference on Learning Representations (ICLR) , 2025. [13] Shansan Gong, Ruixiang ZHANG, Huangjie Zheng, Jiatao Gu, Navdeep Jaitly, Lingpeng Kong, and Yizhe Zhang. Diffucoder: Understanding and improving masked diffusion models for code generation. In The Fourteenth International Conference on Learning Representations , 2026. URL https://openreview.net/forum?id=58NA3unZj5 .[14] Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 , 2024. [15] Tiankai Hang, Shuyang Gu, Jianmin Bao, Fangyun Wei, Dong Chen, Xin Geng, and Baining Guo. Improved noise schedule for diffusion training. In IEEE International Conference on Computer Vision (ICCV) , pp. 4796–4806, 2025. [16] Marton Havasi, Brian Karrer, Itai Gat, and Ricky T. Q. Chen. Edit flows: Variable length discrete flow matching with sequence-level edit operations. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. [17] Satoshi Hayakawa, Yuhta Takida, Masaaki Imaizumi, Hiromi Wakaki, and Yuki Mitsufuji. Distillation of discrete diffusion through dimensional correlations. In Proceedings of the 42nd International Conference on Machine Learning , pp. 22259–22297. PMLR, 2025. [18] Satoshi Hayakawa, Yuhta Takida, Masaaki Imaizumi, Hiromi Wakaki, and Yuki Mitsufuji. Demystifying MaskGIT sampler and beyond: Adaptive order selection in masked diffusion. 
+
+Transactions on Machine Learning Research , 2026. [19] Zhengfu He, Tianxiang Sun, Qiong Tang, Kuanning Wang, Xuan-Jing Huang, and Xipeng Qiu. Diffusionbert: Improving generative masked language models with diffusion models. In 
+
+Proceedings of the 61st annual meeting of the association for computational linguistics (ACL) ,volume 1, pp. 4521–4534, 2023. [20] Michael Hersche, Samuel Moor-Smith, Thomas Hofmann, and Abbas Rahimi. Soft-masked diffusion language models. In International Conference on Learning Representations (ICLR) ,2026. [21] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) , volume 33, pp. 6840–6851, 2020. [22] Chunsan Hong, Seonho An, Min-Soo Kim, and Jong Chul Ye. Improving discrete diffusion unmasking policies beyond explicit reference policies. In International Conference on Learning Representations (ICLR) , 2026. [23] Chunsan Hong, Sanghyun Lee, and Jong Chul Ye. Unifying masked diffusion models with various generation orders and beyond. arXiv preprint arXiv:2602.02112 , 2026. [24] Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forré, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. In Advances in Neural Information Processing Systems (NeurIPS) , volume 34, pp. 12454–12465, 2021. [25] Binyuan Hui, Jian Yang, Zeyu Cui, Jiaxi Yang, Dayiheng Liu, Lei Zhang, Tianyu Liu, Jia-jun Zhang, Bowen Yu, Keming Lu, et al. Qwen2. 5-coder technical report. arXiv preprint arXiv:2409.12186 , 2024. [26] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276 , 2024. [27] Mengni Jia, Mengyu Zhou, Yihao Liu, xiaoxi jiang, and guanjunjiang. Bringing stability to diffusion: Decomposing and reducing variance of training masked diffusion models. In 
+
+International Conference on Learning Representations (ICLR) , 2026. [28] Mandar Joshi, Eunsol Choi, Daniel S Weld, and Luke Zettlemoyer. Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 1601–1611, 2017. 11 [29] Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine. Elucidating the design space of diffusion-based generative models. In Advances in Neural Information Processing Systems (NeurIPS) , 2022. [30] Jaemin Kim and Jong Chul Ye. Adaptive guidance for retrieval-augmented masked diffusion models. arXiv preprint arXiv:2603.17677 , 2026. [31] Jaeyeon Kim, Kulin Shah, Vasilis Kontonis, Sham Kakade, and Sitan Chen. Train for the worst, plan for the best: Understanding token ordering in masked diffusions. In International Conference on Machine Learning (ICML) , 2025. [32] Jaeyeon Kim, Lee Cheuk Kit, Carles Domingo-Enrich, Yilun Du, Sham M. Kakade, Timothy Ngotiaoco, Sitan Chen, and Michael Samuel Albergo. Any-order flexible length masked diffusion. In International Conference on Learning Representations (ICLR) , 2026. [33] Diederik Kingma, Tim Salimans, Ben Poole, and Jonathan Ho. Variational diffusion models. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) , volume 34, pp. 21696–21707, 2021. [34] Florent Krzakala and Lenka Zdeborová. Hiding quiet solutions in random constraint satisfaction problems. Physical review letters , 102(23):238701, 2009. [35] Sanghyun Lee, Seungryong Kim, Jongho Park, and Dongmin Park. Lookahead unmasking elicits accurate decoding in diffusion language models. arXiv preprint arXiv:2511.05563 , 2025. [36] Xuechen Li, Tianyi Zhang, Yann Dubois, Rohan Taori, Ishaan Gulrajani, Carlos Guestrin, Percy Liang, and Tatsunori B Hashimoto. Alpacaeval: An automatic evaluator of instruction-following models. https://github.com/tatsu-lab/alpaca_eval , 2023. [37] Chin-Yew Lin. Rouge: A package for automatic evaluation of summaries. In Text summarization branches out , pp. 74–81, 2004. [38] Anji Liu, Oliver Broadrick, Mathias Niepert, and Guy Van den Broeck. Discrete copula diffusion. In International Conference on Learning Representations (ICLR) , 2025. [39] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In International Conference on Machine Learning (ICML) , 2024. [40] Anton Lozhkov, Loubna Ben Allal, Leandro von Werra, and Thomas Wolf. Fineweb-edu: the finest collection of educational content, 2024. URL https://huggingface.co/datasets/ HuggingFaceFW/fineweb-edu .[41] Mitch Marcus, Beatrice Santorini, and Mary Ann Marcinkiewicz. Building a large annotated corpus of english: The penn treebank. Computational linguistics , 19(2):313–330, 1993. [42] Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher. Pointer sentinel mixture models. In International Conference on Learning Representations (ICLR) , 2017. [43] Todor Mihaylov, Peter Clark, Tushar Khot, and Ashish Sabharwal. Can a suit of armor conduct electricity? a new dataset for open book question answering. In Proceedings of the 2018 conference on empirical methods in natural language processing , pp. 2381–2391, 2018. [44] Nasrin Mostafazadeh, Nathanael Chambers, Xiaodong He, Devi Parikh, Dhruv Batra, Lucy Vanderwende, Pushmeet Kohli, and James Allen. A corpus and cloze evaluation for deeper understanding of commonsense stories. In Proceedings of the 2016 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Tech-nologies , pp. 839–849, 2016. [45] Alexander Quinn Nichol and Prafulla Dhariwal. Improved denoising diffusion probabilistic models. In International conference on machine learning , pp. 8162–8171. PMLR, 2021. [46] Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian Liu, Guangtao Zeng, Min Lin, and Chongxuan Li. Scaling up masked diffusion models on text. In International Conference on Learning Representations (ICLR) , 2025. [47] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. [48] Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. In International Conference on Learning Representations (ICLR) , 2025. 12 [49] Denis Paperno, Germán Kruszewski, Angeliki Lazaridou, Ngoc-Quan Pham, Raffaella Bernardi, Sandro Pezzelle, Marco Baroni, Gemma Boleda, and Raquel Fernández. The lambada dataset: Word prediction requiring a broad discourse context. In Proceedings of the 54th annual meeting of the association for computational linguistics (ACL) , volume 1, pp. 1525–1534, 2016. [50] William Peebles and Saining Xie. Scalable diffusion models with transformers. In IEEE International Conference on Computer Vision (ICCV) , pp. 4195–4205, 2023. [51] Fred Zhangzhi Peng, Zachary Bezemek, Jarrid Rector-Brooks, Shuibai Zhang, Michael M. Bronstein, Anru Zhang, Joey Bose, and Alexander Tong. Planner aware path learning in diffusion language models training. In International Conference on Learning Representations (ICLR) , 2026. [52] Mihir Prabhudesai, Mengning Wu, Amir Zadeh, Katerina Fragkiadaki, and Deepak Pathak. Diffusion beats autoregressive in data-constrained settings. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. [53] Patrick Pynadath, Jiaxin Shi, and Ruqi Zhang. Candi: Hybrid discrete-continuous diffusion models. arXiv preprint arXiv:2510.22510 , 2025. [54] Alec Radford, Jeff Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language models are unsupervised multitask learners. 2019. [55] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of machine learning research , 21(140):1–67, 2020. [56] Subham Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. In Advances in Neural Information Processing Systems (NeurIPS) , volume 37, pp. 130136–130184, 2024. [57] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin Chiu, and Volodymyr Kuleshov. The diffusion duality. In International Conference on Machine Learning (ICML) , 2025. [58] Subham Sekhar Sahoo, Jean-Marie Lemercier, Zhihan Yang, Justin Deschenaux, Jingyu Liu, John Thickstun, and Ante Jukic. Scaling beyond masked diffusion language models. arXiv preprint arXiv:2602.15014 , 2026. [59] Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavatula, and Yejin Choi. Winogrande: An adversarial winograd schema challenge at scale. Communications of the ACM , 64(9):99–106, 2021. [60] Victor Sanh, Albert Webson, Colin Raffel, Stephen H Bach, Lintang Sutawika, Zaid Alyafeai, Antoine Chaffin, Arnaud Stiegler, Teven Le Scao, Arun Raja, et al. Multitask prompted training enables zero-shot task generalization. arXiv preprint arXiv:2110.08207 , 2021. [61] Maarten Sap, Hannah Rashkin, Derek Chen, Ronan Le Bras, and Yejin Choi. Social iqa: Commonsense reasoning about social interactions. In Proceedings of the 2019 conference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP) , pp. 4463–4473, 2019. [62] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized masked diffusion for discrete data. In Advances in Neural Information Processing Systems (NeurIPS) , volume 37, pp. 103131–103167, 2024. [63] Yuxuan Song, Zheng Zhang, Cheng Luo, Pengyang Gao, Fan Xia, Hao Luo, Zheng Li, Yuehang Yang, Hongli Yu, Xingwei Qu, et al. Seed diffusion: A large-scale diffusion language model with high-speed inference. arXiv preprint arXiv:2508.02193 , 2025. [64] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomput. , 568(C), February 2024. ISSN 0925-2312. doi: 10.1016/j.neucom.2023.127063. URL https://doi.org/10.1016/j. neucom.2023.127063 .[65] Jaesung Tae, Hamish Ivison, Sachin Kumar, and Arman Cohan. Tess 2: A large-scale generalist diffusion language model. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pp. 21171–21188, 2025. 13 [66] Yuqing Wang, Ye He, and Molei Tao. Evaluating the design space of diffusion-based generative models. In Advances in Neural Information Processing Systems (NeurIPS) , 2024. [67] Tianyu Xie, Shuchen Xue, Zijin Feng, Tianyang Hu, Jiacheng Sun, Zhenguo Li, and Cheng Zhang. Variational autoencoding discrete diffusion with enhanced dimensional correlations modeling. In International Conference on Learning Representations (ICLR) , 2026. [68] Zhihui Xie, Jiacheng Ye, Lin Zheng, Jiahui Gao, Jingwei Dong, Zirui Wu, Xueliang Zhao, Shansan Gong, Xin Jiang, Zhenguo Li, et al. Dream-coder 7b: An open diffusion language model for code. arXiv preprint arXiv:2509.01142 , 2025. [69] Shuchen Xue, Tianyu Xie, Tianyang Hu, Zijin Feng, Jiacheng Sun, Kenji Kawaguchi, Zhenguo Li, and Zhi-Ming Ma. Any-order GPT as masked diffusion model: Decoupling formulation and architecture. In ES-FoMo III: 3rd Workshop on Efficient Systems for Foundation Models , 2025. URL https://openreview.net/forum?id=KbRxn8fzrY .[70] Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7b: Diffusion large language models. arXiv preprint arXiv:2508.15487 , 2025. [71] Chuanyue Yu, Jiahui Wang, Yuhan Li, Heng Chang, Ge Lan, Qingyun Sun, Jia Li, Jianxin Li, and Ziwei Zhang. Unlocking the potentials of retrieval-augmented generation for diffusion language models. arXiv preprint arXiv:2601.11342 , 2026. [72] Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. Hellaswag: Can a machine really finish your sentence? In Proceedings of the 57th annual meeting of the association for computational linguistics , pp. 4791–4800, 2019. [73] Xiang Zhang, Junbo Zhao, and Yann LeCun. Character-level convolutional networks for text classification. In Advances in Neural Information Processing Systems (NeurIPS) , volume 28, 2015. [74] Siyan Zhao, Devaansh Gupta, Qinqing Zheng, and Aditya Grover. d1: Scaling reasoning in diffusion large language models via reinforcement learning. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. [75] Huangjie Zheng, Shansan Gong, Ruixiang ZHANG, Tianrong Chen, Jiatao Gu, Mingyuan Zhou, Navdeep Jaitly, and Yizhe Zhang. Continuously augmented discrete diffusion model for categorical generative modeling. In The Fourteenth International Conference on Learning Representations , 2026. URL https://openreview.net/forum?id=JNAZ3e7Bwt .[76] Kaiwen Zheng, Yongxin Chen, Hanzi Mao, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. Masked diffusion models are secretly time-agnostic masked models and exploit inaccurate categorical sampling. In International Conference on Learning Representations (ICLR) , 2025. [77] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al. Judging llm-as-a-judge with mt-bench and chatbot arena. Advances in neural information processing systems , 36:46595–46623, 2023. [78] Cai Zhou, Chenxiao Yang, Yi Hu, Chenyu Wang, Chubin Zhang, Muhan Zhang, Lester Mackey, Tommi Jaakkola, Stephen Bates, and Dinghuai Zhang. Coevolutionary continuous discrete diffu-sion: Make your diffusion language model a latent reasoner. arXiv preprint arXiv:2510.03206 ,2025. 14 A Background 
+
+A.1 Related Work Discrete diffusion models. Discrete diffusion models [ 2, 24 ] have emerged as a potential alternative framework for language modeling. The main objective of discrete diffusion modeling is to model the discrete data distribution via a continuous-time diffusion process. There are broadly two types of forward corruption processes in discrete diffusion models: (1) uniform corruption [ 39 , 57 ], which replaces tokens with uniformly random tokens, and (2) masking corruption [ 56 , 62 ], which replaces tokens with a special [MASK] token. Among these, masked diffusion models (MDMs) have emerged as a leading class of discrete diffusion models for text generation [56]. 
+
+Various frameworks based on masked diffusion models. One of the most active recent research directions has been the development of new frameworks that modify the diffusion process itself in order to overcome the theoretical limitations of MDMs. Such efforts include block generation scheme [ 1], modeling the joint probability distribution [ 67 , 38 , 17 ], introducing new operations such as editing [ 32 , 16 ], relaxing the discrete tokenization by augmenting the model with additional latent [75, 78, 53, 20], and learned generation order rather than random order [51, 23]. 
+
+Standard masked diffusion models. Despite these extensions, the simple masking-based MDM framework [ 48 , 56 ] remains the most widely used backbone for large-scale text generation, largely due to its simplicity. Recent large-scale models such as LLaDA [ 47 ], Seed Diffusion [ 63 ], and Dream [ 70 ]retain the standard generation scheme, where a fully masked sequence is gradually converted into tokens. Many recent advances, including inference-time decoding strategies [ 35 , 18 ], reinforcement learning methods [ 22 , 74 ], and retrieval-augmented generation [ 71 , 30 ], are also built on this basic framework. Empirically, standard MDMs have become increasingly competitive with autoregressive models (ARMs): LLaDA [ 47 ] and Dream [ 70 ] outperform same-sized LLaMA3 models [ 14 ], while DiffuCoder [13] and Dream-Coder [68] match same-sized Qwen2.5-Coder models [25]. 
+
+Training inefficiency of masked diffusion models. Meanwhile, MDMs require ∼ 16 × more training compute than ARMs to reach the same validation loss [ 52 , 58 ], which may become a major obstacle when scaling MDMs to real-world LLMs. Several prior works [ 31 , 69 ] attribute this slow learning to the left-to-right (L2R) bias of language; yet, how this bias makes MDM training-inefficient remains underexplored. On the other hand, Jia et al. [ 27 ] suggest that the variance of the batch gradient estimator may be a key issue; yet lacks an experimental analysis of their hypothesis. The work of Kim et al . [ 31 ] is closely related to ours in that it also tackles the training difficulty of MDMs. They compare σ-ARMs with permutations σ that are close to the L2R order, fully random permutations σ, and MDMs, showing that order-agnostic training, as in MDMs (and different from AoARMs), is difficult and that L2R bias further hinders learning. In contrast, our work compares the structurally similar σ-ARM and AoARM to identify the dominant factor among order-space complexity and locality bias. Furthermore, our study empirically analyzes how locality bias makes MDM training difficult, whereas Kim et al . take a fundamentally different approach by proving, based on a physics-inspired conjecture [ 34 ], that order-agnostic training inevitably includes unlearnable subproblems. Finally, another key distinction is that Kim et al . propose an inference-time strategy, whereas we propose a training-time strategy. 
+
+Bell-shaped time sampling in continuous diffusion models. In continuous diffusion modeling, bell-shaped time sampling has also been studied as an effective training strategy [ 15 , 29 , 8]. At first glance, our method may look similar to these approaches, but the underlying reason it works is fundamentally different. In image diffusion, it is proven that bell-shaped sampling aids training since both low- and high-SNR regions are difficult to train [ 66 ]. In MDMs, however, we identify a distinct mechanism: low-context samples are learned early and subsequently waste compute, whereas high-context samples are inefficient because locality bias makes many observed tokens redundant. Moreover, these continuous-diffusion-style alternatives have not been systematically studied in MDMs. In Sec. 5.4, we examine such middle-biased training variants in the MDM setting and find that VDM-style noise-schedule modification [ 33 ] and importance weighting [ 21 , 45 , 6] are ineffective compared to direct bell-shaped time sampling. These observations suggest that MDMs require their own analysis of training inefficiency and a sampling strategy tailored to the locality structure of language. 15 A.2 Various Language Modeling Frameworks in Detail Masked diffusion models. Masked diffusion models (MDMs) [ 56 , 62 ] define the forward corruption process using the absorbing mask strategy: once a token is masked, it remains masked throughout the remaining process. For the diffusion process, define the time interval as t ∈ T = [0 , 1] where we corrupt the data from t = 0 (least noisy) to t = 1 (most noisy). Formally, the forward process 
+
+q(xit | x) = qt|0( is designed as follows: 
+
+q(xit | x) = qt|0(· | xi) = Cat( αtexi + (1 − αt)em) ,
+
+where the forward process gradually adds noise as t grows, i.e ., the noise scheduler should satisfy 
+
+α0 = 1 , α1 = 0 , α′ 
+
+> t
+
+< 0. The noise scheduler [ 56 , 62 ] is typically set to linear scheduler, 
+
+αt = 1 − t. Following prior works [ 56 , 23 ], discretize the time interval T with T + 1 steps, and define s(τ ) = τ / (T + 1) and t(τ ) = ( τ + 1) /(T + 1) . Then the generative distribution is divided into T diffusion reverse steps ( xt(T ) → · · · → xt(0) ) and 1 reconstruction step ( xt(0) → x). The true reverse posterior based on corresponding forward process is derived as follows: 
+
+q(xis | xt, x) = q(xis | xit, x) = 
+
+
+
+Cat( exit ), if xit̸ = m,
+
+Cat 
+
+ 1−αs 
+
+> 1−αt
+
+em + αs−αt 
+
+> 1−αt
+
+exi
+
+
+
+, if xit = m.
+
+where we drop τ in s(τ ) and t(τ ) for brevity. To mimic the true reverse posterior, with the diffusion network μiθ (xt, t ) ∈ ∆V +1 that predicts the clean token xi over the vocabulary, the parametrized reverse process is designed as follows: 
+
+pθ (xis | xt) = q xis | xt, x = xθ (xt, t ) =
+
+
+
+Cat( exit ), if xit̸ = m,
+
+Cat 
+
+ 1−αs 
+
+> 1−αt
+
+em + αs−αt 
+
+> 1−αt
+
+μiθ (xt, t )
+
+
+
+, if xit = m.
+
+where s < t . Note that conventional MDM [ 56 , 47 , 70 , 23 ] typically set model output of mask probability as zero. Due to curse of dimensionality [ 39 ], MDM models the reverse process as a token-wise conditionally independent distribution rather than capturing full joint distribution, 
+
+i.e ., pθ (xs | xt) = QLi=1 pθ (xis | xt). In this regard, the model distribution is expressed as 
+
+pθ (x) = P  
+
+> xt(0: T)
+
+pθ (xt(T ))pθ (x|xt(0) ) QTτ =1 pθ (xs(τ )|xt(τ )) in the discrete-time case. Finally, with T → ∞ , the continuos time NELBO is given as follows: 
+
+LMDM =
+
+Z 10 
+
+> −α′
+> t
+> 1−αt
+
+Ex∼pdata ,xt∼qt|0
+
+h
+
+− X
+
+> i:xit=m
+
+log pθ (xi|xt, t )
+
+i
+
+dt. 
+
+where pθ (xi|xt, t ) = μiθ (xt, t ) and −α′ 
+
+> t
+> 1−αt
+
+> 0. Prior works [ 56 , 76 , 48 ] have reported time-agnostic parameterization gives better performance than that of time-variant parameterization, and inspired by this, MDM typically utilizes time-agnostic network [56, 47, 70, 23], i.e ., μiθ (xt, t ) = μiθ (xt).
+
+Various views of MDM objective. Zheng et al . [ 76 ] have shown that the time-variant MDM objective can be rewritten with the time-agnostic form, and Kim et al . [ 31 ] have shown that the time-agnostic MDM objective can be rewritten as any-order autoregressive objective form. For a sequence x and a mask indicator M ∈ { 0, 1}L, define the masked sequence x[M] that is obtained by replacing xi
+
+with m whenever M i = 1 , while leaving it unchanged whenever M i = 0 . Let Mn as mask indicator with mask number of n, i.e ., P 
+
+> i
+
+M in = n, and Mn as set of all possible combinatorial Mn. Then, Zheng et al . have proven that: 
+
+Lemma A.1 (Proposition 3.1 of Zheng et al . [ 76 ]) . For the time-variant diffusion network μiθ (·, t ) ∈
+
+∆V +1 , the theoretical NELBO of MDM, LMDM (Eq. (1)), can be rewritten as follows: 
+
+LMDM = Ex∼pdata 
+
+h L−1X
+
+> Nc=0
+
+E ML−Nc ∼U (ML−Nc ), i ∼U (i:M iL−Nc =1) 
+
+ − log ¯ pθ (xi | x[ML−Nc ]) i
+
+,
+
+(7) 
+
+where log ¯ pθ (xi | x[ML−Nc ]) := EαNc 
+
+ log pθ (xi | xt = x[ML−Nc ], t = α−1 
+
+> t
+
+(αNc )) , αNc ∼
+
+Beta( Nc + 1 , L − Nc), and pθ (xi | x[ML−Nc ], t ) = μiθ (x[ML−Nc ], t ).
+
+16 Table 6: Framework-specific choices that instantiate the shared objective in Eq. (4). Entries are written as sampling rules; deterministic entries correspond to point masses at the displayed value.                                                                                    
+
+> Framework FPartially observed latent zNcpF(z|x, N c)pF(i|x,zNc)
+> ARM x<N c+1 zNc=x<N c+1 i=Nc+ 1
+> σ-ARM x<σ Nc +1 zNc=x<σ Nc +1 i=σNc+1
+> AoARM (x<σ Nc +1 , σ )σ∼U(SL),zNc= ( x<σ Nc +1 , σ )i=σNc+1
+> Time-agnostic MDM x[ML−Nc]ML−Nc∼U(ML−Nc),
+> zNc=x[ML−Nc]i∼U({i:ziNc=m})
+> Time-variant MDM (x[ML−Nc], α Nc)ML−Nc∼U(ML−Nc),αNc∼Beta( Nc+ 1 , L −Nc),
+> zNc= ( x[ML−Nc], α Nc)i∼U({i:ziNc=m})
+
+Note that the original version of Proposition 3.1 of Zheng et al . includes a 1/(L − Nc) scaling term, which is accounted for in our notation by the expectation over the sampled index i. We note that ¯pθ is not normalized; in particular, P  
+
+> a∈[V]
+
+¯pθ (xi = a | x[M]) ̸ = 1 .Motivated by above lemma, Kim et al . have shown that: 
+
+Lemma A.2 (Proposition 2.1 of Kim et al . [ 31 ]) . For the time-agnostic diffusion network μiθ (·) ∈
+
+∆V +1 , the theoretical NELBO of MDM, LMDM (Eq. (1)), can be rewritten as follows: 
+
+LMDM = Ex∼pdata 
+
+h L−1X
+
+> Nc=0
+
+EML−Nc ∼U( ML−Nc ),i ∼U( i:M iL−Nc =1) [− log pθ (xi|x[ML−Nc ])] 
+
+i
+
+. (8) 
+
+where pθ (xi | x[ML−Nc ]) = μiθ (x[ML−Nc ]) .
+
+Again, note that the original version of Proposition 2.1 of Kim et al . includes a 1
+
+( LL−Nc )·(L−Nc) scaling term, which is accounted for in our notation by the expectation over the sampled index i and sampled mask ML−Nc .
+
+Shared format of learning objectives. Recall the shared objective in Eq. (4): 
+
+LF =
+
+> L−1
+
+X
+
+> Nc=0
+
+LNc 
+
+> F
+
+, LNc 
+
+> F
+
+:= Ex∼pdata ,zNc ∼pF (z|x,N c),i ∼pF (i|x,zNc )[− log pθ (xi | zNc )] , (9) where Nc is the number of context tokens, zNc is the partially observed context, and pF (z | x, N c)
+
+and pF (i | x, zNc ) specify how each framework constructs the context and selects the target position. We spell out these framework-specific choices in Table 6. Since Nc counts observed tokens whereas 
+
+Mn counts masked positions, the MDM row uses ML−Nc .Substituting the ARM row into Eq. (9) recovers Eq. (2). Similarly, for a fixed permutation σ,
+
+> L−1
+
+X
+
+> Nc=0
+
+LNc 
+
+> σ-ARM
+
+= Ex∼pdata 
+
+> L
+
+X
+
+> r=1
+
+h
+
+− log pσ-ARM 
+
+> θ
+
+ xσr | x<σ r  i
+
+,
+
+and averaging the same construction over σ ∼ U (SL) gives the AoARM objective in Eq. (3): 
+
+> L−1
+
+X
+
+> Nc=0
+
+LNc 
+
+> AoARM
+
+= Ex∼pdata , σ ∼U (SL)
+
+h
+
+−
+
+> L
+
+X
+
+> r=1
+
+log pAoARM 
+
+> θ
+
+ xσr | x<σ r , σ  i
+
+.
+
+For time-agnostic MDM, Eq. (9) becomes the context-level loss 
+
+LNc 
+
+> MDM
+
+= Ex∼pdata , ML−Nc ∼U (ML−Nc ), i ∼U (i:M iL−Nc =1) 
+
+ − log pθ (xi | x[ML−Nc ]) , (10) and this matches the theoretical NELBO of MDM by Lemma A.2. For a time-variant MDM, Eq. (9) becomes 
+
+LNc 
+
+> MDM
+
+= E x∼pdata , ML−Nc ∼U (ML−Nc )    
+
+> i∼U({i:MiL−Nc =1 })αNc ∼Beta( Nc+1 ,L −Nc)
+
+ − log pθ (xi | x[ML−Nc ], α −1 
+
+> t
+
+(αNc )) ,
+
+(11) 17 and this matches the theoretical NELBO of MDM by Lemma A.1 where we explicitly include pθ
+
+rather than ¯pθ .
+
+Remark. Since all experiments in our work use time-agnostic MDMs, as in typical MDM parame-terizations [ 56 , 47 , 70 , 23 ], we simply evaluate log pθ (xi | x[ML−Nc ]) by log μiθ (x[ML−Nc ]) . In other words, throughout all of experiments conducted in our paper, we measured LNc 
+
+> MDM
+
+by evaluating Eq. (10). 
+
+## B Proofs 
+
+Before presenting the proofs, we introduce a shorthand for the data conditional induced by a partially observed context. For a partially observed context z, let C#(z) ⊆ [L] denote the set of positions whose clean token values are revealed by z. For example, for a masked sequence x[M], since Mj = 1 
+
+means that position j is masked, we have 
+
+C#(x[M]) = {j ∈ [L] : Mj = 0 }.
+
+For an autoregressive prefix x<i , we have 
+
+C#(x<i ) = {1, . . . , i − 1}.
+
+Similarly, for a permuted prefix x<σ r , we have 
+
+C#(x<σ r ) = {σ1, . . . , σ r−1}.
+
+For each j ∈ C#(z), we write zj for the revealed token value at position j.Using this notation, for any target position i ∈ [L], token value a ∈ [V ], and partially observed context z with positive data mass, we define 
+
+pdata (xi = a | z) := pdata 
+
+ Xi = a Xj = zj , ∀j ∈ C#(z)
+
+=
+
+P      
+
+> ˜x∈X :˜ xi=a, ˜xj=zj,∀j∈C#(z)
+
+pdata (˜ x)
+
+P     
+
+> ˜x∈X :˜ xj=zj,∀j∈C#(z)
+
+pdata (˜ x) . (12) When a = xi is clear from context, we simply write pdata (xi | z). If the denominator is zero, the conditional distribution can be defined arbitrarily, since such a context is never sampled under pdata .
+
+B.1 Proof of Proposition 3.1 
+
+We prove Proposition 3.1, which was omitted in the main paper. We first provide one useful lemma: 
+
+Lemma B.1 (Appendix E.1 of Kim et al . [ 31 ]) . For σ ∈ SL where SL is any permutation of [L], let 
+
+[x<σ r : M] denotes the masked sequence that reveals {xσ1 , . . . , x σr−1 } and masks all remaining positions, rather than the raw subsequence. For the time-agnostic diffusion network μiθ (·) ∈ ∆V +1 ,the theoretical NELBO of MDM, LMDM (Eq. (1)), can be rewritten as follows: 
+
+LMDM = Ex∼pdata ,σ ∼U (SL)
+
+" LX
+
+> r=1
+
+− log pθ (xσr | [x<σ r : M])] 
+
+#
+
+. (13) 
+
+where pθ (xi | x[ML−Nc ]) = μiθ (x[ML−Nc ]) .
+
+Now we prove the following: 
+
+Proposition 3.1. With infinite model capacity, the optimal loss for any framework F ∈{ARM , MDM , σ −ARM , AoARM } is equal to the entropy of the data distribution: 
+
+min  
+
+> θ
+
+LF = H(X), H(X) := −Ex∼pdata 
+
+ log pdata (x). (14) 
+
+Furthermore, letting I denote the random target index, LNc 
+
+> F
+
+can be decomposed as 
+
+LNc 
+
+> F
+
+(θ) = HF (XI | ZNc , I ) + EZNc ,I KL( pdata ,F (· | ZNc , I ) ∥ pθ (· | ZNc , I )) .
+
+where the conditional entropy is induced by pdata .
+
+18 Proof. We first prove the first claim, 
+
+min  
+
+> θ
+
+LF = H(X), F ∈ { ARM , σ -ARM , AoARM , MDM },
+
+For ARM, 
+
+LARM = −Ex∼pdata 
+
+h LX
+
+> i=1
+
+log pARM  
+
+> θ
+
+(xi | x<i )
+
+i
+
+= −Ex∼pdata log pARM  
+
+> θ
+
+(x)= H(X) + KL  pdata (x) ∥ pARM  
+
+> θ
+
+(x) ≥ H(X),
+
+where equality holds when pθ (xi|x<i ) = pdata (xi|x<i ) satisfies almost everywhere. Note that we can prove for σ-ARM case as above. For AoARM, 
+
+LAoARM = −Eσ∼U (SL)Ex∼pdata [log pAoARM  
+
+> θ
+
+(x | σ)] = Eσ∼U (SL)
+
+h
+
+H(X) + KL  pdata (x) ∥ pAoARM  
+
+> θ
+
+(x | σ) i
+
+≥ H(X),
+
+Under infinite model capacity, the equality is attained by 
+
+pAoARM  
+
+> θ
+
+(xσi | x<σ i , σ ) = pdata (xσi | x<σ i ) for all i ∈ [L] and σ ∈ SL.
+
+For time-variant MDM, rather than decomposing NELBO into above decomposition, we directly show that min θ LMDM = H(X) is achievable when pθ (xi = a | xt, t ) = pdata (xi = a | xt) for all 
+
+i ∈ [L], for all xt ∈ { x[M] : ∀x ∈ X , ∀M ∈ { 0, 1}L}, and for all a ∈ [V ].Recall that NELBO of MDM is as follows: 
+
+Epdata [− log pθ (x)] ≤ L MDM =
+
+Z 10 
+
+> −α′
+> t
+> 1−αt
+
+Ex∼pdata ,xt∼qt|0
+
+h
+
+− X
+
+> i:xit=m
+
+log pθ (xi|xt, t )
+
+i
+
+dt. (15) Here, the left-hand side is lower bounded by H(X). On the other hand, we show that if the infinite capacity model θ∗ satisfies pθ∗ (xi = a | xt, t ) = pdata (xi = a | xt), the right-hand side gives 
+
+H(X). If pθ∗ (xi = a|xt, t ) = pdata (xi = a|xt) holds, since pθ∗ (xi = a|xt, t ) is parametrized by 
+
+μθ∗ (xt, t ), the optimal θ∗ is no more time-variant rather time-agnostic. Substituting θ into θ∗ such that pθ (xi = a|xt, t ) = pdata (xi = a|xt), and using Lemma B.1 and Eq. (12), the right-hand side gives 
+
+Ex∼pdata ,σ ∼U (SL)
+
+" LX
+
+> r=1
+
+− log pdata (xσr | x<σ r )
+
+#
+
+, (16) which is equivalent to H(X). Therefore, with infinite model capacity, min θ LMDM = H(X), and this minimum is achievable. Note that time-agnostic MDM can be proven with the same approach as above. We now prove the second claim. Recall that 
+
+LNc 
+
+> F
+
+= Ex∼pdata ,zNc ∼pF (z|x,N c),i ∼pF (i|x,zNc )[− log pθ (xi | zNc )] . (17) For a fixed observation level n, define the framework-induced joint distribution 
+
+pdata ,F (x, zNc , i | Nc) := pdata (x) pF (zNc | x, N c) pF (i | x, zNc ).
+
+Also, with a slight abuse of notation, write 
+
+pθ (a | zNc , i ) := pθ (xi = a | zNc ),
+
+namely, the model prediction for the i-th token given zNc . Then, 
+
+LNc 
+
+> F
+
+= Ex,zNc ,i 
+
+− log pθ (xi | zNc )
+
+= E(zNc ,i )∼pdata ,F (·,·| Nc)
+
+"X
+
+> a
+
+pdata ,F (a | zNc , i ) − log pθ (a | zNc , i )#
+
+= E(zNc ,i )∼pdata ,F (·,·| Nc)
+
+h
+
+H pdata ,F (· | zNc , i ) + KL( pdata ,F (· | zNc , i ) ∥ pθ (· | zNc , i )) 
+
+i
+
+= HF (XI | ZNc , I ) + E(zNc ,i )∼pdata ,F (·,·| Nc)KL( pdata ,F (· | zNc , i ) ∥ pθ (· | zNc , i )) ,
+
+19 which concludes the proof. Therefore, for every framework F and every observation level n,
+
+LNc 
+
+> F
+
+≥ HF (XI | ZNc , I ).
+
+Moreover, equality holds if and only if 
+
+pθ (xi | zNc ) = pdata ,F (xi | zNc , i ) for pdata ,F (zNc , i | Nc)-almost every (zNc , i ).
+
+B.2 Proof of Proposition 4.2 
+
+We prove Proposition 4.2 in this section. We first provide useful lemma to prove the statement: 
+
+Lemma B.3 (Restatement of Zheng et al . [ 76 ]) . Consider two different loss, LMDM and weighted loss ˆL defined as follows: 
+
+LMDM (θ) = 
+
+> L−1
+
+X
+
+> Nc=0
+
+LNc
+
+> MDM
+
+(θ) ˆL(θ) = 
+
+> L−1
+
+X
+
+> Nc=0
+
+ω(Nc)LNc
+
+> MDM
+
+(θ). (18) 
+
+With infinite capacity and time-agnostic θ, if ω(Nc) > 0 holds for all Nc ∈ { 0, . . . , L − 1}, the minimizer of LMDM and ˆL are equal. Proof. Note that above lemma can be inferred from the proof of Proposition 3.2 in Zheng et al . [ 76 ]. We here show the above statement more directly with our notations. Since the model is time-agnostic, we write pθ (xi | xt) instead of pθ (xi | xt, t ). For n ∈ { 0, . . . , L }, recall that Mn = {M ∈ { 0, 1}L :
+
+PLi=1 Mi = n} is the set of mask indicators with exactly n masked positions, where Mi = 1 means that position i is masked. Also recall that x[Mn] is the sequence obtained by replacing the masked positions of x with m. Thus, when the number of context tokens is Nc, the number of masked tokens is L − Nc, and the corresponding masked sequence is x[ML−Nc ].For different values of Nc, the corresponding masked contexts have disjoint input supports, since 
+
+x[ML−Nc ] contains exactly L − Nc mask tokens. Hence, under infinite capacity and time-agnostic parameterization, the model can realize the pointwise optimum for each context level independently. Formally, define the common minimizer set 
+
+Θ⋆ := θ : pθ (xi = a | x[ML−Nc ]) = pdata (xi = a | x[ML−Nc ]) 
+
+∀Nc = 0 , . . . , L − 1, ∀ML−Nc ∈ M L−Nc , ∀i : M iL−Nc = 1 , ∀x ∈ [V ]L, ∀a ∈ [V ] .
+
+Under infinite capacity, this set is nonempty, since the model can realize the pointwise conditional distribution on every masked-context input. To see that this is exactly the minimizer set, fix Nc, ML−Nc ∈ M L−Nc , a masked position i with 
+
+MiL−Nc = 1 , and a masked context xt. The corresponding token-level cross-entropy is 
+
+X 
+
+> a∈[V]
+
+pdata (xi = a | x[ML−Nc ]) − log pθ (xi = a | x[ML−Nc ]) .
+
+This can be decomposed as 
+
+H(pdata (· | x[ML−Nc ])) + KL( pdata (· | x[ML−Nc ]) ∥ pθ (· | x[ML−Nc ])) .
+
+The entropy term is independent of θ, and the KL term is minimized if and only if 
+
+pθ (xi = a | x[ML−Nc ]) = pdata (xi = a | x[ML−Nc ]) 
+
+for every token a ∈ [V ]. Hence each context-level loss LNc 
+
+> MDM
+
+is minimized exactly by matching the true conditional distribution on its corresponding masked contexts. Since ˆL and LMDM are both positive weighted sums of the same context-level cross-entropy terms, 
+
+ˆL(θ) = 
+
+> L−1
+
+X
+
+> Nc=0
+
+ω(Nc)LNc
+
+> MDM
+
+(θ), ωπ (Nc) > 0,
+
+20 and 
+
+LMDM (θ) = 
+
+> L−1
+
+X
+
+> Nc=0
+
+LNc
+
+> MDM
+
+(θ),
+
+their minimizers are exactly the same: 
+
+arg min 
+
+> θ
+
+ˆL(θ) = Θ ⋆ = arg min  
+
+> θ
+
+LMDM (θ).
+
+We now prove the Proposition 4.2 with Lemma B.3. What we need to prove is that w(Nc) > 0, ∀Nc ∈{0, . . . , L − 1} holds for any probability distribution ρ satisfying Pt∼ρ (t ∈ (0 , 1)) > 0.
+
+Proposition 4.2. With infinite-capacity and time-agnostic model θ, for any probability distribution ρ
+
+over [0 , 1] satisfying Pt∼ρ (t ∈ (0 , 1)) > 0, the minimizers of LMDM and ˆLρ are equal. Proof. Let ρ be a Borel probability measure on [0 , 1] . All integrals with respect to dρ (t) are understood as measure-theoretic integrals, so atomic choices such as ρ = δμ are included. Under the absorbing forward process, for any ML−Nc ∈ M L−Nc ,
+
+Pr( xt = x[ML−Nc ] | x, t ) = αNc 
+
+> t
+
+(1 − αt)L−Nc .
+
+Therefore, after marginalizing over t ∼ ρ, the probability of sampling exactly Nc context tokens is 
+
+Pr  
+
+> ρ
+
+(Nc) = 
+
+ LNc
+
+
+
+Et∼ρ
+
+h
+
+αNc 
+
+> t
+
+(1 − αt)L−Nc
+
+i
+
+=
+
+ LNc
+
+ Z 
+
+> [0 ,1]
+
+αNc 
+
+> t
+
+(1 − αt)L−Nc dρ (t).
+
+This formula remains valid when ρ has atoms; for example, if ρ = δμ, the integral simply evaluates the integrand at t = μ. Conditioned on Nc, all mask indicators in ML−Nc are sampled uniformly, because the above probability depends on ML−Nc only through its cardinality. Hence 
+
+ˆLρ(θ) = Ex∼pdata , t ∼ρ, xt∼qt|0(·| x)
+
+− X
+
+> i:xit=m
+
+log pθ (xi | xt)
+
+
+
+=
+
+> L−1
+
+X
+
+> Nc=0
+
+(L − Nc) Pr  
+
+> ρ
+
+(Nc) LNc
+
+> MDM
+
+(θ) = 
+
+> L−1
+
+X
+
+> Nc=0
+
+ωρ(Nc) LNc
+
+> MDM
+
+(θ),
+
+where ωρ(Nc) := ( L − Nc)  LNc
+
+ R  
+
+> [0 ,1]
+
+αNc 
+
+> t
+
+(1 − αt)L−Nc dρ (t). By definition of αt in conventional MDM [ 56 , 62 , 23 ] where α0 = 1 , α1 = 0 , and α′ 
+
+> t
+
+< 0, the integrand αNc 
+
+> t
+
+(1 − αt)L−Nc is strictly positive for every t ∈ (0 , 1) and every Nc ∈ { 0, . . . , L − 1}. Since Pt∼ρ (t ∈ (0 , 1)) > 0, we have 
+
+ωρ(Nc) > 0 for all Nc ∈ { 0, . . . , L − 1}. Then, together with Lemma B.3, this concludes the proof. 
+
+Remark. In measure-theoretic notation, the probability mass assigned by a probability distribution 
+
+ρ to an interval I ⊆ [0 , 1] is conventionally written as ρ(I). To make this notation more accessible to readers less familiar with this convention, we instead write the same quantity as Pt∼ρ(t ∈ I)
+
+throughout the main text and proofs. 
+
+B.3 Proof of Proposition 4.4 
+
+We prove Proposition 4.4 in this section. Recall that Ek denotes the set of k-inefficient mask indicators, i.e., those containing either k consecutive masks or k consecutive non-masks. Accordingly, Eck denotes the set of k-efficient mask indicators. Recall also that 
+
+Mn =
+
+n
+
+M ∈ { 0, 1}L :
+
+> L
+
+X
+
+> i=1
+
+M i = n
+
+o
+
+, Mn ∼ U (Mn),
+
+so that Mn is a uniformly sampled mask indicator with exactly n masked positions. Equivalently, it has exactly L − n observed positions. 21 Define 
+
+qL,k (n) := P Mn ∈ E ck Mn ∼ U (Mn)) .
+
+Let 
+
+Nk(a, b ) := # 
+
+n
+
+M ∈ { 0, 1}a+b :
+
+> a+b
+
+X
+
+> i=1
+
+M i = a, M ∈ E ck
+
+o
+
+,
+
+where a counts masked positions and b counts non-masked positions. Since k is fixed throughout this proof, we drop k in the notation. Then 
+
+qL,k (n) = N (n, L − n)
+
+ Ln
+
+ .
+
+For a time sampling law π on [0 , 1] , define the induced mask-count law 
+
+wπ (n) := P
+
+> L
+
+X
+
+> i=1
+
+M i = n t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+!
+
+.
+
+Here π is understood as a Borel probability measure, and it need not admit a density. Conditioning on t gives 
+
+wπ (n) = 
+
+Ln
+
+ Z 
+
+> [0 ,1]
+
+tn(1 − t)L−n dπ (t).
+
+Therefore 
+
+P
+
+
+
+M ∈ E ck | t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+=
+
+> L
+
+X
+
+> n=0
+
+wπ (n)qL,k (n). (19) In particular, when π = U ([0 , 1]) ,
+
+wU (n) = 
+
+Ln
+
+ Z 10
+
+tn(1 − t)L−n dt = 1
+
+L + 1 ,
+
+so uniform time sampling induces the uniform distribution over the mask count n ∈ { 0, . . . , L }.The key step is to show that qL,k (n) is maximized at the middle mask count. 
+
+Lemma B.5 (Central monotonicity of the efficient probability) . For every L ∈ N and k ≥ 2,
+
+qL,k (n) = qL,k (L − n),
+
+and 
+
+qL,k (n) ≤ qL,k (n + 1) for all 0 ≤ n < L
+
+2 .
+
+Consequently, qL,k (n) is maximized at n = L/ 2 when L is even, and at the two central points 
+
+(L − 1) /2 and (L + 1) /2 when L is odd. Proof. The symmetry 
+
+qL,k (n) = qL,k (L − n)
+
+follows by flipping all mask bits, 0 ↔ 1. This operation maps Mn bijectively to ML−n and preserves the event Eck , since it only swaps masks and non-masks. It remains to prove monotonicity up to the center. Fix n < m and set L = n + m. We want to prove 
+
+qL,k (n) ≤ qL,k (n + 1) ,
+
+or equivalently 
+
+N (n, m )
+
+ Ln
+
+ ≤ N (n + 1 , m − 1) 
+
+  Ln+1 
+
+ .
+
+Since   Ln+1 
+
+ Ln
+
+ = mn + 1 ,
+
+22 this is equivalent to 
+
+(n + 1) N (n + 1 , m − 1) − mN (n, m ) ≥ 0. (20) Unfortunately, N (n, m ) expands into a highly cumbersome form, making it difficult to prove the above inequality by a direct expansion. To handle this combinatorial counting problem, we use the concept of a generating function . Generating functions are a classical tool in enumerative combinatorics, used to encode combinatorial counts as coefficients of formal polynomials. For example, if a sequence {ar }r≥0 is encoded as 
+
+G(x) = X
+
+> r≥0
+
+ar xr ,
+
+then the coefficient-extraction notation [xr ]G(x) denotes the coefficient of xr in G(x), namely ar .In this sense, questions about the combinatorial numbers ar can be translated into algebraic questions about the polynomial or power series G(x). In the present proof, we will consider F (x, y ) that assigns a formal weight x to each masked position and y to each non-masked position; then the coefficient of xayb records how many k-efficient mask indicators have a masked and b non-masked positions. Equivalently, [xayb]F (x, y ) = N (a, b ) where F (x, y ) = P 
+
+> a,b ≥0
+
+N (a, b )xayb, so the 
+
+operation [xayb] pulls out the coefficient of xayb.We divide three cases of M ∈ E ck to obtain F (x, y ): 1) the number of mask-runs and non-mask-runs are equal, e.g ., M = 1 . . . 0 or M = 0 . . . 1, 2) there is one more mask-run than non-mask-run 
+
+M = 1 . . . 1, and 3) there is one less mask-run than non-mask-run M = 0 . . . 0. To formalize 
+
+F (x, y ), first let 
+
+Pk(z) := z + z2 + · · · + zk−1.
+
+Note the length of each consecutive 0’s or 1’s are in {1, . . . , k − 1}. So, for example, the case starting from x and end at y with 2r total runs can be represented as 
+
+Pk(x)Pk(y) · · · Pk(x)Pk(y) = Pk(x)r Pk(y)r .
+
+Furthermore, there also exists the case starting from x and end at y with 2r total runs: 
+
+Pk(y)Pk(x) · · · Pk(y)Pk(x) = Pk(x)r Pk(y)r .
+
+Therefore, if the number of mask-runs and non-mask-runs are both equal to r ≥ 1, then the total contribution is 
+
+2Pk(x)r Pk(y)r .
+
+If there is one more mask-run than non-mask-run, the contribution is 
+
+Pk(x)r+1 Pk(y)r (r ≥ 0) ,
+
+and similarly, if there is one more non-mask-run than mask-run, the contribution is 
+
+Pk(x)r Pk(y)r+1 (r ≥ 0) .
+
+To compute F (x, y ), we take their sum over r ≥ 0 with the above cases. Then the bivariate generating function of nonempty k-efficient mask indicators is 
+
+F (x, y ) := X
+
+> a,b ≥0
+
+N (a, b )xayb = Pk(x) + Pk(y) + 2 Pk(x)Pk(y)1 − Pk(x)Pk(y) .
+
+The empty string is irrelevant here, since we only extract coefficients of positive total degree. Indeed, every k-efficient mask indicator is an alternating sequence of mask-runs and non-mask-runs, and every run length belongs to {1, . . . , k − 1}. Now the left-hand side of Eq. (20) can be converted into the coefficient of xnym−1 in 
+
+D(x, y ) := ∂xF (x, y ) − ∂y F (x, y ).
+
+Therefore it suffices to show that 
+
+[xpyq ]D(x, y ) ≥ 0 whenever p ≤ q. 
+
+We now prove this coefficientwise nonnegativity. Define 
+
+Ak(z) := 1 + Pk(z) = 1 + z + · · · + zk−1.
+
+23 A direct differentiation of F (x, y ) gives 
+
+D(x, y ) = Ak(y)2P ′
+
+> k
+
+(x) − Ak(x)2P ′
+
+> k
+
+(y)
+
+ 1 − Pk(x)Pk(y)2 .
+
+Write 
+
+B(x, y ) := Ak(y)2P ′
+
+> k
+
+(x) − Ak(x)2P ′
+
+> k
+
+(y), K(x, y ) := 1
+
+ 1 − Pk(x)Pk(y)2 .
+
+Then 
+
+D(x, y ) = B(x, y )K(x, y ).
+
+By the definition of a generating function, 
+
+[xpyq ]D(x, y ) ≥ 0 ⇐⇒ [xpyq ] X
+
+> i,j
+
+
+
+[xiyj ]B(x, y )
+
+ 
+
+[xp−iyq−j ]K(x, y )
+
+!
+
+≥ 0.
+
+Therefore, it suffices to show the right-hand side holds for any p ≤ q. Let cij := [ xiyj ]B(x, y ) and 
+
+Ku,v := [ xuyv ]K(x, y ). Our objective is then to show: 
+
+X
+
+> i,j
+
+cij Kp−i,q −j ≥ 0, whenever p ≤ q. 
+
+We first analyze the signs of the coefficients of B. Let 
+
+ai := [ zi]P ′
+
+> k
+
+(z), bi := [ zi]Ak(z)2.
+
+Since 
+
+P ′
+
+> k
+
+(z) = 1 + 2 z + · · · + ( k − 1) zk−2,
+
+and 
+
+Ak(z)2 = (1 + z + · · · + zk−1)2,
+
+we have ai
+
+bi
+
+=
+
+1, 0 ≤ i ≤ k − 2,
+
+0, k − 1 ≤ i ≤ 2k − 2,
+
+with the convention that coefficients outside the support are zero. Hence i 7 → ai/b i is nonincreasing. Therefore, for i < j ,
+
+aibj − biaj = bibj
+
+ ai
+
+bi
+
+− aj
+
+bj
+
+
+
+≥ 0.
+
+Then by definition of cij ,
+
+cij ≥ 0 (i < j ), cji = −cij , cii = 0 . (21) Next we analyze K. For 
+
+K(x, y ) = 1
+
+ 1 − Pk(x)Pk(y)2 = X
+
+> r≥0
+
+(r + 1) Pk(x)r Pk(y)r ,
+
+let 
+
+fr (s) := [ zs]Pk(z)r s.t. Ku,v = X
+
+> r≥0
+
+(r + 1) fr (u)fr (v).
+
+For each fixed r, the sequence s 7 → fr (s) is log-concave. Indeed, Pk(z) = z(1 + z + · · · + zk−2),and the nonzero coefficient sequence (1 , . . . , 1) is log-concave; moreover, convolution preserves log-concavity for nonnegative sequences without internal zeros. Hence the coefficient sequence of 
+
+Pk(z)r is log-concave. Equivalently, the ratio 
+
+ρs := fr (s + 1) 
+
+fr (s)
+
+is nonincreasing wherever both terms are positive. Therefore, for each fixed total degree S and for 
+
+u ≤ S/ 2,
+
+fr (u + 1) fr (S − u − 1) 
+
+fr (u)fr (S − u) = ρu
+
+ρS−u−1
+
+≥ 1,
+
+24 so the sequence 
+
+u 7 → fr (u)fr (S − u)
+
+is symmetric around S/ 2 and nondecreasing for u ≤ S/ 2. Summing over r with nonnegative weights 
+
+(r + 1) preserves this property. Therefore, 
+
+Ku,v ≥ Ku′,v ′ whenever u + v = u′ + v′ and |u − v| ≤ | u′ − v′|. (22) Now fix p ≤ q. Recall that 
+
+[xpyq ]D = X
+
+> i,j
+
+cij Kp−i,q −j .
+
+Pairing the terms (i, j ) and (j, i ) and using Eq. (21), we get 
+
+[xpyq ]D = X
+
+> i<j
+
+cij 
+
+ Kp−i,q −j − Kp−j,q −i
+
+,
+
+where we use the convention that Ku,v = 0 whenever u < 0 or v < 0. We now show that each paired summand is nonnegative. Fix i < j .First, suppose that p < j . Then p − j < 0, and hence 
+
+Kp−j,q −i = 0 .
+
+Since all coefficients of K are nonnegative, we have 
+
+Kp−i,q −j − Kp−j,q −i = Kp−i,q −j ≥ 0,
+
+where the inequality also covers the case in which p − i < 0 or q − j < 0, since then Kp−i,q −j = 0 
+
+by convention. It remains to consider the case p ≥ j. Since p ≤ q and i < j , all indices appearing below are nonnegative: 
+
+p − i, q − j, p − j, q − i ≥ 0.
+
+The two pairs (p − i, q − j) and (p − j, q − i) have the same total degree: 
+
+(p − i) + ( q − j) = ( p − j) + ( q − i).
+
+Moreover, since p ≤ q and i < j ,
+
+(q − j) − (p − i) = q − p − (j − i) ≤ q − p + ( j − i) = (q − i) − (p − j) .
+
+Thus (p − i, q − j) is at least as close to the diagonal as (p − j, q − i). By Eq. (22), 
+
+Kp−i,q −j ≥ Kp−j,q −i.
+
+Therefore, in both cases, 
+
+Kp−i,q −j − Kp−j,q −i ≥ 0.
+
+Since also cij ≥ 0 for i < j , every paired summand is nonnegative. Hence 
+
+[xpyq ]D ≥ 0 whenever p ≤ q. 
+
+Finally, take p = n and q = m − 1. Since n < m , we have n ≤ m − 1, so 
+
+[xnym−1]D ≥ 0.
+
+Equivalently, 
+
+(n + 1) N (n + 1 , m − 1) − mN (n, m ) ≥ 0.
+
+As shown above, this is exactly 
+
+qL,k (n) ≤ qL,k (n + 1) .
+
+This proves the monotonicity for every n < L/ 2, and the lemma follows. 25 We now translate Lemma B.5 into a statement about time sampling. Recall that 
+
+P
+
+
+
+M ∈ E ck | t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+=
+
+> L
+
+X
+
+> n=0
+
+wπ (n)qL,k (n). (23) where 
+
+wπ (n) = P
+
+> L
+
+X
+
+> i=1
+
+M i = n t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+!
+
+=
+
+Ln
+
+ Z 
+
+> [0 ,1]
+
+tn(1 − t)L−n dπ (t) (24) Substituting Eq. (24) into Eq. (23) gives: 
+
+P
+
+
+
+M ∈E ck | t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+=
+
+> L
+
+X
+
+> n=0
+
+wπ (n)qL,k (n)=
+
+> L
+
+X
+
+> n=0
+
+Ln
+
+ Z 
+
+> [0 ,1]
+
+tn(1 − t)L−nqL,k (n) dπ (t)=
+
+Z
+
+> [0 ,1]
+> L
+
+X
+
+> n=0
+
+Ln
+
+
+
+tn(1 − t)L−nqL,k (n) dπ (t) (25) Define 
+
+RL,k (t) := P
+
+
+
+M ∈ E ck M i i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+.
+
+Conditioning on the number of masks gives 
+
+RL,k (t) = 
+
+> L
+
+X
+
+> n=0
+
+Ln
+
+
+
+tn(1 − t)L−nqL,k (n). (26) Substituting Eq. (26) into Eq. (25) then gives: 
+
+P
+
+
+
+M ∈E ck | t ∼ π, M i i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+=
+
+Z
+
+> [0 ,1]
+
+RL,k (t)dπ (t). (27) Now our goal is to prove RL,k (t) has property of central monotonicity, and then prove Proposition 4.4. 
+
+Lemma B.6 (Central monotonicity in time) . The function RL,k (t) is symmetric around 1/2 and nondecreasing on [0 , 1/2] . That is, 
+
+RL,k (t) = RL,k (1 − t), R′
+
+> L,k
+
+(t) ≥ 0 for 0 ≤ t ≤ 12 .
+
+Moreover, if 2 ≤ k ≤ L, then RL,k is strictly increasing on [0 , 1/2] .Proof. The symmetry follows from the symmetry of qL,k (n):
+
+qL,k (n) = qL,k (L − n).
+
+To prove monotonicity, differentiate Eq. (26). The derivative of RL,k (t) is 
+
+R′
+
+> L,k
+
+(t) = L
+
+> L−1
+
+X
+
+> n=0
+
+L − 1
+
+n
+
+ qL,k (n + 1) − qL,k (n)tn(1 − t)L−1−n.
+
+Let dn := qL,k (n + 1) − qL,k (n). By Lemma B.5, dn ≥ 0 for n < (L − 1) /2, and by symmetry of qL,k , dL−1−n = −dn. Now pair the n-th and (L − 1 − n)-th terms in the derivative. For 
+
+n < (L − 1) /2, the paired contribution is 
+
+L
+
+L − 1
+
+n
+
+
+
+dn
+
+h
+
+tn(1 − t)L−1−n − tL−1−n(1 − t)ni
+
+.
+
+26 When 0 ≤ t ≤ 1/2, we have 1 − t ≥ t, so every paired contribution is nonnegative. Hence 
+
+R′
+
+> L,k
+
+(t) ≥ 0 on [0 , 1/2] .It remains to prove strict monotonicity. When 2 ≤ k ≤ L, we have RL,k (0) = 0 , because t = 0 
+
+gives the all-zero mask indicator, which contains L ≥ k consecutive non-masks and therefore lies in 
+
+Ek. On the other hand, RL,k (1 /2) > 0, since the alternating mask indicator 0101 · · · is k-efficient for every k ≥ 2 and occurs with positive probability under i.i.d. Bernoulli (1 /2) sampling. Thus 
+
+RL,k is not constant. Since R′ 
+
+> L,k
+
+is a polynomial and R′ 
+
+> L,k
+
+≥ 0 on [0 , 1/2] , if RL,k were not strictly increasing, then it would be constant on some nonempty interval, so R′ 
+
+> L,k
+
+would vanish on that interval and hence vanish identically. This would contradict RL,k (0) < R L,k (1 /2) . Therefore RL,k 
+
+is strictly increasing on [0 , 1/2] .We can now prove Proposition 4.4. Recall that Proposition 4.4 is as follows: 
+
+Proposition 4.4. For any L, 2 ≤ k ≤ L, and any bell-shaped time distribution π, the following statement always holds: 
+
+P
+
+
+
+M /∈ E k | t ∼ U([0 , 1]) , M i ∼ Bernoulli( t)
+
+
+
+< P
+
+
+
+M /∈ E k | t ∼ π, M i ∼ Bernoulli( t)
+
+
+
+.
+
+Proof. For brevity, write R(t) := RL,k (t). By Eq. (27), for any probability measure μ on [0 , 1] ,
+
+P
+
+
+
+M ∈ E ck t ∼ μ, M i
+
+> i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+=
+
+Z 10
+
+R(t) dμ (t).
+
+Thus it suffices to compare R R(t) dπ (t) with R R(t) dt . Since π may be atomic or assign zero mass to parts of [0 , 1] , we avoid any pointwise density comparison and instead use an integral over the central intervals [a, 1 − a]. By Lemma B.6, R(t) = R(1 − t) and R is strictly increasing on [0 , 1/2] .In particular, R′(a) ≥ 0 on [0 , 1/2] . For every t ∈ [0 , 1] , we have 
+
+R(t) = R(0) + 
+
+Z 1/20
+
+R′(a)1{t ∈ [a, 1 − a]} da. 
+
+Indeed, if t ≤ 1/2, the right-hand side is R(0) + R t 
+
+> 0
+
+R′(a) da = R(t); if t ≥ 1/2, it is R(0) + 
+
+R 1−t 
+
+> 0
+
+R′(a) da = R(1 − t) = R(t).Integrating this identity with respect to π gives 
+
+Z 10
+
+R(t) dπ (t) = R(0) + 
+
+Z 1/20
+
+R′(a)Pt∼π (t ∈ [a, 1 − a]) da. 
+
+Similarly, for the uniform distribution, 
+
+Z 10
+
+R(t) dt = R(0) + 
+
+Z 1/20
+
+R′(a)(1 − 2a) da, 
+
+because the interval [a, 1 − a] has length 1 − 2a.Therefore, 
+
+Z 10
+
+R(t) dπ (t) −
+
+Z 10
+
+R(t) dt =
+
+Z 1/20
+
+R′(a) ( Pt∼π (t ∈ [a, 1 − a]) − (1 − 2a)) da. 
+
+Since π is bell-shaped, 
+
+Pt∼π (t ∈ [a, 1 − a]) ≥ Pt∼U([0 ,1]) (t ∈ [a, 1 − a]) = 1 − 2a for all a ∈ [0 , 1/2) ,
+
+and since R′(a) ≥ 0, the difference above is nonnegative. It remains to show that the inequality is strict. By the definition of a bell-shaped distribution, there exists a0 ∈ (0 , 1/2) such that 
+
+Pt∼π (t ∈ [a0, 1 − a0]) > 1 − 2a0.
+
+27 Let 
+
+η := Pt∼π (t ∈ [a0, 1 − a0]) − (1 − 2a0) > 0.
+
+Choose 0 < ε < min {a0, η/ 4} and set I = [ a0 − ε, a 0]. For every a ∈ I, we have [a0, 1 − a0] ⊂
+
+[a, 1 − a], so 
+
+Pt∼π (t ∈ [a, 1 − a]) − (1 − 2a) ≥ Pt∼π (t ∈ [a0, 1 − a0]) − (1 − 2a) = η − 2( a0 − a) > η
+
+2 .
+
+Hence the bracketed term is strictly positive throughout the interval I.Since R is strictly increasing on [0 , 1/2] ,
+
+Z
+
+> I
+
+R′(a) da = R(a0) − R(a0 − ε) > 0.
+
+Therefore, 
+
+Z 10
+
+R(t) dπ (t) −
+
+Z 10
+
+R(t) dt ≥
+
+Z
+
+> I
+
+R′(a) ( Pt∼π (t ∈ [a, 1 − a]) − (1 − 2a)) da > 0.
+
+Consequently, 
+
+P
+
+
+
+M ∈ E ck t ∼ π, M i
+
+> i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+> P
+
+
+
+M ∈ E ck t ∼ U ([0 , 1]) , M i
+
+> i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+.
+
+Taking complements gives 
+
+P
+
+
+
+M ∈ E k t ∼ π, M i
+
+> i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+< P
+
+
+
+M ∈ E k t ∼ U ([0 , 1]) , M i
+
+> i.i.d.
+
+∼ Bernoulli( t)
+
+
+
+.
+
+This concludes the proof. 
+
+Remark. In measure-theoretic notation, the probability mass assigned by a probability distribution 
+
+π to an interval I ⊆ [0 , 1] is conventionally written as π(I). To make this notation more accessible to readers less familiar with this convention, we instead write the same quantity as Pt∼π (t ∈ I)
+
+throughout the main text and proofs. 
+
+## C Omitted Experimental Details and Results 
+
+C.1 Omitted Experimental Details Experimental setup used in LM1B experiments. We detokenize the One Billion Words (LM1B) dataset following prior works [ 39 , 56 ]. We tokenize LM1B using the BERT -BASE -UNCASED tok-enizer [ 19 ], and concatenate sequences to a fixed length of 128 using sentence packing [ 55 ]. We parameterize the diffusion backbone [ 39 , 56 ] using a modified diffusion transformer (DiT) archi-tecture [ 50 ] with 12 layers, hidden size 768, and 12 attention heads. We train using the AdamW optimizer with a batch size of 512, and adopt a linear warmup schedule from 0 to 3e −4 over 2,500 steps [ 56 , 39 , 57 ]. Training was conducted on 2 ×H200 GPUs for both LM1B with and without sentence packing and consumed ∼100 hours to reach 1M steps. 
+
+Experimental setup used in OWT experiments. For OpenWebText (OWT), we use the GPT-2 tokenizer [ 54 ] following prior works [ 39 , 56 ] and pack sequences to a context length of 1,024, inserting an eos token between consecutive documents. As OWT does not provide an official validation split, we reserve the last 100K documents for validation. We use the same DiT architecture specified in above LM1B setup. Following prior work [ 62 ], we train using the AdamW optimizer with a batch size of 512, and adopt a cosine annealing with weight decay scheduler with warmup from 0 to 3e −4 over 2,500 steps. Training was conducted on 4 ×H100 GPUs for OWT and consumed 
+
+∼300 hours to reach 1M steps. 
+
+Default setting for analysis on MDM training inefficiency (Sec. 3), training dynamics of MDM with various time distribution (Sec. 5.1), and analysis on other alternatives (Sec. 5.4). All experiments in these sections use LM1B with sentence packing as the default setting, and follow the aforementioned setup for LM1B experiments. For ARM, we utilize the same architecture for MDMs, and the only difference is that ARM utilizes causal attention. For σ-ARM, we just utilize 28 same architecture of ARM, yet just permute the data and RoPE [ 64 ] angle with randomly selected but fixed σ. For AoARM, we do not directly adopt the architecture of Xue et al. [ 69 ], since it does not use RoPE and injects source and target positions through sinusoidal embeddings and AdaLN, respectively. To keep the comparison compatible with our RoPE-based backbone, we implement a simple AoARM variant: source-position RoPE is applied in the first half of the layers, and target-position RoPE in the second half. Since this experiment only aims to test whether AoARM can outperform σ-ARM, this simple implementation is sufficient for our analysis. 
+
+Experimental setup used in pretraining benchmarks (Sec. 5.2). The training setup inherits all the aforementioned setups for LM1B and OWT, respectively. We report both generative and zero-shot perplexity. Generative perplexity is computed using a GPT-2 Large autoregressive model, following prior works [ 56 , 39 , 57 ], while zero-shot perplexity is evaluated on the corresponding validation splits of each dataset. See Appendix C.3 for details and results of zero-shot perplexity and generative perplexity. 
+
+Experimental setup used in continual pretraining (Sec. 5.3). We use GPT-2 Large (36 layers, 20 attention heads, hidden size 1280; 774M parameters) as the backbone and train a discrete diffusion language model with full-parameter updates. Continual pretraining (CPT) is performed on pre-tokenized FineWeb-Edu sequences with a global batch size of 256. We use a learning rate of 3e −4
+
+with 2K warmup steps and 10K annealing steps. For downstream supervised fine-tuning (SFT), we construct a 210K-example instruction-style dataset by combining the training splits of the following benchmarks: LAMBADA [ 49 ], HellaSwag [ 72 ], TriviaQA [ 28 ], OpenBookQA [ 43 ], PIQA [ 4 ], Social IQA [ 61 ], and WinoGrande [ 59 ]. This composition follows prior instruction tuning paradigm [ 60 ], where downstream benchmarks are repurposed as supervised training data to induce general reasoning capabilities. Each example is formatted as a prompt ending with Answer: followed by the target answer string. We fine-tune with a global batch size of 128, 64 diffusion steps, and a single annealing step, using a cosine learning rate schedule with 500 warmup steps in bf16 precision and full-parameter updates. All downstream experiments run for 10K SFT steps. For instruction-following evaluation, we further fine-tune on 103K cleaned S HARE GPT-GPT4 conversations, following the SFT protocol of Nie et al . [ 46 ]. Starting from 2K-step downstream SFT checkpoints, we train for an additional 10K steps with a global batch size of 128 and learning rate 1e −4. We use sequence length 1024, 64 diffusion steps, and a single annealing step. Training was conducted on 4 ×B200 GPUs and consumed ∼50 hours to reach 100K steps. To briefly explain the CPT proposed by Gong et al . [ 12 ] and used in our experiments, Gong et al . adapt pretrained autoregressive language models into diffusion language models via continued pretraining, rather than training diffusion models from scratch. Their recipe bridges the gap between ARM and diffusion modeling by converting causal attention into bidirectional denoising behavior and preserving the ARM-style shift operation during adaptation. Importantly, this CPT procedure does not introduce a new diffusion objective; it directly optimizes the standard MDM loss LMDM .In this CPT setting, applying our bell-shaped time sampling simply amounts to replacing this loss with ˆLπ , while keeping the rest of CPT recipe proposed by Gong et al . unchanged. For supervised fine-tuning, following LLaDA [ 47 ], we keep the condition tokens, such as the instruction and prompt, fixed without masking them, and mask only the response tokens for denoising under the standard MDM loss LMDM . Similarly, applying our bell-shaped time sampling in this SFT setting simply amounts to replacing LMDM with ˆLπ , while keeping the conditioning scheme unchanged. 
+
+C.2 Additional Ablation on Bell-shaped Time Sampling 
+
+We provide additional hyperparameter ablations for the time sampling distributions introduced in Table 3. All experiments use the same LM1B sentence-packed setting as in Sec. 5.1, and we report validation NLL during training. In all figures, “Base” denotes the conventional MDM objective, while Gaussian (0 .5, 0.1) denotes the default bell-shaped time sampling distribution used in the main experiments. 
+
+Dirac-delta time sampling. Fig. 8 compares Dirac-delta distributions π = δμ with different choices of μ. All delta-based variants substantially outperform the standard MDM baseline, confirming that concentrating training on a narrow range of middle-context corruption levels is beneficial. Among them, δ0.5 and δ0.4 show strong performance, whereas δ0.6 is consistently worse. Since a larger t
+
+corresponds to a lower-context regime, this result is consistent with the observation in Sec. 5.1 that shifting the sampling distribution toward μ = 0 .6 degrades training dynamics. This result might 29 0.1 0.2 0.3 0.4 0.5 
+
+> Steps (M)
+> 3.4
+> 3.5
+> 3.6
+> 3.7
+> 3.8
+> 3.9
+> 4.0
+> 4.1
+> 4.2
+> NLL
+> Base
+> Gaussian(0.5,0.1)
+> Delta(0.6)
+> Delta(0.5)
+> Delta(0.4)
+
+Figure 8: Additional ablation on Dirac-delta time sampling. We compare different choices of the delta location μ against the standard MDM baseline and the default Gaussian (0 .5, 0.1) time sampling. 0.1 0.2 0.3 0.4 0.5 
+
+> Steps (M)
+> 3.4
+> 3.5
+> 3.6
+> 3.7
+> 3.8
+> 3.9
+> 4.0
+> 4.1
+> 4.2
+> NLL
+> Base
+> Gaussian(0.5,0.1)
+> Gaussian(0.6,0.2)
+> Gaussian(0.4,0.2)
+> Gaussian(0.6,0.1)
+> Gaussian(0.5,0.2)
+> Gaussian(0.4,0.1)
+
+Figure 9: Additional ablation on truncated Gaussian time sampling. We vary the mean and standard deviation of the truncated Gaussian distribution and compare them with the standard MDM baseline and the default Gaussian (0 .5, 0.1) .indicate that the training inefficiency of low-context regime is larger than that of high-context regime. However, although delta sampling can strongly emphasize a specific context level, it removes diversity across corruption levels, which makes it less robust than the default Gaussian sampling. 
+
+Gaussian time sampling. Fig. 9 further varies the mean and standard deviation of the truncated Gaussian distribution. The results show that Gaussian time sampling is broadly effective: all Gaussian variants improve over the base MDM. Nevertheless, the mean is important. Distributions centered at μ = 0 .5 or slightly shifted to μ = 0 .4 remain strong, whereas shifting the mean toward μ = 0 .6
+
+yields worse training dynamics, especially when the variance is small. Increasing the standard deviation from σ = 0 .1 to σ = 0 .2 partially mitigates this degradation, since the distribution assigns more probability mass back to the middle-context region. These results support our default choice of Gaussian (0 .5, 0.1) : it is centered at the most balanced context level while keeping the sampling distribution sufficiently concentrated. 
+
+Laplace time sampling. Fig. 10 evaluates truncated Laplace distributions centered at μ = 0 .5 with different scale parameters. Both Laplace (0 .5, 0.1) and Laplace (0 .5, 0.2) outperform the standard MDM baseline, showing that the benefit of bell-shaped time sampling is not specific to the Gaussian family. The narrower Laplace distribution performs slightly better, while the larger-scale variant remains effective but is somewhat less competitive because its heavier tails allocate more probability mass to the low- and high-context regions. Together with the Gaussian ablation, this suggests that the crucial factor is not the exact parametric form of π(t), but whether the distribution keeps most of its probability mass around the middle-context region. 30 0.1 0.2 0.3 0.4 0.5 
+
+> Steps (M)
+> 3.4
+> 3.5
+> 3.6
+> 3.7
+> 3.8
+> 3.9
+> 4.0
+> 4.1
+> 4.2
+> NLL
+> Base
+> Gaussian(0.5,0.1)
+> Laplace(0.5,0.2)
+> Laplace(0.5,0.1)
+
+Figure 10: Additional ablation on truncated Laplace time sampling. We compare Laplace distributions with different scale parameters against the standard MDM baseline and the default Gaussian (0 .5, 0.1) .Table 7: Zero-shot perplexities ( ↓) of models trained for 1M steps on OpenWebText (mean ± std over 5 seeds).                                                  
+
+> Training Benchmark
+> PTB Wikitext LM1B Lambada AG News Pubmed Arxiv Base 115.99 ±5.60 37.76 ±0.94 72.06 ±0.45 48.18 ±1.18 68.31 ±1.19 43.15 ±0.13 37.85 ±0.14
+> Gaussian 98.16 ±4.29 34.51 ±0.80 67.71 ±0.38 46.39 ±1.05 61.74 ±1.26 41.43 ±0.11 37.88 ±0.15
+
+C.3 Zero-shot Perplexity and Generative Perplexity of Models Trained on OpenWebText 
+
+We provide zero-shot perplexity and generative perplexity for models trained on OWT in Table 7 and 8, respectively. Following prior works [ 56 , 23 ], we utilize 7 zero-shot perplexity benchmarks, including PTB [ 41 ], Wikitext [ 42 ], LM1B, Lambada [ 49 ], AG News [ 73 ], Pubmed [ 7], and Arxiv [ 7]. The generative PPL is computed by a pre-trained GPT-2 Large on 100 generated samples with length of 1024. As shown in the tables, the model trained with Gaussian time sampling consistently outperforms the baseline. 
+
+C.4 Other Explored Training Techniques in Detail 
+
+In this section, we further explain the details of the other training techniques briefly described in Sec. 5.4. Recall that, for a strictly decreasing scheduler αt, the continuous-time NELBO of MDM can be written as 
+
+LMDM =
+
+Z 10
+
+−α′
+
+> t
+
+1 − αt
+
+Ex∼pdata , xt∼qt|0
+
+h X 
+
+> i:xit=m
+
+− log pθ (xi | xt, t )
+
+i
+
+dt. (28) As in the main experimental results, we use a truncated Gaussian density for the middle-biased alternatives in Sec. 5.4. Define 
+
+fTG (t) = 1
+
+σZ φ
+
+ t − μσ
+
+
+
+, t ∈ [ℓ, h ], (29) where Z is the normalization constant. We regard fTG (a) as zero outside [ℓ, h ]. Note that we utilized 
+
+ℓ = 0 , h = 1 , μ = 0 .5 and σ = 0 .1 for all experiments in Sec. 5.4. 
+
+Middle-flat noise scheduler αMF  
+
+> t
+
+. Prior works [ 56 , 62 ] show that the NELBO of MDM is invariant to the specific choice of αt. In this regard, a natural alternative is to modify the scheduler itself so that the model encounters middle-context samples more often while still optimizing the theoretical NELBO. To this end, define the truncated-normal CDF 
+
+FTG (t) := 
+
+Z tℓ
+
+fTG (u) du, (30) and choose the scheduler as 
+
+αMF  
+
+> t
+
+= F −1TG (1 − t), t ∼ Uniform(0 , 1) . (31) 31 Table 8: Generative PPL ( ↓) of models trained for 1M steps on OpenWebText (mean ± std over 5 seeds). NFE denotes the number of function evaluations used during generation.                                
+
+> NFE 512 1024 2048
+> Base 56.51 ±1.12 42.81 ±0.73 36.04 ±1.53 Gaussian 55.50 ±1.05 41.55 ±2.09 33.89 ±0.91      
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 𝛼 !
+> PDF
+>      
+> 
+> 
+> 
+> 
+
+αt
+
+Figure 11: Left: the middle-flat scheduler αMF  
+
+> t
+
+= F −1TG (1 − t) with ℓ = 0 , h = 1 , μ = 0 .5 and 
+
+σ = 0 .1 is flatter around α = 0 .5 than the linear scheduler, so a uniform draw of t produces many more middle-context corruption levels. Right: under t ∼ Uniform(0 , 1) , the induced marginal distribution of αMF  
+
+> t
+
+matches the target truncated-Gaussian density fTG (a).Recall that the forward process of MDM is defined as follows: 
+
+q(xit | x) = qt|0(· | xi) = Cat( αtexi + (1 − αt)em) ,
+
+Thus, the model indeed sees many more middle-context samples if we set αt as αMF  
+
+> t
+
+rather than the original linear scheduler of MDM, i.e ., 1 − t, as visualized in Fig. 11. However, this does not give the same objective as bell-shaped time sampling and is equal to the theoretical NELBO of MDM (Eq. (1)). The reason is that the NELBO already contains the scheduler-dependent prefactor −α′
+
+> t
+
+/(1 − αt). Formally, 
+
+dα MF 
+
+> t
+
+dt = − 1
+
+fTG (αMF  
+
+> t
+
+) , (32) and therefore 
+
+−αMF ′
+
+> t
+
+1 − αMF 
+
+> t
+
+= 1(1 − αMF  
+
+> t
+
+)fTG (αMF  
+
+> t
+
+) . (33) Since fTG (a) is largest around the middle region, the NELBO prefactor in Eq. (33) becomes smallest near the middle and larger away from it. In other words, the apparent oversampling of middle-context scheduler values is compensated by a smaller NELBO prefactor. Therefore, the practical difference between bell-shaped time sampling and the middle-flat scheduler is twofold: 1) as discussed above, the middle-flat scheduler does not modify the learning signal itself, and thus cannot concentrate training on the middle-context region. 2) The scaling factor 
+
+−αMF ′ 
+
+> t
+
+/1 − αMF  
+
+> t
+
+of the middle-flat scheduler becomes much larger near t = 0 or t = 1 than that of αt = 1 − t, increasing the variance of the mini-batch estimator itself. For these two reasons, we conjecture that the middle-flat scheduler performs worse than the conventional MDM loss. 
+
+Importance sampling. Another possible alternative is to keep the canonical absorbing-state scheduler 
+
+αt = 1 − t, but to reweight the loss so that the resulting objective matches bell-shaped time sampling in expectation. Concretely, we keep drawing t uniformly, and use the importance ratio fTG (t), then the reweighted objective then becomes 
+
+LIS =
+
+Z 10
+
+fTG (t)
+
+t Ex∼pdata , xt∼qt|0
+
+− X
+
+> i:xit=m
+
+log pθ (xi | xt, t )dt 
+
+32 where −α′
+
+> t
+
+/(1 − αt) = 1 /t for αt = 1 − t. Here, if we drop t in the denominator, LIS matches the 
+
+same expectation as bell-shaped time sampling. The result shown in Fig. 7 corresponds to the setting where we drop t in the denominator, but we observed similar trends even when we do not drop t in the denominator. The practical difference between importance sampling and ours is that importance sampling does 
+
+not alter which corruption levels are actually drawn in a minibatch: samples are still generated from the uniform schedule, and only their scalar losses are reweighted afterward. By contrast, bell-shaped time sampling directly draws middle-context samples more frequently. Hence, although importance sampling and bell-shaped time sampling optimize the same objective in expectation, their optimization dynamics can differ substantially in practice; the former may suffer from a noisier gradient estimator because informative middle-context samples are not physically sampled more often. 
+
+C.5 Stratified Sampling 
+
+Recall that our bell-shaped time sampling loss is given as follows: 
+
+ˆLπ = Ex∼pdata , t ∼π, xt∼qt|0(·| x)
+
+h
+
+− P 
+
+> i:xit=m
+
+log pθ (xi | xt, t )
+
+i
+
+. (34) A practical issue arises when π is sharply concentrated around the middle-context region. If each 
+
+ti in a mini-batch is drawn independently from π, some batches can contain too many samples from the same context regime, which increases the variance of the gradient estimator and may destabilize optimization. To mitigate this, we utilize stratified time sampling , which is widely used in prior works [ 56 , 57 ]. Intuitively, stratified sampling divides the probability mass of the target time distribution into B equal-probability strata and draws one sample from each stratum. This makes each mini-batch cover the target time distribution more evenly than i.i.d. sampling, while preserving the expectation of the batch estimator. To our knowledge, no prior work has applied stratified sampling to bell-shaped time sampling distributions, so we describe it here in detail. Let Fπ denote the CDF of π. For a batch of size B,instead of i.i.d. sampling ti∼π, we first stratify the unit interval: 
+
+ˆui = i−1 
+
+> B
+
+, ϵi ∼ U [0 , 1 
+
+> B
+
+), ui = ˆ ui + ϵi,
+
+for i ∈ [B], and then map through the inverse CDF, tstrat  
+
+> i
+
+= F −1 
+
+> π
+
+(ui). This preserves the expectation of the batch estimator while reducing its variance compared with naive sampling. Note that all experiments in our paper utilized stratified sampling. 
+
+## D Limitations 
+
+We showed that bell-shaped time sampling is effective not only for from-scratch training, but also for billion-scale CPT with ARM initialization. In Sec. 5.1 and Appendix C.2, we further analyzed the training dynamics of a wide range of bell-shaped distributions on LM1B. Nevertheless, the optimal bell-shaped time distribution may depend on dataset characteristics and model scale, and a more systematic analysis of this dependence remains an important direction. Still, our experiments suggest that a Gaussian distribution with mean 0.5 and standard deviation 0.1 works robustly across most settings. Another promising future direction is to investigate whether bell-shaped time sampling can also benefit post-training methods, such as reinforcement learning. 
+
+## E Qualitative Examples 
+
+In this section, we provide qualitative generation examples from the instruction-following models evaluated in Sec. 5.3. Specifically, we compare the outputs of the base MDM and the bell-shaped time sampling trained MDM after applying the same ShareGPT supervised fine-tuning procedure. These qualitative examples indicate that, after the same number of training steps, the base MDM has not yet acquired the ability to perform conditional generation, whereas our MDM trained with bell-shaped time sampling already demonstrates this ability. 33 (a) Salary-negotiation email generation User Prompt 
+
+You need to write an email to negotiate your salary. 
+
+Base MDM 
+
+However, to understand how you need to negotiate your salary, you need to understand the following steps. To negotiate your salary, you need to need to understand the following of steps steps: 1. negotiate a fair salary: negotiating a fair salary is a salary that is fair to the parties and the b. 2. negotiate a fair salary that is a and the a a salary that is fair to the parties a and the b. 3. negotiate a fair salary that is fair to the parties a and the b. 4. negotiate fair salary5. negotiate the fair salary that is fair to the parties and the b... 
+
+Gaussian time trained MDM 
+
+Sure, here’s an example of an email that you could use to negotiate your salary: Subject: Request for a Salary Raise Dear [Name], I am writing to request a salary raise. Iunderstand that you are a full-time employee and you are entitled to a salary salary. However, I would like to request that you consider a salary raise. I understand that you are a valuable employee and I would like to ensure that you are able to achieve your full potential. I would like to schedule an effort to negotiate your salary. Thank you for your consideration... 
+
+(b) Professional feedback email generation User Prompt 
+
+Draft a professional email seeking your supervisor’s feedback on the ‘Quarterly Financial Report’ you prepared. Ask specifically about the data analysis, presentation style, and the clarity of conclusions drawn. Keep the email short and to the point. 
+
+Base MDM 
+
+Additionally, please encourage the reader to read the rest of the report. Now, here’s the revised version of the email with the changes: Subject: Your supervisor’s feedback on the requested: , the Quarterly Financial Report’ Subject: Feedback on the ‘Quarterly Financial Report’ To: :: Your Supervisor’s Name, ... [Your Supervisor’s Name] Best regards, [Your Name, Your Supervisor Name]... 
+
+Gaussian time trained MDM 
+
+Subject: Dear , I am writing to request your feedback on the ‘Quarterly Financial Report’ prepared for the upcoming quarter. I would appreciate your feedback on the data analysis, presentation style, and clarity of the conclusions drawn. I would also appreciate your feedback on the presentation of the data and the overall clarity of the financial report. Thank you for your time and consideration... 
+
+Figure 12: Qualitative comparisons on professional email generation tasks. Across both email-writing tasks, the baseline MDM frequently degenerates into malformed formatting and repetitive text fragments. In contrast, the Gaussian time trained MDM generates substantially more coherent responses with recognizable email structure, appropriate formatting, and improved instruction follow-ing, despite minor repetition artifacts. 34 (a) Method extraction from scientific abstracts User Prompt 
+
+Extract the method that has been used in the research from the abstract of the paper. Give the exact sentences from the abstract that discuss the method. 
+
+Input Abstract 
+
+We present a state-of-the-art speech recognition system developed using end-to-end deep learning. Our architecture is significantly simpler than traditional speech systems, which rely on laboriously engineered processing pipelines; these traditional systems also tend to perform poorly when used in noisy environments. In contrast, our system does not need hand-designed components to model background noise, reverberation, or speaker variation, but instead directly learns a function that is robust to such effects. We do not need a phoneme dictionary, nor even the concept of a “phoneme.” Key to our approach is a well-optimized RNN training system that uses multiple GPUs, as well as a set of novel data synthesis techniques that allow us to efficiently obtain a large amount of varied data for training. 
+
+Base MDM 
+
+The paper discusses a speech recognition method developed using end-to-end deep learning that is simpler than traditional speech systems. The. The. The.. The... The. processing noisy environments.. The. The. The The.. The. The The..... 
+
+Gaussian time trained MDM 
+
+“We present a state-of-the-art speech recognition system developed using end-to-end deep learning.” “In contrast, our system does not need hand-designed components to model background noise, reverberation, or speaker variation, but instead directly learns a function that is robust to such effects.” “Key to our approach is a well-optimized RNN training system that uses multiple GPUs, as well as a set of novel data synthesis techniques that allow us to efficiently obtain a large amount of varied data for training.” 
+
+(b) Open-ended opinion generation User Prompt 
+
+What do you think about ChatGPT? 
+
+Base MDM 
+
+* Do you think ChatGPT isPT? * Chat? * Do you think ChatGPT is a GPT? * Do you think ChatGPT is a Chat? * Do you think think ChatGPT is a Chat? * Do you think ChatGPT is a GPT? * Do you think ChatGPT is ChatGPT is a GPT? * Do you think ChatGPT is a GPT? * Do Do you think ChatGPT is a GPT?... 
+
+Gaussian time trained MDM 
+
+I am impressed with ChatGPT. ChatGPT is a powerful AI model that can handle a wide range of tasks, including language translation, text generation, and sentiment analysis. It is also able to learn from large amounts of data and adapt to new situations. I am particularly impressed with ChatGPT’s ability to learn quickly, adapt to new tasks, and provide high-quality responses. ChatGPT is a large language model designed to generate text based on user input and assist with a wide variety of applications... 
+
+Figure 13: Qualitative comparisons between the baseline MDM and Gaussian time trained MDM. Across both structured extraction and open-ended generation tasks, the baseline model fre-quently degenerates into repetitive or malformed text, whereas the Gaussian-trained model produces substantially more coherent and instruction-following responses. 35 Table 9: Existing datasets and benchmarks used in this work. “Not explicitly specified” means that we could not find an explicit dataset license from the official provider or public dataset card. 
+
+Asset Usage License / usage terms 
+
+LM1B [5] Pretraining / validation Not explicitly specified on the official bench-mark page; derived from WMT 2011 News Crawl data. OpenWebText [11] Pretraining / validation CC0-1.0 for dataset packaging. FineWeb-Edu [40] Continual pretraining ODC-By 1.0; CommonCrawl Terms of Use apply. WinoGrande [59] Downstream SFT / evalu-ation CC-BY for dataset, version not specified in official README; Apache-2.0 for code HellaSwag [72] Downstream SFT / evalu-ation MIT. Social IQA [61] Downstream SFT / evalu-ation CC-BY-4.0. PIQA [4] Downstream SFT / evalu-ation Academic Free License v3.0 (AFL-3.0) OpenBookQA [43] Downstream SFT / evalu-ation Apache-2.0 for official repository; dataset li-cense not separately specified. TriviaQA [28] Downstream SFT / evalu-ation Apache-2.0 for code and data ROCStories [44] Downstream SFT / evalu-ation CC-BY-4.0. PTB [41] Zero-shot PPL evaluation LDC User Agreement for Non-Members. WikiText [42] Zero-shot PPL evaluation CC-BY-SA-4.0. LAMBADA [49] Zero-shot PPL / down-stream evaluation CC-BY-4.0. AG News [73] Zero-shot PPL evaluation Research / non-commercial use. Scientific Papers: PubMed / arXiv [7] Zero-shot PPL evaluation Source-specific OA licenses; code repository Apache-2.0. SHARE GPT-GPT4 Instruction-following SFT CC-BY-4.0 for the commonly used 
+
+sharegpt_gpt4 release. AlpacaEval 2.0 [36] Instruction-following evaluation CC-BY-NC-4.0 per HF dataset metadata; Apache-2.0 for code. Note: HF script con-tains an inconsistent CC-BY-4.0 field. MT-Bench [77] Instruction-following evaluation Apache-2.0 via FastChat. 
+
+## F Assets and Licenses 
+
+We provide licenses for datasets and benchmarks in Table 9. 36

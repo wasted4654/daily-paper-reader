@@ -1,0 +1,93 @@
+{
+  "label": "2026-05-16",
+  "date": "2026-05-16",
+  "generated_at": "2026-05-16T19:48:53",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202605/16/2605.12624v1-mindvla-u1-vla-beats-va-with-unified-streaming-architecture-for-autonomous-driving",
+      "section": "deep",
+      "title_en": "MindVLA-U1: VLA Beats VA with Unified Streaming Architecture for Autonomous Driving",
+      "authors": "Yuzhou Huang, Benjin Zhu, Hengtong Lu, Victor Shea-Jay Huang, Haiming Zhang, Wei Chen, Jifeng Dai, Yan Xie, Hongsheng Li",
+      "date": "2026-05-12",
+      "pdf": "https://arxiv.org/pdf/2605.12624v1",
+      "score": "9.0",
+      "evidence": "用于端到端自动驾驶的统一流式VLA架构",
+      "tldr": "MindVLA-U1是首个用于自动驾驶的统一流式视觉-语言-动作（VLA）架构，旨在解决以往VLA模型在规划质量上逊于VA模型的问题。该研究通过统一的VLM主干网络在单次前向传播中同步生成语言描述与连续动作轨迹，并引入流式设计与学习记忆通道来高效处理时序上下文。实验表明，该模型在WOD-E2E基准测试中首次超越了人类驾驶水平，在保持高吞吐量的同时实现了最先进的规划性能。",
+      "tags": "query:genad",
+      "abstract_en": "Autonomous driving has progressed from modular pipelines toward end-to-end unification, and Vision-Language-Action (VLA) models are a natural extension of this journey beyond Vision-to-Action (VA). In practice, driving VLAs have often trailed VA on planning quality, suggesting that the difficulty is not simply model scale but the interface through which semantic reasoning, temporal context, and continuous control are combined. We argue that this gap reflects how VLA has been built -- as isolated subtask improvements that fail to compose into coherent driving capabilities -- rather than what VLA is. We present MindVLA-U1, the first unified streaming VLA architecture for autonomous driving. A unified VLM backbone produces autoregressive language tokens and flow-matching continuous action trajectories in a single forward pass over one shared representation, preserving the natural output form of each modality. A streaming design processes the driving video framewise rather than as fixed video-action chunks, while a learned memory channel carries temporal context across frames so planned trajectories evolve smoothly without redundant multi-frame VLM modeling. The unified architecture admits fast/slow execution on dense/sparse Mixture-of-Transformers (MoT) backbones via flexible self-attention context management, and exposes a measurable language-to-action route: a language-predicted driving intent steers action diffusion through classifier-free guidance (CFG), turning language-side intent into a control signal for continuous trajectory generation. On the long-tail WOD-E2E benchmark, MindVLA-U1 surpasses experienced human drivers for the first time (8.20 RFS vs. 8.13 GT RFS) with 2 diffusion steps, achieves state-of-the-art planning ADEs over prior VA/VLA methods by large margins, and matches VA-class throughput (16 FPS vs. RAP-DINO's 18 FPS) while preserving natural-language interfaces.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/16/2605.14487v1-head-forcing-long-autoregressive-video-generation-via-head-heterogeneity",
+      "section": "deep",
+      "title_en": "Head Forcing: Long Autoregressive Video Generation via Head Heterogeneity",
+      "authors": "Jiahao Tian, Yiwei Wang, Gang Yu, Chi Zhang",
+      "date": "2026-05-14",
+      "pdf": "https://arxiv.org/pdf/2605.14487v1",
+      "score": "9.0",
+      "evidence": "自回归视频扩散模型架构",
+      "tldr": "自回归视频扩散模型在长视频生成中常面临误差累积和上下文丢失问题。本研究发现Transformer中的注意力头具有功能异质性，分为局部、锚点和记忆头。据此提出Head Forcing框架，无需训练即可为不同类型的头分配定制化KV缓存策略，并结合RoPE重编码确保位置编码有效性。该方法将视频生成时长从5秒扩展至分钟级，支持多提示交互合成，性能显著优于现有基准。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive video diffusion models support real-time synthesis but suffer from error accumulation and context loss over long horizons. We discover that attention heads in AR video diffusion transformers serve functionally distinct roles as local heads for detail refinement, anchor heads for structural stabilization, and memory heads for long-range context aggregation, yet existing methods treat them uniformly, leading to suboptimal KV cache allocation. We propose Head Forcing, a training-free framework that assigns each head type a tailored KV cache strategy: local and anchor heads retain only essential tokens, while memory heads employ a hierarchical memory system with dynamic episodic updates for long-range consistency. A head-wise RoPE re-encoding scheme further ensures positional encodings remain within the pretrained range. Without additional training, Head Forcing extends generation from 5 seconds to minute-level duration, supports multi-prompt interactive synthesis, and consistently outperforms existing baselines. Project Page: https://jiahaotian-sjtu.github.io/headforcing.github.io/.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/16/2605.08078v2-normalizing-trajectory-models",
+      "section": "quick",
+      "title_en": "Normalizing Trajectory Models",
+      "authors": "Jiatao Gu, Tianrong Chen, Ying Shen, David Berthelot, Shuangfei Zhai, Josh Susskind",
+      "date": "2026-05-08",
+      "pdf": "https://arxiv.org/pdf/2605.08078v2",
+      "score": "7.0",
+      "evidence": "在扩散步骤中使用条件归一化流进行轨迹建模",
+      "tldr": "扩散模型在少步采样时因高斯去噪假设失效而表现不佳，现有加速方法往往牺牲了似然框架。本文提出归一化轨迹模型（NTM），将每一步建模为可计算精确似然的条件归一化流。NTM结合了浅层可逆块与深层并行预测器，支持从头训练或微调预训练模型。通过精确轨迹似然实现的自蒸馏，NTM在仅需4步采样的情况下，在文生图任务中达到或超越了现有基准，同时保留了生成轨迹的精确似然评估能力。",
+      "tags": "query:diffpl",
+      "abstract_en": "Diffusion-based models decompose sampling into many small Gaussian denoising steps -- an assumption that breaks down when generation is compressed to a few coarse transitions. Existing few-step methods address this through distillation, consistency training, or adversarial objectives, but sacrifice the likelihood framework in the process. We introduce Normalizing Trajectory Models (NTM), which models each reverse step as an expressive conditional normalizing flow with exact likelihood training. Architecturally, NTM combines shallow invertible blocks within each step with a deep parallel predictor across the trajectory, forming an end-to-end network trainable from scratch or initializable from pretrained flow-matching models. Its exact trajectory likelihood further enables self-distillation: a lightweight denoiser trained on the model's own score produces high-quality samples in four steps. On text-to-image benchmarks, NTM matches or outperforms strong image generation baselines in just four sampling steps while uniquely retaining exact likelihood over the generative trajectory.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/16/2605.13026v1-understanding-and-accelerating-the-training-of-masked-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Understanding and Accelerating the Training of Masked Diffusion Language Models",
+      "authors": "Chunsan Hong, Sanghyun Lee, Chieh-Hsin Lai, Satoshi Hayakawa, Yuhta Takida, Yuki Mitsufuji, Seungryong Kim, Jong Chul Ye",
+      "date": "2026-05-13",
+      "pdf": "https://arxiv.org/pdf/2605.13026v1",
+      "score": "7.0",
+      "evidence": "掩码扩散模型与自回归模型的对比",
+      "tldr": "掩码扩散模型（MDM）是自回归模型的有力竞争者，但其训练速度较慢。本文深入分析发现，语言的局部性偏差（即预测信息集中在邻近位置）是导致训练缓慢的主因。为此，研究者提出了一种简单有效的“钟形时间采样”训练策略。实验表明，该方法在LM1B基准上将训练速度提升了约4倍，并在生成困惑度和下游任务性能上均有显著改进。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion models (MDMs) have emerged as a promising alternative to autoregressive models (ARMs) for language modeling. However, MDMs are known to learn substantially more slowly than ARMs, which may become problematic when scaling MDMs to larger models. Therefore, we ask the following question: how can we accelerate standard MDM training while maintaining its final performance? To this end, we first provide a detailed analysis of why MDM training is slow. We find that the main factor is the locality bias of language: the predictive information for a token is concentrated in nearby positions. We further investigate how this bias slows learning and suggest a simple yet effective remedy: bell-shaped time sampling as a training strategy. Notably, MDMs trained with our training recipe reach the same validation negative log-likelihood (NLL) up to $\\sim4\\times$ faster than standard training on One Billion Word Benchmark (LM1B). We also show faster improvements in generative perplexity, zero-shot perplexity, and downstream task performance on various benchmarks.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/16/2605.12805v1-discrete-meanflow-one-step-generation-via-conditional-transition-kernels",
+      "section": "quick",
+      "title_en": "Discrete MeanFlow: One-Step Generation via Conditional Transition Kernels",
+      "authors": "Fairoz Nower Khan, Nabuat Zaman Nahim, Md Sajid Ahmed, Ruiquan Huang, Peizhong Ju",
+      "date": "2026-05-12",
+      "pdf": "https://arxiv.org/pdf/2605.12805v1",
+      "score": "6.0",
+      "evidence": "通过转移核进行离散状态空间生成",
+      "tldr": "本文提出了 Discrete MeanFlow 框架，旨在解决离散状态空间中生成模型依赖多步迭代的问题。该方法通过引入连续时间马尔可夫链（CTMC）的条件转移核，将连续空间的 MeanFlow 思想扩展至离散领域。通过学习有限时间间隔内的平均概率变化率，并结合边界构造设计，该模型实现了仅需单次前向传播和类别采样的单步生成，显著提高了离散数据的生成效率。",
+      "tags": "query:ardm",
+      "abstract_en": "MeanFlow enables one-step generation in continuous spaces by learning an average velocity over a time interval rather than the instantaneous velocity field of flow matching. However, discrete state spaces do not have smooth trajectories or spatial derivatives, so the continuous formulation does not directly apply. We introduce Discrete MeanFlow, which replaces the motion of a point with the transport of probability mass over finite states. Our key object is the conditional transition kernel of a continuous-time Markov chain (CTMC), from which we define a mean discrete rate that measures the average change in transition probability over a time interval. We prove a Discrete MeanFlow identity that relates this finite-interval rate to the instantaneous CTMC generator at the endpoint, with the Kolmogorov forward equation replacing the spatial chain rule of continuous MeanFlow. Based on this identity, we parameterize the transition kernel directly using a boundary-by-construction design that guarantees valid probability outputs and exact boundary conditions without auxiliary losses. Since the learned kernel is itself a probability distribution, generation reduces to a single forward pass followed by one categorical draw meaning no iterative denoising, ODE integration, or multi-step refinement is required. We validate the framework on exact finite-state Markov chains, where the learned kernel recovers the analytical ground truth to high precision, and on factorized synthetic sequence generation tasks with varying alphabet sizes and sequence lengths.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/16/2605.15178v1-sana-wm-efficient-minute-scale-world-modeling-with-hybrid-linear-diffusion-transformer",
+      "section": "quick",
+      "title_en": "SANA-WM: Efficient Minute-Scale World Modeling with Hybrid Linear Diffusion Transformer",
+      "authors": "Haoyi Zhu, Haozhe Liu, Yuyang Zhao, Tian Ye, Junsong Chen, Jincheng Yu, Tong He, Song Han, Enze Xie",
+      "date": "2026-05-14",
+      "pdf": "https://arxiv.org/pdf/2605.15178v1",
+      "score": "6.0",
+      "evidence": "用于视频和轨迹控制的生成式世界模型",
+      "tldr": "SANA-WM 是一个 2.6B 参数的开源世界模型，旨在实现高效的分钟级 720p 视频生成。它结合了混合线性注意力机制、双分支相机控制和两阶段生成管线，仅需少量公开数据和计算资源即可训练完成。该模型在保持高视觉质量的同时，显著提升了推理效率，支持在单块消费级显卡上运行，为长视频生成和世界建模提供了高效的开源方案。",
+      "tags": "query:genad",
+      "abstract_en": "We introduce SANA-WM, an efficient 2.6B-parameter open-source world model natively trained for one-minute generation, synthesizing high-fidelity, 720p, minute-scale videos with precise camera control. SANA-WM achieves visual quality comparable to large-scale industrial baselines such as LingBot-World and HY-WorldPlay, while significantly improving efficiency. Four core designs drive our architecture: (1) Hybrid Linear Attention combines frame-wise Gated DeltaNet (GDN) with softmax attention for memory-efficient long-context modeling. (2) Dual-Branch Camera Control ensures precise 6-DoF trajectory adherence. (3) Two-Stage Generation Pipeline applies a long-video refiner to stage-1 outputs, improving quality and consistency across sequences. (4) Robust Annotation Pipeline extracts accurate metric-scale 6-DoF camera poses from public videos to yield high-quality, spatiotemporally consistent action labels. Driven by these designs, SANA-WMdemonstrates remarkable efficiency across data, training compute, and inference hardware: it uses only $\\sim$213K public video clips with metric-scale pose supervision, completes training in 15 days on 64 H100s, and generates each 60s clip on a single GPU; its distilled variant can be deployed on a single RTX 5090 with NVFP4 quantization to denoise a 60s 720p clip in 34s. On our one-minute world-model benchmark, SANA-WM demonstrates stronger action-following accuracy than prior open-source baselines and achieves comparable visual quality at $36\\times$ higher throughput for scalable world modeling.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

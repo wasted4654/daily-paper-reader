@@ -1,0 +1,260 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-16T19:42:32.396950+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2605.12624v1",
+      "title": "MindVLA-U1: VLA Beats VA with Unified Streaming Architecture for Autonomous Driving",
+      "abstract": "Autonomous driving has progressed from modular pipelines toward end-to-end unification, and Vision-Language-Action (VLA) models are a natural extension of this journey beyond Vision-to-Action (VA). In practice, driving VLAs have often trailed VA on planning quality, suggesting that the difficulty is not simply model scale but the interface through which semantic reasoning, temporal context, and continuous control are combined. We argue that this gap reflects how VLA has been built -- as isolated subtask improvements that fail to compose into coherent driving capabilities -- rather than what VLA is. We present MindVLA-U1, the first unified streaming VLA architecture for autonomous driving. A unified VLM backbone produces autoregressive language tokens and flow-matching continuous action trajectories in a single forward pass over one shared representation, preserving the natural output form of each modality. A streaming design processes the driving video framewise rather than as fixed video-action chunks, while a learned memory channel carries temporal context across frames so planned trajectories evolve smoothly without redundant multi-frame VLM modeling. The unified architecture admits fast/slow execution on dense/sparse Mixture-of-Transformers (MoT) backbones via flexible self-attention context management, and exposes a measurable language-to-action route: a language-predicted driving intent steers action diffusion through classifier-free guidance (CFG), turning language-side intent into a control signal for continuous trajectory generation. On the long-tail WOD-E2E benchmark, MindVLA-U1 surpasses experienced human drivers for the first time (8.20 RFS vs. 8.13 GT RFS) with 2 diffusion steps, achieves state-of-the-art planning ADEs over prior VA/VLA methods by large margins, and matches VA-class throughput (16 FPS vs. RAP-DINO's 18 FPS) while preserving natural-language interfaces.",
+      "authors": [
+        "Yuzhou Huang",
+        "Benjin Zhu",
+        "Hengtong Lu",
+        "Victor Shea-Jay Huang",
+        "Haiming Zhang",
+        "Wei Chen",
+        "Jifeng Dai",
+        "Yan Xie",
+        "Hongsheng Li"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-12T18:09:42+00:00",
+      "link": "https://arxiv.org/pdf/2605.12624v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Unified streaming VLA architecture for end-to-end autonomous driving",
+      "llm_evidence_cn": "用于端到端自动驾驶的统一流式VLA架构",
+      "llm_evidence": "用于端到端自动驾驶的统一流式VLA架构",
+      "canonical_evidence": "用于端到端自动驾驶的统一流式VLA架构",
+      "llm_tldr_en": "MindVLA-U1 is a unified streaming VLA architecture for end-to-end autonomous driving.",
+      "llm_tldr_cn": "MindVLA-U1是一种用于端到端自动驾驶的统一流式VLA架构。",
+      "llm_tldr": "MindVLA-U1是一种用于端到端自动驾驶的统一流式VLA架构。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.14487v1",
+      "title": "Head Forcing: Long Autoregressive Video Generation via Head Heterogeneity",
+      "abstract": "Autoregressive video diffusion models support real-time synthesis but suffer from error accumulation and context loss over long horizons. We discover that attention heads in AR video diffusion transformers serve functionally distinct roles as local heads for detail refinement, anchor heads for structural stabilization, and memory heads for long-range context aggregation, yet existing methods treat them uniformly, leading to suboptimal KV cache allocation. We propose Head Forcing, a training-free framework that assigns each head type a tailored KV cache strategy: local and anchor heads retain only essential tokens, while memory heads employ a hierarchical memory system with dynamic episodic updates for long-range consistency. A head-wise RoPE re-encoding scheme further ensures positional encodings remain within the pretrained range. Without additional training, Head Forcing extends generation from 5 seconds to minute-level duration, supports multi-prompt interactive synthesis, and consistently outperforms existing baselines. Project Page: https://jiahaotian-sjtu.github.io/headforcing.github.io/.",
+      "authors": [
+        "Jiahao Tian",
+        "Yiwei Wang",
+        "Gang Yu",
+        "Chi Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-05-14T07:27:39+00:00",
+      "link": "https://arxiv.org/pdf/2605.14487v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive video diffusion models architecture",
+      "llm_evidence_cn": "自回归视频扩散模型架构",
+      "llm_evidence": "自回归视频扩散模型架构",
+      "canonical_evidence": "自回归视频扩散模型架构",
+      "llm_tldr_en": "Proposes Head Forcing to improve long-horizon consistency in autoregressive video diffusion transformers.",
+      "llm_tldr_cn": "提出Head Forcing框架，通过异构注意力头管理提升自回归视频扩散模型的长程一致性。",
+      "llm_tldr": "提出Head Forcing框架，通过异构注意力头管理提升自回归视频扩散模型的长程一致性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.08078v2",
+      "title": "Normalizing Trajectory Models",
+      "abstract": "Diffusion-based models decompose sampling into many small Gaussian denoising steps -- an assumption that breaks down when generation is compressed to a few coarse transitions. Existing few-step methods address this through distillation, consistency training, or adversarial objectives, but sacrifice the likelihood framework in the process. We introduce Normalizing Trajectory Models (NTM), which models each reverse step as an expressive conditional normalizing flow with exact likelihood training. Architecturally, NTM combines shallow invertible blocks within each step with a deep parallel predictor across the trajectory, forming an end-to-end network trainable from scratch or initializable from pretrained flow-matching models. Its exact trajectory likelihood further enables self-distillation: a lightweight denoiser trained on the model's own score produces high-quality samples in four steps. On text-to-image benchmarks, NTM matches or outperforms strong image generation baselines in just four sampling steps while uniquely retaining exact likelihood over the generative trajectory.",
+      "authors": [
+        "Jiatao Gu",
+        "Tianrong Chen",
+        "Ying Shen",
+        "David Berthelot",
+        "Shuangfei Zhai",
+        "Josh Susskind"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-05-08T17:57:14+00:00",
+      "link": "https://arxiv.org/pdf/2605.08078v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "trajectory modeling using conditional normalizing flows in diffusion steps",
+      "llm_evidence_cn": "在扩散步骤中使用条件归一化流进行轨迹建模",
+      "llm_evidence": "在扩散步骤中使用条件归一化流进行轨迹建模",
+      "canonical_evidence": "在扩散步骤中使用条件归一化流进行轨迹建模",
+      "llm_tldr_en": "Models reverse diffusion steps as normalizing flows for improved trajectory generation and likelihood.",
+      "llm_tldr_cn": "将反向扩散步骤建模为归一化流，以改进轨迹生成和似然估计。",
+      "llm_tldr": "将反向扩散步骤建模为归一化流，以改进轨迹生成和似然估计。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.12805v1",
+      "title": "Discrete MeanFlow: One-Step Generation via Conditional Transition Kernels",
+      "abstract": "MeanFlow enables one-step generation in continuous spaces by learning an average velocity over a time interval rather than the instantaneous velocity field of flow matching. However, discrete state spaces do not have smooth trajectories or spatial derivatives, so the continuous formulation does not directly apply. We introduce Discrete MeanFlow, which replaces the motion of a point with the transport of probability mass over finite states. Our key object is the conditional transition kernel of a continuous-time Markov chain (CTMC), from which we define a mean discrete rate that measures the average change in transition probability over a time interval. We prove a Discrete MeanFlow identity that relates this finite-interval rate to the instantaneous CTMC generator at the endpoint, with the Kolmogorov forward equation replacing the spatial chain rule of continuous MeanFlow. Based on this identity, we parameterize the transition kernel directly using a boundary-by-construction design that guarantees valid probability outputs and exact boundary conditions without auxiliary losses. Since the learned kernel is itself a probability distribution, generation reduces to a single forward pass followed by one categorical draw meaning no iterative denoising, ODE integration, or multi-step refinement is required. We validate the framework on exact finite-state Markov chains, where the learned kernel recovers the analytical ground truth to high precision, and on factorized synthetic sequence generation tasks with varying alphabet sizes and sequence lengths.",
+      "authors": [
+        "Fairoz Nower Khan",
+        "Nabuat Zaman Nahim",
+        "Md Sajid Ahmed",
+        "Ruiquan Huang",
+        "Peizhong Ju"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-05-12T22:56:44+00:00",
+      "link": "https://arxiv.org/pdf/2605.12805v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "discrete state spaces generation via transition kernels",
+      "llm_evidence_cn": "通过转移核进行离散状态空间生成",
+      "llm_evidence": "通过转移核进行离散状态空间生成",
+      "canonical_evidence": "通过转移核进行离散状态空间生成",
+      "llm_tldr_en": "Introduces Discrete MeanFlow for one-step generation in discrete spaces, relevant to sequence generation.",
+      "llm_tldr_cn": "引入离散MeanFlow实现离散空间的一步生成，适用于序列生成任务。",
+      "llm_tldr": "引入离散MeanFlow实现离散空间的一步生成，适用于序列生成任务。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.13026v1",
+      "title": "Understanding and Accelerating the Training of Masked Diffusion Language Models",
+      "abstract": "Masked diffusion models (MDMs) have emerged as a promising alternative to autoregressive models (ARMs) for language modeling. However, MDMs are known to learn substantially more slowly than ARMs, which may become problematic when scaling MDMs to larger models. Therefore, we ask the following question: how can we accelerate standard MDM training while maintaining its final performance? To this end, we first provide a detailed analysis of why MDM training is slow. We find that the main factor is the locality bias of language: the predictive information for a token is concentrated in nearby positions. We further investigate how this bias slows learning and suggest a simple yet effective remedy: bell-shaped time sampling as a training strategy. Notably, MDMs trained with our training recipe reach the same validation negative log-likelihood (NLL) up to $\\sim4\\times$ faster than standard training on One Billion Word Benchmark (LM1B). We also show faster improvements in generative perplexity, zero-shot perplexity, and downstream task performance on various benchmarks.",
+      "authors": [
+        "Chunsan Hong",
+        "Sanghyun Lee",
+        "Chieh-Hsin Lai",
+        "Satoshi Hayakawa",
+        "Yuhta Takida",
+        "Yuki Mitsufuji",
+        "Seungryong Kim",
+        "Jong Chul Ye"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-05-13T05:29:38+00:00",
+      "link": "https://arxiv.org/pdf/2605.13026v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "comparison between masked diffusion and autoregressive models",
+      "llm_evidence_cn": "掩码扩散模型与自回归模型的对比",
+      "llm_evidence": "掩码扩散模型与自回归模型的对比",
+      "canonical_evidence": "掩码扩散模型与自回归模型的对比",
+      "llm_tldr_en": "Analyzes why masked diffusion models train slower than autoregressive models and proposes a sampling remedy.",
+      "llm_tldr_cn": "分析了掩码扩散模型训练慢于自回归模型的原因，并提出了一种加速训练的采样策略。",
+      "llm_tldr": "分析了掩码扩散模型训练慢于自回归模型的原因，并提出了一种加速训练的采样策略。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.15178v1",
+      "title": "SANA-WM: Efficient Minute-Scale World Modeling with Hybrid Linear Diffusion Transformer",
+      "abstract": "We introduce SANA-WM, an efficient 2.6B-parameter open-source world model natively trained for one-minute generation, synthesizing high-fidelity, 720p, minute-scale videos with precise camera control. SANA-WM achieves visual quality comparable to large-scale industrial baselines such as LingBot-World and HY-WorldPlay, while significantly improving efficiency. Four core designs drive our architecture: (1) Hybrid Linear Attention combines frame-wise Gated DeltaNet (GDN) with softmax attention for memory-efficient long-context modeling. (2) Dual-Branch Camera Control ensures precise 6-DoF trajectory adherence. (3) Two-Stage Generation Pipeline applies a long-video refiner to stage-1 outputs, improving quality and consistency across sequences. (4) Robust Annotation Pipeline extracts accurate metric-scale 6-DoF camera poses from public videos to yield high-quality, spatiotemporally consistent action labels. Driven by these designs, SANA-WMdemonstrates remarkable efficiency across data, training compute, and inference hardware: it uses only $\\sim$213K public video clips with metric-scale pose supervision, completes training in 15 days on 64 H100s, and generates each 60s clip on a single GPU; its distilled variant can be deployed on a single RTX 5090 with NVFP4 quantization to denoise a 60s 720p clip in 34s. On our one-minute world-model benchmark, SANA-WM demonstrates stronger action-following accuracy than prior open-source baselines and achieves comparable visual quality at $36\\times$ higher throughput for scalable world modeling.",
+      "authors": [
+        "Haoyi Zhu",
+        "Haozhe Liu",
+        "Yuyang Zhao",
+        "Tian Ye",
+        "Junsong Chen",
+        "Jincheng Yu",
+        "Tong He",
+        "Song Han",
+        "Enze Xie"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-14T17:58:03+00:00",
+      "link": "https://arxiv.org/pdf/2605.15178v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative world modeling for video and trajectory control",
+      "llm_evidence_cn": "用于视频和轨迹控制的生成式世界模型",
+      "llm_evidence": "用于视频和轨迹控制的生成式世界模型",
+      "canonical_evidence": "用于视频和轨迹控制的生成式世界模型",
+      "llm_tldr_en": "Presents an efficient diffusion-based world model for long video generation with precise camera control.",
+      "llm_tldr_cn": "介绍了一种高效的扩散世界模型，支持带精确相机控制的分级视频生成。",
+      "llm_tldr": "介绍了一种高效的扩散世界模型，支持带精确相机控制的分级视频生成。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
