@@ -6,40 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-05-16
-- 运行时间：2026-05-16 19:48:43 UTC
+- 最新运行日期：2026-05-18
+- 运行时间：2026-05-18 20:18:26 UTC
 - 运行状态：成功
-- 本次总论文数：6
+- 本次总论文数：4
 - 精读区：2
-- 速读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今日深度解析自动驾驶与长视频生成前沿，MindVLA-U1 与 Head Forcing 凭借 9.0 高分领跑。
-核心结论显示 VLA 统一流式架构在智驾表现上已超越 VA，而头部异构性技术则成功突破了长视频自回归生成的瓶颈。
-推荐关注掩码扩散模型与轨迹建模的效率优化，这是提升多模态生成性能的关键路径。
-- 详情：[/202605/16/README](/202605/16/README)
+今日深度探索扩散模型在语言生成与决策中的跨界应用，涵盖动态分块与闭环控制等前沿算法。
+重点推荐 Diffusion LM 的动态分块技术及潜空间控制研究，为提升生成质量与决策自适应性提供了新方案。
+建议从 9.0 分的高分论文入手，深入理解扩散模型如何通过动态优化重塑文本生成范式。
+- 详情：[/202605/18/README](/202605/18/README)
 
 ### 精读区论文标签
-1. [MindVLA-U1: VLA Beats VA with Unified Streaming Architecture for Autonomous Driving](/202605/16/2605.12624v1-mindvla-u1-vla-beats-va-with-unified-streaming-architecture-for-autonomous-driving)  
-   标签：评分：9.0/10、query:genad
-   evidence：用于端到端自动驾驶的统一流式VLA架构
-2. [Head Forcing: Long Autoregressive Video Generation via Head Heterogeneity](/202605/16/2605.14487v1-head-forcing-long-autoregressive-video-generation-via-head-heterogeneity)  
+1. [Dynamic Chunking for Diffusion Language Models](/202605/18/2605.15676v1-dynamic-chunking-for-diffusion-language-models)  
    标签：评分：9.0/10、query:ardm
-   evidence：自回归视频扩散模型架构
+   evidence：扩散模型中语义块的自回归分解
+2. [Language Generation as Optimal Control: Closed-Loop Diffusion in Latent Control Space](/202605/18/2605.14531v2-language-generation-as-optimal-control-closed-loop-diffusion-in-latent-control-space)  
+   标签：评分：8.0/10、query:ardm
+   evidence：分析自回归和扩散模型的统一理论视角
 
 ### 速读区论文标签
-1. [Normalizing Trajectory Models](/202605/16/2605.08078v2-normalizing-trajectory-models)  
-   标签：评分：7.0/10、query:diffpl
-   evidence：在扩散步骤中使用条件归一化流进行轨迹建模
-2. [Understanding and Accelerating the Training of Masked Diffusion Language Models](/202605/16/2605.13026v1-understanding-and-accelerating-the-training-of-masked-diffusion-language-models)  
+1. [Uncertainty Quantification for Large Language Diffusion Models](/202605/18/2605.14570v1-uncertainty-quantification-for-large-language-diffusion-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：掩码扩散模型与自回归模型的对比
-3. [Discrete MeanFlow: One-Step Generation via Conditional Transition Kernels](/202605/16/2605.12805v1-discrete-meanflow-one-step-generation-via-conditional-transition-kernels)  
-   标签：评分：6.0/10、query:ardm
-   evidence：通过转移核进行离散状态空间生成
-4. [SANA-WM: Efficient Minute-Scale World Modeling with Hybrid Linear Diffusion Transformer](/202605/16/2605.15178v1-sana-wm-efficient-minute-scale-world-modeling-with-hybrid-linear-diffusion-transformer)  
-   标签：评分：6.0/10、query:genad
-   evidence：用于视频和轨迹控制的生成式世界模型
+   evidence：针对作为自回归模型替代方案的大语言扩散模型进行不确定性量化研究
+2. [Ada-Diffuser: Latent-Aware Adaptive Diffusion for Decision-Making](/202605/18/2605.16054v1-ada-diffuser-latent-aware-adaptive-diffusion-for-decision-making)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：使用扩散模型将决策建模为序列生成
 
 
 <div class="dpr-home-promo-card">

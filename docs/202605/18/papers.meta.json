@@ -1,0 +1,65 @@
+{
+  "label": "2026-05-18",
+  "date": "2026-05-18",
+  "generated_at": "2026-05-18T20:18:34",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202605/18/2605.15676v1-dynamic-chunking-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Dynamic Chunking for Diffusion Language Models",
+      "authors": "Yichen Zhu, Xiaoming Shi, Peng Zhao, Weiyu Chen, Debing Zhang, James Kwok",
+      "date": "2026-05-15",
+      "pdf": "https://arxiv.org/pdf/2605.15676v1",
+      "score": "9.0",
+      "evidence": "扩散模型中语义块的自回归分解",
+      "tldr": "针对离散扩散语言模型中固定位置分块破坏语义连贯性的问题，本文提出了动态分块扩散模型（DCDM）。该模型通过创新的 Chunking Attention 层，利用可学习的子空间将 Token 动态聚类为语义块，从而取代了僵化的位置分块。DCDM 在语义块之间采用自回归建模，在块内进行并行去噪，实现了对块扩散模型的严格泛化。实验表明，DCDM 在不同参数规模下均显著优于传统扩散基准，有效提升了语言建模的结构化表达能力。",
+      "tags": "query:ardm",
+      "abstract_en": "Block discrete diffusion language models factorize a sequence autoregressively over fixed-size positional blocks, decoupling within-block parallel denoising from across-block conditioning. We argue that this rigid partition wastes structure already present in the sequence: blocks defined by position rather than by content separate semantically coherent tokens and group unrelated ones together. We introduce the \\textbf{D}ynamic \\textbf{C}hunking \\textbf{D}iffusion \\textbf{M}odel (DCDM), which replaces positional blocks with content-defined semantic chunks. At its core is Chunking Attention, a differentiable layer that routes tokens into $K$ clusters parameterized by learnable subspaces and shaped end-to-end by the diffusion objective. The resulting cluster assignments induce a chunk-causal attention mask under which a discrete diffusion denoiser factorizes the sequence likelihood autoregressively over semantic chunks, strictly generalizing block discrete diffusion. On downstream benchmarks at parameter scales up to 1.5B, DCDM consistently improves over both unstructured and positional-block diffusion baselines, with the advantage stable across scales and visible early in training.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/18/2605.14531v2-language-generation-as-optimal-control-closed-loop-diffusion-in-latent-control-space",
+      "section": "deep",
+      "title_en": "Language Generation as Optimal Control: Closed-Loop Diffusion in Latent Control Space",
+      "authors": "ZiYi Dong, Yuliang Huang, Weijian Deng, Xiangyang Ji, Liang Lin, Pengxu Wei",
+      "date": "2026-05-14",
+      "pdf": "https://arxiv.org/pdf/2605.14531v2",
+      "score": "8.0",
+      "evidence": "分析自回归和扩散模型的统一理论视角",
+      "tldr": "本研究将语言生成重新表述为随机最优控制问题，揭示了自回归和扩散模型在效率与保真度等方面的理论局限。提出了一种基于Hamilton-Jacobi-Bellman (HJB) 方程近似解的闭环控制策略，并利用流匹配在纠偏潜控制空间内求解最优轨迹。通过引入带有全局积分算子的 Manta-LM，实现了高保真且高效的并行文本生成，在多项任务中表现出优异的稳定性与可控性。",
+      "tags": "query:ardm",
+      "abstract_en": "This work reformulates language generation as a stochastic optimal control problem, providing a unified theoretical perspective to analyze autoregressive and diffusion models and explain their limitations (Efficiency-Fidelity Paradox, Irreversibility Error Propagation, Optimization Tractability and Fidelity) in terms of combination of trajectory singularity, adjoint state vanishing, and gradient absence. To address these issues, we approximate the solution to the Hamilton-Jacobi-Bellman (HJB) equation, yielding an optimal policy that acts as a closed-loop controller. To bypass the intractability of directly solving the HJB PDE, we employ Flow Matching as the optimal trajectory solver within the rectified latent control space. This allows our Manta-LM with Global Integral Operator to approximate the global vector field, effectively realizing a model that simultaneously achieves high-fidelity text generation and efficient, low-cost parallel sampling. Empirically, our method achieves strong performance on language modeling and conditional generation tasks, while exhibiting improved stability, efficiency, and controllability.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/18/2605.14570v1-uncertainty-quantification-for-large-language-diffusion-models",
+      "section": "quick",
+      "title_en": "Uncertainty Quantification for Large Language Diffusion Models",
+      "authors": "Artem Vazhentsev, Vladislav Smirnov, David Li, Maxim Panov, Timothy Baldwin, Artem Shelmanov",
+      "date": "2026-05-14",
+      "pdf": "https://arxiv.org/pdf/2605.14570v1",
+      "score": "7.0",
+      "evidence": "针对作为自回归模型替代方案的大语言扩散模型进行不确定性量化研究",
+      "tldr": "针对大语言扩散模型（LLDM）易产生幻觉且现有不确定性量化（UQ）方法效率低下的问题，本文首次系统研究了LLDM的UQ方法。作者提出了基于迭代去噪过程的轻量级零样本信号，并结合掩码扩散似然与轨迹语义差异性开发了高效UQ方案。实验证明，该方法在保持推理速度优势的同时，能以极低的计算开销实现与采样法相当的幻觉检测性能，为LLDM的安全部署提供了重要支持。",
+      "tags": "query:ardm",
+      "abstract_en": "Large Language Diffusion Models (LLDMs) are emerging as an alternative to autoregressive models, offering faster inference through higher parallelism. Similar to autoregressive LLMs, they remain prone to hallucinations, making reliable uncertainty quantification (UQ) crucial for safe deployment. However, existing UQ methods are fundamentally misaligned with this new paradigm: they assume autoregressive factorization or use expensive repeated sampling, negating the efficiency of LLDMs. In this work, we present the first systematic study of UQ for LLDMs and propose lightweight, zero-shot uncertainty signals derived from the iterative denoising process, leveraging intermediate generations, token remasking dynamics, and denoising complexity. We further adapt a state-of-the-art UQ method to LLDMs by combining masked diffusion likelihoods with trajectory-based semantic dissimilarity. We prove that expected trajectory dissimilarity lower bounds the masked diffusion training objective, which motivates its usage as an uncertainty score. Comprehensive experiments across three tasks, eight datasets, and two models show that our method achieves a great cost-performance trade-off: it approaches the strongest sampling-based baselines while incurring up to 100x lower computational overhead. Our work demonstrates that LLDMs can deliver both fast inference and reliable hallucination detection simultaneously.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202605/18/2605.16054v1-ada-diffuser-latent-aware-adaptive-diffusion-for-decision-making",
+      "section": "quick",
+      "title_en": "Ada-Diffuser: Latent-Aware Adaptive Diffusion for Decision-Making",
+      "authors": "Fan Feng, Selena Ge, Minghao Fu, Zijian Li, Yujia Zheng, Zeyu Tang, Yingyao Hu, Biwei Huang, Kun Zhang",
+      "date": "2026-05-15",
+      "pdf": "https://arxiv.org/pdf/2605.16054v1",
+      "score": "7.0",
+      "evidence": "使用扩散模型将决策建模为序列生成",
+      "tldr": "针对决策任务中扩散模型往往忽略环境动态、奖励结构等潜在演化因素的问题，本文提出了 Ada-Diffuser 框架。该框架通过因果扩散模型同时学习观测交互的时间结构和底层潜在动态，并从理论上证明了从少量观测块中识别潜在过程的可行性。Ada-Diffuser 支持规划与策略学习，能有效适应动态、奖励及潜在动作的变化，在模拟控制和机器人基准测试中表现优异。",
+      "tags": "query:diffpl",
+      "abstract_en": "Recent work has framed decision-making as a sequence modeling problem using generative models such as diffusion models. Although promising, these approaches often overlook latent factors that exhibit evolving dynamics, elements that are fundamental to environment transitions, reward structures, and high-level agent behavior. Explicitly modeling these hidden processes is essential for both precise dynamics modeling and effective decision-making. In this paper, we propose a unified framework that explicitly incorporates latent dynamic inference into generative decision-making from minimal yet sufficient observations. We theoretically show that under mild conditions, the latent process can be identified from small temporal blocks of observations. Building on this insight, we introduce Ada-Diffuser, a causal diffusion model that learns the temporal structure of observed interactions and the underlying latent dynamics simultaneously, and furthermore, leverages them for planning and control. With a modular design, Ada-Diffuser supports both planning and policy learning tasks, enabling adaptation to latent variations in dynamics, rewards, and latent actions. Experiments on simulated control and robotic benchmarks demonstrate its effectiveness in accurate latent inference and adaptive policy learning.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
