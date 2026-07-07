@@ -1,0 +1,497 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-07T21:37:28.273486+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 11,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2607.01775v1",
+      "title": "Set Diffusion: Interpolating Token Orderings Between Autoregression and Diffusion for Fast and Flexible Decoding",
+      "abstract": "Discrete diffusion models have steadily improved in quality relative to autoregressive (AR) models. However, these models are normally constrained to fixed-length generation and do not support key-value (KV) caching. Block diffusion partially bridges diffusion and AR by generating token blocks left-to-right, but its fixed-size sequential blocks limit decoding flexibility and parallelism. Here, we present a new class of language models, set diffusion, comprised of (i) a likelihood parameterization that factorizes over flexible-position, flexible-length token sets and (ii) a set-causal diffusion architecture that supports KV cache updates after every inference step. By factorizing over token sets instead of fixed-size blocks, tokens can be decoded in arbitrarily-ordered sets, including sliding-window sets, enabling faster inference and support for any-order decoding. Set diffusion achieves better speed-quality tradeoffs on mathematical reasoning, summarization, and unconditional generation compared to prior diffusion language models while offering stronger infilling performance than block diffusion. We provide the code, along with the model weights and blog post on the project page: https://m-arriola.com/setdlms/",
+      "authors": [
+        "Marianne Arriola",
+        "Volodymyr Kuleshov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-02T06:45:43+00:00",
+      "link": "https://arxiv.org/pdf/2607.01775v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "interpolating token orderings between autoregression and diffusion",
+      "llm_evidence_cn": "在自回归和扩散之间插值令牌排序",
+      "llm_evidence": "在自回归和扩散之间插值令牌排序",
+      "canonical_evidence": "在自回归和扩散之间插值令牌排序",
+      "llm_tldr_en": "Set Diffusion bridges autoregressive and diffusion models using a set-causal architecture for flexible decoding.",
+      "llm_tldr_cn": "Set Diffusion 通过集合因果架构连接了自回归和扩散模型，实现了灵活的解码。",
+      "llm_tldr": "Set Diffusion 通过集合因果架构连接了自回归和扩散模型，实现了灵活的解码。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.01170v1",
+      "title": "Diffusion-GR2: Diffusion Generative Reasoning Re-ranker",
+      "abstract": "Generative reasoning re-rankers achieve strong recommendation accuracy by emitting a chain-of-thought before re-ordering a candidate list, but they are slow at inference: an autoregressive (AR) decoder spends one sequential forward pass per reasoning token, and the reasoning trace far exceeds the ranking it produces. To reduce this cost, block-diffusion language models decode many positions in parallel over a few denoising steps and are substantially faster, yet naively converting an AR re-ranker into one opens two accuracy gaps: (1) a structural gap: answer positions are denoised in parallel and scored independently, so the decoder emits invalid rankings (duplicated, dropped, or out-of-set identifiers) that AR avoids through left-to-right masking; and (2) a distributional gap: fine-tuning the converted model on fixed teacher trajectories is off-policy relative to its own decoding at inference, leaving a residual accuracy gap. To close both gaps while keeping the speedup, we propose \\textbf{Diffusion-GR2}, a recipe that converts our AR reasoning re-ranker (GR2) into a block-diffusion re-ranker. First, conversion fine-tuning (CFT) adapts the AR-initialized diffusion model to denoise the answer into a valid permutation on its own, without an external constrained decoder. Next, on-policy distillation (OPD) then supervises the model on its own decoded trajectories with dense per-token targets from the AR teacher. Finally, we apply a reinforcement-learning (RL) stage against a re-ranking reward on top of OPD's on-policy policy. Experiments on Amazon Beauty demonstrate that Diffusion-GR2 recovers to near-parity with the AR re-ranker, while block-parallel decoding raises decode throughput by $2.4$--$3.5\\times$ at the model's reasoning output length. Ablations show that CFT recovers most of the conversion gap, and that on-policy distillation further closes it to the AR reference.",
+      "authors": [
+        "Zhuoxuan Zhang",
+        "Kangqi Ni",
+        "Yuhang Chen",
+        "Mingfu Liang",
+        "Xiaohan Wei",
+        "Yunchen Pu",
+        "Fei Tian",
+        "Chonglin Sun",
+        "Frank Shyu",
+        "Adam",
+        "Song",
+        "Sandeep Pandey",
+        "Luke Simon",
+        "Tianlong Chen",
+        "Xi Liu"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI"
+      ],
+      "published": "2026-07-01T17:02:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.01170v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Converting AR re-ranker into block-diffusion language model",
+      "llm_evidence_cn": "将自回归重排序器转换为块扩散语言模型",
+      "llm_evidence": "将自回归重排序器转换为块扩散语言模型",
+      "canonical_evidence": "将自回归重排序器转换为块扩散语言模型",
+      "llm_tldr_en": "Develops a diffusion-based re-ranker to speed up generative reasoning compared to autoregressive decoders.",
+      "llm_tldr_cn": "开发了一种基于扩散的生成式推理重排序器，旨在解决自回归解码器推理速度慢的问题。",
+      "llm_tldr": "开发了一种基于扩散的生成式推理重排序器，旨在解决自回归解码器推理速度慢的问题。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.01436v1",
+      "title": "Discrete Diffusion Language Models for Interactive Radiology Report Drafting",
+      "abstract": "Diffusion language models, which generate text by denoising a token canvas bidirectionally instead of emitting tokens left to right, have become competitive with autoregressive (AR) generation. Medical foundation models, however, remain almost entirely autoregressive. We adapt a mixture-of-experts diffusion language model, DiffusionGemma-26B, and benchmark it against its same-size AR sibling Gemma-4-26B under an identical LoRA recipe on medical visual question answering datasets, scored by a verbosity-robust LLM judge. Diffusion matches or exceeds AR on all of them, and the finetuned model (3.8B active) is competitive with frontier vision-language models; its decoding is also 3.5-4.4x faster. Beyond this parity, the diffusion model offers a drafting capability AR lacks: any-order infill. Because the canvas is denoised bidirectionally, a radiologist can fix report fragments and have the model fill the text between them, an operation inherent to diffusion but not to autoregression, which is subpar at it. This suits real reports, which are often terse or inconsistent across clinicians and institutions.",
+      "authors": [
+        "Max Van Puyvelde",
+        "Halil Ibrahim Gulluk",
+        "Wim Van Criekinge",
+        "Olivier Gevaert"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-01T19:59:09+00:00",
+      "link": "https://arxiv.org/pdf/2607.01436v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmarking diffusion language models against autoregressive siblings",
+      "llm_evidence_cn": "将扩散语言模型与自回归模型进行基准测试对比",
+      "llm_evidence": "将扩散语言模型与自回归模型进行基准测试对比",
+      "canonical_evidence": "将扩散语言模型与自回归模型进行基准测试对比",
+      "llm_tldr_en": "Adapts a MoE diffusion language model for medical reports, showing it matches or exceeds autoregressive performance.",
+      "llm_tldr_cn": "将混合专家扩散语言模型应用于医疗报告，证明其性能匹配或超越了自回归模型。",
+      "llm_tldr": "将混合专家扩散语言模型应用于医疗报告，证明其性能匹配或超越了自回归模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.03509v1",
+      "title": "Flex-Forcing: Towards a Unified Autoregressive and Bidirectional Video Diffusion Model",
+      "abstract": "Recent progress in large-scale generative models has substantially advanced video generation, yet existing methods remain constrained by a rigid inference paradigm. Bidirectional diffusion models excel at global coherence and visual fidelity but suffer from slow inference, while autoregressive models offer efficient and streaming generation at the cost of long-range consistency and exposure bias. We introduce Flex-Forcing, a unified training and inference framework that enables a video diffusion model to seamlessly operate under both bidirectional and autoregressive generation regimes. The core idea is a flexible chunking mechanism jointly defined over the temporal axis and denoising steps. This design allows the model to (1) perform flexible chunking according to different device budgets, (2) perform bidirectional inference across chunks for global structure planning, while generating frames autoregressively within each chunk for efficient and fine-grained synthesis, and (3) perform any-order, any-timestep autoregressive generation without the strict causal constraint. Extensive experiments on multiple video generation benchmarks demonstrate that Flex-Forcing achieves consistently better video quality, long-video stability than strong baselines with a rigid inference schedule, while offering faster inference.",
+      "authors": [
+        "Xinyin Ma",
+        "Julius Berner",
+        "Chao Liu",
+        "Arash Vahdat",
+        "Weili Nie",
+        "Xinchao Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-03T17:34:14+00:00",
+      "link": "https://arxiv.org/pdf/2607.03509v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "unified autoregressive and bidirectional video diffusion model",
+      "llm_evidence_cn": "统一的自回归和双向视频扩散模型",
+      "llm_evidence": "统一的自回归和双向视频扩散模型",
+      "canonical_evidence": "统一的自回归和双向视频扩散模型",
+      "llm_tldr_en": "Flex-Forcing enables video diffusion models to switch between bidirectional and autoregressive generation regimes.",
+      "llm_tldr_cn": "Flex-Forcing 使视频扩散模型能够在双向和自回归生成模式之间无缝切换。",
+      "llm_tldr": "Flex-Forcing 使视频扩散模型能够在双向和自回归生成模式之间无缝切换。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.04140v1",
+      "title": "DELTA-TTS: Adapting Autoregressive Model into Diffusion Language Model for Text-to-Speech",
+      "abstract": "Autoregressive (AR) text-to-speech (TTS) models generate discrete speech tokens sequentially, which makes inference slow and can degrade robustness by propagating local errors and hallucinations. This limitation stems from their left-to-right AR commitment: each token must be determined before future speech-token context is available. However, such ordering is not an inherent requirement for TTS, as the full input text is available before synthesis. In this paper, we introduce DELTA-TTS, a lightweight LoRA-based adaptation framework that converts a pretrained AR TTS model into a discrete diffusion language model (dLLM) for confidence-ordered speech-token decoding. To better capture the local structure of speech, DELTA-TTS incorporates a convolution module that injects local acoustic context, together with a $1/t$-weighted training objective and a time-shifted inference schedule that defer low-confidence positions to later steps. Trained on only $585$ hours of LibriTTS, DELTA-TTS achieves a $\\textbf{1.75}\\%$ WER on Seed-TTS test-en, outperforming its AR backbone while generating tokens $\\textbf{3.3}\\times$ faster. Further analysis shows that DELTA-TTS produces sharper text--speech alignment, increases overall decoding confidence, and mitigates hallucinations observed in AR generation.",
+      "authors": [
+        "Junwon Moon",
+        "Seungbeom Kim",
+        "Yejin Lee",
+        "Hoseong Ahn",
+        "Sewoong Park",
+        "Heeseung Kim",
+        "Kyuhong Shim"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.CL"
+      ],
+      "published": "2026-07-05T06:45:47+00:00",
+      "link": "https://arxiv.org/pdf/2607.04140v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Adapting Autoregressive Model into Diffusion Language Model",
+      "llm_evidence_cn": "将自回归模型适配为扩散语言模型",
+      "llm_evidence": "将自回归模型适配为扩散语言模型",
+      "canonical_evidence": "将自回归模型适配为扩散语言模型",
+      "llm_tldr_en": "Introduces DELTA-TTS to convert autoregressive TTS models into discrete diffusion models for better decoding.",
+      "llm_tldr_cn": "引入 DELTA-TTS 框架，将预训练的自回归 TTS 模型转换为离散扩散语言模型以优化解码。",
+      "llm_tldr": "引入 DELTA-TTS 框架，将预训练的自回归 TTS 模型转换为离散扩散语言模型以优化解码。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.04206v1",
+      "title": "Sangam: Efficiently Serving Diffusion LLMs with the AR Stack",
+      "abstract": "Diffusion language models (dLLMs) generate text by iteratively denoising a masked response and can commit multiple output positions per model invocation. Their bidirectional attention prevents exact autoregressive-style KV caching, since committing one position shifts the KV activations of all others. Approximate caching techniques such as Fast-dLLM and dKV-Cache refresh KV activations repeatedly and reuse them across intervening decodes, inducing a repeated prefill/decode structure. This makes AR serving mechanisms relevant to dLLMs, but not directly applicable. dLLM decodes are block-sized rather than token-sized, prefills recur, and bidirectional attention precludes the chunked prefill mechanism used for stall-free colocated serving. We present Sangam, a serving system for cached dLLM inference. Sangam introduces a deficit token-budget scheduler that admits in-flight decodes first, admits whole indivisible prefills only when the accumulated token budget allows, and carries unused budget forward. This achieves amortized stall-free scheduling. Disaggregated serving avoids prefill-decode interference but suffers from prefill/decode resource partitioning problem. Sangam adopts a hybrid serving strategy, overflowing prefills onto decode workers to relieve prefill under-provisioning, and uses the same deficit-budget scheduler to protect those workers' decodes from the overflow. We show that like AR serving, dLLM serving design space is governed by prefill-decode interference and prefill/decode partitioning. Colocated serving is most effective on decode-heavy workloads, cutting mean latency by 9-20% over hybrid execution on LLaDA-8B ShareGPT; while hybrid execution is most effective on prefill-heavy workloads, cutting mean latency by 8-20% over colocated execution on Dream-7B arXiv. Sangam is available at https://github.com/UT-InfraAI/sangam.",
+      "authors": [
+        "Nitin Kedia",
+        "Saurabh Agarwal",
+        "Myungjin Lee",
+        "Aditya Akella"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.LG"
+      ],
+      "published": "2026-07-05T09:55:29+00:00",
+      "link": "https://arxiv.org/pdf/2607.04206v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "serving diffusion language models with autoregressive stack mechanisms",
+      "llm_evidence_cn": "使用自回归堆栈机制服务扩散语言模型",
+      "llm_evidence": "使用自回归堆栈机制服务扩散语言模型",
+      "canonical_evidence": "使用自回归堆栈机制服务扩散语言模型",
+      "llm_tldr_en": "Sangam optimizes the serving of diffusion language models by adapting autoregressive KV caching techniques.",
+      "llm_tldr_cn": "Sangam 通过适配自回归 KV 缓存技术，优化了扩散语言模型的推理服务效率。",
+      "llm_tldr": "Sangam 通过适配自回归 KV 缓存技术，优化了扩散语言模型的推理服务效率。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.01170v2",
+      "title": "Diffusion-GR2: Diffusion Generative Reasoning Re-ranker",
+      "abstract": "Generative reasoning re-rankers achieve strong recommendation accuracy by emitting a chain-of-thought before re-ordering a candidate list, but they are slow at inference: an autoregressive (AR) decoder spends one sequential forward pass per reasoning token, and the reasoning trace far exceeds the ranking it produces. To reduce this cost, block-diffusion language models decode many positions in parallel over a few denoising steps and are substantially faster, yet naively converting an AR re-ranker into one opens two accuracy gaps: (1) a structural gap: answer positions are denoised in parallel and scored independently, so the decoder emits invalid rankings (duplicated, dropped, or out-of-set identifiers) that AR avoids through left-to-right masking; and (2) a distributional gap: fine-tuning the converted model on fixed teacher trajectories is off-policy relative to its own decoding at inference, leaving a residual accuracy gap. To close both gaps while keeping the speedup, we propose \\textbf{Diffusion-GR2}, a recipe that converts our AR reasoning re-ranker (GR2) into a block-diffusion re-ranker. First, conversion fine-tuning (CFT) adapts the AR-initialized diffusion model to denoise the answer into a valid permutation on its own, without an external constrained decoder. Next, on-policy distillation (OPD) then supervises the model on its own decoded trajectories with dense per-token targets from the AR teacher. Finally, we apply a reinforcement-learning (RL) stage against a re-ranking reward on top of OPD's on-policy policy. Experiments on Amazon Beauty demonstrate that Diffusion-GR2 recovers to near-parity with the AR re-ranker, while block-parallel decoding raises decode throughput by $2.4$--$3.5\\times$ at the model's reasoning output length. Ablations show that CFT recovers most of the conversion gap, and that on-policy distillation further closes it to the AR reference.",
+      "authors": [
+        "Zhuoxuan Zhang",
+        "Kangqi Ni",
+        "Yuhang Chen",
+        "Mingfu Liang",
+        "Xiaohan Wei",
+        "Yunchen Pu",
+        "Fei Tian",
+        "Chonglin Sun",
+        "Frank Shyu",
+        "Adam",
+        "Song",
+        "Sandeep Pandey",
+        "Luke Simon",
+        "Tianlong Chen",
+        "Xi Liu"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR",
+        "cs.AI"
+      ],
+      "published": "2026-07-01T17:02:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.01170v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "converting autoregressive re-rankers into block-diffusion models",
+      "llm_evidence_cn": "将自回归重排序器转换为块扩散模型",
+      "llm_evidence": "将自回归重排序器转换为块扩散模型",
+      "canonical_evidence": "将自回归重排序器转换为块扩散模型",
+      "llm_tldr_en": "Proposes a diffusion-based generative reasoning re-ranker to speed up traditional autoregressive inference.",
+      "llm_tldr_cn": "提出了一种基于扩散的生成式推理重排序器，以加速传统的自回归推理过程。",
+      "llm_tldr": "提出了一种基于扩散的生成式推理重排序器，以加速传统的自回归推理过程。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.01774v1",
+      "title": "Subliminal Clocks: Latent Time Modelling in Diffusion Language Models",
+      "abstract": "Diffusion Language Models (DLMs) have recently emerged as a promising alternative to autoregressive models. Unlike standard diffusion-based approaches, DLMs are not explicitly conditioned on a timestep, raising a natural question: do these models internally represent denoising progress, and how is such information used downstream? In this work, we show that DLMs do in fact encode a latent representation related to the diffusion timestep within their residual streams. We find that this signal can be reliably extracted using probes across layers, indicating that denoising progress is decodable from internal activations. We further demonstrate that steering the model along a low-dimensional subspace associated with the inferred timestep allows us to systematically modulate its notion of denoising progress, leading to predictable changes in model confidence and entropy. Finally, we analyse the geometry of the identified representation, showing that it exhibits structured and interpretable properties in activation space, and shedding light on how such a signal is processed by these models.",
+      "authors": [
+        "Maximo Rulli",
+        "Thomas Fontanari",
+        "Simone Petruzzi",
+        "Federico Alvetreti",
+        "Giorgio Strano",
+        "Donato Crisostomi",
+        "Giorgos Nikolaou",
+        "Tommaso Mencattini",
+        "Andrea Santilli",
+        "Emanuele Rodolà",
+        "Simone Scardapane",
+        "Alessio Devoto"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-07-02T06:45:42+00:00",
+      "link": "https://arxiv.org/pdf/2607.01774v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Latent time modelling in Diffusion Language Models",
+      "llm_evidence_cn": "扩散语言模型中的潜时间建模",
+      "llm_evidence": "扩散语言模型中的潜时间建模",
+      "canonical_evidence": "扩散语言模型中的潜时间建模",
+      "llm_tldr_en": "Analyzes how Diffusion Language Models internally represent denoising progress compared to AR models.",
+      "llm_tldr_cn": "研究扩散语言模型（DLM）如何内部表征去噪进度，并展示了通过引导提升生成质量的方法。",
+      "llm_tldr": "研究扩散语言模型（DLM）如何内部表征去噪进度，并展示了通过引导提升生成质量的方法。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.02805v1",
+      "title": "Training Hybrid Block Diffusion Language Models with Partial Bidirectionality",
+      "abstract": "High-throughput long-context generation is one of the central challenges for large language models. Generation is typically memory-bandwidth-bound rather than compute-bound: each decoding step must stream the accumulated key/value (KV) cache from memory, so bandwidth demand grows with context length while only one token is emitted. Two parallel approaches have therefore emerged: reducing memory access with efficient attention variants and linear-time mixers such as Mamba, or increasing parallel computation by generating blocks of tokens at once. However, technical challenges arise when combining these two ideas. Earlier hybrid diffusion models such as DiffuMamba use bidirectional Mamba mixing, including a reverse-direction scan relative to causal generation. This reverse scan needs to scan the entire sequence, so its states are not prefix-only and cannot be precisely reused as a cache even when diffusion is performed block by block. We propose a BDLM Mamba--attention hybrid that addresses this challenge by restricting the reverse Mamba scan to the active denoising block, which enables exact caching across blocks. In an 87M-parameter DCLM sweep, BDLM Mamba-H achieves the best C4-en validation perplexity compared to BDLM attention and full-sequence baselines. At 350M parameters, it remains competitive with BDLM attention. For long-context inference, BDLM Mamba-H reaches 19.7x the throughput of full-sequence DiffuMamba-H at 65K tokens and 3.7x the throughput of BDLM attention at 262K, showing that Mamba hybrids are a potential long-context diffusion architecture.",
+      "authors": [
+        "Pranshu Chaturvedi",
+        "Parth Shroff",
+        "Tarun Suresh",
+        "Hangoo Kang",
+        "Kaiyue Wen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-07-02T22:37:43+00:00",
+      "link": "https://arxiv.org/pdf/2607.02805v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Hybrid block diffusion language models with partial bidirectionality",
+      "llm_evidence_cn": "具有部分双向性的混合块扩散语言模型",
+      "llm_evidence": "具有部分双向性的混合块扩散语言模型",
+      "canonical_evidence": "具有部分双向性的混合块扩散语言模型",
+      "llm_tldr_en": "Explores hybrid diffusion models combining Mamba and block generation for long-context language modeling.",
+      "llm_tldr_cn": "探索结合 Mamba 和块生成的混合扩散模型，用于解决长文本语言建模中的高吞吐量挑战。",
+      "llm_tldr": "探索结合 Mamba 和块生成的混合扩散模型，用于解决长文本语言建模中的高吞吐量挑战。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.03236v1",
+      "title": "TACG: Trajectory-Aware Commit Gating for Diffusion Language Model Decoding",
+      "abstract": "Diffusion language models (DLLMs) generate text by iteratively denoising masked positions, exposing a trajectory of predictive distributions rather than a single instantaneous belief. Most existing decoders ignore this trajectory and commit tokens from the current snapshot alone, conflating confidence with commitment readiness: a transient top-1 peak under incomplete context can be locked in, while candidates with consistent cross-step support are delayed. We propose Trajectory-Aware Commit Gating (TACG), a training-free gate-level decoder that anchors token identities to the base posterior and uses trajectory-aware signals only to decide whether the current proposal is ready to commit. TACG combines Temporal Implicit Logits Guidance (TILG), which keeps an exponential moving average of past logits as a self-reference and contrasts the current logits against this reference in natural-parameter space, with a History Gate (HG) that enforces short-term proposal persistence before commitment. Together with a capped extra-promotion budget, these components yield a stability-constrained commit rule without auxiliary networks or extra forward passes. We evaluate TACG on LLaDA, Dream, and LLaDA2-Mini across code (HumanEval, MBPP) and math (GSM8K, MATH500) benchmarks; it typically improves or preserves accuracy while reducing denoising steps and increasing tokens per forward (TPF). The code is publicly available at https://github.com/Clarence-CV/TACG-DLLM.",
+      "authors": [
+        "Chengcheng Wang",
+        "Tingzhang Luo",
+        "Wenhao Li",
+        "Jianyuan Guo",
+        "Chang Xu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-07-03T11:45:21+00:00",
+      "link": "https://arxiv.org/pdf/2607.03236v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Decoding trajectory in Diffusion Language Models",
+      "llm_evidence_cn": "扩散语言模型中的解码轨迹",
+      "llm_evidence": "扩散语言模型中的解码轨迹",
+      "canonical_evidence": "扩散语言模型中的解码轨迹",
+      "llm_tldr_en": "Proposes a new decoding gate for Diffusion Language Models to improve token commitment using trajectory signals.",
+      "llm_tldr_cn": "为扩散语言模型提出一种轨迹感知提交门控解码器，利用时序信号提升文本生成质量。",
+      "llm_tldr": "为扩散语言模型提出一种轨迹感知提交门控解码器，利用时序信号提升文本生成质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.03788v1",
+      "title": "Tensor-Train Joint Modeling for Few-Step Discrete Diffusion",
+      "abstract": "Discrete diffusion promises orders-of-magnitude faster generation than autoregressive (AR) models for sequential discrete data, yet its full potential of few-step generation has remained out of reach due to a fundamental structural limitation. The conditional-independence assumption underlying current discrete diffusion models introduces a systematic parallelization bias that compounds with the number of tokens unmasked per step, becoming severe in the few-step regime that fast generation requires. We address this with the first framework for explicit joint distribution modeling in discrete diffusion via tensor decomposition, which represents the conditional clean distribution as a low-rank tensor with controllable expressivity. The framework supports both Canonical Polyadic (CPD) and Tensor-Train (TTD) decompositions, and we identify a structural bias of TTD toward dependencies between nearby tokens, formalized through Oseledets' theorem relating TT-rank to unfolding-matrix rank, which is well-suited to sequential data such as natural language and line notations for molecular data. To enable efficient generation, we present an iterative marginal inference procedure with specialization for predetermined position schedules. Our framework integrates into pretrained MDMs through lightweight fine-tuning, yielding substantial improvements in few-step generation at a fraction of the cost of training from scratch.",
+      "authors": [
+        "Byoungkwon Kim",
+        "Minhyuk Sung"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-04T09:32:12+00:00",
+      "link": "https://arxiv.org/pdf/2607.03788v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Discrete diffusion as an alternative to autoregressive models for sequential data",
+      "llm_evidence_cn": "离散扩散模型作为序列数据自回归模型的替代方案",
+      "llm_evidence": "离散扩散模型作为序列数据自回归模型的替代方案",
+      "canonical_evidence": "离散扩散模型作为序列数据自回归模型的替代方案",
+      "llm_tldr_en": "Proposes a tensor-train framework for discrete diffusion to overcome parallelization bias in sequence generation.",
+      "llm_tldr_cn": "提出一种张量训练框架用于离散扩散，旨在克服序列生成中的并行化偏差。",
+      "llm_tldr": "提出一种张量训练框架用于离散扩散，旨在克服序列生成中的并行化偏差。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2607.05376v1",
+      "title": "MV-Forcing: Long Multi-View Video Generation via 4D-Grounded Spatio-Temporal Self-Forcing",
+      "abstract": "Recent advances in video diffusion models have enabled either long single-view generation through temporal autoregression, or short multi-view synthesis through bidirectional attention. However, generating long, multi-view consistent videos of dynamic scenes remains unsolved. In this work, we present MV-Forcing, a framework that composes temporal and view-wise autoregression within a single diffusion model by introducing a 4D geometric bridge between sequentially generated views. Our key insight is that an autoregressive 3D reconstruction model naturally interfaces between autoregressively generated views. Given a completed source view, we reconstruct its 3D structure and render a geometric prior of the next target viewpoint, which the diffusion model refines into a high-quality video. To extend generation beyond the teacher's fixed temporal window, we introduce a joint denoising regime where both view slots are initialized from noise during training, enabling temporally unbounded generation. We distill the model via Distribution Matching Distillation with Spatio-Temporal Self-Forcing, closing the train-inference exposure bias gap for both temporal and view-sequential autoregression. Extensive experiments on both synthetic and real-world data demonstrate that MV-Forcing produces geometrically consistent multi-view videos of dynamic scenes at arbitrary lengths and viewpoint counts using a single few-step student model.",
+      "authors": [
+        "Gal Fiebelman",
+        "Hadar Averbuch-Elor",
+        "Sagie Benaim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.GR"
+      ],
+      "published": "2026-07-06T17:54:16+00:00",
+      "link": "https://arxiv.org/pdf/2607.05376v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "composing temporal and view-wise autoregression within a diffusion model",
+      "llm_evidence_cn": "在扩散模型中组合时间轴和视角轴的自回归",
+      "llm_evidence": "在扩散模型中组合时间轴和视角轴的自回归",
+      "canonical_evidence": "在扩散模型中组合时间轴和视角轴的自回归",
+      "llm_tldr_en": "MV-Forcing uses autoregressive 3D reconstruction to enable long multi-view video generation in diffusion models.",
+      "llm_tldr_cn": "MV-Forcing 利用自回归 3D 重建技术，实现了扩散模型中的长多视图视频生成。",
+      "llm_tldr": "MV-Forcing 利用自回归 3D 重建技术，实现了扩散模型中的长多视图视频生成。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}
