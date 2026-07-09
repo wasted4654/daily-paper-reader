@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-09 <!--dpr-date:20260709-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/09/2607.07026v1-constrained-decoding-for-diffusion-language-models-via-efficient-inference-over-finite-automata" data-sidebar-item="{&quot;title&quot;: &quot;Constrained Decoding for Diffusion Language Models via Efficient Inference over Finite Automata&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.07026v1-constrained-decoding-for-diffusion-language-models-via-efficient-inference-over-finite-automata&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散语言模型与自回归模型的受限解码对比&quot;}">Constrained Decoding for Diffusion Language Models via Efficient Inference over Finite Automata</a>
   * 2026-07-08 <!--dpr-date:20260708-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/08/2607.05722v1-nemotron-labs-diffusion-a-tri-mode-language-model-unifying-autoregressive-diffusion-and-self-speculation-decoding" data-sidebar-item="{&quot;title&quot;: &quot;Nemotron-Labs-Diffusion: A Tri-Mode Language Model Unifying Autoregressive, Diffusion, and Self-Speculation Decoding&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.05722v1-nemotron-labs-diffusion-a-tri-mode-language-model-unifying-autoregressive-diffusion-and-self-speculation-decoding&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;在单一架构中统一自回归和扩散解码&quot;}">Nemotron-Labs-Diffusion: A Tri-Mode Language Model Unifying Autoregressive, Diffusion, and Self-Speculation Decoding</a>

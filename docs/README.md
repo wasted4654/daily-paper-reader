@@ -6,29 +6,23 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-08
-- 运行时间：2026-07-08 21:26:44 UTC
+- 最新运行日期：2026-07-09
+- 运行时间：2026-07-09 20:51:17 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：3
+- 本次总论文数：1
+- 精读区：1
 - 速读区：0
 
 ### 今日简报（AI）
-- 今日共生成 3 篇推荐（精读 3 篇，速读 0 篇）
-- 精读：《Nemotron-Labs-Diffusion: A Tri-Mode Language Model Unifying Autoregressive, Diffusion, and Self-Speculation Decoding》（10.0/10）, 《Point as Skeleton: Accumulated Point Cloud Enhanced Autoregressive Generation for Closed-Loop Autonomous Driving Simulation》（9.0/10）
-- 这些结果覆盖了当下较热的方向，建议先看精读区论文的关键问题与方法。
-- 详情：[/202607/08/README](/202607/08/README)
+今日聚焦扩散语言模型（DLM）的受限解码，探索利用有限自动机实现高效推理的新路径。
+该研究通过在自动机上进行高效推理，成功解决了 DLM 在复杂约束下生成文本的性能瓶颈。
+推荐关注结构化文本生成的读者，深入了解自动机理论如何提升扩散模型的精准控制力。
+- 详情：[/202607/09/README](/202607/09/README)
 
 ### 精读区论文标签
-1. [Nemotron-Labs-Diffusion: A Tri-Mode Language Model Unifying Autoregressive, Diffusion, and Self-Speculation Decoding](/202607/08/2607.05722v1-nemotron-labs-diffusion-a-tri-mode-language-model-unifying-autoregressive-diffusion-and-self-speculation-decoding)  
-   标签：评分：10.0/10、query:ardm
-   evidence：在单一架构中统一自回归和扩散解码
-2. [Point as Skeleton: Accumulated Point Cloud Enhanced Autoregressive Generation for Closed-Loop Autonomous Driving Simulation](/202607/08/2607.06516v1-point-as-skeleton-accumulated-point-cloud-enhanced-autoregressive-generation-for-closed-loop-autonomous-driving-simulation)  
-   标签：评分：9.0/10、query:genad
-   evidence：用于闭环仿真的自回归驾驶视频生成
-3. [MobileWan: Closing the Quality Gap for Mobile Video Diffusion](/202607/08/2607.06173v1-mobilewan-closing-the-quality-gap-for-mobile-video-diffusion)  
+1. [Constrained Decoding for Diffusion Language Models via Efficient Inference over Finite Automata](/202607/09/2607.07026v1-constrained-decoding-for-diffusion-language-models-via-efficient-inference-over-finite-automata)  
    标签：评分：8.0/10、query:ardm
-   evidence：将视频生成转换为分块自回归过程
+   evidence：扩散语言模型与自回归模型的受限解码对比
 
 ### 速读区论文标签
 - 本次无速读推荐。
