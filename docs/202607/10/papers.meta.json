@@ -1,0 +1,65 @@
+{
+  "label": "2026-07-10",
+  "date": "2026-07-10",
+  "generated_at": "2026-07-10T21:18:28",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/10/2607.08020v1-saga-stable-acceleration-guidance-for-autoregressive-video-generation",
+      "section": "deep",
+      "title_en": "SAGA: Stable Acceleration Guidance for Autoregressive Video Generation",
+      "authors": "Thanh-Nhan Vo, Trong-Thuan Nguyen, Trung-Hoang Le, Tam V. Nguyen, Minh-Triet Tran",
+      "date": "2026-07-09",
+      "pdf": "https://arxiv.org/pdf/2607.08020v1",
+      "score": "10.0",
+      "evidence": "针对自回归视频扩散生成的稳定加速度引导方法",
+      "tldr": "自回归视频扩散模型在长视频生成中常因潜变量重复使用导致闪烁和运动抖动。本文提出SAGA，一种无需训练的稳定加速度引导方法。该方法通过分析离散潜变量加速度，利用Slepian投影进行频谱引导，并结合结构化噪声初始化，在不改变模型架构的情况下显著提升了视频的时间稳定性和图像质量，解决了长程生成中的结构漂移问题。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive video diffusion enables efficient streaming and long-horizon video generation, but repeatedly reusing generated latents as causal context can amplify temporal errors, resulting in flickering, motion jitter, and structural drift. In this paper, we investigate this failure mode from a spectral kinematic perspective and identify discrete latent acceleration as an effective signal for revealing unstable high-frequency temporal perturbations. To this end, we propose SAGA, a training-free \\textbf{\\textit{s}}table \\textbf{\\textit{a}}cceleration \\textbf{\\textit{g}}uidance approach for \\textbf{\\textit{a}}utoregressive video generation. SAGA integrates an acceleration domain spectral guidance objective based on finite-window Slepian projections with a structured autoregressive noise initialization strategy that suppresses short-range temporal correlations while preserving long-range motion structure. Without retraining or modifying the backbone, SAGA can be directly applied to existing chunk-wise autoregressive diffusion models, which is the prevalent setting for high-quality generation. Extensive experiments show that SAGA consistently improves temporal quality across multiple autoregressive diffusion models. On Self-Forcing, SAGA improves Temporal Quality from 97.30 to 97.91 and Image Quality from 69.60 to 70.51. Moreover, spectral analysis and human preference studies demonstrate that SAGA reduces temporal instability while maintaining visual fidelity.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/10/2607.08741v1-ardy-autoregressive-diffusion-with-hybrid-representation-for-interactive-human-motion-generation",
+      "section": "deep",
+      "title_en": "ARDY: Autoregressive Diffusion with Hybrid Representation for Interactive Human Motion Generation",
+      "authors": "Kaifeng Zhao, Mathis Petrovich, Haotian Zhang, Tingwu Wang, Siyu Tang, Davis Rempe",
+      "date": "2026-07-09",
+      "pdf": "https://arxiv.org/pdf/2607.08741v1",
+      "score": "10.0",
+      "evidence": "用于动作生成的混合表示自回归扩散模型",
+      "tldr": "ARDY是一个用于交互式人体动作生成的流式框架，旨在解决现有离线方法推理慢和在线方法控制力弱的问题。它结合了显式根节点特征与潜空间身体嵌入的混合表示，并采用两阶段自回归Transformer去噪器。该方法支持在线文本提示和长程运动学约束，在保持高保真度的同时实现了实时生成，适用于动画、仿真和机器人等领域。",
+      "tags": "query:ardm",
+      "abstract_en": "Generating realistic 3D human motions in real-time within interactive applications is key for animation, simulation, and humanoid robotics. While recent offline motion generation approaches offer precise control via text and kinematic constraints, they lack the inference speed required for interactive settings. Conversely, existing online methods enable real-time synthesis but often sacrifice controllability or struggle with complex text semantics and long-horizon goals due to limited context windows. In this work, we introduce ARDY, a streaming generation framework that bridges this gap by enabling high-fidelity motion generation controllable via online text prompts and flexible kinematic constraints. ARDY employs a hybrid representation that combines explicit root features with a latent body embedding, balancing precise trajectory control with efficient generative learning. We propose a two-stage autoregressive transformer denoiser that features variable history context and supports conditioning on flexible, long-horizon kinematic constraints. By training on a large-scale motion capture dataset and being directly conditioned on text labels and kinematic constraints sampled from ground truth poses, ARDY natively learns controllable generation that supports online prompting and flexible long-horizon goals. Extensive evaluations on the HumanML3D benchmark and the large-scale, high-fidelity Bones Rigplay dataset demonstrate ARDY's high motion quality and constraint adherence, validating the efficacy of our key architectural decisions. Finally, we demonstrate the method's practical versatility through an interactive demo featuring dynamic text control, diverse keyframe pose constraints, path following, and interactive locomotion control via mouse and keyboard. Supplementary video results, code, and model releases can be found at https://research.nvidia.com/labs/sil/projects/ardy/.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/10/2607.08766v1-opsd-v-on-policy-self-distillation-for-post-training-few-step-autoregressive-video-generators",
+      "section": "deep",
+      "title_en": "OPSD-V: On-Policy Self-Distillation for Post-Training Few-Step Autoregressive Video Generators",
+      "authors": "Hongyu Liu, Chun Wang, Feng Gao, Xuanhua He, Yue Ma, Ziyu Wan, Yong Zhang, Xiaoming Wei, Qifeng Chen",
+      "date": "2026-07-09",
+      "pdf": "https://arxiv.org/pdf/2607.08766v1",
+      "score": "10.0",
+      "evidence": "自回归视频扩散模型的策略内自蒸馏",
+      "tldr": "针对少步自回归视频生成模型在长视频生成中存在的误差累积和运动减弱问题，本文提出了OPSD-V，一种策略内自蒸馏范式。该方法在不改变推理路径的前提下，引入真实长视频作为时间上下文，通过教师模型在学生访问的状态下提供密集的去噪校正目标，从而优化自回归缓存动态。实验证明，OPSD-V在Self-Forcing和LongLive等模型上显著提升了长视频的视觉质量和运动表现。",
+      "tags": "query:ardm",
+      "abstract_en": "We propose OPSD-V, an on-policy self-distillation paradigm for post-training few-step autoregressive (AR) video diffusion models. Existing few-step AR video generators can produce long videos with low latency, but still suffer from error accumulation and weakened motion dynamics during long autoregressive rollout. OPSD-V reduces long-horizon degradation while preserving the original few-step inference path. The key idea is to introduce real long-video data as temporal context during training and use it to provide dense trajectory-level supervision. Specifically, the student follows the exact inference-time rollout, generating each chunk conditioned on its own previously generated KV cache. In parallel, the teacher is evaluated at the same student-visited denoising states, but uses a cleaner AR-consistent temporal cache in which older history can be replaced by real-video context. This provides dense denoising-level corrective targets under on-policy AR cache dynamics, without changing the sampler, number of denoising steps, or inference-time cache mechanism. We apply OPSD-V to representative few-step AR video models, including Self-Forcing and LongLive. Experiments show consistent improvements in visual quality, motion dynamics, and VBenchLong scores. A user study with 10 participants comparing 20 video pairs shows that OPSD-V is preferred over the base models in 66.0% of overall-preference judgments (82.5% excluding ties).",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/10/2607.08056v1-reinforcing-the-generation-order-of-multimodal-masked-diffusion-models",
+      "section": "deep",
+      "title_en": "Reinforcing the Generation Order of Multimodal Masked Diffusion Models",
+      "authors": "Yidong Ouyang, Zhe Wang, Sourav Bhabesh, Dmitriy Bespalov",
+      "date": "2026-07-09",
+      "pdf": "https://arxiv.org/pdf/2607.08056v1",
+      "score": "8.0",
+      "evidence": "优化多模态掩码扩散模型的生成顺序",
+      "tldr": "本研究探讨了多模态掩码扩散模型中生成顺序的优化问题。针对文本生成图像和多模态理解任务中 Logits 无法有效指导生成顺序的挑战，作者提出了一种基于群体相对策略优化（GRPO）训练的可学习控制模块。该方法通过动态调整 Token 生成顺序，显著提升了模型对细粒度空间关系的捕捉能力及多模态推理性能。实验表明，该框架在 GenEval 和 VLMEvalKit 基准测试中分别实现了 4.08% 和 4.85% 的性能提升，证明了优化生成顺序在多模态任务中的重要性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Language Models (DLMs) have recently achieved substantial progress in natural language generation tasks. Recent research demonstrates that adaptive token generation ordering can significantly improve performance in mathematical reasoning and code synthesis applications. In this work, we investigate the optimization of generation order for both text-to-image synthesis and multimodal understanding. We first establish that, unlike structured problems in language generation such as Sudoku puzzles, model logits alone are insufficient for determining optimal generation sequences in text-to-image generation and multimodal understanding. To address this challenge, we introduce a learnable control module trained via Group Relative Policy Optimization (GRPO) to determine the generation order. Our results demonstrate that learning this control block substantially improves both text-to-image alignment and multimodal understanding in DLMs. In particular, it enhances the model's ability to capture fine-grained spatial relationships in generated images while also strengthening performance on multimodal reasoning and comprehension tasks. We evaluate our framework on GenEval, an object-focused benchmark for text-to-image alignment, where it achieves 4.08% relative improvements. In addition, experiments on VLMEvalKit confirm 4.85% relative improvements in multimodal understanding, highlighting the broad effectiveness of our approach.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
