@@ -1,0 +1,51 @@
+{
+  "label": "2026-07-12",
+  "date": "2026-07-12",
+  "generated_at": "2026-07-12T20:53:47",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/12/2607.04428v1-dopsd-on-policy-self-distillation-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "dOPSD: On-Policy Self-Distillation for Diffusion Language Models",
+      "authors": "Phuong Tuan Dat, Qi Li, Xinchao Wang",
+      "date": "2026-07-05",
+      "pdf": "https://arxiv.org/pdf/2607.04428v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为自回归模型的并行替代方案",
+      "tldr": "扩散语言模型（dLLM）在推理任务的后训练中面临监督微调的偏置和强化学习奖励稀疏等挑战。本文提出dOPSD，一种针对dLLM的在线自蒸馏方法。该方法不依赖外部标签，而是创新性地利用模型自身去噪轨迹中更晚、解码更充分的步骤作为教师信号来指导早期步骤。在Dream和LLaDA模型上的实验表明，dOPSD显著提升了数学推理和代码生成能力，优于现有的监督微调和在线基准方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) generate text by iteratively denoising a masked sequence, offering a parallel alternative to autoregressive models, but eliciting strong reasoning through post-training remains difficult: supervised fine-tuning is off-policy and suffers from exposure bias, while reinforcement learning gives only sparse, sequence-level rewards and is hard to apply without tractable sequence likelihoods. On-policy self-distillation (OPSD) offers a promising alternative, using one model as both student and teacher to provide dense, token-level, on-policy supervision, but its effectiveness hinges on giving the teacher privileged information (PI) - typically an instance-specific ground-truth reference unavailable at inference - so the student ends up distilling a weak PI-free consensus policy that yields little improvement on dLLM reasoning. We introduce dOPSD, which instead derives the teacher's privilege directly from the student's own denoising trajectory, evaluating masked positions using later, more-decoded steps of that same trajectory rather than an external label, so the teacher's advantage emerges from the model's own decoding process; on Dream and LLaDA, dOPSD improves both in-domain math reasoning and out-of-domain code generation, outperforming supervised and on-policy baselines.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/12/2607.08770v1-longe2v-long-horizon-event-based-video-reconstruction-prediction-and-frame-interpolation-with-video-diffusion-models",
+      "section": "quick",
+      "title_en": "LongE2V: Long-Horizon Event-based Video Reconstruction, Prediction, and Frame Interpolation with Video Diffusion Models",
+      "authors": "Cheng-De Fan, Chun-Wei Tuan Mu, Chen-Wei Chang, Chin-Yang Lin, Kun-Ru Wu, Yu-Chee Tseng, Yu-Lun Liu",
+      "date": "2026-07-09",
+      "pdf": "https://arxiv.org/pdf/2607.08770v1",
+      "score": "7.0",
+      "evidence": "视频扩散模型中的自回归展开",
+      "tldr": "LongE2V 是一种基于预训练视频扩散模型的框架，旨在解决从稀疏事件流中恢复高质量视频的挑战。它通过微调基础模型，实现了事件驱动的视频重建、预测和插帧。该方法引入了自回归展开、自适应上下文切换和重编码对齐等技术，有效解决了长序列的时间漂移和双向一致性问题，在保持高感知质量的同时展现了卓越的时间连贯性和泛化能力。",
+      "tags": "query:ardm",
+      "abstract_en": "Recovering high-quality video from sparse event streams is a challenging task. Regression methods often blur textures, while existing generative models struggle with long-term stability. We propose LongE2V, a novel approach that leverages pre-trained video diffusion priors to jointly handle event-based video reconstruction, prediction, and frame interpolation. By fine-tuning a foundational video model, our approach achieves high data efficiency and superior perceptual quality. We introduce Autoregressive Unrolling and Adaptive Context Switching to mitigate temporal drift in extremely long sequences. We also propose Reencoding Alignment with Cross Residual Correction to ensure precise bidirectional consistency during frame interpolation. Furthermore, Event Voxel Density Augmentation ensures robustness across varying sensor resolutions. Extensive experiments on real-world benchmarks demonstrate that LongE2V outperforms state-of-the-art methods across all three tasks, exhibiting exceptional temporal coherence and zero-shot generalization. Project page: https://cdfan0627.github.io/LongE2V-page/",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/12/2607.05381v1-what-does-a-discrete-diffusion-model-learn",
+      "section": "quick",
+      "title_en": "What Does a Discrete Diffusion Model Learn?",
+      "authors": "Rodrigo Casado Noguerales, Bernhard Schölkopf, Thomas Hofmann, Aran Raoufi",
+      "date": "2026-07-06",
+      "pdf": "https://arxiv.org/pdf/2607.05381v1",
+      "score": "6.0",
+      "evidence": "离散扩散模型的理论分析",
+      "tldr": "本文深入探讨了离散扩散模型（CTMC）的学习本质，通过严谨推导包含边界项的ELBO，提出了Oracle Distance定理，证明负ELBO等于数据熵与路径KL之和。研究揭示了去噪器、分数比和桥接插件预测器是同一对象的不同坐标表示，并统一了MDM、UDM、SEDD等现有模型，解释了不同参数化方案在初始化时的稳定性差异。",
+      "tags": "query:ardm",
+      "abstract_en": "What does a discrete diffusion model learn: a denoiser, a score ratio, or a bridge plug-in predictor? At the level of jump rates, these are one object in different coordinates, and reading a neural network in the wrong coordinate changes the process being trained and sampled. Starting with a rigorous derivation of the continuous-time Markov chain (CTMC) ELBO for any noising process, boundary terms included, we prove the \\emph{Oracle Distance} theorem: the negative ELBO is exactly equal to the data entropy plus the path KL from the oracle reverse process to the learned one, not merely a bound. Its unique optimizer is therefore the conditional expectation of the true reverse jump rate given the current noisy state, and its irreducible cost is the rate at which the forward process $Z_t$ destroys information about the clean data $Z_0$, $-\\tfrac{d}{dt}I(Z_0; Z_t)$, so every noising process shares the same best achievable negative ELBO: the data entropy. For sequences with token-factorizing noise, the oracle projection yields three exact coordinates for the optimizer: denoiser, cavity (bridge plug-in), and score, with closed-form conversions among them. This framework identifies which law each loss in the literature actually optimizes, recovering MDM, UDM, SEDD, and GIDD as special cases; explains why denoiser and cavity coincide for masked diffusion but not for uniform diffusion; proves that a denoiser parameterization makes the uniform ELBO diverge at initialization while the bridge plug-in stays finite; and calibrates ELBO implementations exactly at initialization. Every identity is verified numerically, without approximation, on an exactly solvable model.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
