@@ -6,31 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-12
-- 运行时间：2026-07-12 20:53:36 UTC
+- 最新运行日期：2026-07-13
+- 运行时间：2026-07-13 20:41:16 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：1
 - 精读区：1
-- 速读区：2
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦扩散模型在文本与视频领域的跨界突破，深度解析 dOPSD 带来的策略自蒸馏新范式。
-核心结论指出在线策略自蒸馏能显著提升扩散语言模型性能，同时长程视频重建技术正迈向更长时序的生成。
-推荐优先研读高分论文 dOPSD，掌握扩散模型在自然语言处理中的前沿优化思路。
-- 详情：[/202607/12/README](/202607/12/README)
+今日深度解析 3D 分子生成新范式，自回归与潜扩散模型强强联手。
+该研究通过结合自回归序列建模与潜空间扩散技术，显著提升了三维分子结构的生成精度与多样性。
+推荐关注 AI 制药与材料设计的读者深入研读，探索其在复杂分子空间建模中的应用潜力。
+- 详情：[/202607/13/README](/202607/13/README)
 
 ### 精读区论文标签
-1. [dOPSD: On-Policy Self-Distillation for Diffusion Language Models](/202607/12/2607.04428v1-dopsd-on-policy-self-distillation-for-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型作为自回归模型的并行替代方案
+1. [Autoregressive latent diffusion for 3D molecule generation](/202607/13/2607.09277v1-autoregressive-latent-diffusion-for-3d-molecule-generation)  
+   标签：评分：10.0/10、query:ardm
+   evidence：用于3D分子生成的潜空间自回归扩散框架
 
 ### 速读区论文标签
-1. [LongE2V: Long-Horizon Event-based Video Reconstruction, Prediction, and Frame Interpolation with Video Diffusion Models](/202607/12/2607.08770v1-longe2v-long-horizon-event-based-video-reconstruction-prediction-and-frame-interpolation-with-video-diffusion-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：视频扩散模型中的自回归展开
-2. [What Does a Discrete Diffusion Model Learn?](/202607/12/2607.05381v1-what-does-a-discrete-diffusion-model-learn)  
-   标签：评分：6.0/10、query:ardm
-   evidence：离散扩散模型的理论分析
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">

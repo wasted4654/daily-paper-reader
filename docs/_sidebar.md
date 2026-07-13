@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-13 <!--dpr-date:20260713-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/13/2607.09277v1-autoregressive-latent-diffusion-for-3d-molecule-generation" data-sidebar-item="{&quot;title&quot;: &quot;Autoregressive latent diffusion for 3D molecule generation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.09277v1-autoregressive-latent-diffusion-for-3d-molecule-generation&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;用于3D分子生成的潜空间自回归扩散框架&quot;}">Autoregressive latent diffusion for 3D molecule generation</a>
   * 2026-07-12 <!--dpr-date:20260712-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/12/2607.04428v1-dopsd-on-policy-self-distillation-for-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;dOPSD: On-Policy Self-Distillation for Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.04428v1-dopsd-on-policy-self-distillation-for-diffusion-language-models&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散语言模型作为自回归模型的并行替代方案&quot;}">dOPSD: On-Policy Self-Distillation for Diffusion Language Models</a>
