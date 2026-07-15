@@ -1,0 +1,237 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-15T20:04:57.657693+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.12422v1",
+      "title": "Accepted Prefixes Are Not All You Need: A Negative Result on PEFT-Based Block-Diffusion Drafting",
+      "abstract": "Speculative decoding accelerates autoregressive language model inference by using a cheap drafter to propose multiple future tokens and a target model to verify them. A common design goal is therefore to improve draft quality while reducing auxiliary parameters and systems overhead. We study a negative result for this direction through PEFT-BD, a same-backbone speculative decoding method in which a LoRA-like adapter acts as a block-diffusion drafter for an autoregressive verifier. PEFT-BD is motivated by several attractive properties: it avoids tokenizer mismatch, avoids loading a separate draft model, adds only a small number of trainable parameters, and uses a BD3LM-style denoising objective to propose a block of tokens in parallel. Despite these advantages, PEFT-BD does not yield a practical speedup in our Qwen3-0.6B experiments. Although the method obtains nontrivial accepted prefixes, profiling shows that each speculative step requires an adapter-enabled full-backbone draft pass followed by an adapter-disabled full-backbone verification pass. Thus, the drafter is parameter-efficient but not compute-efficient. Our results isolate a simple but important condition for successful speculative decoding: the drafter must be substantially cheaper to execute than the verifier. Longer accepted prefixes alone cannot compensate when draft computation remains verifier-scale.",
+      "authors": [
+        "Abdurrahman Javat",
+        "Allan Kazakov"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-07-14T06:48:33+00:00",
+      "link": "https://arxiv.org/pdf/2607.12422v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Block-diffusion drafter for an autoregressive verifier in speculative decoding",
+      "llm_evidence_cn": "投机解码中用于自回归验证器的块扩散起草器",
+      "llm_evidence": "投机解码中用于自回归验证器的块扩散起草器",
+      "canonical_evidence": "投机解码中用于自回归验证器的块扩散起草器",
+      "llm_tldr_en": "Evaluates a block-diffusion drafting method to accelerate autoregressive language model inference.",
+      "llm_tldr_cn": "评估了一种块扩散起草方法，旨在加速自回归语言模型的推理。",
+      "llm_tldr": "评估了一种块扩散起草方法，旨在加速自回归语言模型的推理。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.13031v1",
+      "title": "The Seriality Gap in Video Diffusion Models",
+      "abstract": "When one ball strikes another, then another, video models should predict the consequences of each bounce. In controlled experiments on multi-ball hard-sphere dynamics, we find that the performance of standard bidirectional video diffusion degrades as the causal chain lengthens, even when provided more denoising steps. In a length-matched single-ball control, where ball-ball interactions are absent, the degradation largely disappears, isolating dependent-event structure rather than video length as the cause. Across intervention studies, methods that increase effective serial computation improve performance disproportionately, including autoregressive/blockwise generation and architectural depth. We identify this pattern as the seriality gap: a mismatch between tasks requiring growing serial computation and video diffusion models whose denoising loop does not provide scalable serial compute. We then prove that, for deterministic video prediction, denoising steps do not add serial computation beyond the backbone, indicating a structural obstacle for video diffusion on serial reasoning and simulation tasks.",
+      "authors": [
+        "Jorge Diaz Chao",
+        "Konpat Preechakul",
+        "Yuxi Liu",
+        "Yutong Bai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-07-14T17:59:22+00:00",
+      "link": "https://arxiv.org/pdf/2607.13031v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive/blockwise generation in video diffusion",
+      "llm_evidence_cn": "视频扩散中的自回归/分块生成",
+      "llm_evidence": "视频扩散中的自回归/分块生成",
+      "canonical_evidence": "视频扩散中的自回归/分块生成",
+      "llm_tldr_en": "Identifies the seriality gap in video diffusion and shows autoregressive generation improves performance.",
+      "llm_tldr_cn": "识别了视频扩散中的序列性差距，并证明自回归生成能显著提升性能。",
+      "llm_tldr": "识别了视频扩散中的序列性差距，并证明自回归生成能显著提升性能。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.12829v1",
+      "title": "Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques",
+      "abstract": "Diffusion large language models (dLLMs) offer a theoretical advantage in parallel generation over standard autoregressive models. However, parallel generation alone does not guarantee practical speedups. Realizing this efficiency requires specialized inference mechanisms, such as diffusion-aware caching and reuse. Consequently, as inference efficiency becomes a prerequisite for practical deployment, recent research has actively explored acceleration techniques across algorithms, architectures, and systems. However, rigorous comparisons remain difficult, as end-to-end latency stems from intricate trade-offs between algorithmic, architectural, and system-level factors that are often conflated in existing benchmarks. In this survey, we introduce a unified latency decomposition framework for dLLMs to disentangle these factors and analyze their impact on inference speed in real deployments. Guided by this framework, we categorize acceleration techniques along three axes covering algorithmic innovations, architectural and system optimizations, and inference-time scaling. Finally, we provide guidelines for reproducible benchmarking and highlight open challenges for realizing the full potential of parallel generation.",
+      "authors": [
+        "Daehoon Gwak",
+        "Minhyung Lee",
+        "Junwoo Park",
+        "Jaegul Choo"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-07-14T14:48:06+00:00",
+      "link": "https://arxiv.org/pdf/2607.12829v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Survey of masked diffusion LLMs as alternatives to autoregressive models",
+      "llm_evidence_cn": "综述了作为自回归模型替代方案的掩码扩散大语言模型",
+      "llm_evidence": "综述了作为自回归模型替代方案的掩码扩散大语言模型",
+      "canonical_evidence": "综述了作为自回归模型替代方案的掩码扩散大语言模型",
+      "llm_tldr_en": "Surveys efficient inference techniques for diffusion LLMs, comparing their parallel nature to autoregressive models.",
+      "llm_tldr_cn": "综述了扩散大语言模型的高效推理技术，并将其并行特性与自回归模型进行了对比。",
+      "llm_tldr": "综述了扩散大语言模型的高效推理技术，并将其并行特性与自回归模型进行了对比。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.13013v1",
+      "title": "Audio-Native Speech Recognition with a Frozen Discrete-Diffusion Language Model",
+      "abstract": "Automatic speech recognition is dominated by autoregressive decoders that emit one token at a time. We ask whether a discrete diffusion language model can transcribe speech instead, refining a whole transcript in parallel over a small number of denoising steps. We train an audio-native interface for DiffusionGemma, a 26B mixture-of-experts model that generates text by uniform, random-token discrete diffusion rather than the absorbing-mask scheme common to recent diffusion language models. A frozen Whisper encoder supplies acoustic features, a lightweight projector maps them into the model embedding space, and low-rank adapters let the frozen backbone attend to the new modality.   About 42M parameters are trained, which is 0.16 percent of the backbone. We find that the natural training objectives fail to ground the audio because their gradient reaches the projector only through attention that has already dismissed it. A connectionist temporal classification loss applied through the frozen output head breaks this deadlock. The resulting model reaches 6.6 percent word error rate on LibriSpeech test-clean, transcribes in roughly eight parallel steps regardless of utterance length, and uses a single adapter trained on six languages, which we evaluate here on English, Hindi, and Mandarin.",
+      "authors": [
+        "Harsha Vardhan Khurdula",
+        "Abhinav Kumar Singh",
+        "Yoeven D Khemlani",
+        "Vineet Agarwal"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.SD"
+      ],
+      "published": "2026-07-14T17:53:22+00:00",
+      "link": "https://arxiv.org/pdf/2607.13013v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "discrete-diffusion language model as alternative to autoregressive decoders",
+      "llm_evidence_cn": "离散扩散语言模型作为自回归解码器的替代方案",
+      "llm_evidence": "离散扩散语言模型作为自回归解码器的替代方案",
+      "canonical_evidence": "离散扩散语言模型作为自回归解码器的替代方案",
+      "llm_tldr_en": "Explores using discrete diffusion models for speech recognition instead of traditional autoregressive decoders.",
+      "llm_tldr_cn": "探索使用离散扩散模型代替传统的自回归解码器进行语音识别。",
+      "llm_tldr": "探索使用离散扩散模型代替传统的自回归解码器进行语音识别。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.11758v1",
+      "title": "From Global to Factor-Wise Expert Composition in Discrete Diffusion Models",
+      "abstract": "Discrete diffusion models offer a powerful framework for solving complex reasoning tasks, particularly through compositional generation, which combines multiple pre-trained experts to generalize beyond their individual training data. Recent theoretical corrections introduce time-dependent mixing weights to better align composed diffusion dynamics with the intended target. However, these methods are fundamentally limited by working on a per-sample basis, treating each generated state monolithically and ignoring the potential spatial or functional specializations of different experts. In this work, we address this limitation by proposing FactorDiff - a factor-wise composition framework for diffusion models. We posit that samples can be further decomposed into smaller factors, and propose a sampling process that dynamically routes each factor to the most relevant expert. We instantiate this framework with spatial/pixel-level compositions and validate it on the ARC-AGI benchmark, demonstrating that simple factor-specific routing consistently outperforms complex global scalar weighting schemes on tasks that require logical consistency and spatial disentanglement.",
+      "authors": [
+        "Haozhe Huang",
+        "Yudong Xu",
+        "Abhijoy Mandal",
+        "Alán Aspuru-Guzik"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-13T16:22:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.11758v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "discrete diffusion models for complex reasoning and compositional generation",
+      "llm_evidence_cn": "用于复杂推理和组合生成的离散扩散模型",
+      "llm_evidence": "用于复杂推理和组合生成的离散扩散模型",
+      "canonical_evidence": "用于复杂推理和组合生成的离散扩散模型",
+      "llm_tldr_en": "Proposes FactorDiff for factor-wise composition in discrete diffusion models to improve reasoning.",
+      "llm_tldr_cn": "提出了 FactorDiff 框架，通过离散扩散模型中的因子分解组合来提升推理能力。",
+      "llm_tldr": "提出了 FactorDiff 框架，通过离散扩散模型中的因子分解组合来提升推理能力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.12391v1",
+      "title": "ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series",
+      "abstract": "We present a diffusion based model for asynchronous time series prediction, where the goal is to predict the next inter event time and event type. To address the inherent uncertainty of future events, we introduce ReDiTT, a retrieval augmented conditional diffusion transformer that operates in latent space. ReDiTT retrieves structurally similar latent sequences from a memory bank during both training and inference and incorporates them as reference conditions through cross attention. This retrieval based conditioning allows the model to attend to relevant temporal dynamics and provides global structural guidance for generation. As a result, ReDiTT stabilizes long horizon forecasting and improves sample diversity. Experiments on seven real world datasets demonstrate state of the art performance on next event prediction and long horizon forecasting. Our code is available at https://github.com/BorealisAI/ReDiTT.",
+      "authors": [
+        "Saiyue Lyu",
+        "Zhitian Zhang",
+        "Ruizhi Deng",
+        "Thibaut Durand"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-14T06:11:40+00:00",
+      "link": "https://arxiv.org/pdf/2607.12391v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Diffusion based model for asynchronous time series prediction",
+      "llm_evidence_cn": "基于扩散模型的异步时间序列预测",
+      "llm_evidence": "基于扩散模型的异步时间序列预测",
+      "canonical_evidence": "基于扩散模型的异步时间序列预测",
+      "llm_tldr_en": "Introduces a retrieval-augmented diffusion transformer for predicting next events in time series.",
+      "llm_tldr_cn": "引入检索增强的扩散Transformer用于预测时间序列中的下一个事件。",
+      "llm_tldr": "引入检索增强的扩散Transformer用于预测时间序列中的下一个事件。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

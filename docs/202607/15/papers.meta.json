@@ -1,0 +1,93 @@
+{
+  "label": "2026-07-15",
+  "date": "2026-07-15",
+  "generated_at": "2026-07-15T20:05:55",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202607/15/2607.12422v1-accepted-prefixes-are-not-all-you-need-a-negative-result-on-peft-based-block-diffusion-drafting",
+      "section": "deep",
+      "title_en": "Accepted Prefixes Are Not All You Need: A Negative Result on PEFT-Based Block-Diffusion Drafting",
+      "authors": "Abdurrahman Javat, Allan Kazakov",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12422v1",
+      "score": "9.0",
+      "evidence": "投机解码中用于自回归验证器的块扩散起草器",
+      "tldr": "本研究探讨了基于参数高效微调（PEFT）和块扩散（Block-Diffusion）的投机解码方法 PEFT-BD。该方法利用 LoRA 适配器在同一骨干网络上生成候选 Token，旨在减少系统开销并避免分词器不匹配。然而，实验表明 PEFT-BD 在 Qwen3-0.6B 上未能实现实际加速。研究指出，尽管该方法能获得有效的接受前缀，但由于草稿模型执行成本与验证模型相当，导致计算效率低下。这一负面结果强调了投机解码中草稿模型必须显著轻于验证模型的重要性。",
+      "tags": "query:ardm",
+      "abstract_en": "Speculative decoding accelerates autoregressive language model inference by using a cheap drafter to propose multiple future tokens and a target model to verify them. A common design goal is therefore to improve draft quality while reducing auxiliary parameters and systems overhead. We study a negative result for this direction through PEFT-BD, a same-backbone speculative decoding method in which a LoRA-like adapter acts as a block-diffusion drafter for an autoregressive verifier. PEFT-BD is motivated by several attractive properties: it avoids tokenizer mismatch, avoids loading a separate draft model, adds only a small number of trainable parameters, and uses a BD3LM-style denoising objective to propose a block of tokens in parallel. Despite these advantages, PEFT-BD does not yield a practical speedup in our Qwen3-0.6B experiments. Although the method obtains nontrivial accepted prefixes, profiling shows that each speculative step requires an adapter-enabled full-backbone draft pass followed by an adapter-disabled full-backbone verification pass. Thus, the drafter is parameter-efficient but not compute-efficient. Our results isolate a simple but important condition for successful speculative decoding: the drafter must be substantially cheaper to execute than the verifier. Longer accepted prefixes alone cannot compensate when draft computation remains verifier-scale.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.13031v1-the-seriality-gap-in-video-diffusion-models",
+      "section": "deep",
+      "title_en": "The Seriality Gap in Video Diffusion Models",
+      "authors": "Jorge Diaz Chao, Konpat Preechakul, Yuxi Liu, Yutong Bai",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.13031v1",
+      "score": "9.0",
+      "evidence": "视频扩散中的自回归/分块生成",
+      "tldr": "本研究探讨了视频扩散模型在模拟复杂物理交互（如多球碰撞）时的局限性，提出了“串行性差距”概念。通过受控实验发现，标准双向扩散模型在处理长因果链任务时性能显著下降，且增加去噪步数无法解决该问题。研究证明了去噪循环在确定性预测中无法提供额外的串行计算能力，并指出自回归生成和增加架构深度是缓解该问题的有效手段。",
+      "tags": "query:ardm",
+      "abstract_en": "When one ball strikes another, then another, video models should predict the consequences of each bounce. In controlled experiments on multi-ball hard-sphere dynamics, we find that the performance of standard bidirectional video diffusion degrades as the causal chain lengthens, even when provided more denoising steps. In a length-matched single-ball control, where ball-ball interactions are absent, the degradation largely disappears, isolating dependent-event structure rather than video length as the cause. Across intervention studies, methods that increase effective serial computation improve performance disproportionately, including autoregressive/blockwise generation and architectural depth. We identify this pattern as the seriality gap: a mismatch between tasks requiring growing serial computation and video diffusion models whose denoising loop does not provide scalable serial compute. We then prove that, for deterministic video prediction, denoising steps do not add serial computation beyond the backbone, indicating a structural obstacle for video diffusion on serial reasoning and simulation tasks.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.12829v1-accelerating-masked-diffusion-large-language-models-a-survey-of-efficient-inference-techniques",
+      "section": "deep",
+      "title_en": "Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques",
+      "authors": "Daehoon Gwak, Minhyung Lee, Junwoo Park, Jaegul Choo",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12829v1",
+      "score": "8.0",
+      "evidence": "综述了作为自回归模型替代方案的掩码扩散大语言模型",
+      "tldr": "本综述针对扩散大语言模型（dLLMs）在并行生成中的推理效率问题，系统探讨了算法、架构及系统层面的加速技术。研究提出了一个统一的延迟分解框架，旨在厘清影响推理速度的复杂因素，并从算法创新、系统优化和推理缩放三个维度对现有技术进行分类。此外，文章还提供了可复现的基准测试指南，为释放dLLMs的并行生成潜力提供了理论支撑与实践方向。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) offer a theoretical advantage in parallel generation over standard autoregressive models. However, parallel generation alone does not guarantee practical speedups. Realizing this efficiency requires specialized inference mechanisms, such as diffusion-aware caching and reuse. Consequently, as inference efficiency becomes a prerequisite for practical deployment, recent research has actively explored acceleration techniques across algorithms, architectures, and systems. However, rigorous comparisons remain difficult, as end-to-end latency stems from intricate trade-offs between algorithmic, architectural, and system-level factors that are often conflated in existing benchmarks. In this survey, we introduce a unified latency decomposition framework for dLLMs to disentangle these factors and analyze their impact on inference speed in real deployments. Guided by this framework, we categorize acceleration techniques along three axes covering algorithmic innovations, architectural and system optimizations, and inference-time scaling. Finally, we provide guidelines for reproducible benchmarking and highlight open challenges for realizing the full potential of parallel generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.13013v1-audio-native-speech-recognition-with-a-frozen-discrete-diffusion-language-model",
+      "section": "deep",
+      "title_en": "Audio-Native Speech Recognition with a Frozen Discrete-Diffusion Language Model",
+      "authors": "Harsha Vardhan Khurdula, Abhinav Kumar Singh, Yoeven D Khemlani, Vineet Agarwal",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.13013v1",
+      "score": "8.0",
+      "evidence": "离散扩散语言模型作为自回归解码器的替代方案",
+      "tldr": "本研究探索了使用离散扩散语言模型（DiffusionGemma）进行语音识别的可能性，旨在打破自回归解码的串行限制。通过冻结26B参数的混合专家模型，并结合Whisper编码器、轻量级投影层和LoRA适配器，仅训练0.16%的参数。研究引入CTC损失解决了音频对齐难题，实现了在约8步内完成并行转录，在LibriSpeech上达到6.6%的字错率，并支持多语言转录。",
+      "tags": "query:ardm",
+      "abstract_en": "Automatic speech recognition is dominated by autoregressive decoders that emit one token at a time. We ask whether a discrete diffusion language model can transcribe speech instead, refining a whole transcript in parallel over a small number of denoising steps. We train an audio-native interface for DiffusionGemma, a 26B mixture-of-experts model that generates text by uniform, random-token discrete diffusion rather than the absorbing-mask scheme common to recent diffusion language models. A frozen Whisper encoder supplies acoustic features, a lightweight projector maps them into the model embedding space, and low-rank adapters let the frozen backbone attend to the new modality.   About 42M parameters are trained, which is 0.16 percent of the backbone. We find that the natural training objectives fail to ground the audio because their gradient reaches the projector only through attention that has already dismissed it. A connectionist temporal classification loss applied through the frozen output head breaks this deadlock. The resulting model reaches 6.6 percent word error rate on LibriSpeech test-clean, transcribes in roughly eight parallel steps regardless of utterance length, and uses a single adapter trained on six languages, which we evaluate here on English, Hindi, and Mandarin.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.11758v1-from-global-to-factor-wise-expert-composition-in-discrete-diffusion-models",
+      "section": "quick",
+      "title_en": "From Global to Factor-Wise Expert Composition in Discrete Diffusion Models",
+      "authors": "Haozhe Huang, Yudong Xu, Abhijoy Mandal, Alán Aspuru-Guzik",
+      "date": "2026-07-13",
+      "pdf": "https://arxiv.org/pdf/2607.11758v1",
+      "score": "6.0",
+      "evidence": "用于复杂推理和组合生成的离散扩散模型",
+      "tldr": "离散扩散模型通过组合多个预训练专家来解决复杂推理任务，但现有方法通常在样本层面进行全局加权，忽略了专家的空间或功能专业化。本文提出 FactorDiff 框架，将样本分解为更小的因子，并在采样过程中将每个因子动态路由至最相关的专家。在 ARC-AGI 基准测试中，该方法在逻辑一致性和空间解耦任务上显著优于传统的全局加权方案。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion models offer a powerful framework for solving complex reasoning tasks, particularly through compositional generation, which combines multiple pre-trained experts to generalize beyond their individual training data. Recent theoretical corrections introduce time-dependent mixing weights to better align composed diffusion dynamics with the intended target. However, these methods are fundamentally limited by working on a per-sample basis, treating each generated state monolithically and ignoring the potential spatial or functional specializations of different experts. In this work, we address this limitation by proposing FactorDiff - a factor-wise composition framework for diffusion models. We posit that samples can be further decomposed into smaller factors, and propose a sampling process that dynamically routes each factor to the most relevant expert. We instantiate this framework with spatial/pixel-level compositions and validate it on the ARC-AGI benchmark, demonstrating that simple factor-specific routing consistently outperforms complex global scalar weighting schemes on tasks that require logical consistency and spatial disentanglement.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.12391v1-reditt-retrieval-augmented-conditional-diffusion-transformers-for-asynchronous-time-series",
+      "section": "quick",
+      "title_en": "ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series",
+      "authors": "Saiyue Lyu, Zhitian Zhang, Ruizhi Deng, Thibaut Durand",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12391v1",
+      "score": "6.0",
+      "evidence": "基于扩散模型的异步时间序列预测",
+      "tldr": "本研究针对异步时间序列预测中的不确定性，提出了ReDiTT模型。该模型结合了检索增强和条件扩散Transformer，在潜空间内运行。通过从存储库中检索结构相似的潜序列并利用交叉注意力机制进行调节，ReDiTT能够捕捉相关的时间动态并提供全局结构引导。实验证明，该方法在下一事件预测和长周期预测任务中均达到了SOTA水平，显著提升了生成的稳定性和多样性。",
+      "tags": "query:ardm",
+      "abstract_en": "We present a diffusion based model for asynchronous time series prediction, where the goal is to predict the next inter event time and event type. To address the inherent uncertainty of future events, we introduce ReDiTT, a retrieval augmented conditional diffusion transformer that operates in latent space. ReDiTT retrieves structurally similar latent sequences from a memory bank during both training and inference and incorporates them as reference conditions through cross attention. This retrieval based conditioning allows the model to attend to relevant temporal dynamics and provides global structural guidance for generation. As a result, ReDiTT stabilizes long horizon forecasting and improves sample diversity. Experiments on seven real world datasets demonstrate state of the art performance on next event prediction and long horizon forecasting. Our code is available at https://github.com/BorealisAI/ReDiTT.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

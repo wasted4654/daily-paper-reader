@@ -6,40 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-14
-- 运行时间：2026-07-14 20:42:07 UTC
+- 最新运行日期：2026-07-15
+- 运行时间：2026-07-15 20:05:46 UTC
 - 运行状态：成功
 - 本次总论文数：6
 - 精读区：4
 - 速读区：2
 
 ### 今日简报（AI）
-今日聚焦长视频生成与多模态建模，深度解析 6 篇前沿论文，力求突破视觉大模型的长效稳定性。
-重点推荐 Cycle-World 提出的逆向预测循环一致性，它以满分表现有效解决了视频世界模型长期预测中的误差累积顽疾。
-建议普通读者关注视频生成中的一致性算法演进，这是通往高保真、长时段视觉创作的核心技术门槛。
-- 详情：[/202607/14/README](/202607/14/README)
+今日聚焦扩散模型前沿，深度复盘了视频生成瓶颈与 PEFT 推理加速的负面实验结论。
+核心结论指出视频模型存在“串行鸿沟”，且 PEFT 并非块扩散草稿推理的万能药。
+推荐优先精读两篇 9 分高分论文，以规避当前生成式 AI 开发中的常见技术误区。
+- 详情：[/202607/15/README](/202607/15/README)
 
 ### 精读区论文标签
-1. [Cycle-World: Mitigating Error Accumulation in Long-term Video World Models via Reverse-Prediction Cycle Consistency](/202607/14/2607.11836v1-cycle-world-mitigating-error-accumulation-in-long-term-video-world-models-via-reverse-prediction-cycle-consistency)  
-   标签：评分：10.0/10、query:ardm
-   evidence：解决了长视频生成中自回归扩散模型的误差累积问题
-2. [Next-Dense-Stride Prediction for Multimodal Autoregressive Visual Modeling](/202607/14/2607.09892v1-next-dense-stride-prediction-for-multimodal-autoregressive-visual-modeling)  
+1. [Accepted Prefixes Are Not All You Need: A Negative Result on PEFT-Based Block-Diffusion Drafting](/202607/15/2607.12422v1-accepted-prefixes-are-not-all-you-need-a-negative-result-on-peft-based-block-diffusion-drafting)  
+   标签：评分：9.0/10、query:ardm
+   evidence：投机解码中用于自回归验证器的块扩散起草器
+2. [The Seriality Gap in Video Diffusion Models](/202607/15/2607.13031v1-the-seriality-gap-in-video-diffusion-models)  
+   标签：评分：9.0/10、query:ardm
+   evidence：视频扩散中的自回归/分块生成
+3. [Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques](/202607/15/2607.12829v1-accelerating-masked-diffusion-large-language-models-a-survey-of-efficient-inference-techniques)  
    标签：评分：8.0/10、query:ardm
-   evidence：将自回归图像生成重新表述为从粗到细的下一密集步长预测
-3. [Improving Sample Diversity in Autoregressive Text-to-Image Generation via Cluster Truncation](/202607/14/2607.10535v1-improving-sample-diversity-in-autoregressive-text-to-image-generation-via-cluster-truncation)  
+   evidence：综述了作为自回归模型替代方案的掩码扩散大语言模型
+4. [Audio-Native Speech Recognition with a Frozen Discrete-Diffusion Language Model](/202607/15/2607.13013v1-audio-native-speech-recognition-with-a-frozen-discrete-diffusion-language-model)  
    标签：评分：8.0/10、query:ardm
-   evidence：自回归图像生成作为扩散模型在多样性方面的替代方案研究
-4. [Structure-Detail Decoupled Autoregressive Generation for Fast and High-Fidelity Virtual Try-On](/202607/14/2607.11233v1-structure-detail-decoupled-autoregressive-generation-for-fast-and-high-fidelity-virtual-try-on)  
-   标签：评分：8.0/10、query:ardm
-   evidence：视觉自回归(VAR)模型作为扩散模型在图像生成领域的替代方案
+   evidence：离散扩散语言模型作为自回归解码器的替代方案
 
 ### 速读区论文标签
-1. [Conservation Laws for Diffusion Models](/202607/14/2607.10067v1-conservation-laws-for-diffusion-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：通过守恒定律和似然表征对比了自回归模型与扩散模型
-2. [Sticky Jump Diffusions: A Unifying View of Masked, Continuous, and Hybrid Diffusion](/202607/14/2607.10951v1-sticky-jump-diffusions-a-unifying-view-of-masked-continuous-and-hybrid-diffusion)  
+1. [From Global to Factor-Wise Expert Composition in Discrete Diffusion Models](/202607/15/2607.11758v1-from-global-to-factor-wise-expert-composition-in-discrete-diffusion-models)  
    标签：评分：6.0/10、query:ardm
-   evidence：使用标记嵌入统一掩码扩散与连续扩散的视角
+   evidence：用于复杂推理和组合生成的离散扩散模型
+2. [ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series](/202607/15/2607.12391v1-reditt-retrieval-augmented-conditional-diffusion-transformers-for-asynchronous-time-series)  
+   标签：评分：6.0/10、query:ardm
+   evidence：基于扩散模型的异步时间序列预测
 
 
 <div class="dpr-home-promo-card">
