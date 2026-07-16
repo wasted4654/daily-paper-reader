@@ -6,40 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 20:05:46 UTC
+- 最新运行日期：2026-07-16
+- 运行时间：2026-07-16 20:32:21 UTC
 - 运行状态：成功
-- 本次总论文数：6
-- 精读区：4
+- 本次总论文数：3
+- 精读区：1
 - 速读区：2
 
 ### 今日简报（AI）
-今日聚焦扩散模型前沿，深度复盘了视频生成瓶颈与 PEFT 推理加速的负面实验结论。
-核心结论指出视频模型存在“串行鸿沟”，且 PEFT 并非块扩散草稿推理的万能药。
-推荐优先精读两篇 9 分高分论文，以规避当前生成式 AI 开发中的常见技术误区。
-- 详情：[/202607/15/README](/202607/15/README)
+今日深度探索扩散模型的全场景进化，重点解析从离散统一框架到动作与网格生成的最新突破。
+核心看点在于离散扩散模型如何实现从分词到生成的全链路统一，以及利用“噪声票据”精炼动作生成的效率。
+推荐优先研读 8.0 分的离散扩散框架论文，以把握生成式 AI 在非连续数据领域的底层逻辑变革。
+- 详情：[/202607/16/README](/202607/16/README)
 
 ### 精读区论文标签
-1. [Accepted Prefixes Are Not All You Need: A Negative Result on PEFT-Based Block-Diffusion Drafting](/202607/15/2607.12422v1-accepted-prefixes-are-not-all-you-need-a-negative-result-on-peft-based-block-diffusion-drafting)  
-   标签：评分：9.0/10、query:ardm
-   evidence：投机解码中用于自回归验证器的块扩散起草器
-2. [The Seriality Gap in Video Diffusion Models](/202607/15/2607.13031v1-the-seriality-gap-in-video-diffusion-models)  
-   标签：评分：9.0/10、query:ardm
-   evidence：视频扩散中的自回归/分块生成
-3. [Accelerating Masked Diffusion Large Language Models: A Survey of Efficient Inference Techniques](/202607/15/2607.12829v1-accelerating-masked-diffusion-large-language-models-a-survey-of-efficient-inference-techniques)  
+1. [Discrete Diffusion Models: A Unified Framework from Tokenization to Generation](/202607/16/2607.13431v1-discrete-diffusion-models-a-unified-framework-from-tokenization-to-generation)  
    标签：评分：8.0/10、query:ardm
-   evidence：综述了作为自回归模型替代方案的掩码扩散大语言模型
-4. [Audio-Native Speech Recognition with a Frozen Discrete-Diffusion Language Model](/202607/15/2607.13013v1-audio-native-speech-recognition-with-a-frozen-discrete-diffusion-language-model)  
-   标签：评分：8.0/10、query:ardm
-   evidence：离散扩散语言模型作为自回归解码器的替代方案
+   evidence：离散扩散模型作为自回归建模的有竞争力的替代方案
 
 ### 速读区论文标签
-1. [From Global to Factor-Wise Expert Composition in Discrete Diffusion Models](/202607/15/2607.11758v1-from-global-to-factor-wise-expert-composition-in-discrete-diffusion-models)  
+1. [Retrieving and Refining Winning Noise Tickets for Diffusion-Based Motion Generation](/202607/16/2607.06843v1-retrieving-and-refining-winning-noise-tickets-for-diffusion-based-motion-generation)  
+   标签：评分：7.0/10、query:diffpl
+   evidence：基于扩散的运动生成与轨迹一致性
+2. [Nexus: Native Mesh Generation with Diffusion](/202607/16/2607.13563v1-nexus-native-mesh-generation-with-diffusion)  
    标签：评分：6.0/10、query:ardm
-   evidence：用于复杂推理和组合生成的离散扩散模型
-2. [ReDiTT: Retrieval Augmented Conditional Diffusion Transformers for Asynchronous Time Series](/202607/15/2607.12391v1-reditt-retrieval-augmented-conditional-diffusion-transformers-for-asynchronous-time-series)  
-   标签：评分：6.0/10、query:ardm
-   evidence：基于扩散模型的异步时间序列预测
+   evidence：作为自回归过程替代方案的网格生成扩散方法
 
 
 <div class="dpr-home-promo-card">
