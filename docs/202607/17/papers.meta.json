@@ -1,0 +1,79 @@
+{
+  "label": "2026-07-17",
+  "date": "2026-07-17",
+  "generated_at": "2026-07-17T20:04:47",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202607/17/2607.15278v1-hierarchical-denoising-for-multi-step-visual-reasoning",
+      "section": "deep",
+      "title_en": "Hierarchical Denoising For Multi-Step Visual Reasoning",
+      "authors": "Zezhong Qian, Xiaowei Chi, Chak-Wing Mak, Tianze Zhou, Ruibin Yuan, Yuhan Rui, Hengzhe Sun, Zhuoqun Wu, Yuming Li, Siyuan Qian, Sirui Han, Shanghang Zhang",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.15278v1",
+      "score": "9.0",
+      "evidence": "将分层潜变量集成到因果视频生成中，用于流式自回归扩散",
+      "tldr": "针对视频模型在多步视觉推理中缺乏逻辑一致性且推理延迟高的问题，本文提出HDR框架。该框架通过层次化潜变量结构实现由粗到精的推理，结合稀疏层次注意力机制（SHAP），在保持低延迟流式输出的同时显著提升了全局规划能力。在涵盖迷宫、汉诺塔等六类任务的新基准测试中，HDR大幅超越了自回归扩散模型，并在机器人实验中展现了物理交互潜力。",
+      "tags": "query:ardm",
+      "abstract_en": "Video models are evolving into vision foundation models, yet they still lack human-like multi-step reasoning. Streaming autoregressive diffusion models are efficient but limited in reasoning, while bidirectional diffusion enables global revision with high inference costs due to dense frame-level denoising. Both paradigms struggle to achieve logical consistency and low-latency streaming for complex reasoning tasks. We propose HDR (Hierarchical Denoising for Visual Reasoning), a unified framework that integrates hierarchical latents into causal video generation for multi-step reasoning. HDR organizes video latents into a tree-structured hierarchy, enabling coarse-to-fine reasoning before streaming output. Coarse denoising layers preserve uncertain hypotheses for global planning, while finer layers progressively refine them into concrete visual states. A sparse hierarchical attention pattern (SHAP) further reduces temporal attention costs. We introduce a level-stratified multi-step video reasoning benchmark with out-of-distribution cases, covering six tasks: maze navigation, Tower of Hanoi, one-line drawing, sliding puzzle, Sokoban, and water pouring. Compared with streaming autoregressive diffusion baselines, HDR improves success from 34.22 to 60.29 (76.2% relative gain) and increases average progress from 76.00 to 89.56, demonstrating more consistent reasoning trajectories. HDR maintains low-latency streaming at 0.70 seconds per latent, achieving 54.2 times faster inference than bidirectional diffusion. It also retains 82.9% of full-data performance with only 2% training data, compared with 52.0% for bidirectional diffusion. Real-world robot experiments further demonstrate HDR's potential for physical interaction and world modeling. Project demo: https://hierarchical-diffusion-reasoning.github.io/.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/17/2607.14279v1-from-vector-autoregressions-to-ai-based-time-series-forecasting-a-review",
+      "section": "quick",
+      "title_en": "From Vector Autoregressions to AI-based Time Series Forecasting: A Review",
+      "authors": "Likai Chen, Weining Wang",
+      "date": "2026-07-15",
+      "pdf": "https://arxiv.org/pdf/2607.14279v1",
+      "score": "7.0",
+      "evidence": "扩散生成预测器与向量自回归的综述",
+      "tldr": "本文综述了从传统向量自回归（VAR）到现代AI时间序列预测的发展，重点探讨了Transformer、大规模预训练模型和扩散生成模型。研究通过条件分布这一核心概念将计量经济学传统与AI方法联系起来，分析了这些方法在处理高维、非平稳和非线性挑战方面的进展，并指出了AI模型在推断和结构化分析方面的局限性。",
+      "tags": "query:ardm",
+      "abstract_en": "Forecasting is a central goal of time-series analysis. This review centers on three major developments in recent AI-based time-series forecasting: transformers, large pretrained models for zero-shot forecasting, and diffusion-based generative forecasters. We connect these methods to the econometric tradition built around the vector autoregression (VAR) through a common object: the conditional distribution of the future given the past. The review is organized around three long-standing challenges: \\emph{high dimensionality}, \\emph{nonstationarity}, and \\emph{nonlinearity}. We argue that modern methods make progress by expanding the classical forecasting template: they allow more flexible dynamics, use larger information sets and training corpora, and represent richer predictive distributions. Yet they often lack the inferential and structural tools that make classical models useful for testing, explanation, and policy analysis. We close by outlining open problems where econometric tools remain important.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/17/2607.15200v1-mask-aware-policy-gradients-for-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Mask-Aware Policy Gradients for Diffusion Language Models",
+      "authors": "Haran Raajesh, Kulin Shah, Adam Klivans, Philipp Krähenbühl",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.15200v1",
+      "score": "7.0",
+      "evidence": "将扩散语言模型中的生成过程形式化为两阶段动作MDP",
+      "tldr": "针对掩码扩散语言模型（MDLM）在强化学习中对数似然估计难的问题，本文提出了一种掩码感知策略梯度方法。研究发现MDLM生成过程包含令牌预测和掩码选择两个阶段，通过将其建模为两阶段动作MDP，实现了策略梯度的自然分解。该方法在数学推理和编程任务上取得了显著提升，刷新了GSM8K和MBPP的性能记录。",
+      "tags": "query:ardm",
+      "abstract_en": "Reinforcement learning has proven effective for improving reasoning in large language models, but extending it to Masked Diffusion Language Models (MDLMs) remains challenging due to the intractability of the log-likelihood estimation. Existing approaches approximate this log-likelihood by modeling only the token predictions, ignoring the order in which positions are unmasked during generation. We observe that MDLM generation involves two decisions at each step: what tokens to place at each masked position and which positions to remask. We formalize this as a two-stage action MDP, showing that the policy gradient naturally decomposes into a token term and a masking term. Combining optimization of both terms leads to state-of-the-art outcomes on mathematical reasoning and coding benchmarks, with scores of 87.1% on GSM8K and 53.4% on MBPP.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/17/2607.12922v1-latentflow-a-general-framework-for-conditioning-stochastic-processes",
+      "section": "quick",
+      "title_en": "LatentFlow: A General Framework for Conditioning Stochastic Processes",
+      "authors": "Louis Sharrock, Lachlan Astfalck, Henry Moss",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12922v1",
+      "score": "6.0",
+      "evidence": "用于随机过程约束的框架，可用于轨迹生成和规划",
+      "tldr": "针对随机过程在非线性观测或复杂约束下难以进行条件推断的问题，本文提出了LatentFlow框架。该方法无需训练神经网络，通过将随机过程表示为潜在变量的确定性映射，将过程层面的条件化转化为潜在空间的推断。利用引导概率流在潜在空间采样并映射回原空间，实现了对空间先验、随机微分方程及物理模型等多种过程的高效、精确条件采样，具有极高的通用性。",
+      "tags": "query:diffpl",
+      "abstract_en": "Stochastic-process models are, as a rule, far easier to simulate than to condition. Non-linear observations, non-Gaussian likelihoods, black-box information, and global constraints all induce intractable conditional laws, requiring bespoke, model-specific constructions. We introduce LatentFlow, a single framework for conditioning stochastic processes, with no learned neural approximations and no training. Our starting point is to write the stochastic process as the deterministic image of a tractable latent innovation, $f_0 = T_{\\vartheta}(ξ_0)$, with $ξ_0$ sampled from a simple reference distribution. This reduces process-level conditioning to latent-space inference: pull the likelihood back through $T_{\\vartheta}$, sample the resulting latent law with a tractable guided probability flow, and push the samples forward. This construction is provably exact at the level of the target law; in practice, approximation enters only through finite terminal noising, Monte Carlo guidance, and time discretisation of the continuous-time dynamics, each of which is explicit and systematically reducible. As LatentFlow is training-free, conditioning reduces to solving a single reverse-time SDE. This enables conditional sampling in seconds on a single desktop CPU across model classes that have never shared a scalable method: classical spatial priors, nonlinear stochastic dynamics, mechanistic models from the physical and life sciences, stochastic PDEs, heavy-tails and extremes, point and discrete-state processes, and neural or simulator-defined processes.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/17/2607.14749v1-wansong-v10-technical-report",
+      "section": "quick",
+      "title_en": "WanSong v1.0 Technical Report",
+      "authors": "Binghui Chen, Pandeng Li, Yu Liu, Jingren Zhou",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.14749v1",
+      "score": "6.0",
+      "evidence": "讨论了自回归后接扩散的流水线以及纯扩散替代方案",
+      "tldr": "WanSong 是一款针对长篇商业级歌曲生成的纯扩散模型。针对现有模型在效率、长音频保真度和可控性方面的挑战，WanSong 摒弃了自回归或级联架构，实现了单次运行生成长达 5 分钟的高保真、多语言双声道（人声与伴奏）歌曲。通过步进蒸馏技术，该模型显著提升了推理速度，并为下游编辑任务提供了高效的微调路径。",
+      "tags": "query:ardm",
+      "abstract_en": "Music generation foundation models have recently attracted significant industry attention. However, achieving efficient generation and high-fidelity long-form audio while supporting controllability remains challenging. To address these needs, we present \\textbf{WanSong}, a simple yet powerful approach for long-form, commercial-grade song generation. Unlike autoregressive (AR) and cascaded multi-stage pipelines (\\eg, AR followed by diffusion), \\textbf{WanSong} is a pure diffusion-based model that directly generates high-fidelity, multilingual songs up to 5 minutes and outputs dual stems (vocals and background music) in a single run. In addition, our diffusion framework enables faster inference through step-distillation, and offers an efficient pathway for fine-tuning and customization to support downstream editing tasks.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
