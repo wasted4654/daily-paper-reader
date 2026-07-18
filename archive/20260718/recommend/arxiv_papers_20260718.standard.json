@@ -1,0 +1,90 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-18T21:00:43.607830+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2607.14557v1",
+      "title": "Seeing the End at Step Zero: Accelerating Diffusion MLLMs via MLP Sparsity-Aware Truncation",
+      "abstract": "Diffusion Multimodal Large Language Models (DMLLMs) are highly effective for multimodal reasoning, yet their inference efficiency is significantly hindered by fixed-length generation constraints. Since the actual output length is unknown, output sequences are padded to a predefined maximum length, resulting in substantial redundant computation over unnecessary [EOS] tokens. In this work, we discover that DMLLMs implicitly reveal their valid semantic boundary at the very first denoising step through a distinct shift in MLP activation sparsity. Leveraging this observation, we propose Seer, a training-free framework that detects this boundary using a Signal-to-Noise Ratio (SNR)-based criterion and performs one-shot truncation of the redundant suffix for all subsequent computations. To preserve these theoretical gains during batched serving, Seer incorporates a hybrid execution strategy that maximizes throughput while seamlessly accommodating dynamic sequence lengths. Experimental results demonstrate that Seer effectively eliminates padding waste, accelerating throughput by up to $\\sim$31$\\times$. Across 9 benchmarks, Seer robustly maintains overall performance and even improves accuracy on complex visual tasks by mitigating noise leakage (e.g., DocVQA score increases from 63.52 to 63.66), offering a highly efficient, plug-and-play solution for DMLLM acceleration.",
+      "authors": [
+        "Qicheng Zhao",
+        "Qi Sun",
+        "Zheyu Yan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-07-16T04:37:02+00:00",
+      "link": "https://arxiv.org/pdf/2607.14557v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "accelerating Diffusion Multimodal Large Language Models (DMLLMs)",
+      "llm_evidence_cn": "加速扩散多模态大语言模型（DMLLM）",
+      "llm_evidence": "加速扩散多模态大语言模型（DMLLM）",
+      "canonical_evidence": "加速扩散多模态大语言模型（DMLLM）",
+      "llm_tldr_en": "Seer accelerates Diffusion MLLMs by detecting semantic boundaries at the first step to truncate redundant computation.",
+      "llm_tldr_cn": "Seer通过在第一步检测语义边界来截断冗余计算，从而加速扩散多模态大语言模型。",
+      "llm_tldr": "Seer通过在第一步检测语义边界来截断冗余计算，从而加速扩散多模态大语言模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.14522v1",
+      "title": "A Continuous-Time Reinforcement Learning Framework for Fine-Tuning Discrete Diffusion Models",
+      "abstract": "We formulate reinforcement learning (RL) in continuous time with discrete state spaces and possibly arbitrary action spaces via a stochastic control approach, where the state dynamics are modeled as a controlled continuous-time Markov chain (CTMC). We consider policy optimization problems and derive the corresponding policy gradient methods, leading to continuous-time variants of proximal policy optimization (PPO) and group relative policy optimization (GRPO). As a primary application, we develop a complete continuous-time RL framework for fine-tuning score-based discrete diffusion models. The proposed framework enables reward-driven optimization without requiring differentiability on the reward signals. In contrast to the existing GRPO-based approaches that only rely on terminal rewards, our formulation allows intermediate reward or advantage signals to be incorporated throughout the denoising trajectory. Importantly, when specialized to masked diffusion models (MDMs), our framework encompasses a rich class of policy parameterizations over the vocabulary simplex with analytically tractable probability ratios, providing a unified perspective on exploration and policy optimization in MDMs. For masked diffusion large language models (dLLMs), we further propose trajectory subsampling techniques to efficiently estimate computationally prohibitive trajectory likelihoods, reducing the computational cost of computing per-position probability ratios. We showcase the effectiveness of our methods on both low-dimensional entropy-regularized optimization problems and RL post-training of dLLMs on mathematical reasoning and coding tasks.",
+      "authors": [
+        "Zikun Zhang",
+        "Jiayuan Sheng",
+        "David D. Yao",
+        "Wenpin Tang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-16T03:19:53+00:00",
+      "link": "https://arxiv.org/pdf/2607.14522v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "RL framework for fine-tuning discrete diffusion models as an alternative to AR",
+      "llm_evidence_cn": "用于微调离散扩散模型的强化学习框架，作为自回归建模的替代方案",
+      "llm_evidence": "用于微调离散扩散模型的强化学习框架，作为自回归建模的替代方案",
+      "canonical_evidence": "用于微调离散扩散模型的强化学习框架，作为自回归建模的替代方案",
+      "llm_tldr_en": "Introduces a continuous-time RL framework for fine-tuning discrete diffusion models using policy gradients.",
+      "llm_tldr_cn": "引入了一种连续时间强化学习框架，利用策略梯度对离散扩散模型进行微调。",
+      "llm_tldr": "引入了一种连续时间强化学习框架，利用策略梯度对离散扩散模型进行微调。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
