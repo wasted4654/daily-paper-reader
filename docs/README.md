@@ -6,28 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-18
-- 运行时间：2026-07-18 21:01:22 UTC
+- 最新运行日期：2026-07-19
+- 运行时间：2026-07-19 20:46:01 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：1
 - 精读区：1
-- 速读区：1
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦扩散模型效率飞跃，深度解析多模态加速与离散模型微调新范式。
-核心结论在于利用 MLP 稀疏感知截断实现“零步预见”式加速，并引入连续时间强化学习优化离散扩散模型。
-建议关注如何通过模型内部稀疏性压榨推理性能，并探索强化学习在生成式模型微调中的落地潜力。
-- 详情：[/202607/18/README](/202607/18/README)
+今日聚焦高效世界模型，深度解析 DriftWorld 如何通过“漂移”机制实现建模速度的质变。
+该研究证明了 DriftWorld 在保持高精度的同时显著提升了环境模拟效率，是当前世界模型领域的重要突破。
+建议关注具身智能与强化学习效率的读者深入研读其核心加速逻辑。
+- 详情：[/202607/19/README](/202607/19/README)
 
 ### 精读区论文标签
-1. [Seeing the End at Step Zero: Accelerating Diffusion MLLMs via MLP Sparsity-Aware Truncation](/202607/18/2607.14557v1-seeing-the-end-at-step-zero-accelerating-diffusion-mllms-via-mlp-sparsity-aware-truncation)  
-   标签：评分：8.0/10、query:ardm
-   evidence：加速扩散多模态大语言模型（DMLLM）
+1. [DriftWorld: Fast World Modeling through Drifting](/202607/19/2607.15065v1-driftworld-fast-world-modeling-through-drifting)  
+   标签：评分：8.0/10、query:genad
+   evidence：用于机器人规划的生成式世界模型
 
 ### 速读区论文标签
-1. [A Continuous-Time Reinforcement Learning Framework for Fine-Tuning Discrete Diffusion Models](/202607/18/2607.14522v1-a-continuous-time-reinforcement-learning-framework-for-fine-tuning-discrete-diffusion-models)  
-   标签：评分：6.0/10、query:ardm
-   evidence：用于微调离散扩散模型的强化学习框架，作为自回归建模的替代方案
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
