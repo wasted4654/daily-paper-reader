@@ -6,23 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-19
-- 运行时间：2026-07-19 20:46:01 UTC
+- 最新运行日期：2026-07-20
+- 运行时间：2026-07-20 20:26:08 UTC
 - 运行状态：成功
-- 本次总论文数：1
-- 精读区：1
+- 本次总论文数：3
+- 精读区：3
 - 速读区：0
 
 ### 今日简报（AI）
-今日聚焦高效世界模型，深度解析 DriftWorld 如何通过“漂移”机制实现建模速度的质变。
-该研究证明了 DriftWorld 在保持高精度的同时显著提升了环境模拟效率，是当前世界模型领域的重要突破。
-建议关注具身智能与强化学习效率的读者深入研读其核心加速逻辑。
-- 详情：[/202607/19/README](/202607/19/README)
+今日聚焦视频生成真实感的跨越式提升与扩散语言模型上下文学习的底层机理分析。
+重点推荐通过测试时噪声引导优化自回归视频质量，以及揭示掩码扩散模型双向诱导机制的机械论研究。
+建议关注噪声引导在提升视频一致性上的实战价值，并深入
+- 详情：[/202607/20/README](/202607/20/README)
 
 ### 精读区论文标签
-1. [DriftWorld: Fast World Modeling through Drifting](/202607/19/2607.15065v1-driftworld-fast-world-modeling-through-drifting)  
-   标签：评分：8.0/10、query:genad
-   evidence：用于机器人规划的生成式世界模型
+1. [Test-Time Noise Guided Adaptation for Realistic Autoregressive Video Generation](/202607/20/2607.15849v1-test-time-noise-guided-adaptation-for-realistic-autoregressive-video-generation)  
+   标签：评分：10.0/10、query:ardm
+   evidence：解决自回归视频扩散模型中的误差累积问题
+2. [Induction in Both Directions: A Mechanistic Analysis of In-Context Learning in Masked Diffusion Language Models](/202607/20/2607.15893v1-induction-in-both-directions-a-mechanistic-analysis-of-in-context-learning-in-masked-diffusion-language-models)  
+   标签：评分：9.0/10、query:ardm
+   evidence：扩散语言模型与自回归Transformer的机制分析
+3. [Adaptive Multi-Step Lookahead Decoding for Diffusion Language Models](/202607/20/2607.15655v1-adaptive-multi-step-lookahead-decoding-for-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型作为自回归解码的替代方案
 
 ### 速读区论文标签
 - 本次无速读推荐。

@@ -1,0 +1,130 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-20T20:25:32.844778+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 0,
+    "quick_skim_target": 11,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2607.15849v1",
+      "title": "Test-Time Noise Guided Adaptation for Realistic Autoregressive Video Generation",
+      "abstract": "Autoregressive video diffusion models have enabled the generation of arbitrarily long videos by removing conditioning on future frames, thus greatly improving computational efficiency. Yet, they suffer from error accumulation over time, as the denoised sequence gradually drifts away from the conditioning distribution seen during training. Recent advances attempt to reduce this error by anchoring each generated frame to the learned manifold of real ones. However, even when all generated individual frames lie close to the real manifold, there are trajectories which the model lacks sufficient knowledge to continue without exiting it, thus reaching a terminal point. To prevent the model from being trapped in terminal points, we start from the hypothesis that for well-modeled future trajectories the distribution of the predicted noise should match the one of the forward noising process. To enforce such a prior at test time, we introduce Terminal points Avoidance through Noise Guided Optimization (TANGO), which uses the diffusion model as a critic of its own outputs, by predicting one step forward and requiring an isotropic Gaussian noise prediction. We use the deviation from this expected noise distribution to search for an alternative trajectory that does not lead to a terminal point. Our approach achieves a $3.1\\%$ absolute improvement on VBench over state-of-the-art, while reducing Fréchet Video Distance by $28.3\\%$ on average across $15$s videos. Our code is available on https://mever-team.github.io/tango.",
+      "authors": [
+        "Dimitrios Karageorgiou",
+        "Symeon Papadopoulos",
+        "Ioannis Kompatsiaris",
+        "Efstratios Gavves"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-17T11:07:07+00:00",
+      "link": "https://arxiv.org/pdf/2607.15849v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "addresses error accumulation in autoregressive video diffusion models",
+      "llm_evidence_cn": "解决自回归视频扩散模型中的误差累积问题",
+      "llm_evidence": "解决自回归视频扩散模型中的误差累积问题",
+      "canonical_evidence": "解决自回归视频扩散模型中的误差累积问题",
+      "llm_tldr_en": "Introduces a noise-guided adaptation method to improve the realism of autoregressive video diffusion models.",
+      "llm_tldr_cn": "引入噪声引导自适应方法，提升自回归视频扩散模型的真实性。",
+      "llm_tldr": "引入噪声引导自适应方法，提升自回归视频扩散模型的真实性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.15893v1",
+      "title": "Induction in Both Directions: A Mechanistic Analysis of In-Context Learning in Masked Diffusion Language Models",
+      "abstract": "While the internal mechanisms of autoregressive (AR) transformers have been studied extensively, much less is known about diffusion language models (DLMs), an emerging alternative that generates text by iterative denoising. In this work, we study how DLMs implement induction, a mechanism behind in-context learning in which the model finds a repeated context and copies the token that followed it. Our analysis compares attention-only AR models and absorbing-mask DLMs with matched architectures. We find that DLMs learn a bidirectional induction circuit, where previous-token and next-token heads write local context into the residual stream and later induction heads use it to find and copy the answer from the matching source position. The circuit is direction-symmetric, working whether the source appears in the past or in the future. When only left context is visible, matching what an AR model sees, the DLM does not outperform its AR counterpart in induction capabilities. However, we observe it has stronger induction when both sides of the masked token are visible, pointing to bidirectional context access rather than a stronger one-sided mechanism. Beyond induction, we provide causal evidence that DLMs compute the global fraction of masked tokens and use it as an implicit timestep, even though they are given no explicit timestep embedding.",
+      "authors": [
+        "Andy Catruna",
+        "Emilian Radoi"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-17T12:07:59+00:00",
+      "link": "https://arxiv.org/pdf/2607.15893v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mechanistic analysis of diffusion language models vs autoregressive transformers",
+      "llm_evidence_cn": "扩散语言模型与自回归Transformer的机制分析",
+      "llm_evidence": "扩散语言模型与自回归Transformer的机制分析",
+      "canonical_evidence": "扩散语言模型与自回归Transformer的机制分析",
+      "llm_tldr_en": "Analyzes how diffusion language models implement induction circuits compared to autoregressive models.",
+      "llm_tldr_cn": "分析扩散语言模型与自回归模型相比如何实现归纳电路。",
+      "llm_tldr": "分析扩散语言模型与自回归模型相比如何实现归纳电路。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.15655v1",
+      "title": "Adaptive Multi-Step Lookahead Decoding for Diffusion Language Models",
+      "abstract": "Masked diffusion language models (DLMs) enable parallel text generation by iteratively refining masked tokens, offering a promising alternative to autoregressive decoding. Recent lookahead-based decoding methods improve the accuracy--efficiency trade-off by exploring future decoding states before committing token updates. However, existing approaches mainly rely on shallow one-step lookahead, which optimizes immediate information gain but can be suboptimal for longer-horizon decoding trajectories. Meanwhile, we find that a naive extension for deeper lookahead is also ineffective, as fixed-depth rollout introduces additional computation and cannot adapt to heterogeneous intermediate decoding states. Thus, in this work, we propose AdaLook, an adaptive lookahead framework for DLM decoding. AdaLook dynamically determines whether to continue rollout based on candidate-score variance and further enables branch expansion when intermediate rollout states require additional exploration. This design avoids unnecessary deep rollout while allowing the decoder to re-trigger lookahead from informative intermediate states. Experiments on various benchmarks and models demonstrate that AdaLook achieves a better accuracy--decoding steps trade-off than existing one-step lookahead decoding methods.",
+      "authors": [
+        "Yingqian Cui",
+        "Wei Deng",
+        "Lantao Mei",
+        "Hang Li",
+        "Charu C. Aggarwal",
+        "Hui Liu",
+        "Yue Xing"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-07-17T06:04:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.15655v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diffusion language models as alternative to autoregressive decoding",
+      "llm_evidence_cn": "扩散语言模型作为自回归解码的替代方案",
+      "llm_evidence": "扩散语言模型作为自回归解码的替代方案",
+      "canonical_evidence": "扩散语言模型作为自回归解码的替代方案",
+      "llm_tldr_en": "AdaLook introduces adaptive multi-step lookahead decoding to improve diffusion language model efficiency.",
+      "llm_tldr_cn": "AdaLook引入自适应多步前瞻解码，提升扩散语言模型的生成效率与准确性。",
+      "llm_tldr": "AdaLook引入自适应多步前瞻解码，提升扩散语言模型的生成效率与准确性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

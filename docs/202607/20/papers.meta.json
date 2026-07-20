@@ -1,0 +1,51 @@
+{
+  "label": "2026-07-20",
+  "date": "2026-07-20",
+  "generated_at": "2026-07-20T20:26:24",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/20/2607.15849v1-test-time-noise-guided-adaptation-for-realistic-autoregressive-video-generation",
+      "section": "deep",
+      "title_en": "Test-Time Noise Guided Adaptation for Realistic Autoregressive Video Generation",
+      "authors": "Dimitrios Karageorgiou, Symeon Papadopoulos, Ioannis Kompatsiaris, Efstratios Gavves",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15849v1",
+      "score": "10.0",
+      "evidence": "解决自回归视频扩散模型中的误差累积问题",
+      "tldr": "自回归视频扩散模型在生成长视频时常因误差累积陷入无法继续生成的“终端点”。本文提出 TANGO 方法，在测试阶段将扩散模型作为自身的评论者，通过监控预测噪声是否偏离各向同性高斯分布来识别潜在错误，并引导模型搜索更合理的生成路径。该方法在不改变训练过程的情况下，显著提升了长视频生成的质量和连贯性，在 VBench 和 FVD 指标上均表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive video diffusion models have enabled the generation of arbitrarily long videos by removing conditioning on future frames, thus greatly improving computational efficiency. Yet, they suffer from error accumulation over time, as the denoised sequence gradually drifts away from the conditioning distribution seen during training. Recent advances attempt to reduce this error by anchoring each generated frame to the learned manifold of real ones. However, even when all generated individual frames lie close to the real manifold, there are trajectories which the model lacks sufficient knowledge to continue without exiting it, thus reaching a terminal point. To prevent the model from being trapped in terminal points, we start from the hypothesis that for well-modeled future trajectories the distribution of the predicted noise should match the one of the forward noising process. To enforce such a prior at test time, we introduce Terminal points Avoidance through Noise Guided Optimization (TANGO), which uses the diffusion model as a critic of its own outputs, by predicting one step forward and requiring an isotropic Gaussian noise prediction. We use the deviation from this expected noise distribution to search for an alternative trajectory that does not lead to a terminal point. Our approach achieves a $3.1\\%$ absolute improvement on VBench over state-of-the-art, while reducing Fréchet Video Distance by $28.3\\%$ on average across $15$s videos. Our code is available on https://mever-team.github.io/tango.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.15893v1-induction-in-both-directions-a-mechanistic-analysis-of-in-context-learning-in-masked-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Induction in Both Directions: A Mechanistic Analysis of In-Context Learning in Masked Diffusion Language Models",
+      "authors": "Andy Catruna, Emilian Radoi",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15893v1",
+      "score": "9.0",
+      "evidence": "扩散语言模型与自回归Transformer的机制分析",
+      "tldr": "本研究深入探讨了扩散语言模型（DLM）实现上下文学习的内部机制，重点分析了其归纳（Induction）能力。通过对比自回归模型与吸收掩码DLM，研究者发现DLM构建了双向归纳电路，能够同时利用过去和未来的上下文进行预测。此外，研究还揭示了DLM在没有显式时间步嵌入的情况下，能通过计算全局掩码比例作为隐式时间步。这一发现为理解非自回归生成模型的机理提供了重要见解。",
+      "tags": "query:ardm",
+      "abstract_en": "While the internal mechanisms of autoregressive (AR) transformers have been studied extensively, much less is known about diffusion language models (DLMs), an emerging alternative that generates text by iterative denoising. In this work, we study how DLMs implement induction, a mechanism behind in-context learning in which the model finds a repeated context and copies the token that followed it. Our analysis compares attention-only AR models and absorbing-mask DLMs with matched architectures. We find that DLMs learn a bidirectional induction circuit, where previous-token and next-token heads write local context into the residual stream and later induction heads use it to find and copy the answer from the matching source position. The circuit is direction-symmetric, working whether the source appears in the past or in the future. When only left context is visible, matching what an AR model sees, the DLM does not outperform its AR counterpart in induction capabilities. However, we observe it has stronger induction when both sides of the masked token are visible, pointing to bidirectional context access rather than a stronger one-sided mechanism. Beyond induction, we provide causal evidence that DLMs compute the global fraction of masked tokens and use it as an implicit timestep, even though they are given no explicit timestep embedding.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.15655v1-adaptive-multi-step-lookahead-decoding-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Adaptive Multi-Step Lookahead Decoding for Diffusion Language Models",
+      "authors": "Yingqian Cui, Wei Deng, Lantao Mei, Hang Li, Charu C. Aggarwal, Hui Liu, Yue Xing",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15655v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为自回归解码的替代方案",
+      "tldr": "针对掩码扩散语言模型（DLM）并行生成中前瞻解码深度受限且缺乏灵活性的问题，本文提出了 AdaLook 框架。该方法通过动态评估候选得分方差来决定是否继续多步前瞻，并支持在关键中间状态进行分支扩展。AdaLook 避免了冗余计算，在保持生成质量的同时显著优化了解码效率，在多个基准测试中超越了现有的一步前瞻方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion language models (DLMs) enable parallel text generation by iteratively refining masked tokens, offering a promising alternative to autoregressive decoding. Recent lookahead-based decoding methods improve the accuracy--efficiency trade-off by exploring future decoding states before committing token updates. However, existing approaches mainly rely on shallow one-step lookahead, which optimizes immediate information gain but can be suboptimal for longer-horizon decoding trajectories. Meanwhile, we find that a naive extension for deeper lookahead is also ineffective, as fixed-depth rollout introduces additional computation and cannot adapt to heterogeneous intermediate decoding states. Thus, in this work, we propose AdaLook, an adaptive lookahead framework for DLM decoding. AdaLook dynamically determines whether to continue rollout based on candidate-score variance and further enables branch expansion when intermediate rollout states require additional exploration. This design avoids unnecessary deep rollout while allowing the decoder to re-trigger lookahead from informative intermediate states. Experiments on various benchmarks and models demonstrate that AdaLook achieves a better accuracy--decoding steps trade-off than existing one-step lookahead decoding methods.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
