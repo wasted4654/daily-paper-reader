@@ -1,0 +1,79 @@
+{
+  "label": "2026-07-21",
+  "date": "2026-07-21",
+  "generated_at": "2026-07-21T20:23:50",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202607/21/2607.15893v2-induction-in-both-directions-a-mechanistic-analysis-of-in-context-learning-in-masked-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Induction in Both Directions: A Mechanistic Analysis of In-Context Learning in Masked Diffusion Language Models",
+      "authors": "Andy Catruna, Emilian Radoi",
+      "date": "2026-07-17",
+      "pdf": "https://arxiv.org/pdf/2607.15893v2",
+      "score": "9.0",
+      "evidence": "扩散语言模型与自回归模型的机制分析对比",
+      "tldr": "本研究深入探讨了掩码扩散语言模型（DLM）实现上下文学习的核心机制——归纳电路。通过与自回归（AR）模型对比，研究发现DLM利用双向归纳电路，结合前向和后向标记头将局部上下文写入残差流，从而在双向语境下实现更强的归纳能力。此外，研究还提供了因果证据，证明DLM能通过计算掩码标记的全局比例来隐式获取时间步信息，而非依赖显式嵌入。",
+      "tags": "query:ardm",
+      "abstract_en": "While the internal mechanisms of autoregressive (AR) transformers have been studied extensively, much less is known about diffusion language models (DLMs), an emerging alternative that generates text by iterative denoising. In this work, we study how DLMs implement induction, a mechanism behind in-context learning in which the model finds a repeated context and copies the token that followed it. Our analysis compares attention-only AR models and absorbing-mask DLMs with matched architectures. We find that DLMs learn a bidirectional induction circuit, where previous-token and next-token heads write local context into the residual stream and later induction heads use it to find and copy the answer from the matching source position. The circuit is direction-symmetric, working whether the source appears in the past or in the future. When only left context is visible, matching what an AR model sees, the DLM does not outperform its AR counterpart in induction capabilities. However, we observe it has stronger induction when both sides of the masked token are visible, pointing to bidirectional context access rather than a stronger one-sided mechanism. Beyond induction, we provide causal evidence that DLMs compute the global fraction of masked tokens and use it as an implicit timestep, even though they are given no explicit timestep embedding.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/21/2607.16339v1-lacache-exact-caching-and-precision-adaptive-inference-for-diffusion-large-language-models",
+      "section": "deep",
+      "title_en": "LaCache: Exact Caching and Precision-Adaptive Inference for Diffusion Large Language Models",
+      "authors": "Xingru Chen, Zelang Liang, Yongjia Ma, Jiqing Zhan, Shuling Yang, Lian Wen, Kun Zhan",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.16339v1",
+      "score": "9.0",
+      "evidence": "扩散大语言模型中的半自回归解码",
+      "tldr": "针对扩散大语言模型（DLLM）在去噪过程中存在的算子级冗余计算问题，本文提出 LaCache 框架。该框架通过无损状态备忘录（LSM）缓存嵌入、RoPE 和 FlashAttention 的中间结果，并结合针对扩散过程优化的 FP8 量化策略，在不损失精度的情况下显著提升推理速度，最高可实现 40.2 倍的端到端加速。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion-based Large Language Models(DLLMs) enable parallel generation via Semi-Autoregressive (SAR) decoding in text generation. However, current methods suffer from severe operator-level redundancy: they recompute the entire sequence during denoising steps, ignoring that the prefix and masked suffix remain invariant within a block. We propose LaCache, a training-free acceleration framework that alleviates this redundancy through lossless caching and mixed precision. Specifically, LaCache employs Lossless State Memoization (LSM) by caching three types of intermediate results: (i) EmbedCache for embedding outputs, (ii) RoPECache for token-wise pre-attention states, and (iii) FACache for the online softmax statistics within FlashAttention. These caches allow the model to skip redundant computation on unchanged tokens without altering the output. To further alleviate memory-bandwidth bottlenecks, LaCache inegrates a per-group FP8 quantization strategy for FFN layers, tailored to step-dependent activation distributions across the diffusion process. Experiments demonstrate that LaCache alone achieves approximately 1.3X end-to-end speedup over vanilla DLLM. When combined with existing acceleration methods, LaCache reaches up to 40.2X end-to-end speedup while maintaining comparable task accuracy.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/21/2607.16648v1-synchronization-free-algebraic-fingerprints-for-large-language-models-from-autoregressive-to-diffusion-models",
+      "section": "deep",
+      "title_en": "Synchronization-Free Algebraic Fingerprints for Large Language Models: From Autoregressive to Diffusion Models",
+      "authors": "Jaroslaw Janas, Josef Pieprzyk, Pawel Morawiecki",
+      "date": "2026-07-18",
+      "pdf": "https://arxiv.org/pdf/2607.16648v1",
+      "score": "8.0",
+      "evidence": "自回归与扩散模型的数字水印技术",
+      "tldr": "针对大语言模型生成内容的归属识别问题，本文提出一种无需同步的代数指纹水印方案。该方法利用相邻 Token 对生成二进制同余约束，结合密码学哈希与 Reed-Solomon 多项式嵌入秘密身份。由于每个约束仅依赖局部 Token 对，该方案天然具有抗插入、删除和重排序的鲁棒性。实验证明，即使在高损坏率下，该方法也能以较低冗余实现可靠的身份恢复，适用于自回归及扩散模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Large Language Models (LLMs) have created an urgent need for reliable watermarking methods that enable attribution of generated text while remaining robust to editing and paraphrasing. We propose a novel synchronization-free watermarking scheme in which every watermark consists of a single binary congruence generated from a pair of neighbouring tokens. For each token pair, a cryptographic hash determines an evaluation point of a Reed--Solomon polynomial representing the secret identity, while the parity of the polynomial evaluation determines the watermark bit embedded into the second token of the pair. Since each congruence is self-contained and depends only on the local token pair, the proposed construction is naturally resistant to insertions, deletions, and token reordering. We analyse the recovery problem from an algebraic perspective, discuss several decoding algorithms suitable for different identity sizes, and model watermark corruption as a Binary Symmetric Channel. The analysis shows that reliable recovery requires only a small redundancy even for relatively high token corruption rates. Unlike existing block-based watermarking schemes, the proposed method avoids synchronization problems while providing a flexible framework for embedding both short and long secret identities.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/21/2607.16872v1-trace-based-on-policy-distillation-for-masked-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Trace-Based On-Policy Distillation for Masked Diffusion Language Models",
+      "authors": "Haolin Ren, Ziyang Huang, Chenhao Yuan, Jun Zhao, Kang Liu",
+      "date": "2026-07-18",
+      "pdf": "https://arxiv.org/pdf/2607.16872v1",
+      "score": "8.0",
+      "evidence": "扩散大语言模型作为自回归序列生成的替代方案",
+      "tldr": "针对扩散大语言模型（dLLM）在推理任务中微调困难的问题，本文提出了一种基于轨迹的同策略蒸馏框架（TOPD）。该方法通过让目标模型在自身的去噪轨迹上学习教师模型的知识，利用逆向KL散度进行优化，避免了强化学习中复杂的奖励估计。实验表明，TOPD在数学推理任务上达到了与强化学习相当的性能，且训练效率提升了约96倍，为dLLM的后训练提供了一种高效的新路径。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) are a promising alternative to autoregressive generation. However, reasoning-oriented post-training for dLLMs remains challenging. Supervised fine-tuning (SFT) for dLLMs requires dense but often off-policy masked states, while reinforcement learning (RL) relies on sparse rewards or value modeling. This paper proposes \\textbf{trace-based on-policy distillation (TOPD)}, a teacher-supervised framework that transfers reasoning ability to a target dLLM without reward estimation. The key idea is to supervise a dLLM on its own denoising trajectory, focusing on the trace-aligned token decisions that form the final response. Specifically, TOPD samples on-policy diffusion trajectories from the target dLLM, obtains teacher token distributions from a teacher model on the corresponding partially denoised states, and updates the target dLLM with a token-level Reverse Kullback-Leibler (Reverse-KL) objective. This design preserves dense teacher supervision while aligning training with the model's own denoising states. On mathematical reasoning benchmarks, TOPD enables SDAR-4B-Chat to match the MATH500 accuracy of its RL-trained counterpart TraDo-4B-Instruct, with gains of +5.7 under static evaluation and +4.5 under dynamic evaluation. Compared with the RL-trained counterpart, TOPD achieves this with 4$\\times$ fewer rollout rounds, corresponding to an estimated 96.0$\\times$ to-accuracy model-compute speedup.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/21/2607.17612v1-rarity-aware-discrete-diffusion-with-spatially-consistent-decoding-for-photo-realistic-image-super-resolution",
+      "section": "quick",
+      "title_en": "Rarity-Aware Discrete Diffusion with Spatially Consistent Decoding for Photo-Realistic Image Super-Resolution",
+      "authors": "Ao Li, Yapeng Du, Yi Xin, Lei Zhu, Le Zhang, Guangtao Zhai, Ce Zhu, Xiaohong Liu",
+      "date": "2026-07-20",
+      "pdf": "https://arxiv.org/pdf/2607.17612v1",
+      "score": "7.0",
+      "evidence": "将离散扩散与自回归风格的离散视觉标记相结合用于超分辨率",
+      "tldr": "针对超分辨率任务中连续扩散模型语义表征不直接及自回归模型效率低的问题，本文提出DiMOO-SR框架。该框架采用离散扩散模型，通过逆频率采样（IFS）解决视觉标记的长尾分布问题，并利用空间一致性排序（SCR）优化推理时的结构连贯性。实验证明，DiMOO-SR在保持高感知质量的同时，仅需少量并行解码步骤即可实现逼真的图像超分辨率。",
+      "tags": "query:ardm",
+      "abstract_en": "Continuous diffusion models have become the dominant paradigm for photo-realistic image Super-Resolution (SR), but they typically formulate reconstruction as continuous signal-level denoising and incorporate semantic priors through external conditioning modules. This makes it less direct to exploit the unified token-based scaling paradigm of modern multimodal models. Autoregressive models provide a more native semantic representation by modeling images as discrete visual tokens, yet their causal decoding is inefficient for high-resolution reconstruction. Discrete diffusion offers a promising middle ground by enabling non-causal, parallel prediction over visual tokens. However, directly adapting discrete diffusion to SR remains non-trivial due to two task-specific challenges: (1) the long-tailed distribution of visual tokens, which under-represents rare but perceptually critical textures; and (2) spatially inconsistent parallel decoding, which may introduce isolated artifacts. To address these issues, we propose DiMOO-SR, a rarity-aware multimodal discrete diffusion framework for photo-realistic image SR. During training, Inverse Frequency Sampling (IFS) prioritizes under-represented but information-rich tokens. During inference, Spatial Consistency Ranking (SCR) refines token confidence using local neighborhood agreement to improve structural coherence. Extensive experiments on widely used real-world SR benchmarks demonstrate that DiMOO-SR achieves competitive perceptual quality with only a few parallel decoding steps, highlighting the potential of discrete diffusion for generative image super-resolution. The code will be released upon publication.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
