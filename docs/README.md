@@ -6,37 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-21
-- 运行时间：2026-07-21 20:23:38 UTC
+- 最新运行日期：2026-07-23
+- 运行时间：2026-07-23 21:13:12 UTC
 - 运行状态：成功
-- 本次总论文数：5
+- 本次总论文数：6
 - 精读区：4
-- 速读区：1
+- 速读区：2
 
 ### 今日简报（AI）
-今日深度复盘 5 篇前沿论文，重点突破扩散语言模型（Diffusion LM）的机理分析与推理加速。
-核心结论揭示了掩码扩散模型双向归纳的底层逻辑，并推出 LaCache 缓存方案以实现精度自适应的高效推理。
-建议关注扩散模型在文本生成领域的架构演进，特别是如何通过缓存优化平衡生成质量与计算成本。
-- 详情：[/202607/21/README](/202607/21/README)
+今日深度解析扩散大语言模型推理优化与高效视频生成，涵盖 6 篇前沿成果。
+重点推荐 LaCache 的精确缓存机制与 HeadCast 的注意力头投射技术，两者均在生成效率上取得重大突破。
+建议优先研读两篇 9 分高分论文，掌握扩散模型在多模态推理加速领域的核心演进。
+- 详情：[/202607/23/README](/202607/23/README)
 
 ### 精读区论文标签
-1. [Induction in Both Directions: A Mechanistic Analysis of In-Context Learning in Masked Diffusion Language Models](/202607/21/2607.15893v2-induction-in-both-directions-a-mechanistic-analysis-of-in-context-learning-in-masked-diffusion-language-models)  
-   标签：评分：9.0/10、query:ardm
-   evidence：扩散语言模型与自回归模型的机制分析对比
-2. [LaCache: Exact Caching and Precision-Adaptive Inference for Diffusion Large Language Models](/202607/21/2607.16339v1-lacache-exact-caching-and-precision-adaptive-inference-for-diffusion-large-language-models)  
+1. [LaCache: Exact Caching and Precision-Adaptive Inference for Diffusion Large Language Models](/202607/23/2607.16339v2-lacache-exact-caching-and-precision-adaptive-inference-for-diffusion-large-language-models)  
    标签：评分：9.0/10、query:ardm
    evidence：扩散大语言模型中的半自回归解码
-3. [Synchronization-Free Algebraic Fingerprints for Large Language Models: From Autoregressive to Diffusion Models](/202607/21/2607.16648v1-synchronization-free-algebraic-fingerprints-for-large-language-models-from-autoregressive-to-diffusion-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：自回归与扩散模型的数字水印技术
-4. [Trace-Based On-Policy Distillation for Masked Diffusion Language Models](/202607/21/2607.16872v1-trace-based-on-policy-distillation-for-masked-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散大语言模型作为自回归序列生成的替代方案
+2. [HeadCast: Casting Attention Heads for Efficient Autoregressive Video Generation](/202607/23/2607.20125v1-headcast-casting-attention-heads-for-efficient-autoregressive-video-generation)  
+   标签：评分：9.0/10、query:ardm
+   evidence：高效自回归视频扩散模型与KV缓存优化
+3. [Self Gradient Forcing: Native Long Video Extrapolation](/202607/23/2607.20368v1-self-gradient-forcing-native-long-video-extrapolation)  
+   标签：评分：9.0/10、query:ardm
+   evidence：自回归视频扩散方法与Self-Forcing训练
+4. [Diffusion ReRoll: Revisable Denoising for Robotic Sequential Prediction](/202607/23/2607.19919v1-diffusion-reroll-revisable-denoising-for-robotic-sequential-prediction)  
+   标签：评分：8.0/10、query:diffpl
+   evidence：基于扩散模型的机器人序列预测与规划框架
 
 ### 速读区论文标签
-1. [Rarity-Aware Discrete Diffusion with Spatially Consistent Decoding for Photo-Realistic Image Super-Resolution](/202607/21/2607.17612v1-rarity-aware-discrete-diffusion-with-spatially-consistent-decoding-for-photo-realistic-image-super-resolution)  
+1. [Multi-Mask Diffusion Language Models for Few-Step Generation](/202607/23/2607.19686v1-multi-mask-diffusion-language-models-for-few-step-generation)  
    标签：评分：7.0/10、query:ardm
-   evidence：将离散扩散与自回归风格的离散视觉标记相结合用于超分辨率
+   evidence：用于序列生成的掩码扩散模型
+2. [Denoising Subordinated Probabilistic Models: Diffusion with a Tempered-Stable Volatility Clock, and What the Noise Mechanism Actually Controls](/202607/23/2607.19218v1-denoising-subordinated-probabilistic-models-diffusion-with-a-tempered-stable-volatility-clock-and-what-the-noise-mechanism-actually-controls)  
+   标签：评分：6.0/10、query:ardm
+   evidence：扩散模型中的混合向量是一个平稳的AR(1)链
 
 
 <div class="dpr-home-promo-card">

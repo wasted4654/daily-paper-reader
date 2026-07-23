@@ -1,0 +1,93 @@
+{
+  "label": "2026-07-23",
+  "date": "2026-07-23",
+  "generated_at": "2026-07-23T21:13:56",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202607/23/2607.16339v2-lacache-exact-caching-and-precision-adaptive-inference-for-diffusion-large-language-models",
+      "section": "deep",
+      "title_en": "LaCache: Exact Caching and Precision-Adaptive Inference for Diffusion Large Language Models",
+      "authors": "Xingru Chen, Zelang Liang, Yongjia Ma, Jiqing Zhan, Shuling Yang, Lian Wen, Kun Zhan",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.16339v2",
+      "score": "9.0",
+      "evidence": "扩散大语言模型中的半自回归解码",
+      "tldr": "扩散大语言模型（DLLM）在去噪过程中存在严重的算子级冗余计算。本文提出LaCache，一个无需训练的加速框架。它通过无损状态备忘录（LSM）缓存Embedding、RoPE和FlashAttention的中间结果，并结合针对FFN层的自适应FP8量化，有效减少了重复计算和内存带宽瓶颈。实验显示LaCache可实现1.3倍至40.2倍的端到端加速，且不损失模型精度。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion-based Large Language Models(DLLMs) enable parallel generation via Semi-Autoregressive (SAR) decoding in text generation. However, current methods suffer from severe operator-level redundancy: they recompute the entire sequence during denoising steps, ignoring that the prefix and masked suffix remain invariant within a block. We propose LaCache, a training-free acceleration framework that alleviates this redundancy through lossless caching and mixed precision. Specifically, LaCache employs Lossless State Memoization (LSM) by caching three types of intermediate results: (i) EmbedCache for embedding outputs, (ii) RoPECache for token-wise pre-attention states, and (iii) FACache for the online softmax statistics within FlashAttention. These caches allow the model to skip redundant computation on unchanged tokens without altering the output. To further alleviate memory-bandwidth bottlenecks, LaCache inegrates a per-group FP8 quantization strategy for FFN layers, tailored to step-dependent activation distributions across the diffusion process. Experiments demonstrate that LaCache alone achieves approximately 1.3X end-to-end speedup over vanilla DLLM. When combined with existing acceleration methods, LaCache reaches up to 40.2X end-to-end speedup while maintaining comparable task accuracy.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.20125v1-headcast-casting-attention-heads-for-efficient-autoregressive-video-generation",
+      "section": "deep",
+      "title_en": "HeadCast: Casting Attention Heads for Efficient Autoregressive Video Generation",
+      "authors": "Jinliang Shen, Lianghao Su, Zheming Li, Kang He, ZiLiang Lai, Yanbing Jiang, Chengru Song",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20125v1",
+      "score": "9.0",
+      "evidence": "高效自回归视频扩散模型与KV缓存优化",
+      "tldr": "针对自回归视频扩散模型中KV缓存随帧数增加导致推理成本激增的问题，本文提出HeadCast。这是一种无需训练的即插即用框架，通过识别注意力头的四种异构行为（Sink、Dummy、Spatial、Global），将KV缓存重构为特定路径。在保持长程时间一致性的同时，显著降低了高分辨率下的计算开销，实现了高达1.95倍的加速且无明显质量损失。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) video diffusion models have become a promising paradigm for long and streaming video synthesis, but the continuously growing Key-Value (KV) cache makes attention the dominant inference cost, especially at high resolution where each frame contributes many tokens. Existing remedies either evict the cache with coarse heuristics that cause inter-frame flickering, or require model re-training. We propose HeadCast, a training-free, plug-and-play acceleration framework built on the observation that a pre-trained AR model's attention heads exhibit stable, heterogeneous behaviors. After a short warm-up, HeadCast performs a one-time classification at the maximum-noise step that sorts every head into one of four archetypes: Sink, Dummy, Spatial, and Global, and restructures the monolithic KV cache into head-specific pathways. Crucially, it retains the Global heads that preserve the long-range temporal consistency aggressive eviction destroys. Because the Spatial pathway operates on a fixed-size grid, its savings grow with resolution: across state-of-the-art AR models, HeadCast accelerates inference by up to 1.62x at 720P and 1.95x at 1080P, while keeping VBench quality on par with full attention and largely flicker-free. Code is available at https://github.com/sjlgaga/HeadCast .",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.20368v1-self-gradient-forcing-native-long-video-extrapolation",
+      "section": "deep",
+      "title_en": "Self Gradient Forcing: Native Long Video Extrapolation",
+      "authors": "Junhao Zhuang, Shiyi Zhang, Yuxuan Bian, Yaowei Li, Yawen Luo, Yijun Liu, Weiyang Jin, Songchun Zhang, Xianglong He, Xuying Zhang, Haoran Li, Haoyang Huang, Zeyue Xue, Nan Duan",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.20368v1",
+      "score": "9.0",
+      "evidence": "自回归视频扩散方法与Self-Forcing训练",
+      "tldr": "针对自回归视频扩散模型中历史上下文梯度缺失导致的生成偏差问题，本文提出 Self Gradient Forcing (SGF) 训练策略。通过两阶段训练（无梯度生成记录与并行梯度重建），SGF 恢复了未来帧对历史 KV 缓存编码的监督信号。该方法显著提升了长视频外推的身份一致性与时空稳定性，仅需 5 秒训练窗口即可实现数分钟的高质量视频生成。",
+      "tags": "query:ardm",
+      "abstract_en": "Recent autoregressive video diffusion methods are increasingly built upon Self Forcing, where the student is trained on histories produced by its own rollout rather than ground-truth video contexts. This reduces exposure bias, but the historical key-value cache is still used by future frames only as frozen rollout state. As a result, future losses cannot supervise how earlier generated latents should be written into more useful keys and values for later video-latent generation. We call this the historical context-gradient gap. We propose Self Gradient Forcing (SGF), a two-pass training strategy that restores this missing supervision signal without backpropagating through the full serial rollout. Pass 1 performs a no-gradient autoregressive rollout matching inference and, at a sampled denoising exit step, records both the self-generated context and the noisy latents fed to the model. Pass 2 performs parallel context-gradient reconstruction for the recorded exit step. The generated context is used as stop-gradient clean-latent input, while the model recomputes the context KV representations and future-to-context causal attention. Thus, SGF provides the missing memory-writing supervision within the native autoregressive training objective, using losses on future video latents to train the model to encode context into more effective causal memory. Across extensive long-horizon frame-wise and chunk-wise experiments under different initializations, SGF achieves stronger native long-video extrapolation than Self Forcing, especially in subject identity, background/layout consistency, and temporal stability. Remarkably, using only a 5-second training window, SGF can extrapolate to videos lasting several minutes. Code and models will be released to advance research on autoregressive video generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.19919v1-diffusion-reroll-revisable-denoising-for-robotic-sequential-prediction",
+      "section": "deep",
+      "title_en": "Diffusion ReRoll: Revisable Denoising for Robotic Sequential Prediction",
+      "authors": "Seonsoo Kim, Seongil Hong, Jun-Gill Kang",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.19919v1",
+      "score": "8.0",
+      "evidence": "基于扩散模型的机器人序列预测与规划框架",
+      "tldr": "针对机器人序列预测中传统扩散模型单向去噪的局限，本文提出 Diffusion ReRoll 框架。该方法通过选择性地对已稳定区域进行重新加噪，实现了跨时域的可修订去噪，使序列的前后部分能相互修正并保持局部一致性。在长时程规划、策略学习及视频动作建模等任务中，该方法显著优于 Diffusion Forcing 和 Diffusion Policy 等基准，提升了预测的准确性与一致性。",
+      "tags": "query:diffpl",
+      "abstract_en": "We propose Diffusion ReRoll, a diffusion-based framework for robotic sequential prediction that enables revisable denoising over horizons. Existing diffusion-based sequence predictors typically perform a single monotonic denoising process. In contrast, Diffusion ReRoll selectively re-noises regions that have become locally stable while the remaining regions continue denoising, so the re-noised regions can be refined again using context from the rest of the horizon. This structured re-noising enables iterative cross-horizon revision, allowing earlier and later segments to revise one another, while maintaining local consistency. We evaluate Diffusion ReRoll against full-sequence diffusion and causal denoising based on Diffusion Forcing across long-horizon planning, policy learning, and unified video-action modeling. On OGBench PointMaze and AntMaze, Diffusion ReRoll achieves relative gains in average success rate of 21% over Diffusion Forcing in matched guidance-based planning and 23% over Diffuser in matched goal-inpainting. In diffusion-policy-style action prediction, Diffusion ReRoll improves average success by 56.5% relative to Diffusion Policy across different prediction horizons and history lengths on the LIBERO-10 multi-task benchmark. In unified video-action prediction, Diffusion ReRoll improves policy and inverse dynamics performance, especially under out-of-distribution evaluation, and achieves the best action-video consistency. These results support structured re-noising as an effective mechanism for revisable robotic sequence generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.19686v1-multi-mask-diffusion-language-models-for-few-step-generation",
+      "section": "quick",
+      "title_en": "Multi-Mask Diffusion Language Models for Few-Step Generation",
+      "authors": "Sijin Chen, Yinuo Ren, Heyang Zhao, Ziheng Cheng, Quanquan Gu, Lexing Ying",
+      "date": "2026-07-22",
+      "pdf": "https://arxiv.org/pdf/2607.19686v1",
+      "score": "7.0",
+      "evidence": "用于序列生成的掩码扩散模型",
+      "tldr": "针对掩码扩散模型（MDM）在少步生成中因状态退化导致质量受限的问题，本文提出MultiMDM。该模型通过引入多掩码机制，使前向过程将Token推向特定掩码并逐渐混合，赋予反向过程“先草拟后精炼”的能力。结合闭式ELBO目标和离散状态一致性蒸馏，MultiMDM在保持建模质量的同时，显著提升了少步生成的效率和性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion models (MDMs) are a promising family of language generators, but achieving high-quality few-step generation remains challenging. In MDMs, all forward trajectories collapse to a single fully masked state, leaving no terminal entropy for consistency-style few-step generation. While recent few-step alternatives based on uniform-state diffusion avoid this degeneracy, it becomes harder to distinguish clean tokens from noise than MDMs, which usually harms modeling quality and training efficiency. In this work, we propose a multi-mask diffusion model (MultiMDM) that preserves the masking structure towards few-step generation. In the forward process, each clean token is first pushed towards a designated mask and then gradually mixes over the mask set. As a result, the backward process has a drafting capability by predicting a designated mask before refining to a clean token. We derive a closed-form ELBO training objective for MultiMDM that supports continual training from pretrained MDMs. In addition, we formulate a purely discrete-state consistency distillation scheme, with a shared-Gumbel coupling to reduce pathwise entropy. Experiments on pretraining and distillation show that MultiMDM provides an effective foundation for principled few-step generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/23/2607.19218v1-denoising-subordinated-probabilistic-models-diffusion-with-a-tempered-stable-volatility-clock-and-what-the-noise-mechanism-actually-controls",
+      "section": "quick",
+      "title_en": "Denoising Subordinated Probabilistic Models: Diffusion with a Tempered-Stable Volatility Clock, and What the Noise Mechanism Actually Controls",
+      "authors": "Junchi Shen, Helin Zhao",
+      "date": "2026-07-21",
+      "pdf": "https://arxiv.org/pdf/2607.19218v1",
+      "score": "6.0",
+      "evidence": "扩散模型中的混合向量是一个平稳的AR(1)链",
+      "tldr": "本文提出去噪从属概率模型（DSPM），旨在解决重尾扩散模型缺乏金融数据中关键的波动率聚集特性的问题。通过引入受回火稳定从属增量驱动的AR(1)链作为混合向量，DSPM统一了DDPM和DLPM等模型。研究揭示了去噪器对混合变量分布的某种不变性，并提出变分波动率编码器以实现对潜在波动率的有效控制和恢复。",
+      "tags": "query:ardm",
+      "abstract_en": "Heavy-tailed diffusion models replace Gaussian noise by a Gaussian variance mixture: denoising Levy probabilistic models (DLPM) take the mixing variables i.i.d. across coordinates, while Student-t EDM shares one mixing variable per sample. Neither has dynamics, yet temporal dependence of the noise amplitude - volatility clustering - is the defining stylized fact of financial returns. We introduce the Denoising Subordinated Probabilistic Model (DSPM), whose mixing vector is a stationary AR(1) chain driven by tempered-stable subordinator increments (the discrete Barndorff-Nielsen-Shephard volatility process) along the data axis. Conditionally on the chain the DDPM machinery survives verbatim; kurtosis and squared-noise autocorrelation are closed-form in the chain parameters, giving an exactly identified, analytically invertible calibration; DDPM, DLPM and Student-t noise are boundary cases of one memory parameter. We then prove a delimiting result: when the denoiser is conditioned on the mixing variables, their law is a nuisance - in the exact-denoiser limit the generated distribution is invariant to it and interventions on the chain do nothing. Experiments confirm both halves: conditioned models match the data's clustering whatever the mixing law, a designed x8 volatility shock moves the envelope by under 13%, while blind models transmit the mechanism exactly as calibrated. Finally, coupling the chain to the data by a variational volatility encoder - trained with the stochastic-volatility likelihood whose log-determinant the simplified denoising loss provably drops - restores control (shock response 3.07 vs. naive 2.83), recovers latent volatility (correlation 0.76), and learns the prior memory toward the true persistence.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
