@@ -1,0 +1,243 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-24T20:58:52.787579+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 5,
+    "deep_cap": 6,
+    "deep_selected": 5,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2607.21594v1",
+      "title": "Streaming Multi-Agent Autoregressive Diffusion Model with World State Registers",
+      "abstract": "Multi-agent interactive world models should not only generate consistent observations, but also maintain world states that persist across agents and evolve across views. Existing autoregressive video diffusion pipelines carry forward observation history as conditioning context, which makes shared state difficult to maintain in multi-agent and multi-view settings. We present WorldWeaver (W^2), a streaming multi-agent video diffusion model that augments rollout with cross-agent world state registers: learnable tokens that store shared world information, track individual agent status, and are dynamically updated after each generated chunk. We ground these registers with supervision signals spanning individual agent status, global state views including bird's-eye views, and scene text. We further improve the architecture with a Mixture-of-Transformers design that uses separate weights for world state modeling and visual frame modeling. Extensive experiments in two-agent Minecraft video generation show that explicit world-state modeling improves logical consistency and generation quality.",
+      "authors": [
+        "Sicheng Mo",
+        "Yuheng Li",
+        "Ziyang Leng",
+        "Krishna Kumar Singh",
+        "Bolei Zhou"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-23T17:59:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.21594v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "streaming multi-agent autoregressive diffusion model",
+      "llm_evidence_cn": "流式多智能体自回归扩散模型",
+      "llm_evidence": "流式多智能体自回归扩散模型",
+      "canonical_evidence": "流式多智能体自回归扩散模型",
+      "llm_tldr_en": "Presents a streaming multi-agent video diffusion model using autoregressive pipelines and world state registers.",
+      "llm_tldr_cn": "提出了一种使用自回归流水线和世界状态寄存器的流式多智能体视频扩散模型。",
+      "llm_tldr": "提出了一种使用自回归流水线和世界状态寄存器的流式多智能体视频扩散模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.18436v1",
+      "title": "Surprise Forcing: What to Remember, When to Skip in Long Video Generation",
+      "abstract": "Streaming autoregressive diffusion makes minute-scale video synthesis practical, but its bounded context and fixed denoising schedule allocate resources uniformly across a highly non-stationary sequence. A rolling key-value cache forgets distant visual evidence even when that evidence remains important, while every generated chunk receives the same number of denoising passes irrespective of its actual difficulty. We introduce Surprise Forcing, a training-free framework that treats both limitations as online resource-allocation problems. A Surprise-Gated Memory Bank summarizes evicted frames with value-token descriptors, evaluates them using complementary global-deviation and nearest-neighbor novelty signals, and regulates admission through a feedback-controlled budget in normalized score space. Priority-based replacement and relevance-aware routing then keep the external memory compact and useful. In parallel, Surprise-Aware Denoising estimates chunk difficulty from the maximum adjacent-frame cosine distance after the first denoising pass and uses a local percentile scheduler to skip intermediate steps for comparatively easy chunks. Experiments on VBench, VBench-Long, and VBench-2.0 show that the proposed allocation strategy improves long-horizon consistency and visual quality while retaining real-time streaming throughput.",
+      "authors": [
+        "Shuwei Shi",
+        "Zhen Li",
+        "Muyao Niu",
+        "Chuanhao Li",
+        "Bo Zheng",
+        "Kaipeng Zhang",
+        "Yinqiang Zheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-20T18:37:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.18436v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "streaming autoregressive diffusion for video generation",
+      "llm_evidence_cn": "用于视频生成的流式自回归扩散模型",
+      "llm_evidence": "用于视频生成的流式自回归扩散模型",
+      "canonical_evidence": "用于视频生成的流式自回归扩散模型",
+      "llm_tldr_en": "Introduces Surprise Forcing to optimize resource allocation in streaming autoregressive diffusion for long videos.",
+      "llm_tldr_cn": "提出Surprise Forcing框架，优化长视频流式自回归扩散生成中的资源分配问题。",
+      "llm_tldr": "提出Surprise Forcing框架，优化长视频流式自回归扩散生成中的资源分配问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.21042v1",
+      "title": "Faster IndexTTS-2: Accelerating and Streaming Autoregressive Zero-Shot Text-to-Speech Synthesis on GPUs",
+      "abstract": "Autoregressive text-to-speech models achieve strong naturalness but suffer from slow inference due to sequential token generation, limiting their deployment in production applications that require low latency. IndexTTS-2 is a state-of-the-art autoregressive TTS model consisting of a GPT, a flow-matching Diffusion Transformer, and a vocoder. Despite its high synthesis quality, its inference speed barely reaches real-time without streaming or batching support. We present Faster IndexTTS-2, which accelerates all neural network components of IndexTTS-2 for production deployment on GPUs using NVIDIA TensorRT and TensorRT-LLM. Faster IndexTTS-2 also enables streaming synthesis for latency-sensitive interactive applications, and batched inference across all components to maximize GPU utilization. Experiments on the Seed-TTS benchmark for both English and Chinese demonstrate up to 5.0$\\times$ speedup on the autoregressive GPT and 3.6$\\times$ end-to-end, with minimal degradation in word error rate, speaker similarity, and naturalness. Our methodology provides a practical reference for efficiently accelerating similar autoregressive speech models on GPUs.",
+      "authors": [
+        "Muyang Du",
+        "Shuang Yu",
+        "Junjie Lai"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-07-23T08:24:21+00:00",
+      "link": "https://arxiv.org/pdf/2607.21042v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive TTS model with flow-matching diffusion transformer",
+      "llm_evidence_cn": "带有流匹配扩散Transformer的自回归TTS模型",
+      "llm_evidence": "带有流匹配扩散Transformer的自回归TTS模型",
+      "canonical_evidence": "带有流匹配扩散Transformer的自回归TTS模型",
+      "llm_tldr_en": "Accelerates an autoregressive text-to-speech model that integrates a GPT and a diffusion transformer.",
+      "llm_tldr_cn": "加速了一种集成GPT和扩散Transformer的自回归文本转语音模型。",
+      "llm_tldr": "加速了一种集成GPT和扩散Transformer的自回归文本转语音模型。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.20940v1",
+      "title": "Ms. Forcing: Efficient Streaming Video Generation with Multi-Scale Patchification and Attention",
+      "abstract": "Streaming video diffusion models have made substantial progress toward interactive and dynamic world simulation, but the nested autoregressive and denoising loops of conventional next-frame generation hinder real-time deployment. Recent rolling-window methods pipeline denoising across multiple consecutive frames at different noise levels, improving throughput and long-horizon stability. However, they tokenize every state at the same fine spatial granularity, leaving substantial noise-dependent redundancy in the joint denoising window. We propose Ms.Forcing, an efficient streaming video generation paradigm that adapts spatial granularity to each state's noise level. Its Multi-Scale Patchification (MSP) assigns coarser patches to noisier states, reducing the active-window token count by 45%, while Multi-Scale Self-Attention (MSSA) matches the density of visible non-sink keys and values to each query scale to further reduce attention cost. Because both schedules are fixed by window position, Ms.Forcing retains a static, hardware-friendly computation graph. We further introduce Homogeneous-Noise-Level DMD (H-DMD), which assembles each fake video from clean predictions sharing the same source noise level, thereby reducing the mismatch between DMD training sequences and inference-time rollouts. The multi-scale design helps offset the additional training cost of backpropagating through overlapping windows. We include both quantitative and qualitative experiments to show that Ms.Forcing reaches 22.84 FPS on a single H200 GPU, 39.6% faster than Rolling Forcing, while significantly improving VBench scores in both short video and long video generation setting.",
+      "authors": [
+        "Zekun Li",
+        "Xiaoyan Cong",
+        "Hongyu Li",
+        "Zhiyang Dou",
+        "Chuan Guo",
+        "Abhay Mittal",
+        "Sizhe An",
+        "Srinath Sridhar"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-23T05:35:31+00:00",
+      "link": "https://arxiv.org/pdf/2607.20940v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Nested autoregressive and denoising loops in streaming video diffusion",
+      "llm_evidence_cn": "流式视频扩散模型中的嵌套自回归与去噪循环",
+      "llm_evidence": "流式视频扩散模型中的嵌套自回归与去噪循环",
+      "canonical_evidence": "流式视频扩散模型中的嵌套自回归与去噪循环",
+      "llm_tldr_en": "Ms.Forcing optimizes streaming video generation by adapting spatial granularity in autoregressive denoising loops.",
+      "llm_tldr_cn": "Ms.Forcing通过在自回归去噪循环中自适应空间粒度来优化流式视频生成。",
+      "llm_tldr": "Ms.Forcing通过在自回归去噪循环中自适应空间粒度来优化流式视频生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.21519v1",
+      "title": "Diffusion Language Model for Recommendation",
+      "abstract": "Large language model (LLM)-empowered recommender systems have emerged as a promising paradigm for generative recommendation, leveraging their strong semantic reasoning and generative capacity to model complex, diverse user preferences. However, most existing approaches rely on an autoregressive paradigm that is suboptimal for recommendation. The next-token objective emphasizes sequential order rather than the structural inter-item dependencies underlying user preferences. In addition, prefix-constrained generation restricts bidirectional context and commits to left-to-right decoding, causing early errors to accumulate without correction. Inspired by the success of diffusion language models, we propose \\textbf{DLMRec}, a discrete diffusion language model tailored for recommendation that offers a compelling alternative to autoregressive generation. Specifically, DLMRec introduces three key components to bridge diffusion language modeling with recommendation. First, a collaborative-aware stochastic tokenizer encodes multi-hop collaborative signals into expressive discrete tokens compatible with diffusion modeling. Second, a curriculum-driven training strategy aligns the denoising process with preference recovery through progressive item- and token-level learning. Third, a stability-aware voting mechanism aggregates iterative predictions to improve generation consistency and robustness.",
+      "authors": [
+        "Chengyi Liu",
+        "Yongqi Zhou",
+        "Junwei Pan",
+        "Zhixiang Feng",
+        "Chengguo Yin",
+        "Haijie Gu",
+        "Jie Jiang",
+        "Yinghao Liu",
+        "Yujuan Ding",
+        "Qing Li",
+        "Wenqi Fan"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-07-23T17:02:12+00:00",
+      "link": "https://arxiv.org/pdf/2607.21519v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "discrete diffusion language model as alternative to autoregressive paradigm",
+      "llm_evidence_cn": "离散扩散语言模型作为自回归范式的替代方案",
+      "llm_evidence": "离散扩散语言模型作为自回归范式的替代方案",
+      "canonical_evidence": "离散扩散语言模型作为自回归范式的替代方案",
+      "llm_tldr_en": "Proposes a discrete diffusion language model for recommendation to overcome autoregressive limitations.",
+      "llm_tldr_cn": "提出了一种用于推荐的离散扩散语言模型，以克服自回归范式的局限性。",
+      "llm_tldr": "提出了一种用于推荐的离散扩散语言模型，以克服自回归范式的局限性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.21427v1",
+      "title": "Context-weighted Discrete Flow Matching",
+      "abstract": "Discrete flow matching provides a flexible framework for generative modeling on discrete structures. However, the standard factorized training objective exposes the model to targets of varying difficulty, mixing well-conditioned, predictable tokens with ambiguous, high-entropy ones. We empirically demonstrate that the uncertainty over the value of each token is closely related to the density of available context in its neighborhood. Motivated by this observation, we propose a simple modification to the underlying continuous-time Markov chain (CTMC) that incorporates local context information. Our context-weighted sampler improves generation quality with negligible computational overhead, while our scaled cross-entropy loss function reweights the training signal from different tokens and reduces generative perplexity by up to 63% on OpenWebText. Moreover, our approach matches a strong semi-autoregressive block diffusion baseline in quality while retaining the ability to perform generation in any order. These results highlight the role of local context as an important factor in discrete generative modeling and show that simple context-aware modifications can significantly improve both sampling and training efficiency.",
+      "authors": [
+        "Daniil Cherniavskii",
+        "Daniel Severo",
+        "Karen Ullrich"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-23T15:29:49+00:00",
+      "link": "https://arxiv.org/pdf/2607.21427v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "generative modeling on discrete structures with flow matching",
+      "llm_evidence_cn": "离散结构上的流匹配生成建模",
+      "llm_evidence": "离散结构上的流匹配生成建模",
+      "canonical_evidence": "离散结构上的流匹配生成建模",
+      "llm_tldr_en": "Improves discrete flow matching by incorporating local context into the continuous-time Markov chain.",
+      "llm_tldr_cn": "通过将局部上下文引入连续时间马尔可夫链，改进了离散流匹配。",
+      "llm_tldr": "通过将局部上下文引入连续时间马尔可夫链，改进了离散流匹配。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

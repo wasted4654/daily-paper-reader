@@ -1,0 +1,93 @@
+{
+  "label": "2026-07-24",
+  "date": "2026-07-24",
+  "generated_at": "2026-07-24T21:02:43",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202607/24/2607.21594v1-streaming-multi-agent-autoregressive-diffusion-model-with-world-state-registers",
+      "section": "deep",
+      "title_en": "Streaming Multi-Agent Autoregressive Diffusion Model with World State Registers",
+      "authors": "Sicheng Mo, Yuheng Li, Ziyang Leng, Krishna Kumar Singh, Bolei Zhou",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21594v1",
+      "score": "10.0",
+      "evidence": "流式多智能体自回归扩散模型",
+      "tldr": "针对多智能体交互式世界模型中难以维持跨视角一致状态的问题，本文提出 WorldWeaver (W^2)。该模型引入了跨智能体世界状态寄存器，利用可学习的 Token 存储共享信息并动态更新，同时采用混合 Transformer 架构分离状态建模与视觉生成。通过在 Minecraft 环境下的实验证明，这种显式的状态建模显著增强了多智能体视频生成的逻辑一致性与视觉质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Multi-agent interactive world models should not only generate consistent observations, but also maintain world states that persist across agents and evolve across views. Existing autoregressive video diffusion pipelines carry forward observation history as conditioning context, which makes shared state difficult to maintain in multi-agent and multi-view settings. We present WorldWeaver (W^2), a streaming multi-agent video diffusion model that augments rollout with cross-agent world state registers: learnable tokens that store shared world information, track individual agent status, and are dynamically updated after each generated chunk. We ground these registers with supervision signals spanning individual agent status, global state views including bird's-eye views, and scene text. We further improve the architecture with a Mixture-of-Transformers design that uses separate weights for world state modeling and visual frame modeling. Extensive experiments in two-agent Minecraft video generation show that explicit world-state modeling improves logical consistency and generation quality.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.18436v1-surprise-forcing-what-to-remember-when-to-skip-in-long-video-generation",
+      "section": "deep",
+      "title_en": "Surprise Forcing: What to Remember, When to Skip in Long Video Generation",
+      "authors": "Shuwei Shi, Zhen Li, Muyao Niu, Chuanhao Li, Bo Zheng, Kaipeng Zhang, Yinqiang Zheng",
+      "date": "2026-07-20",
+      "pdf": "https://arxiv.org/pdf/2607.18436v1",
+      "score": "9.0",
+      "evidence": "用于视频生成的流式自回归扩散模型",
+      "tldr": "本研究针对长视频生成中自回归扩散模型的局限性，提出了Surprise Forcing框架。该框架解决了固定上下文导致的远端记忆丢失和固定去噪步数导致的计算资源浪费问题。通过引入基于“惊喜度”门控的记忆库来保留关键视觉证据，并利用惊喜度感知去噪动态调整计算量，在无需额外训练的情况下，显著提升了长视频的一致性和生成质量，同时保持了实时流式传输效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Streaming autoregressive diffusion makes minute-scale video synthesis practical, but its bounded context and fixed denoising schedule allocate resources uniformly across a highly non-stationary sequence. A rolling key-value cache forgets distant visual evidence even when that evidence remains important, while every generated chunk receives the same number of denoising passes irrespective of its actual difficulty. We introduce Surprise Forcing, a training-free framework that treats both limitations as online resource-allocation problems. A Surprise-Gated Memory Bank summarizes evicted frames with value-token descriptors, evaluates them using complementary global-deviation and nearest-neighbor novelty signals, and regulates admission through a feedback-controlled budget in normalized score space. Priority-based replacement and relevance-aware routing then keep the external memory compact and useful. In parallel, Surprise-Aware Denoising estimates chunk difficulty from the maximum adjacent-frame cosine distance after the first denoising pass and uses a local percentile scheduler to skip intermediate steps for comparatively easy chunks. Experiments on VBench, VBench-Long, and VBench-2.0 show that the proposed allocation strategy improves long-horizon consistency and visual quality while retaining real-time streaming throughput.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.21042v1-faster-indextts-2-accelerating-and-streaming-autoregressive-zero-shot-text-to-speech-synthesis-on-gpus",
+      "section": "deep",
+      "title_en": "Faster IndexTTS-2: Accelerating and Streaming Autoregressive Zero-Shot Text-to-Speech Synthesis on GPUs",
+      "authors": "Muyang Du, Shuang Yu, Junjie Lai",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21042v1",
+      "score": "9.0",
+      "evidence": "带有流匹配扩散Transformer的自回归TTS模型",
+      "tldr": "本研究针对自回归文本转语音模型IndexTTS-2推理速度慢、难以满足生产部署需求的问题，提出了Faster IndexTTS-2。通过利用NVIDIA TensorRT和TensorRT-LLM对GPT、扩散Transformer及声码器进行全面优化，实现了流式合成与批量推理。在Seed-TTS基准测试中，该方法在保持高音质的同时，将端到端推理速度提升了3.6倍，为自回归语音模型在GPU上的高效加速提供了实践参考。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive text-to-speech models achieve strong naturalness but suffer from slow inference due to sequential token generation, limiting their deployment in production applications that require low latency. IndexTTS-2 is a state-of-the-art autoregressive TTS model consisting of a GPT, a flow-matching Diffusion Transformer, and a vocoder. Despite its high synthesis quality, its inference speed barely reaches real-time without streaming or batching support. We present Faster IndexTTS-2, which accelerates all neural network components of IndexTTS-2 for production deployment on GPUs using NVIDIA TensorRT and TensorRT-LLM. Faster IndexTTS-2 also enables streaming synthesis for latency-sensitive interactive applications, and batched inference across all components to maximize GPU utilization. Experiments on the Seed-TTS benchmark for both English and Chinese demonstrate up to 5.0$\\times$ speedup on the autoregressive GPT and 3.6$\\times$ end-to-end, with minimal degradation in word error rate, speaker similarity, and naturalness. Our methodology provides a practical reference for efficiently accelerating similar autoregressive speech models on GPUs.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.20940v1-ms-forcing-efficient-streaming-video-generation-with-multi-scale-patchification-and-attention",
+      "section": "deep",
+      "title_en": "Ms. Forcing: Efficient Streaming Video Generation with Multi-Scale Patchification and Attention",
+      "authors": "Zekun Li, Xiaoyan Cong, Hongyu Li, Zhiyang Dou, Chuan Guo, Abhay Mittal, Sizhe An, Srinath Sridhar",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.20940v1",
+      "score": "8.0",
+      "evidence": "流式视频扩散模型中的嵌套自回归与去噪循环",
+      "tldr": "针对流式视频生成中传统方法计算冗余的问题，本文提出 Ms. Forcing 框架。该框架通过多尺度分块（MSP）根据噪声水平动态调整空间粒度，并结合多尺度自注意力（MSSA）优化计算效率。此外，引入 H-DMD 减少训练与推理的不一致性。实验表明，该方法在保持高质量生成的同时，推理速度提升至 22.84 FPS，显著优于现有方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Streaming video diffusion models have made substantial progress toward interactive and dynamic world simulation, but the nested autoregressive and denoising loops of conventional next-frame generation hinder real-time deployment. Recent rolling-window methods pipeline denoising across multiple consecutive frames at different noise levels, improving throughput and long-horizon stability. However, they tokenize every state at the same fine spatial granularity, leaving substantial noise-dependent redundancy in the joint denoising window. We propose Ms.Forcing, an efficient streaming video generation paradigm that adapts spatial granularity to each state's noise level. Its Multi-Scale Patchification (MSP) assigns coarser patches to noisier states, reducing the active-window token count by 45%, while Multi-Scale Self-Attention (MSSA) matches the density of visible non-sink keys and values to each query scale to further reduce attention cost. Because both schedules are fixed by window position, Ms.Forcing retains a static, hardware-friendly computation graph. We further introduce Homogeneous-Noise-Level DMD (H-DMD), which assembles each fake video from clean predictions sharing the same source noise level, thereby reducing the mismatch between DMD training sequences and inference-time rollouts. The multi-scale design helps offset the additional training cost of backpropagating through overlapping windows. We include both quantitative and qualitative experiments to show that Ms.Forcing reaches 22.84 FPS on a single H200 GPU, 39.6% faster than Rolling Forcing, while significantly improving VBench scores in both short video and long video generation setting.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.21519v1-diffusion-language-model-for-recommendation",
+      "section": "deep",
+      "title_en": "Diffusion Language Model for Recommendation",
+      "authors": "Chengyi Liu, Yongqi Zhou, Junwei Pan, Zhixiang Feng, Chengguo Yin, Haijie Gu, Jie Jiang, Yinghao Liu, Yujuan Ding, Qing Li, Wenqi Fan",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21519v1",
+      "score": "8.0",
+      "evidence": "离散扩散语言模型作为自回归范式的替代方案",
+      "tldr": "针对现有大语言模型推荐系统在自回归生成中存在的结构依赖建模不足及误差累积问题，本文提出DLMRec，一种专为推荐设计的离散扩散语言模型。该模型通过协作感知分词器捕捉多步协作信号，利用课程驱动训练策略优化去噪过程，并引入稳定性感知投票机制提升生成的一致性。DLMRec为生成式推荐提供了一种非自回归的替代方案，有效增强了对复杂用户偏好的建模能力。",
+      "tags": "query:ardm",
+      "abstract_en": "Large language model (LLM)-empowered recommender systems have emerged as a promising paradigm for generative recommendation, leveraging their strong semantic reasoning and generative capacity to model complex, diverse user preferences. However, most existing approaches rely on an autoregressive paradigm that is suboptimal for recommendation. The next-token objective emphasizes sequential order rather than the structural inter-item dependencies underlying user preferences. In addition, prefix-constrained generation restricts bidirectional context and commits to left-to-right decoding, causing early errors to accumulate without correction. Inspired by the success of diffusion language models, we propose \\textbf{DLMRec}, a discrete diffusion language model tailored for recommendation that offers a compelling alternative to autoregressive generation. Specifically, DLMRec introduces three key components to bridge diffusion language modeling with recommendation. First, a collaborative-aware stochastic tokenizer encodes multi-hop collaborative signals into expressive discrete tokens compatible with diffusion modeling. Second, a curriculum-driven training strategy aligns the denoising process with preference recovery through progressive item- and token-level learning. Third, a stability-aware voting mechanism aggregates iterative predictions to improve generation consistency and robustness.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/24/2607.21427v1-context-weighted-discrete-flow-matching",
+      "section": "quick",
+      "title_en": "Context-weighted Discrete Flow Matching",
+      "authors": "Daniil Cherniavskii, Daniel Severo, Karen Ullrich",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21427v1",
+      "score": "6.0",
+      "evidence": "离散结构上的流匹配生成建模",
+      "tldr": "本研究针对离散流匹配中标准训练目标忽略Token预测难度差异的问题，提出了一种上下文加权的改进方案。作者发现Token的不确定性与局部上下文密度密切相关，据此修改了连续时间马尔可夫链（CTMC），引入上下文加权采样器和缩放交叉熵损失函数。该方法在OpenWebText上将生成困惑度降低了高达63%，在保持生成顺序灵活性的同时，达到了强半自回归扩散模型的生成质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete flow matching provides a flexible framework for generative modeling on discrete structures. However, the standard factorized training objective exposes the model to targets of varying difficulty, mixing well-conditioned, predictable tokens with ambiguous, high-entropy ones. We empirically demonstrate that the uncertainty over the value of each token is closely related to the density of available context in its neighborhood. Motivated by this observation, we propose a simple modification to the underlying continuous-time Markov chain (CTMC) that incorporates local context information. Our context-weighted sampler improves generation quality with negligible computational overhead, while our scaled cross-entropy loss function reweights the training signal from different tokens and reduces generative perplexity by up to 63% on OpenWebText. Moreover, our approach matches a strong semi-autoregressive block diffusion baseline in quality while retaining the ability to perform generation in any order. These results highlight the role of local context as an important factor in discrete generative modeling and show that simple context-aware modifications can significantly improve both sampling and training efficiency.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
