@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-07-26 <!--dpr-date:20260726-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/26/2607.21553v1-sana-video-20-hybrid-linear-attention-with-attention-residuals-for-efficient-video-generation" data-sidebar-item="{&quot;title&quot;: &quot;SANA-Video 2.0: Hybrid Linear Attention with Attention Residuals for Efficient Video Generation&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.21553v1-sana-video-20-hybrid-linear-attention-with-attention-residuals-for-efficient-video-generation&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;用于视频扩散 Transformer 的混合线性注意力&quot;}">SANA-Video 2.0: Hybrid Linear Attention with Attention Residuals for Efficient Video Generation</a>
   * 2026-07-25 <!--dpr-date:20260725-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202607/25/2607.21591v1-inference-time-scaling-of-diffusion-models-via-progressive-seed-pruning" data-sidebar-item="{&quot;title&quot;: &quot;Inference-Time Scaling of Diffusion Models via Progressive Seed Pruning&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.21591v1-inference-time-scaling-of-diffusion-models-via-progressive-seed-pruning&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;与自回归语言模型的推理时缩放对比&quot;}">Inference-Time Scaling of Diffusion Models via Progressive Seed Pruning</a>

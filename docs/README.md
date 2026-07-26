@@ -6,29 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-25
-- 运行时间：2026-07-25 20:51:37 UTC
+- 最新运行日期：2026-07-26
+- 运行时间：2026-07-26 21:03:12 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：1
 - 精读区：0
-- 速读区：2
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦扩散模型推理优化，探索种子剪枝与并行生成的提效新路径。
-重点关注通过渐进式种子剪枝实现推理缩放，以及利用选择性注意力状态复用提升并行生成的性价比。
-建议追求生成效率与质量平衡的开发者，深入了解这两项降低扩散模型推理成本的前沿技术。
-- 详情：[/202607/25/README](/202607/25/README)
+今日聚焦高效视频生成，SANA-Video 2.0 凭借混合线性注意力机制实现性能突破。
+该研究通过引入注意力残差与混合线性架构，显著提升了视频生成的计算效率与画面质量。
+关注视频生成效率的开发者可深入了解其线性注意力优化方案，探索低成本创作的更多可能。
+- 详情：[/202607/26/README](/202607/26/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Inference-Time Scaling of Diffusion Models via Progressive Seed Pruning](/202607/25/2607.21591v1-inference-time-scaling-of-diffusion-models-via-progressive-seed-pruning)  
-   标签：评分：7.0/10、query:ardm
-   evidence：与自回归语言模型的推理时缩放对比
-2. [DiTango: Cost-Effective Parallel Diffusion Generation with Selective Attention State Reuse](/202607/25/2607.15650v1-ditango-cost-effective-parallel-diffusion-generation-with-selective-attention-state-reuse)  
+1. [SANA-Video 2.0: Hybrid Linear Attention with Attention Residuals for Efficient Video Generation](/202607/26/2607.21553v1-sana-video-20-hybrid-linear-attention-with-attention-residuals-for-efficient-video-generation)  
    标签：评分：6.0/10、query:ardm
-   evidence：扩散Transformer的并行扩散生成
+   evidence：用于视频扩散 Transformer 的混合线性注意力
 
 
 <div class="dpr-home-promo-card">
