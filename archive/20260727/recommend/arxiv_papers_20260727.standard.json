@@ -1,0 +1,292 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-27T21:05:38.059508+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2607.20368v2",
+      "title": "Self Gradient Forcing: Native Long Video Extrapolation",
+      "abstract": "Recent autoregressive video diffusion methods are increasingly built upon Self Forcing, where the student is trained on histories produced by its own rollout rather than ground-truth video contexts. This reduces exposure bias, but the historical key-value cache is still used by future frames only as frozen rollout state. As a result, future losses cannot supervise how earlier generated latents should be written into more useful keys and values for later video-latent generation. We call this the historical context-gradient gap. We propose Self Gradient Forcing (SGF), a two-pass training strategy that restores this missing supervision signal without backpropagating through the full serial rollout. Pass 1 performs a no-gradient autoregressive rollout matching inference and, at a sampled denoising exit step, records both the self-generated context and the noisy latents fed to the model. Pass 2 performs parallel context-gradient reconstruction for the recorded exit step. The generated context is used as stop-gradient clean-latent input, while the model recomputes the context KV representations and future-to-context causal attention. Thus, SGF provides the missing memory-writing supervision within the native autoregressive training objective, using losses on future video latents to train the model to encode context into more effective causal memory. Across extensive long-horizon frame-wise and chunk-wise experiments under different initializations, SGF achieves stronger native long-video extrapolation than Self Forcing, especially in subject identity, background/layout consistency, and temporal stability. Remarkably, using only a 5-second training window, SGF can extrapolate to videos lasting several minutes. Code and models will be released to advance research on autoregressive video generation.",
+      "authors": [
+        "Junhao Zhuang",
+        "Shiyi Zhang",
+        "Yuxuan Bian",
+        "Yaowei Li",
+        "Yawen Luo",
+        "Yijun Liu",
+        "Weiyang Jin",
+        "Songchun Zhang",
+        "Xianglong He",
+        "Xuying Zhang",
+        "Haoran Li",
+        "Haoyang Huang",
+        "Zeyue Xue",
+        "Nan Duan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-22T16:59:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.20368v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "autoregressive video diffusion methods and self gradient forcing for long video extrapolation",
+      "llm_evidence_cn": "自回归视频扩散方法及用于长视频外推的自梯度强制技术",
+      "llm_evidence": "自回归视频扩散方法及用于长视频外推的自梯度强制技术",
+      "canonical_evidence": "自回归视频扩散方法及用于长视频外推的自梯度强制技术",
+      "llm_tldr_en": "Introduces Self Gradient Forcing to improve long-term consistency in autoregressive video diffusion models.",
+      "llm_tldr_cn": "引入自梯度强制技术，旨在提升自回归视频扩散模型在长视频生成中的一致性。",
+      "llm_tldr": "引入自梯度强制技术，旨在提升自回归视频扩散模型在长视频生成中的一致性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.19686v2",
+      "title": "Multi-Mask Diffusion Language Models for Few-Step Generation",
+      "abstract": "Masked diffusion models (MDMs) are a promising family of language generators, but achieving high-quality few-step generation remains challenging. In MDMs, all forward trajectories collapse to a single fully masked state, leaving no terminal entropy for consistency-style few-step generation. While recent few-step alternatives based on uniform-state diffusion avoid this degeneracy, it becomes harder to distinguish clean tokens from noise than MDMs, which usually harms modeling quality and training efficiency. In this work, we propose a multi-mask diffusion model (MultiMDM) that preserves the masking structure towards few-step generation. In the forward process, each clean token is first pushed towards a designated mask and then gradually mixes over the mask set. As a result, the backward process has a drafting capability by predicting a designated mask before refining to a clean token. We derive a closed-form ELBO training objective for MultiMDM that supports continual training from pretrained MDMs. In addition, we formulate a purely discrete-state consistency distillation scheme, with a shared-Gumbel coupling to reduce pathwise entropy. Experiments on pretraining and distillation show that MultiMDM provides an effective foundation for principled few-step generation.",
+      "authors": [
+        "Sijin Chen",
+        "Yinuo Ren",
+        "Heyang Zhao",
+        "Ziheng Cheng",
+        "Quanquan Gu",
+        "Lexing Ying"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-07-22T02:35:40+00:00",
+      "link": "https://arxiv.org/pdf/2607.19686v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "multi-mask diffusion language models for sequence generation",
+      "llm_evidence_cn": "用于序列生成的多掩码扩散语言模型",
+      "llm_evidence": "用于序列生成的多掩码扩散语言模型",
+      "canonical_evidence": "用于序列生成的多掩码扩散语言模型",
+      "llm_tldr_en": "Proposes MultiMDM to enable high-quality few-step text generation in masked diffusion models.",
+      "llm_tldr_cn": "提出 MultiMDM 模型，通过多掩码结构实现掩码扩散模型的高质量少步文本生成。",
+      "llm_tldr": "提出 MultiMDM 模型，通过多掩码结构实现掩码扩散模型的高质量少步文本生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.21372v1",
+      "title": "Mean-to-Score Discrete Diffusion: Posterior-Mean Denoisers for Score Entropy",
+      "abstract": "Score Entropy Discrete Diffusion (SEDD) parameterizes discrete reverse processes with unconstrained positive score ratios. While positivity guarantees nonnegative reverse jump rates, it does not ensure Bayes realizability: ratios at a noisy state need not be jointly induced by any clean-token posterior under the forward kernel. The score-entropy loss has the correct population optimum but does not enforce this constraint away from it. In a trained pure-uniform SEDD checkpoint, roughly one quarter of complete score vectors violate the coordinate box, while more than half lie inside it yet remain materially incompatible with any valid posterior. Such violations can produce negative pre-normalization weights in finite-step sampling. Projecting raw scores onto the bridge polytope removes all observed negative weights and improves external generative PPL from $203.6$ to $175.1$ without changing the sampler. We introduce \\emph{mean-to-score} (M2S), which predicts a clean-token posterior mean and converts it to the score through an exact kernel-dependent linear map. The construction applies to any known coordinate-wise continuous-time Markov chain (CTMC) satisfying a mild support condition. For uniform corruption, it maps the probability simplex onto the bridge polytope; for absorbing-mask corruption, the resulting objective recovers MD4 exactly. In a controlled 28.4M-parameter CIFAR-10 comparison, M2S lowers test BPD from $3.173$ to $3.129$ and FID-50k from $\\CifarSEDDFID$ to $\\CifarMtwoSFID$. A 170M-parameter M2S model trained on about 262B OpenWebText token slots outperforms the evaluated pure-uniform SEDD, GIDD, and Neural CTMC checkpoints at every tested sampling budget, reaching generative PPL $143.3$ at 128 steps versus $183.6$ for the strongest pure-uniform baseline.",
+      "authors": [
+        "Jingyuan Li",
+        "Xiaoyi Jiang",
+        "Yixuan Jiang",
+        "Wei Liu",
+        "Yi Zhu",
+        "Zuoqiang Shi",
+        "Pipi Hu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-07-23T14:37:30+00:00",
+      "link": "https://arxiv.org/pdf/2607.21372v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "discrete diffusion models for sequence generation and score entropy",
+      "llm_evidence_cn": "用于序列生成和分数熵的离散扩散模型",
+      "llm_evidence": "用于序列生成和分数熵的离散扩散模型",
+      "canonical_evidence": "用于序列生成和分数熵的离散扩散模型",
+      "llm_tldr_en": "Improves Score Entropy Discrete Diffusion by enforcing Bayes realizability through posterior-mean denoisers.",
+      "llm_tldr_cn": "通过后验均值去噪器强制执行贝叶斯可实现性，改进了离散扩散模型的生成质量。",
+      "llm_tldr": "通过后验均值去噪器强制执行贝叶斯可实现性，改进了离散扩散模型的生成质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.22091v1",
+      "title": "Spectral Prior for Reducing Exposure Bias in Diffusion Models",
+      "abstract": "Diffusion models typically suffer from error accumulation during iterative sampling, commonly referred to as exposure bias. We reveal systematic frequency-dependent discrepancies between training and inference, which can be interpreted as frequency-dependent SNR error. Crucially, the direction of this mismatch varies across models and timesteps, indicating that fixed correction rules do not generalize. We propose Spectral Alignment (SPA), a lightweight, guidance-based method that calibrates the power spectrum of intermediate predictions to a pre-computed prior. Our approach consists of two stages: (1) offline fitting of a parametric spectrum model from training data, and (2) inference-time guidance via efficient FFT-based gradient computation. SPA introduces minimal computational overhead (3-4\\%) and is complementary to Classifier-Free Guidance (CFG). We demonstrate consistent improvements across diverse architectures, from pixel-space models (DDPM, ADM) to latent diffusion models (SD2.0, SDXL) and flow-matching models (SD3.5, FLUX). Our implementation is available at https://github.com/SonyResearch/SPA.",
+      "authors": [
+        "Yuya Kobayashi",
+        "Masato Ishii",
+        "Yuhta Takida",
+        "Takashi Shibuya",
+        "Yuki Mitsufuji"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-24T08:37:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.22091v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "reducing exposure bias in diffusion models during iterative sampling",
+      "llm_evidence_cn": "减少扩散模型迭代采样过程中的曝光偏差",
+      "llm_evidence": "减少扩散模型迭代采样过程中的曝光偏差",
+      "canonical_evidence": "减少扩散模型迭代采样过程中的曝光偏差",
+      "llm_tldr_en": "Proposes Spectral Alignment to reduce error accumulation and exposure bias in diffusion model sampling.",
+      "llm_tldr_cn": "提出光谱对齐方法，通过校准中间预测的光谱来减少扩散模型的采样误差累积。",
+      "llm_tldr": "提出光谱对齐方法，通过校准中间预测的光谱来减少扩散模型的采样误差累积。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.17572v2",
+      "title": "JAGG: Jacobian-Aggregated Group Gradient for Efficient GRPO Training of Diffusion Models",
+      "abstract": "Group Relative Policy Optimization (GRPO) is a powerful reinforcement learning algorithm for aligning generative models with human preferences. While successful in large language models~\\cite{shao2024deepseekmathpushinglimitsmathematical}, its extension to diffusion and flow matching models introduces a severe computational bottleneck: gradients must be back-propagated through the high-capacity DiT backbone at \\emph{every} timestep of the sampling trajectory, making high-resolution text-to-image (T2I) training prohibitively expensive. Training-free DiT inference acceleration methods (e.g., $Δ$-DiT, ScalingCache) exploit the fact that DiT hidden states and velocity predictions vary \\emph{smoothly and nearly linearly} along the trajectory. We ask whether the same linearity can reduce the backward-pass cost of DiT RL training, and answer affirmatively with \\textbf{JAGG} (\\textbf{J}acobian-\\textbf{A}ggregated \\textbf{G}roup \\textbf{G}radient), which reduces full transformer backward passes from $W$ to $2$ per group of $W$ consecutive steps. JAGG approximates intermediate-step Jacobians via $t$-weighted interpolation of the endpoint Jacobians, then aggregates per-step upstream signals into two composite gradients applied through a single joint backward pass. We prove this interpolation is \\emph{exact} when the velocity is linear in $(z,t)$, and a cosine-similarity routing rule (\\texttt{jagg\\_frac}) deploys JAGG only where the assumption holds. Experiments on T2I benchmarks show JAGG delivers $\\sim$2$\\times$ backward speedup with negligible quality degradation.",
+      "authors": [
+        "Ruiyi Ding",
+        "Jie Li",
+        "He Kang",
+        "Ziyan Liu",
+        "Chengru Song",
+        "Yuan chen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV",
+        "eess.SY"
+      ],
+      "published": "2026-07-20T05:30:40+00:00",
+      "link": "https://arxiv.org/pdf/2607.17572v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "efficient training of diffusion models using reinforcement learning alignment",
+      "llm_evidence_cn": "使用强化学习对齐高效训练扩散模型",
+      "llm_evidence": "使用强化学习对齐高效训练扩散模型",
+      "canonical_evidence": "使用强化学习对齐高效训练扩散模型",
+      "llm_tldr_en": "Introduces JAGG to accelerate GRPO training for aligning diffusion models with human preferences.",
+      "llm_tldr_cn": "提出 JAGG 算法，旨在加速扩散模型与人类偏好对齐的 GRPO 强化学习训练过程。",
+      "llm_tldr": "提出 JAGG 算法，旨在加速扩散模型与人类偏好对齐的 GRPO 强化学习训练过程。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.17972v1",
+      "title": "DiFA: Inference-Time Forward-Process Alignment for Diffusion Models",
+      "abstract": "The prevailing inference framework for diffusion models formulates generation fundamentally as a problem of numerical integration. This perspective casts the model as an exact estimator, neglecting the inherent statistical uncertainty of the denoising process. In this work, we propose Forward-Process Aligned Diffusion prediction (\\textbf{DiFA}), a training-free framework that reframes inference-time data prediction refinement as a sequential state estimation problem. Rather than reusing past outputs solely for numerical integration, DiFA treats iterative data predictions along the reverse trajectory as correlated observations to build a forward-aligned temporal consensus. Inspired by Kalman filtering, this consensus aggregates historical predictions according to structural consistency and noise-level compatibility. To counteract the over-smoothing tendency of temporal consensus, we introduce a deviation guidance mechanism to adaptively preserve residual details. Empirically, DiFA yields significant improvements on CIFAR-10 and ImageNet across the evaluated metrics, including FID, IS, and FD-DINOv2, demonstrating that aligning inference with the forward statistical structure substantially improves generative fidelity.",
+      "authors": [
+        "Shigui Li",
+        "Delu Zeng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-20T14:10:53+00:00",
+      "link": "https://arxiv.org/pdf/2607.17972v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "reframes inference-time data prediction refinement as a sequential state estimation problem",
+      "llm_evidence_cn": "将推理时数据预测细化重新定义为序列状态估计问题",
+      "llm_evidence": "将推理时数据预测细化重新定义为序列状态估计问题",
+      "canonical_evidence": "将推理时数据预测细化重新定义为序列状态估计问题",
+      "llm_tldr_en": "Proposes DiFA to improve diffusion model inference by treating iterative predictions as correlated observations.",
+      "llm_tldr_cn": "提出 DiFA 框架，通过将迭代预测视为相关观测值来优化扩散模型的推理过程。",
+      "llm_tldr": "提出 DiFA 框架，通过将迭代预测视为相关观测值来优化扩散模型的推理过程。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.19173v1",
+      "title": "Neural Kolmogorov Equations: Parallelizable Learning of Stochastic Dynamics under General Noise",
+      "abstract": "Neural stochastic differential equations (SDEs) have emerged as powerful tools for learning noisy or stochastic dynamics directly from data; however, existing approaches largely assume uncoupled and continuous noise, limiting their applicability to realistic stochastic drivers, and often scale poorly in time, requiring expensive autoregressive training. To address these limitations, we propose Neural Kolmogorov Equations (NKEs), a deterministic, infinite-dimensional reformulation of Neural SDEs based on the Kolmogorov Forward equation, transforming the learning problem from modelling individual stochastic trajectories to modelling the evolution of probability densities. NKEs learn general Lévy-type stochastic forcing directly through the operator structure of the KFE, and enable parallel-in-time training via a Lagrangian Galerkin projection and operator splitting. We evaluate NKEs on several stochastic benchmarks, including systems with coupled noise and jump processes, and verify that NKEs provide flexible models that accurately recover deterministic and stochastic dynamics with competitive predictive accuracy and improved training efficiency. Code and pretrained models will be released.",
+      "authors": [
+        "Arthur Bizzi",
+        "Olga Fink"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-21T15:07:37+00:00",
+      "link": "https://arxiv.org/pdf/2607.19173v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Reformulation of SDEs to avoid expensive autoregressive training",
+      "llm_evidence_cn": "重构SDE以避免昂贵的自回归训练",
+      "llm_evidence": "重构SDE以避免昂贵的自回归训练",
+      "canonical_evidence": "重构SDE以避免昂贵的自回归训练",
+      "llm_tldr_en": "Introduces Neural Kolmogorov Equations for parallelizable learning of stochastic dynamics.",
+      "llm_tldr_cn": "引入神经柯尔莫哥洛夫方程，实现随机动力学的并行化学习。",
+      "llm_tldr": "引入神经柯尔莫哥洛夫方程，实现随机动力学的并行化学习。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

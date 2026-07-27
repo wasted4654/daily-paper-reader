@@ -1,0 +1,1840 @@
+Title: Mean-to-Score Discrete Diffusion: Posterior-Mean Denoisers for Score Entropy
+
+URL Source: https://arxiv.org/pdf/2607.21372v1
+
+Published Time: Fri, 24 Jul 2026 01:17:13 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+# Mean-to-Score Discrete Diffusion: Posterior-Mean Denoisers for Score Entropy 
+
+Jingyuan Li 2,3,4∗ Xiaoyi Jiang 1,4∗ Yixuan Jiang 1,4 Wei Liu 3
+
+Yi Zhu 1,2,4 Zuoqiang Shi 1,2,4 Pipi Hu 2,4†
+
+> 1
+
+Tsinghua University 2Beijing Institute of Mathematical Sciences and Applications 
+
+> 3
+
+Wuhan University 4MathonAI 
+
+Abstract 
+
+Score Entropy Discrete Diffusion (SEDD) parameterizes discrete reverse processes with unconstrained positive score ratios. Although positivity ensures nonnegative reverse jump rates, it does not ensure Bayes realizability: at a fixed noisy state, all candidate score ratios must arise jointly from a single clean-token posterior under the forward kernel. We show that the score-entropy loss has the correct population optimum but does not enforce Bayes realizability away from it. In a trained pure-uniform SEDD checkpoint, roughly one quarter of complete score vectors violate the coordinate box, while more than half satisfy every coordinate bound but remain materially incompatible with any valid clean-token posterior. Although the corresponding continuous-time reverse jump rates remain nonnegative, these violations can induce negative pre-normalization weights in the finite-step sampler update. Projecting the checkpoint’s raw scores onto the bridge polytope removes all observed negative weights and lowers external generative PPL from 203 .6 to 175 .1 without changing the sampler. To enforce Bayes realizability by construction rather than through post-hoc projection, we introduce mean-to-score (M2S): the network predicts a clean-token posterior mean and converts it to the score through an exact kernel-dependent linear map. The map applies to any known coordinate-wise continuous-time Markov chain (CTMC) satisfying a mild support condition. For uniform corruption, it maps the probability simplex onto the bridge polytope; for absorbing-mask corruption, the resulting objective recovers MD4 exactly. In a controlled 28.4M-parameter CIFAR-10 comparison, M2S lowers test BPD from 3.173 to 3.129 and FID-50k from 42 .83 to 28 .09 . A 170M-parameter M2S model trained on approximately 262B OpenWebText token slots outperforms the evaluated pure-uniform SEDD, GIDD, and Neural CTMC checkpoints at every tested sampling budget, reaching generative PPL 143 .3 at 128 steps compared with 183 .6 for the strongest pure-uniform baseline. 
+
+# 1 Introduction 
+
+Discrete diffusion models generate finite-valued data by reversing a continuous-time Markov chain (CTMC) that progressively corrupts a sample [ 1, 4]. We study pure-uniform corruption, which treats vocabulary states symmetrically without an absorbing mask token. For site i, let Xi 
+
+> 0
+
+denote the clean token and μ⋆i (x, t ) := Pr (Xi 
+
+> 0
+
+= · | Xt = x) ∈ ∆K−1 its posterior given the noisy sequence Xt = x,where ∆K−1 is the probability simplex over a vocabulary of size K. Unlike absorbing-mask training, 
+
+> ∗
+
+Equal contribution. 
+
+> †
+
+Corresponding author. 
+
+1arXiv:2607.21372v1 [cs.LG] 23 Jul 2026 : 05 c ¡ 1 c + 20                                           
+
+> 0
+> 5
+> 10
+> 15
+> 20
+> normalized value
+> AB
+> (a) Loss and gradient along a score ray
+> 2=314=3
+> 0.0
+> 0.2
+> 0.4
+> M2S range
+> loss L(c)
+> grad. G(c)
+> :05 c¡1c+20
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> TV( q(c)0 ; p 0)
+> A: joint-invalid
+> TV = 0 :042 B: boundary
+> TV = 0 :022
+> optimal
+> TV = 0
+> (b) Reverse-process sensitivity
+> ½t11.5 ½¡1
+> t
+> score sy1
+> ½t
+> 1
+> 1.5
+> ½¡1
+> t
+> score  sy2 A: joint-invalid B: boundary
+> optimal s⋆
+> SEDD region: ℝ2
+> >0
+> (c) Same K= 3 score ray
+> M2S region
+> P=B(¢ 2)½tenvelope
+> C½= [ ½t; ½ ¡1
+> t]2
+> relative candidate score c=bsy1(t)=s ⋆
+> y1(t)(log scale)
+
+Figure 1: M2S occupies the Bayes-realizable subset of the scalar envelope, whereas SEDD can output any positive score. In a K = 3 uniform toy, panels (a)–(b) vary one score along 
+
+bs(c) = ( cs ⋆y1 , s ⋆y2 ) around the shared optimum c = 1 . The labels c− and c+ mark the limits imposed by the ρt-based coordinate envelope, while the inner dark-blue band is the smaller Bayes-realizable subset enforced by M2S and enlarged in the inset. Panel (a) shows the score-entropy excess and log-score gradient; panel (b) shows the terminal reverse-process TV error; and panel (c) shows the joint score region. Point A passes every scalar bound but admits no valid joint posterior, while point B lies on the M2S boundary. which reduces to a weighted clean-token cross-entropy on marked positions, uniform corruption does not reveal which positions changed and requires the reverse model to coordinate transitions across the full vocabulary [21, 23]. MD4 [ 23 ] already highlights a closely related parameterization issue for absorbing-mask diffusion: a freely parameterized score need not be induced by the conditional clean-token mean under the forward process. MD4 therefore predicts this mean and constructs the masked reverse model from it. We ask a vector-level question: whether one valid clean-token posterior induces the complete concrete-score vector predicted by SEDD. We call this property Bayes realizability . It reduces to MD4’s score–mean constraint for an absorbing mask, but under pure-uniform corruption it couples all K − 1 scores. In score-based CTMC models, each reverse jump rate uses a concrete score ratio pt(xi→y)/p t(x).SEDD [ 15 ] predicts each ratio with an exponentiated network output, guaranteeing positive scores and nonnegative continuous-time reverse jump rates. Positivity alone, however, does not ensure that all candidate score ratios arise from one clean-token posterior. 
+
+Formally, at noisy state x and site i with k = xi, a candidate-score vector s = ( sy)y̸ =k satisfies Bayes realizability if s = Bt,k μ for some posterior μ ∈ ∆K−1. Under uniform corruption, any score induced by a clean-token posterior must lie in the coordinate box Ct,k := [ ρt, ρ −1 
+
+> t
+
+]K−1. This restriction concerns Bayes realizability, not requirement for nonnegative continuous-time reverse rates, which only require sy > 0. The coordinate box is necessary but not sufficient for Bayes realizability: the complete score vector must lie in the strictly smaller bridge polytope Pt,k = Bt,k (∆ K−1) ⊊ Ct,k .Thus, constraining a SEDD head to positive outputs is insufficient to ensure Bayes realizability: its output may lie outside both the bridge polytope and even the coordinate box. Score entropy therefore has the correct population optimum but does not enforce Bayes realizability away from that optimum. Figure 1 visualizes the distinction for K = 3 . The coordinate-box interval strictly contains its intersection with the bridge polytope, and panel (c) shows Pt,k ⊊ Ct,k ⊊ R 2
+
+> >0
+
+. Point A passes every coordinate bound but has a negative signed inverse component. 2Failure of Bayes realizability has measurable consequences at language scale. In a pure-uniform SEDD checkpoint, 6.69% of 3.29 billion audited candidate scores leave the coordinate box. To test Bayes realizability during generation, we run this checkpoint with SEDD’s released sampler on 128 sequences and audit the unmodified score vector at every position and sampling step. Of these vectors, 25 .02% contain a coordinate violation, while another 56 .23% pass every scalar check but admit no valid joint posterior. During these runs, the sampler update encounters negative pre-normalization weights and operationally samples from their positive part. To isolate the effect, we project the scores onto Pt,k for 1,024 paired sequences while holding the time grid, initial states, random-number stream, final denoising, and sampler code fixed. Projection removes all observed negative weights and lowers external generative PPL from 203 .60 to 175 .07 .Rather than project scores at inference time, we enforce Bayes realizability in the model. For any known coordinate-wise forward kernel satisfying a mild support condition, the one-site clean-token posterior recovers every concrete score: 
+
+s⋆i (x, t ; y) = E
+
+"
+
+P (i) 
+
+> t
+
+(y | Xi
+
+> 0
+
+)
+
+P (i) 
+
+> t
+
+(xi | Xi
+
+> 0
+
+) Xt = x
+
+#
+
+, (1) where the integrand depends only on the clean token at site i. Mean-to-score (M2S) predicts 
+
+μiθ(xt, t ) = softmax (xiθ(xt, t )) and applies the known linear map Bt to obtain the score. Because μiθ
+
+is a distribution, M2S enforces Bayes realizability. It changes the admissible off-optimum geometry, not the population target. The bridge uses only a one-site posterior, not a posterior over the full sequence. For uniform corruption it is injective on the simplex, has a closed form, and evaluates all scores in O(K) time per site. For absorbing-mask corruption, the same construction recovers the weighted clean-token cross-entropy of MD4 exactly. We also show that the conditional score-entropy risk is uniquely minimized at the true score (Proposition 4.3) and derive the rank condition rank ([ B⊤ 
+
+> +
+
+, 1]⊤) = K
+
+under which this optimum uniquely recovers the clean-token posterior (Theorem 4.4); pure-uniform corruption satisfies this condition. Our experiments ask whether enforcing Bayes realizability matters for image and language generation. On 256-state MNIST, we compare M2S with SEDD: the two models share the architecture, forward process, objective, training budget, and sampler, and M2S improves FID from 126 .1 ± 0.4 to 
+
+71 .1±4.3. On CIFAR-10, an augmentation-free 28.4M-parameter M2S checkpoint reaches a test BPD upper bound of 3.129 , compared with 3.173 for SEDD under the same evaluation protocol; under the same 256-step Euler sampler, M2S also lowers FID-50k from 42 .83 to 28 .09 . On OpenWebText [ 9], the best configuration of our 169.9M-parameter M2S model reaches generative PPL 143 .3 at 128 steps and outperforms the evaluated pure-uniform SEDD [ 15 ], GIDD [ 28 ], and Neural CTMC [ 14 ]baselines at all tested budgets. Figure 2 further compares M2S with pure-uniform SEDD through Bayes realizability and score-entropy audits, and adds a CIFAR-10 optimization trace under identical compute. Keeping the SEDD checkpoint fixed, we also project its scores onto Pt,k during sampling using the simplex-constrained Euclidean projection in Eq. (11) , lowering external GenPPL from 
+
+203 .60 to 175 .07 (Section 5.1). 
+
+Contributions. 
+
+1. We introduce joint Bayes realizability for discrete score vectors. A complete score vector satisfies Bayes realizability exactly when it is induced by one valid clean-token posterior. Positivity and even coordinate-wise feasibility do not suffice. Under uniform corruption, such vectors form a strict bridge polytope Pt,k ⊊ Ct,k , and score entropy does not enforce this constraint away from its population optimum. 310 −3 10 −2 10 −1 10 0  
+
+> diffusion time t(log scale)
+> 0
+> 5
+> 10
+> 15
+> 20
+> scores outside  [½t; ½ ¡1
+> t ] (%)
+
+(a) Checkpoint Bayes realizability     
+
+> SEDD
+> M2S
+> 10 −2 10 −1 10 0
+> diffusion time t(log scale)
+> 0
+> 25
+> 50
+> 75
+> 100
+> positions with negative weight (%)
+
+(b) Sampler-weight validity     
+
+> SEDD
+> Projected SEDD
+> 0816 24 32
+> OWT checkpoint epoch
+> 1k
+> 1.5k
+> 2k
+> 3k
+> 5k
+> 7k
+> score-entropy loss (log scale)
+> epoch 32
+> 1642 vs. 2159
+
+(c) OWT training      
+
+> SEDD
+> M2S
+> 02.0k 4.1k 6.1k 8.2k 10.2k
+> CIFAR-10-equivalent epoch
+> 7k
+> 10k
+> 20k
+> 30k
+> score-entropy loss (log scale)
+
+(d) CIFAR-10 training   
+
+> 8.2k 9.2k 10.2k
+> 6.7k
+> 6.9k
+> 7.0k
+> M2S below SEDD
+> final 2,048 epochs
+> SEDD
+> M2S
+
+Figure 2: M2S enforces Bayes realizability and achieves lower final loss on both text and image generation. Panels (a)–(b) audit score realizability and sampler-weight validity. Panels (c)– (d) compare the score-entropy loss of M2S and SEDD on OpenWebText and CIFAR-10, respectively. 2. We derive M2S to enforce Bayes realizability. M2S maps a one-site clean-token posterior to all concrete scores through an exact kernel-dependent linear bridge. We establish score consistency and posterior recovery, derive the uniform-kernel form, and recover the MD4 objective under absorbing-mask corruption. 3. We show empirically that Bayes realizability matters. For a fixed pure-uniform SEDD checkpoint, simplex-constrained Euclidean projection removes negative sampler weights and lowers generative PPL from 203 .6 to 175 .1. On MNIST and CIFAR-10, M2S improves FID over SEDD under identical settings, while a 170M-parameter OpenWebText model outperforms the evaluated pure-uniform SEDD, GIDD, and Neural CTMC baselines at every tested sampling budget. 
+
+# 2 Related Work 
+
+Discrete diffusion. Diffusion probabilistic models originate from progressively corrupting Markov chains [ 24 ]. Discrete variants use multinomial, structured, or absorbing transition kernels [ 12 , 1, 3,11 , 30 ]. Continuous-time formulations learn reverse CTMC rates or more general denoising Markov dynamics [ 4, 25 , 2]. Discrete score learning includes concrete and target-concrete score matching 4[16 , 29 ], while SEDD learns marginal probability ratios with score entropy [ 15 ]. Recent scalable systems use score, clean-token denoiser, interpolating-kernel, or factorized-rate parameterizations [21 , 23 , 17 , 28 , 14 ]. M2S retains SEDD’s score-entropy CTMC and changes how the complete score vector is parameterized. 
+
+Posterior and score parameterizations. Posterior parameterizations construct reverse dynamics from clean-token predictions, as in D3PM and subsequent reparameterized or absorbing models [1, 11 , 30 ]. For absorbing corruption, RADD factors the concrete score through conditional clean-data probabilities [ 17 ], while MDLM and MD4 reduce their objectives to weighted clean-token cross-entropy and MD4 highlights score–mean consistency [ 21 , 23 ]. GIDD interpolates between masked and uniform corruption [ 28 ], and concurrent work derives exact coordinate-level score–denoiser conversions for uniform diffusion [ 10 ]. These works characterize individual score coordinates or population objectives. M2S instead asks whether the complete SEDD score vector is induced by one clean-token posterior, audits this joint condition in trained checkpoints, and enforces it by construction. 
+
+# 3 Preliminaries 
+
+Let V = {1, . . . , K } be a finite state space. A time-inhomogeneous CTMC on V over [0 , T ] is specified by a rate matrix Qt satisfying Qt(a, b ) ≥ 0 for a̸ = b and P 
+
+> b
+
+Qt(a, b ) = 0 .
+
+Definition 3.1. For some start time s and end time t = s + ∆ (t > s ) as ∆ → 0, we have 
+
+qt|s(b | a) = δa,b + Qt(a, b )∆ + o(∆) , (2) where Qt is called the forward transition rate. The Kolmogorov forward equation ddt qt = qtQt determines the finite-time transition kernel Pt|s [ 4]. For the corruption processes considered here, we use the kernel in Definition 3.2, which covers both uniform and absorbing corruption. 
+
+Definition 3.2. The cumulative transition probabilities of the CTMC are given by 
+
+qt|0(a | z) = Cat( a; Pt(z, ·)) , Pt = αtI + βt1π⊤, (3) where αt + βt = 1 , with α0 = 1 and αT = 0 , and π is a fixed distribution on V. For uniform corruption, π = 1/K ; for absorbing corruption, π = em, where em is the one-hot vector for the mask state m. Here 1 is the all-ones vector. As t → T , qt|0(· | z) → π for every z ∈ V , so the reference distribution is pref = π.For sequences, the forward process acts independently across sites. With site-wise kernels P (i)
+
+> t
+
+and rates Q(i) 
+
+> t
+
+, qt(xt | x0) = QLi=1 P (i) 
+
+> t
+
+(xit | xi
+
+> 0
+
+) and pt(x) = P 
+
+> x0
+
+pdata (x0) QLj=1 P (j) 
+
+> t
+
+(xj | xj
+
+> 0
+
+).
+
+Definition 3.3. For a sequence state x ∈ V L and a candidate token y̸ = xi, let xi→y denote the sequence obtained by replacing site i of x with y. Whenever pt(x) > 0, the concrete score and its corresponding reverse transition rate are 
+
+s⋆i (x, t ; y) = pt(xi→y)
+
+pt(x) , Q(i) 
+
+> t
+
+(xi, y | x) = Q(i) 
+
+> t
+
+(y, x i) s⋆i (x, t ; y), (4) respectively [4, 15]. 5MDLM and GIDD use an x0 parameterization, whereas SEDD directly predicts the concrete score in Definition 3.3. M2S instead predicts the site-wise clean posterior μi(xt, t ) ∈ ∆K−1, with 
+
+[μi(xt, t )] z = Pr( Xi 
+
+> 0
+
+= z | Xt = xt),
+
+and maps it to the concrete score in Section 4. 
+
+# 4 Methodology 
+
+This section presents the M2S bridge, its training loss, and its connection to MD4. All proofs are provided in Appendix A. 
+
+Theorem 4.1. Under Assumption A.1, for any site i, candidate token y, and noisy state x with 
+
+pt(x) > 0, let π⋆(z) = Pr (Xi 
+
+> 0
+
+= z | Xt = x). For every z ∈ supp (π⋆), we have P (i) 
+
+> t
+
+(xi | z) > 0. Then 
+
+s⋆i (x, t ; y) = E
+
+"
+
+P (i) 
+
+> t
+
+(y | Xi
+
+> 0
+
+)
+
+P (i) 
+
+> t
+
+(xi | Xi
+
+> 0
+
+) Xt = x
+
+#
+
+= X
+
+> z∈supp( π⋆)
+
+π⋆(z) P (i) 
+
+> t
+
+(y | z)
+
+P (i) 
+
+> t
+
+(xi | z) . (5) Replacing the exact posterior in Theorem 4.1 with the neural network prediction μiθ(x, t ) defines the M2S score as 
+
+sθ,i (x, t ; y) = 
+
+> K
+
+X
+
+> z=1
+
+[μiθ(x, t )] z
+
+P (i) 
+
+> t
+
+(y | z)
+
+P (i) 
+
+> t
+
+(xi | z) =: ( Bμ iθ)y. (6) For the uniform process, define the off-diagonal-to-diagonal kernel ratio as ρt = ( βt/K )/(αt +βt/K ) ∈
+
+(0 , 1) . At a noisy input xt, Equation (6) then simplifies, for each candidate y̸ = xit, to 
+
+sθ,i (xt, t ; y) = 1 + ( ρt − 1) μiθ(xt, t )
+
+> xit
+
++ ( ρ−1 
+
+> t
+
+− 1) μiθ(xt, t )
+
+> y
+
+. (7) All candidate scores in Equation (7) are computed in O(K) time. We next introduce the training objective. 
+
+Theorem 4.2. For the uniform CTMC with αt = e−σ(t) and ˙σ(t) ≥ 0, let x0 ∼ pdata , t ∼ Unif [0 , 1] ,and xt ∼ qt(· | x0). For y̸ = xit, define ri(x0, x t, t ; y) = P (i) 
+
+> t
+
+(y | xi
+
+> 0
+
+)/P (i) 
+
+> t
+
+(xit | xi
+
+> 0
+
+). For s, r > 0, define 
+
+h(s, r ) = s − r log s + r log r − r = r s/r − 1 − log (s/r ) ≥ 0, with equality if and only if s = r, and extend this definition continuously to r = 0 by h(s, 0) = s. Define the M2S objective 
+
+LM2S (θ) = Et,x 0,x t
+
+
+
+> L
+
+X
+
+> i=1
+
+X 
+
+> y̸=xit
+
+wt,i (xit, y ) h (Bμ iθ)y, r i(x0, x t, t ; y) ,wt,i (xit, y ) = Q(i) 
+
+> t
+
+(y, x it) = ˙σ(t)
+
+K
+
+ y̸ = xit
+
+.
+
+(8) 
+
+Let pθ, 0 be the time-zero marginal obtained by initializing the reverse process from pref and replacing 
+
+s⋆i with sθ,i in its rates. Then 
+
+Ex0∼pdata [− log pθ, 0(x0)] ≤ L M2S (θ) + Ex0∼pdata DKL (qT (· | x0) ∥ pref ) . (9) The following results show that minimizing this objective recovers the true score and the clean posterior. 6Proposition 4.3. For fixed t, x, i, y with s⋆i (x, t ; y) > 0, the conditional risk Rx(s) := E[h(s, r i) |
+
+Xt = x] satisfies Rx(s) − Rx(s⋆i ) = h(s, s ⋆i ) ≥ 0, with equality if and only if s = s⋆i .
+
+Theorem 4.4. For fixed t, x, i , let π⋆ be the clean posterior from Theorem 4.1, let Y+ = {y̸ = xi :
+
+wt,i (xi, y ) > 0}, and let B+ contain the rows of B indexed by Y+. Assume s⋆i (x, t ; y) > 0 for every 
+
+y ∈ Y +. Then μ minimizes the conditional M2S risk if and only if B+μ = B+π⋆. Moreover, B+ is injective on ∆K−1 if and only if 
+
+ker( B+) ∩ { v ∈ RK : 1⊤v = 0 } = {0}, equivalently rank 
+
+B+
+
+1⊤
+
+
+
+= K. (10) 
+
+When this rank condition holds, the unique minimizer is μ = π⋆. For the uniform kernel, ˙σ(t) > 0
+
+makes every candidate positively weighted, and αt ∈ (0 , 1) makes the augmented matrix in Eq. (10) 
+
+full rank. Therefore, μ⋆ = π⋆ = E[eXi 
+
+> 0
+
+| Xt = x].
+
+Beyond the realizable case, this exact-recovery result suggests a canonical repair for an arbitrary predicted score: project it onto the bridge image and then invert the bridge. The uniform bridge is injective on the probability simplex, so each realizable score vector corresponds to a unique posterior. Fix t, x, i , let k = xi, and let Bt,k ∈ R(K−1) ×K map a posterior to its scores for candidates y̸ = k.Given any score vector s ∈ RK−1, define the posterior whose induced score is closest to s by 
+
+μproj (s) := arg min 
+
+> μ∈∆K−1
+
+∥Bt,k μ − s∥22. (11) This projection distinguishes coordinate-wise feasibility from joint Bayes realizability. Define the coordinate box and the bridge polytope by 
+
+Ct,k := [ ρt, ρ −1 
+
+> t
+
+]K−1, Pt,k := Bt,k (∆ K−1). (12) Equation (7) gives Pt,k ⊆ C t,k , with strict inclusion for K > 2. Hence the score space has the following exact disjoint decomposition: 
+
+RK−1 = RK−1 \ C t,k 
+
+| {z }
+
+> coordinate-outside
+
+˙∪ Ct,k \ P t,k 
+
+| {z }
+
+> joint-only non-realizable
+
+˙∪ Pt,k 
+
+|{z} 
+
+> Bayes-realizable
+
+. (13) The coordinate envelope is therefore necessary but not sufficient: a vector can satisfy every scalar bound while its unique affine inverse has a negative posterior component. Appendix D evaluates this same decomposition on raw SEDD scores. To separate material violations from sign-level floating-point effects, it divides the middle class at εμ = 10 −6 into material and numerical-boundary subclasses; their union corresponds to Ct,k \ P t,k under the computed-sign convention. 
+
+Proposition 4.5. Let π⋆ = Pr (Xi 
+
+> 0
+
+= · | Xt = x) and let s⋆ = ( s⋆i (x, t ; y)) y̸ =k = Bt,k π⋆. For the uniform kernel with αt ∈ (0 , 1) , the projection in Eq. (11) uniquely recovers the clean posterior: 
+
+μproj (s⋆) = π⋆. (14) Proposition 4.5 guarantees exact recovery only at the population optimum. For an arbitrary learned score s, μproj (s) is a valid posterior but need not be the true one. We next show that, for the absorbing-mask process, the M2S objective in Eq. (8) reduces exactly to the MD4 loss [23]. 
+
+Theorem 4.6. Let m be an absorbing mask. For every clean token z̸ = m, let Pt(z | z) = αt and 
+
+Pt(m | z) = 1 − αt, and let Pt(m | m) = 1 , with no transitions between distinct clean tokens. Suppose that each μiθ is a distribution over the clean vocabulary, so [μiθ]m = 0 . Then 
+
+Labs M2S (θ) = LMD4 (θ) := Et,x 0,x t
+
+" X 
+
+> i:xit=m
+
+− ˙αt
+
+1 − αt
+
+ − log[ μiθ(xt, t )] xi
+
+> 0
+
+#
+
+. (15) 75 Experiments 
+
+5.1 Same-Checkpoint Score Repair 
+
+To isolate Bayes realizability at inference time from training differences, we generate 1,024 paired sequences from the epoch-32 pure-uniform SEDD checkpoint with the same released sampler and coupled random-number stream. Replacing only sSEDD by its Euclidean projection onto the bridge polytope lowers external GenPPL from 203 .60 to 175 .07 ; the paired average-NLL difference is 
+
+−0.1510 with 95% bootstrap interval [−0.1774 , −0.1251] . The complete protocol, the distinction between direct, reconstructed, and projected scores, and the partition relative to the bridge polytope are given in Appendix D. 
+
+5.2 Image and Language Generation 
+
+We evaluate M2S on discrete image and language generation tasks. All models use the uniform forward process (Appendix B) with αt = 1 − t and βt = t. For a fair comparison, M2S adopts the same DiT [ 19 ] backbone and parameter count as the mainstream baselines; full hyperparameters are given in Appendix C. 
+
+Image Generation: We train M2S on MNIST, representing each 28 ×28 image as a sequence over 
+
+S = {0, 1, . . . , 255 }. Using identical architectures, parameter counts, optimization hyperparameters, training budgets, and samplers, M2S reduces FID by more than 52 points relative to SEDD at every tested sampling budget, with full details provided in Appendix C.1. We also evaluate M2S on CIFAR-10 using a 28.4M-parameter U-Net with self-attention. Following the MD4 setup, we match its total training budget of 512M image presentations while using pure-uniform corruption and the M2S parameterization. Without data augmentation, the model reaches a test BPD upper bound of 3.129 , compared with 3.173 for SEDD under the same evaluation protocol. Thus, M2S lowers test BPD by approximately 0.045 . With the same 256-step Euler sampler and coupled random-number stream, M2S also lowers FID-50k from 42 .83 to 28 .09 (a 34 .4% reduction); qualitative samples and the complete protocol are reported in Appendix C.2. It also improves over the D3PM and Campbell et al. results in Table 1. This result provides evidence that the Bayes-realizable parameterization remains effective beyond MNIST. Full training and evaluation details are given in Appendix C.2. Table 1: CIFAR-10 test BPD ( ↓). M2S and SEDD are evaluated under the same test protocol; the remaining baseline values are published results. ≤ denotes a variational upper bound. The M2S and SEDD estimates are rounded to three decimal places. M2S is trained without data augmentation. A dash denotes an unreported parameter count.                                       
+
+> Method # Params BPD ( ↓)
+> Autoregressive
+> PixelRNN [26] –3.00
+> Gated PixelCNN [27] –3.03
+> PixelCNN++ [22] 53M 2.92
+> PixelSNAIL [5] 46M 2.85
+> Image Transformer [18] –2.90
+> Sparse Transformer [6] 59M 2.80
+> Method # Params BPD ( ↓)
+> Pure-uniform discrete diffusion
+> M2S (ours) 28.4M ≤3.129
+> SEDD [15] 28.4M ≤3.173
+> Absorbing-mask discrete diffusion
+> D3PM Absorb [1] 37M ≤4.40
+> Campbell et al. Absorb [4] 28M ≤3.52
+> MD4 [23] 28M ≤2.75
+> Discrete-Gaussian diffusion
+> D3PM Gauss + logistic [1] 36M ≤3.44
+> Campbell et al. ( τLDR) [4] 36M ≤3.59
+
+8Language Modeling: We compare M2S against SEDD [ 15 ], MDLM [ 21 ], GIDD [ 28 ], and Neural CTMC [ 14 ] on OpenWebText [ 9]. To ensure a fair comparison, M2S and all baselines (SEDD, MDLM, GIDD, Neural CTMC) use an identical backbone architecture (12-layer DiT-style Transformer, 768 hidden dim, 12 heads, ∼169M parameters); the only difference across methods is the parameterization of the reverse process and its associated loss. For GIDD we report results with punif ∈ { 0.0, 0.1, 0.2}, where punif = 0 .0 corresponds to a pure mask process. For evaluation, we draw 1024 unconditional samples from each model and score them with a pretrained Gemma2-9B 
+
+model to obtain generative perplexity (PPL); each method is run with multiple sampling seeds and we report the best PPL across seeds. 16 32 64 128 
+
+> Number of sampling steps
+> 100
+> 200
+> 500
+> 1,000
+> 2,000
+> Generative PPL (log scale)
+> M2S (uniform)
+> MDLM (mask)
+> GIDD (p_unif=0.0)
+> GIDD (p_unif=0.1)
+> GIDD (p_unif=0.2)
+> Neural CTMC (uniform)
+> SEDD (uniform)
+> GIDD (uniform)
+
+(a) 16 32 64 128  
+
+> Number of sampling steps
+> 150
+> 200
+> 300
+> 500
+> 800
+> Generative PPL (log scale)
+> Euler (linear)
+> Euler (cosine)
+> Bayes (linear)
+> Bayes (cosine)
+
+(b) 
+
+Figure 3: (a) Generative-PPL comparison between M2S and the evaluated baselines. (b) Generative-PPL comparison of M2S Euler and Bayes samplers under linear and cosine time grids. Table 2: Generative perplexity ( ↓) on OpenWebText for varying numbers of sampling steps. All checkpoints use DiT-style backbones at a comparable parameter scale. Bold : best overall per column; underline: best among rows with a reported 262B-token training budget. 
+
+Type Method Train Toks Max Len 16 32 64 128 mask SEDD [15] 682B 1024 825 .5 337 .9 186 .5 127 .2
+
+MDLM [21] 262B 1024 1432 .8 553 .7 301 .6 210 .5
+
+GIDD ( punif = 0 .0) [28] 262B 512 2773 .1 993 .7 529 .6 414 .3
+
+mixture GIDD ( punif = 0 .1) [28] 262B 512 702 .0 398 .9 270 .8 249 .8
+
+GIDD ( punif = 0 .2) [28] 262B 512 770 .4 430 .1 344 .3 293 .0
+
+uniform Neural CTMC [14] 262B 512 578 .3 258 .8 189 .7 183 .6
+
+SEDD [15] 262B 512 963 .9 353 .2 247 .7 204 .1
+
+GIDD [28] 262B 512 2134 .0 455 .6 271 .7 226 .0
+
+M2S (Bayes, cosine) 262B 512 254 .6 175 .3 152 .6 148 .8
+
+Note: (1) The losses of SEDD (mask) and GIDD ( punif = 0 .0) are equivalent to the MDLM loss. (2) Checkpoint and sampler details are given in Appendix C.3. 
+
+Table 2 shows that M2S with Bayes sampling on the cosine grid achieves the best overall PPL at 16–64 steps ( 254 .6, 175 .3, and 152 .6) and the best PPL among 262B-token checkpoints at 128 steps (148 .8). Figure 3(b) compares the M2S sampling configurations and shows that Bayes sampling on the linear grid achieves the best 128-step PPL of 143 .3. Overall, M2S outperforms every evaluated uniform and mixture model at all four budgets. Against the strongest uniform baseline, M2S reduces 9PPL by 56% at 16 steps ( 578 .3 to 254 .6) and by 22% at 128 steps ( 183 .6 to 143 .3), demonstrating a consistent advantage across the full sampling range. At 128 steps, M2S ranks second overall only to SEDD (mask), which uses 682B training tokens compared with 262B for M2S. 
+
+# 6 Conclusion 
+
+This work identifies Bayes realizability as a structural requirement for discrete score vectors. Positive SEDD scores define valid reverse CTMC rates, but the complete vector need not be induced by any clean-token posterior. We characterize this gap and introduce M2S, which predicts the one-site clean-token posterior and maps it to all candidate scores through the known forward kernel. The construction applies to known coordinate-wise kernels under a mild support condition, restricts uniform-corruption scores to the bridge polytope, and recovers MD4 under absorbing-mask corruption. Empirically, M2S improves FID over SEDD under identical MNIST and CIFAR-10 settings and outperforms the evaluated pure-uniform baselines on OpenWebText at every tested sampling budget. A fixed-checkpoint intervention further shows that projecting SEDD scores onto the bridge polytope removes the observed negative sampler weights and improves generative PPL. These results establish Bayes realizability as a practical design principle for score-based discrete diffusion. 
+
+# References 
+
+[1] Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Structured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems , volume 34, pages 17981–17993. Curran Associates, Inc., 2021. URL https://proceedings. neurips.cc/paper/2021/hash/958c530554f78bcd8e97125b70e6973d-Abstract.html .[2] Joe Benton, Yuyang Shi, Valentin De Bortoli, George Deligiannidis, and Arnaud Doucet. From denoising diffusions to denoising Markov models. Journal of the Royal Statistical Society Series B: Statistical Methodology , 86(2):286–301, 2024. [3] Sam Bond-Taylor, Peter Hessey, Hiroshi Sasaki, Toby P. Breckon, and Chris G. Willcocks. Unleashing transformers: Parallel token prediction with discrete absorbing diffusion for fast high-resolution image generation from vector-quantized codes. In Computer Vision – ECCV 2022 , volume 13683 of Lecture Notes in Computer Science , pages 170–188. Springer, 2022. doi: 10.1007/978-3-031-20050-2_11. URL 
+
+https://doi.org/10.1007/978-3-031-20050-2_11 .[4] Andrew Campbell, Joe Benton, Valentin De Bortoli, Tom Rainforth, George Deligiannidis, and Arnaud Doucet. A continuous time framework for discrete denoising models. In Advances in Neural In-formation Processing Systems , volume 35, pages 28266–28279. Curran Associates, Inc., 2022. doi: 10.52202/068431-2049. URL https://proceedings.neurips.cc/paper_files/paper/2022/hash/ b5b528767aa35f5b1a60fe0aaeca0563-Abstract-Conference.html .[5] Xi Chen, Nikhil Mishra, Mostafa Rohaninejad, and Pieter Abbeel. PixelSNAIL: An improved autore-gressive generative model. In Proceedings of the 35th International Conference on Machine Learn-ing , volume 80 of Proceedings of Machine Learning Research , pages 864–872. PMLR, 2018. URL 
+
+https://proceedings.mlr.press/v80/chen18h.html .[6] Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers. arXiv preprint arXiv:1904.10509 , 2019. [7] Laurent Condat. Fast projection onto the simplex and the ℓ1 ball. Mathematical Programming , 158(1–2): 575–585, 2016. 
+
+10 [8] John Duchi, Shai Shalev-Shwartz, Yoram Singer, and Tushar Chandra. Efficient projections onto the ℓ1-ball for learning in high dimensions. In Proceedings of the 25th International Conference on Machine Learning , pages 272–279, New York, NY, USA, 2008. Association for Computing Machinery. doi: 10.1145/1390156.1390191. URL https://doi.org/10.1145/1390156.1390191 .[9] Aaron Gokaslan and Vanya Cohen. OpenWebText corpus. http://Skylion007.github.io/ OpenWebTextCorpus , 2019. [10] Samson Gourevitch, Yazid Janati, Dario Shariatian, Umut Simsekli, Eric Moulines, Eric P. Xing, and Alain Durmus. Uniform diffusion models revisited: Leave-one-out denoiser and absorbing state reformulation. arXiv preprint arXiv:2605.22765 , 2026. [11] Zhengfu He, Tianxiang Sun, Qiong Tang, Kuanning Wang, Xuanjing Huang, and Xipeng Qiu. Diffusion-BERT: Improving generative masked language models with diffusion models. In Proceedings of the 61st An-nual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 4521–4534, Toronto, Canada, 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023.acl-long.248. URL https://aclanthology.org/2023.acl-long.248/ .[12] Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forré, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. In Advances in Neural Information Processing Systems , volume 34, pages 12454–12465. Curran Asso-ciates, Inc., 2021. URL https://proceedings.neurips.cc/paper_files/paper/2021/hash/ 67d96d458abdef21792e6d8e590244e7-Abstract.html .[13] Alex Krizhevsky. Learning multiple layers of features from tiny images. Technical report, University of Toronto, 2009. [14] Jingyuan Li, Xiaoyi Jiang, Fukang Wen, Wei Liu, Renqian Luo, Yi Zhu, Zuoqiang Shi, and Pipi Hu. Neural continuous-time Markov chain: Discrete diffusion via decoupled jump timing and direction. arXiv preprint arXiv:2604.15694 , 2026. [15] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In Proceedings of the 41st International Conference on Machine Learning ,volume 235 of Proceedings of Machine Learning Research , pages 32819–32848. PMLR, 2024. URL 
+
+https://proceedings.mlr.press/v235/lou24a.html .[16] Chenlin Meng, Kristy Choi, Jiaming Song, and Stefano Ermon. Concrete score match-ing: Generalized score matching for discrete data. In Advances in Neural Information Processing Systems , volume 35, pages 34532–34545. Curran Associates, Inc., 2022. doi: 10.52202/068431-2502. URL https://proceedings.neurips.cc/paper_files/paper/2022/hash/ df04a35d907e894d59d4eab1f92bc87b-Abstract-Conference.html .[17] Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. In International Conference on Learning Representations , 2025. URL https://openreview.net/forum?id=sMyXP8Tanm .[18] Niki Parmar, Ashish Vaswani, Jakob Uszkoreit, Lukasz Kaiser, Noam Shazeer, Alexander Ku, and Dustin Tran. Image transformer. In Proceedings of the 35th International Conference on Machine Learning , volume 80 of Proceedings of Machine Learning Research , pages 4055–4064. PMLR, 2018. URL 
+
+https://proceedings.mlr.press/v80/parmar18a.html .[19] William Peebles and Saining Xie. Scalable diffusion models with transformers. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 4195– 4205, 2023. URL https://openaccess.thecvf.com/content/ICCV2023/html/Peebles_Scalable_ Diffusion_Models_with_Transformers_ICCV_2023_paper.html .[20] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language models are unsupervised multitask learners. Technical report, OpenAI, 2019. 
+
+11 [21] Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T. Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. In 
+
+Advances in Neural Information Processing Systems , volume 37, pages 130136–130184. Curran Associates, Inc., 2024. doi: 10.52202/079017-4135. URL https://proceedings.neurips.cc/paper_files/paper/ 2024/hash/eb0b13cc515724ab8015bc978fdde0ad-Abstract-Conference.html .[22] Tim Salimans, Andrej Karpathy, Xi Chen, and Diederik P. Kingma. PixelCNN++: Improving the PixelCNN with discretized logistic mixture likelihood and other modifications. In International Conference on Learning Representations , 2017. URL https://openreview.net/forum?id=BJrFC6ceg .[23] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis K. Titsias. Simpli-fied and generalized masked diffusion for discrete data. In Advances in Neural Information Processing Systems , volume 37, pages 103131–103167. Curran Associates, Inc., 2024. doi: 10.52202/079017-3277. URL https://proceedings.neurips.cc/paper_files/paper/2024/hash/ bad233b9849f019aead5e5cc60cef70f-Abstract-Conference.html .[24] Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli. Deep unsupervised learning using nonequilibrium thermodynamics. In Proceedings of the 32nd International Conference on Machine Learning , volume 37 of Proceedings of Machine Learning Research , pages 2256–2265. PMLR, 2015. URL https://proceedings.mlr.press/v37/sohl-dickstein15.html .[25] Haoran Sun, Lijun Yu, Bo Dai, Dale Schuurmans, and Hanjun Dai. Score-based continuous-time discrete diffusion models. In International Conference on Learning Representations , 2023. URL 
+
+https://openreview.net/forum?id=BYWWwSY2G5s .[26] Aäron van den Oord, Nal Kalchbrenner, and Koray Kavukcuoglu. Pixel recurrent neural networks. In 
+
+Proceedings of the 33rd International Conference on Machine Learning , volume 48 of Proceedings of Machine Learning Research , pages 1747–1756. PMLR, 2016. URL https://proceedings.mlr.press/ v48/oord16.html .[27] Aäron van den Oord, Nal Kalchbrenner, Oriol Vinyals, Lasse Espeholt, Alex Graves, and Koray Kavukcuoglu. Conditional image generation with PixelCNN decoders. In Advances in Neural Information Processing Systems , volume 29, pages 4790–4798. Curran Associates, Inc., 2016. URL https: //proceedings.neurips.cc/paper/2016/hash/b1301141feffabac455e1f90a7de2054-Abstract. html .[28] Dimitri von Rütte, Janis Fluri, Yuhui Ding, Antonio Orvieto, Bernhard Schölkopf, and Thomas Hofmann. Generalized interpolating discrete diffusion. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 61810–61843. PMLR, 2025. URL https://proceedings.mlr.press/v267/von-rutte25a.html .[29] Ruixiang Zhang, Shuangfei Zhai, Yizhe Zhang, James Thornton, Zijing Ou, Joshua M. Susskind, and Navdeep Jaitly. Target concrete score matching: A holistic framework for discrete diffusion. In 
+
+Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 76716–76753. PMLR, 2025. URL https://proceedings.mlr.press/ v267/zhang25cw.html .[30] Lin Zheng, Jianbo Yuan, Lei Yu, and Lingpeng Kong. A reparameterized discrete diffusion model for text generation. In Conference on Language Modeling , 2024. URL https://openreview.net/forum? id=PEQFHRUFca .
+
+12 Appendix 
+
+# Contents 
+
+A Proofs 13 B Algorithms 18 
+
+B.1 Training Algorithm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 B.2 Sampling Algorithms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 
+
+C Experimental Details 19 
+
+C.1 MNIST Experiments . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 C.2 CIFAR-10 Experiments . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 C.3 OpenWebText Experiments . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 
+
+D SEDD Bayes Realizability: Projection Repair, Violation Rates, and Sample Quality 23 
+
+D.1 Projection Repair . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 D.2 Bayes-Realizability Violation Rates . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24 D.3 Sample Quality after Projection Repair . . . . . . . . . . . . . . . . . . . . . . . . . . 25 D.4 Projected SEDD Sampler . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 
+
+E Sample Generation 26 
+
+# A Proofs 
+
+Assumption A.1 (Support condition) . Scores and posteriors are evaluated only at states x
+
+with pt(x) > 0. For every site i, candidate y, and clean token z in the site-i data support, 
+
+P (i) 
+
+> t
+
+(xi | z) = 0 = ⇒ P (i) 
+
+> t
+
+(y | z) = 0 .
+
+Theorem 4.1. Under Assumption A.1, for any site i, candidate token y, and noisy state x with 
+
+pt(x) > 0, let π⋆(z) = Pr (Xi 
+
+> 0
+
+= z | Xt = x). For every z ∈ supp (π⋆), we have P (i) 
+
+> t
+
+(xi | z) > 0.Then 
+
+s⋆i (x, t ; y) = E
+
+"
+
+P (i) 
+
+> t
+
+(y | Xi
+
+> 0
+
+)
+
+P (i) 
+
+> t
+
+(xi | Xi
+
+> 0
+
+) Xt = x
+
+#
+
+= X
+
+> z∈supp( π⋆)
+
+π⋆(z) P (i) 
+
+> t
+
+(y | z)
+
+P (i) 
+
+> t
+
+(xi | z) .
+
+Proof of Theorem 4.1. For each clean token z, define 
+
+Az := X 
+
+> x0:xi
+> 0=z
+
+pdata (x0) Y 
+
+> j̸=i
+
+P (j) 
+
+> t
+
+(xj | xj
+
+> 0
+
+), Pz := P (i) 
+
+> t
+
+(xi | z).
+
+These quantities collect all contributions outside site i. They give 
+
+pt(x) = X
+
+> z
+
+Az Pz , pt(xi→y) = X
+
+> z
+
+Az P (i) 
+
+> t
+
+(y | z).
+
+13 The one-site posterior satisfies 
+
+Pr( Xi 
+
+> 0
+
+= z | Xt = x) = Az Pz
+
+pt(x) .
+
+Let Z⋆ = supp( π⋆) = {z : Az Pz > 0}. For every z ∈ Z ⋆, we have Pz > 0, so define 
+
+g(z) := P (i) 
+
+> t
+
+(y | z)
+
+P (i) 
+
+> t
+
+(xi | z)
+
+on Z⋆. Expanding the conditional expectation over its support gives 
+
+E[g(Xi
+
+> 0
+
+) | Xt = x] = X
+
+> z∈Z ⋆
+
+π⋆(z)g(z)= X
+
+> z∈Z ⋆
+
+Az Pz
+
+pt(x)
+
+P (i) 
+
+> t
+
+(y | z)
+
+Pz
+
+= 1
+
+pt(x)
+
+X
+
+> z∈Z ⋆
+
+Az P (i) 
+
+> t
+
+(y | z).
+
+If z / ∈ Z ⋆, then either Az = 0 or Pz = 0 . In the latter case, whenever Az > 0, the token z occurs in the clean support at site i, so Assumption A.1 implies P (i) 
+
+> t
+
+(y | z) = 0 . Thus Az P (i) 
+
+> t
+
+(y | z) = 0 
+
+outside Z⋆, and the restricted sum can be extended to all z. Hence 
+
+E[g(Xi
+
+> 0
+
+) | Xt = x] = 
+
+P 
+
+> z
+
+Az P (i) 
+
+> t
+
+(y | z)
+
+pt(x) = pt(xi→y)
+
+pt(x) .
+
+The first equality above is the posterior expansion in the theorem, and the last equality is the concrete score s⋆i (x, t ; y).
+
+Theorem 4.2. For the uniform CTMC with αt = e−σ(t) and ˙σ(t) ≥ 0, let x0 ∼ pdata , t ∼
+
+Unif [0 , 1] , and xt ∼ qt(· | x0). For y̸ = xit, define ri(x0, x t, t ; y) = P (i) 
+
+> t
+
+(y | xi
+
+> 0
+
+)/P (i) 
+
+> t
+
+(xit | xi
+
+> 0
+
+). For 
+
+s, r > 0, define h(s, r ) = s − r log s + r log r − r = r s/r − 1 − log (s/r ) ≥ 0, with equality if and only if s = r, and extend this definition continuously to r = 0 by h(s, 0) = s. Define the M2S objective 
+
+LM2S (θ) = Et,x 0,x t
+
+
+
+> L
+
+X
+
+> i=1
+
+X 
+
+> y̸=xit
+
+wt,i (xit, y ) h (Bμ iθ)y, r i(x0, x t, t ; y) ,wt,i (xit, y ) = Q(i) 
+
+> t
+
+(y, x it) = ˙σ(t)
+
+K
+
+ y̸ = xit
+
+.
+
+Let pθ, 0 be the time-zero marginal obtained by initializing the reverse process from pref and replacing s⋆i with sθ,i in its rates. Then 
+
+Ex0∼pdata [− log pθ, 0(x0)] ≤ L M2S (θ) + Ex0∼pdata DKL (qT (· | x0) ∥ pref ) .
+
+Proof of Theorem 4.2. For u = s/r > 0, the inequality u − 1 − log u ≥ 0 gives h(s, r ) = r(u − 1 −
+
+log u) ≥ 0, with equality only at u = 1 .14 Theorem 3.6 of Lou et al. [15] , based on the continuous-time ELBO of Campbell et al. [4] ,includes the target-only normalization r( log r − 1) = r log r − r. Its integrand is therefore exactly 
+
+h(s, r ). Since T = 1 , the theorem gives, for every x0,
+
+− log pθ, 0(x0) ≤
+
+Z 10
+
+Ext∼qt(·| x0)
+
+" X
+
+> ex̸=xt
+
+Qt(ex, x t) h
+
+
+
+sθ(xt, t ; ex), qt(ex | x0)
+
+qt(xt | x0)
+
+#
+
+dt
+
++ DKL (qT (· | x0) ∥ pref ) ,
+
+written here in our row-generator convention. The coordinate-wise generator has a nonzero off-diagonal entry only when ex = xi→yt for some i
+
+and y̸ = xit. For this pair, 
+
+Qt(ex, x t) = Q(i) 
+
+> t
+
+(y, x it), qt(ex | x0)
+
+qt(xt | x0) = P (i) 
+
+> t
+
+(y | xi
+
+> 0
+
+)
+
+P (i) 
+
+> t
+
+(xit | xi
+
+> 0
+
+) = ri(x0, x t, t ; y).
+
+For the uniform process, Q(i) 
+
+> t
+
+(y, x it) = ˙σ(t)/K for y̸ = xit. Hence the integral, after averaging over x0 ∼ pdata , is exactly LM2S (θ) because t ∼ Unif [0 , 1] . Averaging the pointwise bound proves Eq. (9). 
+
+Proposition 4.3. For fixed t, x, i, y with s⋆i (x, t ; y) > 0, the conditional risk Rx(s) := E[h(s, r i) |
+
+Xt = x] satisfies Rx(s) − Rx(s⋆i ) = h(s, s ⋆i ) ≥ 0, with equality if and only if s = s⋆i .
+
+Proof of Proposition 4.3. Condition on Xt = x and write s⋆ = s⋆i (x, t ; y). Since E[ri | Xt = x] = s⋆
+
+by Theorem 4.1, 
+
+Rx(s) := E[h(s, r i) | Xt = x]= s − s⋆ log s + Cx,
+
+where Cx is independent of s. Moreover, 
+
+R′
+
+> x
+
+(s) = 1 − s⋆
+
+s , R′′ 
+
+> x
+
+(s) = s⋆
+
+s2 > 0.
+
+Thus Rx is strictly convex and uniquely minimized at s⋆, with 
+
+Rx(s) − Rx(s⋆) = s − s⋆ − s⋆ log ss⋆ = h(s, s ⋆).
+
+Theorem 4.4. For fixed t, x, i , let π⋆ be the clean posterior from Theorem 4.1, let Y+ = {y̸ =
+
+xi : wt,i (xi, y ) > 0}, and let B+ contain the rows of B indexed by Y+. Assume s⋆i (x, t ; y) > 0
+
+for every y ∈ Y +. Then μ minimizes the conditional M2S risk if and only if B+μ = B+π⋆.Moreover, B+ is injective on ∆K−1 if and only if 
+
+ker( B+) ∩ { v ∈ RK : 1⊤v = 0 } = {0}, equivalently rank 
+
+B+
+
+1⊤
+
+
+
+= K. 
+
+When this rank condition holds, the unique minimizer is μ = π⋆. For the uniform kernel, ˙σ(t) > 0
+
+makes every candidate positively weighted, and αt ∈ (0 , 1) makes the augmented matrix in Eq. (10) 
+
+15 full rank, and hence μ⋆ = π⋆ = E[eXi 
+
+> 0
+
+| Xt = x].
+
+Proof of Theorem 4.4. By Theorem 4.1, 
+
+Bπ ⋆ = s⋆i (x, t ; ·).
+
+Write wy = wt,i (xi, y ) and let Rx(μ) denote the conditional M2S risk summed over y ∈ Y +. Applying Proposition 4.3 to each candidate gives, for every μ with finite conditional risk, 
+
+Rx(μ) − R x(π⋆) = X
+
+> y∈Y +
+
+wy h (Bμ )y, (Bπ ⋆)y
+
+
+
+≥ 0.
+
+Here every wy and (Bπ ⋆)y = s⋆i (x, t ; y) is positive. Since h(s, r ) = 0 if and only if s = r, equality holds exactly when 
+
+B+μ = B+π⋆.
+
+This proves the first claim. We next prove the rank characterization. If μ, ν ∈ ∆K−1 satisfy B+μ = B+ν, then v = μ − ν
+
+satisfies 
+
+B+v = 0 , 1⊤v = 1⊤μ − 1⊤ν = 0 .
+
+Thus the null-space condition in Eq. (10) implies v = 0 and hence μ = ν, so B+ is injective on ∆K−1.For the converse, suppose there exists a nonzero v ∈ ker( B+) with 1⊤v = 0 . Let 
+
+¯μ = 1
+
+K 1, 0 < ε < 1
+
+K∥v∥∞
+
+, μ± = ¯ μ ± εv. 
+
+The choice of ε ensures that every coordinate of μ± is positive, while 1⊤v = 0 gives 1⊤μ± = 1 .Hence μ+, μ − ∈ ∆K−1 and μ+̸ = μ−. However, 
+
+B+μ+ − B+μ− = 2 εB +v = 0 ,
+
+so B+ is not injective on ∆K−1. This proves 
+
+B+ is injective on ∆K−1 ⇐⇒ ker( B+) ∩ ker( 1⊤) = {0}.
+
+Finally, 
+
+ker 
+
+B+
+
+1⊤
+
+
+
+= ker( B+) ∩ ker( 1⊤).
+
+Because the augmented matrix has K columns, its kernel is trivial if and only if its column rank is 
+
+K. This establishes both equivalences in Eq. (10). When they hold, B+μ = B+π⋆ forces μ = π⋆.For the uniform kernel, ˙σ(t) > 0 makes every candidate y̸ = xi positively weighted, so B+ = B.Moreover, αt ∈ (0 , 1) implies ρt ∈ (0 , 1) . Let k = xi and suppose μ, ν ∈ ∆K−1 satisfy Bμ = Bν . For any η ∈ ∆K−1, summing Eq. (7) over y̸ = k gives 
+
+F (η) := X 
+
+> y̸=k
+
+ (Bη )y − 1
+
+= ( K − 1)( ρt − 1) ηk + ( ρ−1 
+
+> t
+
+− 1)(1 − ηk).
+
+16 The coefficient of ηk is 
+
+(K − 1)( ρt − 1) − (ρ−1 
+
+> t
+
+− 1) = ( ρt − 1)  (K − 1) + ρ−1
+
+> t
+
+,
+
+which is nonzero for ρt ∈ (0 , 1) . Since Bμ = Bν implies F (μ) = F (ν), it follows that μk = νk. For each y̸ = k, Eq. (7) then gives 
+
+0 = ( Bμ )y − (Bν )y
+
+= ( ρt − 1)( μk − νk) + ( ρ−1 
+
+> t
+
+− 1)( μy − νy)= ( ρ−1 
+
+> t
+
+− 1)( μy − νy).
+
+Because ρ−1 
+
+> t
+
+− 1̸ = 0 , we obtain μy = νy for every y̸ = k. Thus μ = ν, proving that the uniform bridge is injective on ∆K−1; by the equivalence above, its augmented matrix has rank K. The unique minimizer is therefore μ = π⋆ = E[eXi 
+
+> 0
+
+| Xt = x].
+
+Proposition 4.5. Let π⋆ = Pr (Xi 
+
+> 0
+
+= · | Xt = x) and let s⋆ = ( s⋆i (x, t ; y)) y̸ =k = Bt,k π⋆. For the uniform kernel with αt ∈ (0 , 1) , the projection in Eq. (11) uniquely recovers the clean posterior: 
+
+μproj (s⋆) = π⋆.
+
+Proof of Proposition 4.5. Because π⋆ ∈ ∆K−1 and s⋆ = Bt,k π⋆, choosing μ = π⋆ in Eq. (11) gives objective value zero. Hence every minimizer bμ satisfies Bt,k bμ = s⋆ = Bt,k π⋆. The uniform bridge is injective on ∆K−1 when αt ∈ (0 , 1) by Theorem 4.4, so bμ = π⋆. Thus the minimizer is unique and equals the clean posterior. 
+
+Theorem 4.6. Let m be an absorbing mask. For every clean token z̸ = m, let Pt(z | z) = αt
+
+and Pt(m | z) = 1 − αt, and let Pt(m | m) = 1 , with no transitions between distinct clean tokens. Suppose that each μiθ is a distribution over the clean vocabulary, so [μiθ]m = 0 . Then 
+
+Labs M2S (θ) = LMD4 (θ) := Et,x 0,x t
+
+" X 
+
+> i:xit=m
+
+− ˙αt
+
+1 − αt
+
+ − log[ μiθ(xt, t )] xi
+
+> 0
+
+#
+
+.
+
+Proof of Theorem 4.6. Masked sites. Fix a site with xit = m and let ct = αt/(1 − αt). The bridge and conditional target reduce to 
+
+sθ,i (xt, t ; y) = ct[μiθ(xt, t )] y, ri(x0, x t, t ; y) = ct1{y = xi
+
+> 0
+
+}.
+
+Using h(s, 0) = s, substitution into the inner score-entropy sum in Eq. (8) gives 
+
+X 
+
+> y̸=m
+
+h
+
+ct[μiθ]y − ct1{y = xi
+
+> 0
+
+} log( ct[μiθ]y) + ct1{y = xi
+
+> 0
+
+} log ct − ct1{y = xi
+
+> 0
+
+}
+
+i
+
+.
+
+Because μiθ is supported on the clean vocabulary, P 
+
+> y̸=m
+
+[μiθ]y = 1 . The first and last terms therefore cancel after summation, and the two occurrences of log ct also cancel. The remaining loss is 
+
+−ct log[ μiθ]xi 
+
+> 0
+
+.
+
+17 The Kolmogorov equation gives the clean-to-mask rate Q(i) 
+
+> t
+
+(y, m ) = − ˙αt/α t, independent of the clean candidate y. Therefore, 
+
+Q(i) 
+
+> t
+
+(y, m ) ct = − ˙αt
+
+αt
+
+αt
+
+1 − αt
+
+= − ˙αt
+
+1 − αt
+
+.
+
+Thus, summing over masked sites and taking the expectation gives exactly Eq. (15). 
+
+Unmasked sites. Now let xit = xi 
+
+> 0
+
+= k̸ = m. For every candidate y̸ = k, Q(i) 
+
+> t
+
+(y, k ) = 0 :clean-to-clean rates vanish, and the absorbing state has no outgoing rate. Thus every candidate weight is zero, so unmasked sites make no contribution. This completes the reduction. 
+
+# B Algorithms 
+
+B.1 Training Algorithm 
+
+During training, a clean token z is corrupted according to the uniform kernel 
+
+qt(y | z) = αt1{y = z} + 1 − αt
+
+K , αt = 1 − t, (16) where y is the corrupted token, K is the vocabulary size, and t ∈ [0 , 1] .Algorithm 1 summarizes the training procedure. Given a clean sequence x0 and a diffusion time 
+
+t, we sample xt from the forward kernel in Eq. (16) . The model predicts the clean-token posterior, converts it to concrete scores through the M2S bridge, and is optimized with the loss in Eq. (8). 
+
+Algorithm 1 M2S Training 
+
+Require: model fθ, data distribution pdata , vocabulary size K, learning rate η 
+
+> 1:
+
+while not converged do  
+
+> 2:
+
+Sample x0 ∼ pdata and t ∼ Unif[0 , 1]  
+
+> 3:
+
+Corrupt x0 with Eq. (16) to obtain xt 
+
+> 4:
+
+Predict μiθ = softmax( f iθ(xt, t )) for all sites i 
+
+> 5:
+
+Compute sθ,i (xt, t ; y) for all i and y̸ = xit using Eq. (6)  
+
+> 6:
+
+Compute ri and wt,i from the known forward process as in Eq. (8)  
+
+> 7:
+
+θ ← θ − η∇θLM2S (θ) 
+
+> 8:
+
+end while  
+
+> 9:
+
+return θ
+
+B.2 Sampling Algorithms 
+
+M2S pairs Euler and Bayes updates with either a linear or cosine time grid. This gives four samplers: Euler-linear, Euler-cosine, Bayes-linear, and Bayes-cosine. For M sampling steps, let t0 > t 1 > · · · > t M denote the reverse-time grid: 
+
+tlin  
+
+> m
+
+= 1 − mM , tcos  
+
+> m
+
+= cos 
+
+ πm 
+
+2M
+
+
+
+, m = 0 , . . . , M, (17) Let ∆m = tm − tm+1 . Both grids start at t0 = 1 and end at tM = 0 . All samplers initialize Xt0
+
+from the uniform distribution and update all sites in parallel. At step m, the model predicts the clean-token posterior μθ,i from the current sequence x = Xtm and maps it to scores using Eq. (7) .Euler sampling uses the reverse rates 
+
+Rm,i (y) = Q(i) 
+
+> tm
+
+(y, x i) sθ,i (x, t m; y), y̸ = xi. (18) 18 Algorithm 2 M2S Euler Sampling (Linear or Cosine Grid) 
+
+Require: model fθ, steps M , grid type g ∈ { lin , cos }, vocabulary size K, sequence length L 
+
+> 1:
+
+Construct {tm}Mm=0 from Eq. (17)  
+
+> 2:
+
+Sample Xit0 ∼ Unif( {1, . . . , K }) for all sites i 
+
+> 3:
+
+for m = 0 , . . . , M − 1 do  
+
+> 4:
+
+x ← Xtm and ∆m ← tm − tm+1  
+
+> 5:
+
+Predict μθ,i and compute scores using Eq. (7)  
+
+> 6:
+
+Compute Rm,i using Eq. (18)  
+
+> 7:
+
+for all sites i in parallel do  
+
+> 8:
+
+pi(y) ← ∆mRm,i (y) for y̸ = xi 
+
+> 9:
+
+pi(xi) ← 1 − P  
+
+> y̸=xi
+
+pi(y) 
+
+> 10:
+
+Sample Xitm+1 ∼ Categorical( pi) 
+
+> 11:
+
+end for  
+
+> 12:
+
+end for  
+
+> 13:
+
+return XtM
+
+Bayes sampling draws directly from the finite-time posterior instead of discretizing the reverse rates. For the current token k = Xitm , marginalizing over μθ,i gives 
+
+epm,i (y) = 
+
+> K
+
+X
+
+> z=1
+
+[μθ,i ]z
+
+qtm+1 (y | z) qtm|tm+1 (k | y)
+
+qtm (k | z) . (19) 
+
+Algorithm 3 M2S Bayes Sampling (Linear or Cosine Grid) 
+
+Require: model fθ, steps M , grid type g ∈ { lin , cos }, vocabulary size K, sequence length L 
+
+> 1:
+
+Construct {tm}Mm=0 from Eq. (17)  
+
+> 2:
+
+Sample Xit0 ∼ Unif( {1, . . . , K }) for all sites i 
+
+> 3:
+
+for m = 0 , . . . , M − 1 do  
+
+> 4:
+
+x ← Xtm 
+
+> 5:
+
+Predict μθ,i from (x, t m) 
+
+> 6:
+
+for all sites i in parallel do  
+
+> 7:
+
+Compute epm,i (y) for all y using Eq. (19)  
+
+> 8:
+
+Normalize pm,i ← epm,i / P 
+
+> y
+
+epm,i (y) 
+
+> 9:
+
+Sample Xitm+1 ∼ Categorical( pm,i ) 
+
+> 10:
+
+end for  
+
+> 11:
+
+end for  
+
+> 12:
+
+return X0
+
+# C Experimental Details 
+
+C.1 MNIST Experiments 
+
+We compare M2S and SEDD on 28 × 28 MNIST images quantized to K = 256 gray levels. For a fair comparison, both methods use the same width-64 U-Net architecture and parameter count, optimization hyperparameters (AdamW with a learning rate of 2 × 10 −4), uniform transition kernel and forward process αt = e−t, 50-epoch training budget and generate samples with the same sampler, 19 while differing only in the training parameterization: M2S predicts the posterior mean, whereas SEDD predicts the log-score directly. We generate 5000 samples for each model and compute FID against the first 5000 MNIST test images. Table 3 compares the two methods with 50, 100, and 200 sampling steps while holding all other settings fixed. M2S lowers FID by more than 52 points at every budget. Table 3: MNIST FID ( ↓) across sampling budgets. Objective 50 steps 100 steps 200 steps M2S (ours) 72 .80 72 .87 73 .44 
+
+SEDD 127 .18 126 .81 126 .19 
+
+Figure 4 shows the first 64 uncurated samples from the 200-step runs. M2S produces clearer strokes and fewer isolated bright pixels than SEDD, consistent with the FID comparison.     
+
+> (a) MNIST test data (b) M2S, FID 73 .4(c) SEDD, FID 126 .2
+
+Figure 4: Qualitative comparison on MNIST. 
+
+C.2 CIFAR-10 Experiments 
+
+Training setup. We follow the CIFAR-10 [ 13 ] setup of MD4 [ 23 ]. Each 32 × 32 RGB image is represented as a length-3072 sequence with 256 states per color channel. We use the same approximately 28M-parameter U-Net with self-attention, AdamW with learning rate 4 × 10 −4 and weight decay 0.01 . The warmup covers 25,600 image presentations, equal to 100 MD4 batch-256 updates and 6.25 of our large-batch updates, and is followed by cosine learning-rate decay. The model is trained without data augmentation. M2S retains the clean-token posterior head but uses pure-uniform corruption and maps its output to concrete scores as described in Section 4. MD4 trains for 2M updates with batch size 256. We use a global batch size of 4096 for 125,000 updates, matching its total budget of 512M image presentations (10,240 CIFAR-10-equivalent epochs). The resulting 28,427,520-parameter checkpoint achieves a CIFAR-10 test BPD upper bound of 3.129 .Re-evaluating SEDD under exactly the same test protocol gives 3.173 , so M2S lowers test BPD by approximately 0.045 .
+
+Optimization trace. The two parameterizations are trained with the same complete score-entropy objective: M2S maps posterior logits to a log-score through the uniform bridge, whereas SEDD 20 predicts the log-score directly, after which both use the same time distribution, corruption kernel, token sum, and batch mean. We log the all-reduced raw objective over all 16 ranks at every optimizer step and convert step u to 4096 u/ 50 ,000 CIFAR-10-equivalent epochs. M2S starts higher and optimizes more slowly early in training, but its trailing 625-step mean makes its final crossover below SEDD at equivalent epoch 3963 .6 and remains lower thereafter. Over the final 5,000 updates, the mean raw loss is 6770 .1 for M2S and 6901 .9 for SEDD. This curve is an optimization diagnostic, distinct from the held-out BPD estimates above. 0 2.0k 4.1k 6.1k 8.2k 10.2k     
+
+> CIFAR-10-equivalent epoch
+> 7000
+> 14000
+> 21000
+> 28000
+> 35000
+> raw score-entropy loss (nats/image)
+> last crossover: epoch 3964
+> (a) Complete 512M-presentation trajectory
+> SEDD
+> M2S
+> 8.2k 8.7k 9.2k 9.7k 10.2k
+> CIFAR-10-equivalent epoch
+> 6700
+> 6800
+> 6900
+> 7000
+> last 5k-step mean:
+> M2S 6770.1, SEDD 6901.9
+> (b) Final 2,048 epochs
+
+Figure 5: M2S converges to a lower CIFAR-10 training objective. Panel (a) includes every optimizer step in the 512M-image-presentation run; panel (b) enlarges the final 2,048 equivalent epochs. Faint curves show raw per-step losses (subsampled only for rendering), and bold curves show trailing 625-step means, a 51.2-equivalent-epoch window. Both axes use equivalent epoch rather than wall-clock time or dataloader passes. 
+
+Generation protocol. We compare the EMA weights at update 125,000 for M2S and SEDD. Both checkpoints have 28,427,520 parameters and were trained without augmentation using the same optimizer, schedule, global batch size, and 512M image-presentation budget. For each method, we generate 50,000 images with the same 256-step categorical Euler discretization, cosine time grid, eight-GPU rank assignment, per-GPU batch size 256, and seed 20260723. Every rank-local batch is independently seeded from its first global sample index, so corresponding M2S and SEDD images use the same initial noise and categorical random-number stream even after a restart. We do not apply a final clean-token projection, rejection, or sample filtering. The generation paths differ only in the learned model output and the corresponding reverse-rate construction: M2S maps a posterior through the bridge, whereas SEDD exponentiates a directly predicted log-score. Table 4: M2S improves both likelihood and sample quality in the controlled CIFAR-10 comparison. BPD is the four-pass variational upper bound on all 10,000 test images. FID-50k uses 
+
+pytorch-fid v0.3.0 with 2,048-dimensional Inception pool-3 features against all 50,000 CIFAR-10 training images. Lower is better. 
+
+Method Admissible score set Test BPD ( ↓) FID-50k ( ↓)M2S (ours) Pt,k = Bt,k (∆ K−1) ≤ 3.129 28 .09 
+
+SEDD RK−1 
+
+> >0
+
+≤ 3.173 42 .83 
+
+21 (a) M2S, FID-50k 28 .09 (b) SEDD, FID-50k 42 .83 
+
+Figure 6: M2S suppresses the isolated chromatic artifacts visible in SEDD under a fully paired sampler. Each panel contains generated indices 0–63 from its corresponding 50,000-image FID run, in index order, without ranking, filtering, or manual selection. Corresponding positions use the same seeded random-number stream, 256-step Euler discretization, and cosine grid. 
+
+Connection to Bayes realizability. Theorem 4.1 shows that the true score vector is induced by one clean-token posterior. Because M2S predicts that posterior in the simplex, its entire off-diagonal score vector lies in the bridge polytope Pt,k from Eq. (12) at every network iterate. SEDD enforces positivity coordinate by coordinate but does not enforce this joint constraint. Under finite data, capacity, and optimization, the M2S parameterization therefore removes non-Bayesian score degrees of freedom and promotes a coherent reverse-rate field. In the controlled experiment, this structural restriction coincides with a 14 .74 -point FID reduction ( 34 .4% ), the lower test BPD in Table 4, and fewer isolated high-saturation pixels and local texture breaks in Figure 6. Both parameterizations contain the population-optimal score, so the theorem alone does not imply a universal FID ordering; the paired result is empirical evidence consistent with the proposed finite-training mechanism. 
+
+C.3 OpenWebText Experiments 
+
+M2S training. We train a 169.7M-parameter diffusion Transformer on OpenWebText with GPT-2 [ 20 ] tokenization and a maximum sequence length of 512. We use the uniform forward process and the M2S loss in Eq. (8) , setting the time-sampling cutoff to 10 −3. The global batch size is 1584 across 24 H100 GPUs. We use AdamW with a peak learning rate of 5 × 10 −4, 3200 linear warmup steps, cosine decay, gradient clipping at 1.0, and bf16 precision. The model is trained on 262B tokens. 22 0 40 80 120 160 
+
+> optimization step ( £10 3)
+> 1000
+> 2000
+> 3000
+> 4000
+> 5000
+> 6000
+> 7000
+> M2S training loss  raw loss (every 100 steps)
+> trailing 5,000-step average
+> warmup end
+
+Figure 7: M2S training loss over 161.8k optimization steps. The gray curve shows raw loss recorded every 100 steps, the blue curve shows its trailing 5,000-step average, and the dashed line marks the end of warmup. 
+
+GenPPL evaluation. For each method and sampling-step budget, we draw 1024 unconditional samples and score 512 tokens per sample with the same Gemma2-9B evaluator. For checkpoints with max_len =1024, we evaluate only the first 512 generated tokens; all other checkpoints generate 512-token sequences. We report GenPPL as the exponentiated average next-token NLL assigned by the evaluator. To evaluate the baselines with their intended sampling procedures, MDLM, GIDD, SEDD, and Neural CTMC each use the sampler specified in the corresponding paper [ 21 , 28 , 15 , 14 ]. The sampling algorithms used for M2S are described in Appendix B. Generated samples are shown in Appendix E. 
+
+# D SEDD Bayes Realizability: Projection Repair, Violation Rates, and Sample Quality 
+
+This appendix develops and evaluates projection repair for SEDD scores. We first distinguish affine reconstruction, which reveals whether a score has a valid clean-token posterior, from simplex-constrained projection, which maps an non-realizable score to the nearest Bayes-realizable one. We then measure Bayes-realizability violations during SEDD sampling. Finally, we compare sample quality before and after projection repair at a fixed checkpoint and describe the projected SEDD sampler. 
+
+D.1 Projection Repair 
+
+For current token k, time t, and an SEDD candidate-score vector s, we seek the valid clean-token posterior whose induced score is closest to s:
+
+μproj (s) = arg min 
+
+> μ∈∆K−1
+
+∥Bt,k μ − s∥22, sproj (s) = Bt,k μproj (s).
+
+Thus sproj (s) is the Euclidean projection of s onto the set of scores produced by valid posteriors, 
+
+Pt,k = Bt,k (∆ K−1). Euclidean projection onto the probability simplex is a standard optimization primitive [ 8, 7]. Our objective measures distance after the linear score map Bt,k , so Section D.4 derives a specialized solver for the uniform bridge. 23 The simplex constraint is what makes this projection nontrivial. The matrix Bt,k ∈ R(K−1) ×K
+
+has full row rank, so if μ were allowed to be an arbitrary real vector, every s ∈ RK−1 could be written exactly as Bt,k μ and the projection would leave s unchanged. Even after imposing 1⊤ eμ = 1 , every 
+
+s has a unique affine inverse, but this inverse may contain negative entries. Requiring eμ ∈ ∆K−1,including nonnegativity, is what restricts the score to Pt,k .For the uniform bridge, this affine inverse has a closed form. Let n = K − 1, dt = 1 − ρt, and 
+
+bt = dt/ρ t. Then 
+
+m(s) = 
+
+P 
+
+> y̸=k
+
+(sy − ρt)
+
+dt(n + ρ−1 
+
+> t
+
+) , eμk = 1 − m(s), eμy = sy − ρt − dtm(s)
+
+bt
+
+.
+
+It is important to distinguish reconstruction from projection. The SEDD head produces 
+
+sSEDD  
+
+> y
+
+= exp( aθ,y ), y̸ = k. 
+
+Applying the affine inverse above gives a unique signed vector eμ(sSEDD ) with 1⊤ eμ = 1 . Reapplying the bridge defines the reconstruction 
+
+srec := Bt,k eμ(sSEDD ) = sSEDD .
+
+The last equality is an algebraic identity on the full affine hyperplane, so srec is a numerical consistency check, not a repair. In particular, a negative entry of eμ can coexist with srec = sSEDD .Bayes realizability requires eμ ∈ ∆K−1. Consequently, only the simplex-constrained projection changes a score outside the bridge polytope: 
+
+μproj := μproj (sSEDD ), sproj := Bt,k μproj .
+
+Thus sproj = sSEDD if and only if eμ ∈ ∆K−1.Section D.4 derives the scalar-threshold solver used by the projected SEDD sampler. 
+
+D.2 Bayes-Realizability Violation Rates 
+
+We use three sets of samples for different purposes: four trajectories for the diagnostic in Figure 2(b), 128 trajectories to measure Bayes-realizability violations, and 1,024 paired sequences to evaluate projection repair. Because the three analyses use different units, their reported percentages should be interpreted separately. Table 5: Data used in the three SEDD score analyses. The first two rows inspect SEDD scores while leaving the generated trajectories unchanged. The third applies projection repair during sampling.       
+
+> Data Purpose Reported unit 4 SEDD trajectories Negative-weight diagnostic in Figure 2(b) Step-averaged candidate-score and position rates 128 SEDD trajectories Bayes-realizability violation rates 8,388 ,608 position-step score vectors 1,024 paired sequences Sample quality before and after projection repair
+> 67 ,633 ,152 position updates and sequence quality
+
+For the first two analyses, we used the original SEDD scores throughout sampling. At each state and position, we recorded the complete score vector and checked whether every coordinate lay in the required interval and whether the complete vector was induced by a valid clean-token posterior. These checks did not alter the generated trajectories. Only the projection experiment in Section D.3 replaced sSEDD with sproj during sampling. 24 Sampler-weight violations. We ran four length-512 sequences with the 128-step SEDD sampler. At each step we evaluated the SEDD score sSEDD and its projection on the same current states. Averaged over steps, 9.781% of off-diagonal candidate scores violated the coordinate box, and 37 .632% 
+
+of positions had at least one negative pre-normalization weight. Projection removed all observed negative weights, giving the diagnostic in Figure 2(b). For the 128-trajectory analysis, we used the partition in Eq. (13) . To distinguish material violations from numerical effects near the boundary, we split Ct,k \ P t,k at εμ = 10 −6. Table 6 reports the resulting four classes over 512 positions and 128 sampler steps per trajectory. Table 6: SEDD score vectors over 128 trajectories, using Pt,k = Bt,k (∆ K−1) ⊊ Ct,k ⊊ R K−1 
+
+> >0
+
+. The boundary row separates numerical from material violations. 
+
+Position-step class Criterion Fraction Count Outside Ct,k sSEDD /∈ C t,k 25 .0177% 2,098 ,635 
+
+In Ct,k \ P t,k , material sSEDD ∈ C t,k \ P t,k and min eμ < −10 −6 56 .2310% 4,716 ,994 
+
+In Ct,k \ P t,k , boundary sSEDD ∈ C t,k \ P t,k and −10 −6 ≤ min eμ < 0 18 .7419% 1,572 ,188 
+
+In Pt,k sSEDD ∈ P t,k 0.0094% 791 
+
+Across position-steps, 25 .0177% lay outside Ct,k , 56 .2310% were material violations in Ct,k \ P t,k ,
+
+18 .7419% formed its numerical boundary band, and only 0.0094% lay in Pt,k . The 56 .2310% rate was counted directly because the marginal coordinate and posterior-sign violations overlap ( 1.2584% ). 
+
+D.3 Sample Quality after Projection Repair 
+
+To isolate the effect of projection repair, we kept the pure-uniform SEDD checkpoint and sampler fixed and changed only the score passed to the sampler. It received either sSEDD or sproj = Bt,k μproj .For each setting, we generated 1,024 sequences of length 512 with 128 sampling steps. Each pair started from the same initial noise and used the same random numbers and final denoising update. With projected scores, none of the observed pre-normalization sampler weights was negative. We decoded the samples with the GPT-2 tokenizer and measured external GenPPL using the same Gemma2-9B evaluator as in the main language experiment. Table 7 summarizes the comparison; confidence intervals are estimated by sequence bootstrap, with samples paired across the two settings. Table 7: Effect of projection repair at a fixed SEDD checkpoint. The checkpoint and sampler are identical in both rows; only the score input changes. Intervals are 95% sequence-bootstrap confidence intervals. 
+
+Score input Average NLL External GenPPL 95% GenPPL interval 
+
+sSEDD 5.31615 203 .60 [196 .64 , 210 .45] 
+
+sproj = Bt,k μproj 5.16518 175 .07 [169 .10 , 181 .19] 
+
+Using projected scores lowered external GenPPL from 203 .60 to 175 .07 , a 14 .0% reduction. The paired bootstrap consistently favored projection, and all generated sequences were distinct in both settings, so the gain was not explained by sequence collapse. Because the checkpoint and sampler were unchanged, this comparison isolates the effect of projection repair at inference time for this checkpoint. It does not imply that post-hoc projection is equivalent to training M2S; external GenPPL is also an external measure of sample quality, not the model’s likelihood. 25 D.4 Projected SEDD Sampler 
+
+The uniform bridge permits an exact reduction of the simplex-constrained projection to a scalar threshold. Let u = μ−k, z = sSEDD  
+
+> −k
+
+− ρt1, n = K − 1, d = 1 − ρt, and b = d/ρ t. Since μk = 1 − 1⊤u,Eq. (7) gives 
+
+min  
+
+> u≥0,1⊤u≤1
+
+(bI + d11 ⊤)u − z 22 . (20) For the objective in Eq. (20), define 
+
+c = b2, h = d2
+
+
+
+n + 2
+
+ρt
+
+
+
+, gy = bz y + d X 
+
+> v̸=k
+
+zv.
+
+The KKT conditions give 
+
+uy = [gy − θ]+
+
+c .
+
+If the mass constraint is inactive, the scalar threshold satisfies P  
+
+> y̸=k
+
+uy = θ/h with θ ∈ [0 , h ].If it is active, it satisfies P  
+
+> y̸=k
+
+uy = 1 with θ ∈ [h, max y̸ =k gy]. At the branch point θ = h, let 
+
+mh = c−1 P 
+
+> y̸=k
+
+[gy − h]+. The mass constraint is active exactly when mh > 1. In either branch, the mass on the left decreases monotonically while the target on the right is nondecreasing, so batched bisection solves all positions without sorting the vocabulary. Here [a]+ = max {a, 0}. The resulting projection is applied at every position before the standard SEDD update, as summarized in Algorithm 4. 
+
+Algorithm 4 Projected SEDD Sampler 
+
+Require: trained SEDD model, reverse-time grid t0 > · · · > t M , terminal distribution  
+
+> 1:
+
+Sample Xt0 from the terminal distribution  
+
+> 2:
+
+for m = 0 , . . . , M − 1 do  
+
+> 3:
+
+x ← Xtm 
+
+> 4:
+
+Evaluate the SEDD score sSEDD  
+
+> i
+
+for every position i 
+
+> 5:
+
+for all positions i in parallel do  
+
+> 6:
+
+k ← xi and μproj  
+
+> i
+
+← μproj (sSEDD  
+
+> i
+
+) using Eq. (11)  
+
+> 7:
+
+sproj  
+
+> i
+
+← Btm,k μproj  
+
+> i
+> 8:
+
+end for  
+
+> 9:
+
+Apply the standard SEDD update with sproj to sample Xtm+1  
+
+> 10:
+
+end for  
+
+> 11:
+
+Apply the standard final denoising update  
+
+> 12:
+
+return X0
+
+# E Sample Generation 
+
+The following passages are randomly selected excerpts from samples generated by the M2S model using 128 sampling steps. 
+
+Sample 1 
+
+The European Union (EU) said the European Union would “fight” Russia’s aggression against ISIS with “love for neighbour” and achieve a “defaulted” nuclear agreement and prevent the launch of a nuclear weapon. 
+
+26 Among the top pro-Moscow-Kremlin claims about the Minsk peace agreement were that in 2014, however the war a far east pro-Russian separatists had stopped their long and violent clashes with Russia. That was still false now, the EU leaders said in a joint statement delivered by German Chancellor Angela Merkel late on Monday. They claimed that ceasefire negotiations would continue after 2014, but added that their “government has to compromise,” before rushing to Minsk. This came during a brief discussion with President Merkel at a joint news conference of the Joint Forces Committee of the Russian Aerospace Forces. 
+
+Sample 2 
+
+A Republican proposal to change Senate rules would force the Senate budget in line for 10 percent, but under current law the regs spending is $77 million. The budget proposal submitted on Tuesday by Sen. Marco Rubio, R-Fla., the Senate’s third stiffer member and didn’t include the first shortfall, a Republican said, one that he now faces would cost a Republican incumbent $3,000 in the U.S. Senate, the unnamed Republican said. While Senate Democrats were unavailable for comment about the Rubio proposal, the Senate’s budget from 2009 to fiscal 2013 was $120 million, with Senate Majority Leader Harry Reid, D-Nev., calling for savings to narrow the gap. Whitehouse communications director Matt Lunt responded, saying that while any new bill would be pork, full funding would have been required, if the usual funds made financial sense. Leavint Reid, D-Nev., had not responded to questions about the proposal. According to the Senate, Rubio would have requested $14 million—a sum that became somewhat problematic in 2011. In the final 15 days that he had given into campaign finance, he closed a public college and policy research board, which had no students. The board of education was appointed by Obama. 
+
+Sample 3 
+
+Apple has revealed a new 5K tablet with a redesigned, bezel-less Touch Cover design. It’s a bit cumbersome and a little more of a departure than the first redesign will be expected. It looks harmless, especially considering launching the invitation ring on the new 5800 later this year, with another refreshed version soon. What we should see in the huge next iPhone 5S is a tablet stand, costing $420,000–$850,000, along with a full top shelf smartphone. Such mini-boxes will serve them the power down and thus the memories, and possibly drive ports are all possible. You’d most likely wish they’d wrap this thing up, rather than with their own logo but at least that’s what we can expect. Apple will also offer the keyboard that pairs with it like you’re forced to the top of its sides. Obviously we find that as a nice gesture and you’d think that wouldn’t have to be available during launch too, but if you take the $300–$400, the setup will fit very nicely. Apple has also prepared a new iPad, just so you can have it with it too, but this idea is a myth. Not bad, since the iPhone offers a 4K resolution to 4k video and up to 12GB should be very respectable, but its not why the phone comes with Android 4.1/2.0 OS. Stay tuned for more hands-on details about the latest, and we’ll report back to iPad TV Line in the future for more info. 
+
+Sample 4 
+
+Junior Robinson is a genius. He’s always been blessed with natural size and speed. Lemon speed is about any player. But the speed he cultivated in the offseason, and he has averaged just six minutes in practice ice in a season starting the past three is at all impressive. 
+
+27 And it’s not something you can’t. People can carry a a couple of minutes in five preseason games, able to attend a freeze from assembling the NHL roster. They are versatile, guys. The 24-year-old former 18th overall selection chose Detroit as the first-round pick of the 2012 NHL Pending Draft, two years after averaging 25 points in 24 games in various stints at 82 points, and starting since this past October, for Detroit, in the same spot some of his most promising stints in short-re 30 games, and 24 points in 27, for a rookie season, he performed very well. He returned this offseason, maximizing his own potential by one season at the NHL—subject to arbitration until 2012 at his due date. In order for the Red Wings to make use of roster room, they need just a couple of 25-man reinforcements in their rotation, without shipping John O’Neil or others for a roster spot. 
+
+Sample 5 
+
+The year is once again in 2015, as the number of layoffs has been a record year high. Consequently, the banking giant Chase & Chase Bank recently reported that the sector had lost more than 19,000 jobs over the past three years. Read more Markers, who are criticised for feeling a stagnation, usually cite strong employment growth trends to speak to its current trends. “Today, the unemployment rate is down by 330 per cent since 2010,” said in its annual report. “And that depends on the shifts in opportunities in business.” However, in 2014–2015, one Fargo Ontario office employing 17,000 from was downsized—by 5,200—it backtracked this. It eliminated more than two-thirds of production, filling out the need among its banking sector employees. Earlier, the Bank had hinted that it may tighten its finances more. It released evidence that a low in wage workers caused the unemployment cut by almost $14,000 to workers before a tax of 0.25 percent. This would push the GDP worse in 2015. The recovery could not have been struck without these defects. As Fargo is expected to come out soon about the disinitation of its economy, the report, however, states the need to change infrastructure in a more sustainable way. The sale of Fargo operating Business Hummer division was taken in as the expense by example cited above. 
+
+Sample 6 
+
+The main web apps on the desktop are 8GB allowed KB. They have a 40% download speed, and get a chunk of that from the Google Play Store, you can bet that Google also intends to bring the fun back into the store by having the same much functionality as in Firefox browsers like Chrome and Safari. On the mobile side, we have Hoothing, Magazines, Cycle Enhancement Browser, and Goggles apps, though this technically means you can upgrade later this year if you tried and missed before. Full apps can go on now too. Apps are also available on self-link for third-party developers to help with the Web apps as well as the Mobile settings also. However, such details were not available at this stage of the above launch. Chrome users, however, need to enable options even for Android. That’s been going on for many years now, with the Google Chrome desktop live app (which has been live for nearly a year now) and the mobile browsers on the U.S. and Chinese Web versions. Still enough stuff, you know? Apps first launched in early September will now be supported including on Google’s website, therefore making the Google Chrome app easier to sign up. There is still an open beta. All things are ready for everyone, always and soon. Google is testing out the redboards in China and other countries and is testing the locations available on the site. 
+
+28 Sample 7 
+
+When you sign up for an AWS Elastic Load Network (ELT), get connected with your email or even the online language in your applications, it gets you go immediately. This may have only gotten so rare in the past, but the full power of computing is up for grabs in cloud computing and with its acquisition by PxCom, Inc. its cloud-delivered services has always been unusually designed with one important one: customer delivery in mind. “As the dominant broadband-only provider in the world, Seattle-based AWS has particular plans to modernize its computing infrastructure and give it real-time on-demand service and production-ready broadband customer delivery, with direct access to its delivery systems,” its agency says in a release. It also understands that it can be a layer used by its other large providers and coordinate their services to their customers’s data centers and connect them in their case at home, an indication that not all of the customer experiences in the cloud are necessarily different from each of the largest ISPs’ portfolio companies. P&Com, founded in partnership with Yormia and Escape Networks in January of 2014, is a provider of enterprise cloud service for “cloud” services AWS, Microsoft Azure, Amazon Dropbox, and Google Docs. 
+
+Sample 8 
+
+Microsoft has announced it will announce and released of AI assistant in around the holidays. Last Thursday, Microsoft revealed that its AI assistant device, which was shown as a prototype over at CES, “is the successor to Google tablet- AI operating system with a text and call interface.” It will likely be paired with the upcoming Microsoft-powered Xbox One. Now there is another hugely interesting and interesting rumor floating around, and it got execs caught at CES anyway. An official Windows blog post is claiming that the new software will feature in users’ mobile systems, and it will provide a “personal voice assistant for device hubs with limited sharing space,” Microsoft said. Unlike Siri, it works with older storage devices, but there stored multiple SD cards or at least a volume on them. That’s obviously a waste of time, as your device can be gone out-of-state after being hooked up to the SD card. The AI device is all tied to Microsoft’s tech future, the AI+ operating system. Siri that will be capable of communicating with Internet-connected PCs, and the goal will be to work with iOS, Mac, and other groups of devices in common, require AI+ using operating system. We said, but wait. The full video is available here. μ
+
+Sample 9 
+
+With a new law pending before Congress, California faces an uphill labor battle, chief executive officer Xavier Becerra said recently. There is an uproar over California’s pay rate for the corporate behemoth that sells health care, which makes home appliances and other products. Western leaders on Capitol Hill still struggling with lower wages in countries that lean to union workers and rely on pliers’ compensation. But here were signs of a change of heart that amounts to a higher rate for California, partly because taxpayers in the state have invested heavily in company labor. The federal labor department said rates in its factories in Tennessee were also getting higher. “As there has been such a measure of growth in the states, labor costs have risen,” Mr. Cosino said in ODFO’s fact sheet March 20. 
+
+29 Sample 10 
+
+The International Maoist-China forum called in return for “a world leader in international stability and international goods and services”. “China is proposing that its vision of state-denialing is a new machine, based on international cooperation, and its own market, rather than a country who would use its culture and opportunity to lead,” Hu Bingkao told participants, in an announcement of the convention on Saturday. Saturday, as the party celebrated the first anniversary of the start of the Maoist Commission, which was held in October when it warned of economic and social unrest in the country. The government, at the time felt there was no warning about the new trend, which included the rise of crack economy, ultra-high unemployment rates, levels of corruption, and the growth of militant groups. The convention took place just north of the Helfen, where also collected in some over 60 addresses take place annually. “Our society will be part of the discussion, but our ideological reason is simply the objective,” the Bingkao said. Meanwhile, Hu said People needed to grow the environment, dealing with drug dealing, and said that the methods to boost social stability was needed to respond to problems for the population. 
+
+30
