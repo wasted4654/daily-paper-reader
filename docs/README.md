@@ -6,43 +6,43 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-27
-- 运行时间：2026-07-27 21:07:01 UTC
+- 最新运行日期：2026-07-29
+- 运行时间：2026-07-29 20:01:33 UTC
 - 运行状态：成功
 - 本次总论文数：7
-- 精读区：3
-- 速读区：4
+- 精读区：5
+- 速读区：2
 
 ### 今日简报（AI）
-今日深度解析 7 篇前沿论文，重点攻克长视频原生外推与扩散语言模型的高效生成难题。
-满分神作 Self Gradient Forcing 实现了突破性的长视频外推，多掩码技术则显著提升了扩散模型的生成效率。
-建议优先研读长视频外推相关技术，这是掌握超长内容生成演进方向的关键。
-- 详情：[/202607/27/README](/202607/27/README)
+今日深度复盘 7 篇前沿论文，聚焦扩散模型在语言建模与架构优化上的范式革新。
+重点推荐 Block Diffusion 生成顺序的重构及 AR 模型向离散扩散转化的统一目标函数研究。
+建议关注扩散与自回归架构融合的趋势，探索生成式模型在效率与质量上的新平衡。
+- 详情：[/202607/29/README](/202607/29/README)
 
 ### 精读区论文标签
-1. [Self Gradient Forcing: Native Long Video Extrapolation](/202607/27/2607.20368v2-self-gradient-forcing-native-long-video-extrapolation)  
-   标签：评分：10.0/10、query:ardm
-   evidence：自回归视频扩散方法及用于长视频外推的自梯度强制技术
-2. [Multi-Mask Diffusion Language Models for Few-Step Generation](/202607/27/2607.19686v2-multi-mask-diffusion-language-models-for-few-step-generation)  
+1. [Rethinking the Generation Order of Block Diffusion Language Models](/202607/29/2607.24306v1-rethinking-the-generation-order-of-block-diffusion-language-models)  
    标签：评分：9.0/10、query:ardm
-   evidence：用于序列生成的多掩码扩散语言模型
-3. [Mean-to-Score Discrete Diffusion: Posterior-Mean Denoisers for Score Entropy](/202607/27/2607.21372v1-mean-to-score-discrete-diffusion-posterior-mean-denoisers-for-score-entropy)  
+   evidence：块扩散语言模型的并行自回归解码
+2. [UNIFUSION: Adapting Autoregressive Language Models into Discrete Diffusion under a Unified Reverse-Rate Objective](/202607/29/2607.24507v1-unifusion-adapting-autoregressive-language-models-into-discrete-diffusion-under-a-unified-reverse-rate-objective)  
+   标签：评分：9.0/10、query:ardm
+   evidence：将自回归语言模型适配到离散扩散模型
+3. [PreDiff-LM: Pretrained Discrete Masked Diffusion Language Modeling with Hybrid Attention](/202607/29/2607.25157v1-prediff-lm-pretrained-discrete-masked-diffusion-language-modeling-with-hybrid-attention)  
+   标签：评分：9.0/10、query:ardm
+   evidence：将预训练的自回归Transformer适配于扩散语言建模
+4. [ViDS: Video Diffusion Shader using 3D Face Tracking](/202607/29/2607.24124v1-vids-video-diffusion-shader-using-3d-face-tracking)  
    标签：评分：8.0/10、query:ardm
-   evidence：用于序列生成和分数熵的离散扩散模型
+   evidence：用于视频生成的自回归扩散采样过程
+5. [Neuromorphic Diffusion Language Models: Addressing Compute and Memory Bottlenecks via Sparsity and Block Denoising](/202607/29/2607.24841v1-neuromorphic-diffusion-language-models-addressing-compute-and-memory-bottlenecks-via-sparsity-and-block-denoising)  
+   标签：评分：8.0/10、query:ardm
+   evidence：类脑扩散语言模型与块去噪
 
 ### 速读区论文标签
-1. [Spectral Prior for Reducing Exposure Bias in Diffusion Models](/202607/27/2607.22091v1-spectral-prior-for-reducing-exposure-bias-in-diffusion-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：减少扩散模型迭代采样过程中的曝光偏差
-2. [JAGG: Jacobian-Aggregated Group Gradient for Efficient GRPO Training of Diffusion Models](/202607/27/2607.17572v2-jagg-jacobian-aggregated-group-gradient-for-efficient-grpo-training-of-diffusion-models)  
+1. [MMOE: Modernizing Diffusion Transformers with Efficient Expert Design](/202607/29/2607.24665v1-mmoe-modernizing-diffusion-transformers-with-efficient-expert-design)  
    标签：评分：6.0/10、query:ardm
-   evidence：使用强化学习对齐高效训练扩散模型
-3. [DiFA: Inference-Time Forward-Process Alignment for Diffusion Models](/202607/27/2607.17972v1-difa-inference-time-forward-process-alignment-for-diffusion-models)  
+   evidence：通过高效专家设计现代化扩散Transformer
+2. [Instruction-based Image Editing: A Survey on Data, Models, Evaluation, and Applications](/202607/29/2607.25642v1-instruction-based-image-editing-a-survey-on-data-models-evaluation-and-applications)  
    标签：评分：6.0/10、query:ardm
-   evidence：将推理时数据预测细化重新定义为序列状态估计问题
-4. [Neural Kolmogorov Equations: Parallelizable Learning of Stochastic Dynamics under General Noise](/202607/27/2607.19173v1-neural-kolmogorov-equations-parallelizable-learning-of-stochastic-dynamics-under-general-noise)  
-   标签：评分：6.0/10、query:ardm
-   evidence：重构SDE以避免昂贵的自回归训练
+   evidence：从GAN到扩散和自回归范式的演进
 
 
 <div class="dpr-home-promo-card">

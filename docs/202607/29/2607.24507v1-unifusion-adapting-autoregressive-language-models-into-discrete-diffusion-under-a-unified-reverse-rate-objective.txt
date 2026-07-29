@@ -1,0 +1,2108 @@
+Title: UNIFUSION: Adapting Autoregressive Language Models into Discrete Diffusion under a Unified Reverse-Rate Objective
+
+URL Source: https://arxiv.org/pdf/2607.24507v1
+
+Published Time: Tue, 28 Jul 2026 02:06:38 GMT
+
+Number of Pages: 38
+
+Markdown Content:
+# Unifusion : Adapting Autoregressive Language Models into Discrete Diffusion under a Unified Reverse-Rate Objective 
+
+## Xiaoyi Jiang 1,4∗ Jingyuan Li 2,3,4∗ Yixuan Jiang 1,4 Wei Liu 3
+
+## Yi Zhu 1,2,4 Zuoqiang Shi 1,2,4 Pipi Hu 2,4†
+
+> 1
+
+## Tsinghua University 2Beijing Institute of Mathematical Sciences and Applications 
+
+> 3
+
+## Wuhan University 4MathonAI 
+
+Abstract 
+
+Existing methods mainly adapt pretrained autoregressive (AR) language models to masked diffusion, whereas we directly adapt them to uniform-noise diffusion, where every token remains editable during sampling. However, adapting AR checkpoints across corruption kernels remains challenging because existing DLMs use different objectives and prediction parameterizations. We establish connections among SEDD, MDLM/GIDD, M2S, and Neural CTMC by expressing their conditional losses as a single generalized Kullback–Leibler objective over model reverse rates. We further derive conversions from clean-token predictions to concrete-score, posterior-mean, and exit-rate/jump parameterizations, yielding a shared x0 interface that supports switching between mask and uniform kernels. Building on these connections, we propose Unifusion , a simple continual pre-training approach for directly adapting pretrained GPT2 checkpoints to uniform-noise diffusion. Through systematic evaluation of 124M- and 355M-parameter mod-els, we show that Unifusion steadily improves the trade-off between generative perplexity (GenPPL) and unigram entropy as the sampling budget increases from 16 to 256 steps. At 256 steps, Unifusion -S and Unifusion -M achieve GenPPL/entropy pairs of 97 .783 /5.2626 and 
+
+71 .516 /5.6669 , respectively; no evaluated model at the same scale simultaneously outperforms 
+
+Unifusion on both metrics. At both scales, Unifusion also achieves the highest WinoGrande, SIQA, and BBH accuracy among the compared diffusion models. 
+
+# 1 Introduction 
+
+Autoregressive (AR) language models generate one token at a time from left to right. This factor-ization supports efficient training and has produced many reusable checkpoints, but the generation order is fixed: once a token is emitted, later steps cannot revise it. Discrete diffusion instead corrupts a complete sequence and learns to reverse that corruption [1, 3]. Recent discrete diffu-sion models have narrowed the quality gap to AR models [13, 18, 22, 14], but training a new diffusion model from random initialization discards the language knowledge already stored in AR checkpoints. DiffuGPT and DiffuLLaMA reuse GPT2 and LLaMA weights, and Dream-7B starts from Qwen [17, 7, 27]. These conversions use absorbing mask corruption. This choice has a direct connection to AR training: an absorbing diffusion objective averages over token-reveal orders, and left-to-right AR decoding is one such order [25, 10, 15, 22]. However, a mask model can only replace 
+
+> ∗
+
+Equal contribution. 
+
+> †
+
+Corresponding author. 
+
+1arXiv:2607.24507v1 [cs.LG] 27 Jul 2026 positions that remain masked. In our samples, increasing the number of denoising steps sometimes lowers generative perplexity (GenPPL) while also lowering unigram entropy and producing repeated numbers, templates, or table fragments (Section 4.3). Uniform corruption offers a different target: it replaces tokens with vocabulary items rather than a special mask, so all positions remain editable throughout sampling. The open question is how to reach this model directly from an AR checkpoint, without first training a masked diffusion model. A direct conversion must specify both what the network predicts and how that prediction is trained. Existing discrete diffusion methods make different choices. SEDD predicts concrete scores; MDLM and GIDD predict clean tokens; M2S predicts posterior means; and Neural CTMC predicts an exit rate together with a jump distribution [13, 18, 22, 26, 11, 12]. Their losses consequently have different formulas. Comparing those formulas alone does not reveal whether two methods learn different reverse processes or merely describe the same process with different outputs. Moreover, concrete scores, posterior means, and jump rates all contain the forward corruption kernel. An output built for absorbing corruption therefore cannot be reused unchanged for uniform corruption. We address the training question in reverse-rate space (Section 3.1). For a fixed clean token and noised token, a discrete diffusion model assigns a rate to every possible reverse jump. We show that, after mapping each method’s output to these rates, the conditional losses of SEDD, MDLM/GIDD, M2S, and Neural CTMC are the same generalized KL objective. We then convert a clean-token prediction to the other three prediction formats. This equivalence has a precise scope: converting the same clean-token logits into the four prediction formats produces identical reverse rates and the same rate-space objective. Native optimization can still follow different paths because the methods weight examples differently and use different batch sizes. We address the kernel question with the clean-token distribution xθ(x0 | xt, t ) (Theorem 3.5). Unlike a concrete score or jump rate, this distribution always answers the same question: which vocabulary token occupied the current position before corruption? Once it is predicted, the known forward kernel converts it into the reverse rates for either absorbing or uniform noise. It therefore forms a concrete interface between a pretrained AR output and multiple diffusion kernels. Based on this interface, Unifusion adapts GPT2 directly to uniform diffusion (Section 3.2). The AR softmax at position i − 1 already predicts the clean token at position i; we shift these outputs by one position and use them to initialize the diffusion x0 predictor. During fine-tuning, we gradually open causal attention to bidirectional attention, add time conditioning, and use a linear uniform corruption schedule. This requires no intermediate masked checkpoint. Our experiments answer three questions (Section 4). First, rate-equivalent native objectives follow different finite-budget trajectories from the same GPT2-small initialization. Second, direct AR-to-uniform training attains a minimum GenPPL comparable to the two-stage masked path. Third, across five seeds, Unifusion -S and Unifusion -M improve both GenPPL and unigram entropy as the sampling budget grows. At 256 steps, their GenPPL/entropy pairs are 97 .783 /5.2626 
+
+and 71 .516 /5.6669 ; at both scales, they also achieve the highest WinoGrande, SIQA, and BBH accuracy among the compared diffusion models. Our contributions are: 
+
+• We unify the conditional losses of SEDD, MDLM/GIDD, M2S, and Neural CTMC in reverse-rate space and derive conversions from clean-token predictions to all four parameterizations (Section 3.1). 
+
+• We use clean-token x0 predictions to bridge AR initialization and absorbing/uniform kernels, enabling direct AR-to-uniform adaptation (Sections 3.2 and 4.2). 
+
+• We separate rate-space equivalence from finite-budget optimization and improve the GenPPL– entropy trade-off while retaining strong zero-shot accuracy (Section 4). 22 Preliminaries 
+
+Let V = {1, . . . , S } be the vocabulary. A uniform CTMC has state space S = V, whereas an absorbing CTMC uses the augmented space S = V ∪{ m}. A CTMC on S over [0 , T ] is characterized by a time-dependent rate matrix Rt, with Rt(i, j ) ≥ 0 for i̸ = j and ∑ 
+
+> j
+
+Rt(i, j ) = 0 .
+
+Definition 2.1. If the chain is in state i at time s and t = s + h with h > 0, then, as h → 0,
+
+qt|s(j | i) = δi,j + Rt(i, j ) h + o(h), (1) and Rt is the forward rate matrix .The Kolmogorov forward equation ˙qt = qtRt determines the finite-time transition matrix Ps,t , and below we use two common forms of the corresponding cumulative kernel. 
+
+Definition 2.2. The cumulative kernel Ps,t is the finite-time transition matrix defined by 
+
+∂tPs,t = Ps,t Rt, Ps,s = I, qt|s(j | i) = ( Ps,t )ij . (2) We use two closed forms. (1) Generator form. If Rt = βrate  
+
+> t
+
+¯R for a fixed generator ¯R, then 
+
+Ps,t = exp  
+
+> {(∫ts
+
+βrate  
+
+> u
+
+du 
+
+> )
+
+¯R
+
+> }
+
+,
+
+with the homogeneous case given by βrate  
+
+> t
+
+≡ 1, and with a target prior π imposed by choosing ¯R
+
+reversible, π(i) ¯R(i, j ) = π(j) ¯R(j, i ). (2) Interpolating form. The time-0-to-t transition is specified directly by 
+
+qt|0(j | i) = αtδij + βtπ(j), P0,t = αtI + βt1π⊤, (3) where αt + βt = 1 , αt is differentiable and nonincreasing, α0 = 1 , αT = 0 , αt > 0 for t < T , and 
+
+pprior = π. The classical choices π = em on V ∪ { m} and π = 1/S on V give masked and uniform kernels. For i̸ = j, let j be the current noised token, i the reverse jump target, and Rt(i, j ) the rate of the forward jump i → j. The data-marginal reverse rate and the conditional reverse rate given a clean token x0 are ̂
+
+Rt(j, i ) := Rt(i, j ) qt(i)
+
+qt(j) ,̂ Rt(j, i | x0) := Rt(i, j ) qt|0(i | x0)
+
+qt|0(j | x0) ,
+
+with qt(k) := ∑ 
+
+> z
+
+pdata (z)qt|0(k | z). Each ratio is used when its denominator is positive; we set the corresponding rate to 0 when the denominator is 0. The marginal model rate and the clean-token-induced conditional rate are denoted by ̂ Rθt (j, i ) and ̂ Rt(j, i | xθ), respectively, with diagonals fixed by row sums, e.g., ̂ Rθt (j, j ) = − ∑ 
+
+> i̸=ĵ
+
+Rθt (j, i ).The models below use four neural parameterizations of off-diagonal reverse rates: SEDD pre-dicts concrete-score entries sθ(j, t )i for candidate jumps j → i [13]; MDLM and GIDD pre-dict a distribution on clean tokens xθ(· | j, t ) [18, 22, 26]; M2S predicts a posterior distribu-tion μθ(· | j, t ) [12], which the operator Bj,t maps to the concrete-score vector Bj,t μθ, with 
+
+(Bj,t μθ)i := ∑
+
+> z∈V
+
+μθ(z | j, t )qt|0(i | z)/q t|0(j | z) for i̸ = j when j is reachable at time t from every z ∈ V , meaning that qt|0(j | z) > 0 for all z ∈ V . Neural CTMC predicts an exit rate λθ(j, t )
+
+and a conditional jump distribution rθ(· | j, t ) [11]. Their reverse-rate maps and explicit conversions from xθ are given in Theorems 3.3 and 3.5, while the published losses are collected in Section A.1. 33 Methodology 
+
+## 3.1 A Unified Reverse-Rate Theorem 
+
+This subsection states the main theory, with every proof deferred to Section A and numerical verification deferred to Section B. The key message is that the losses of different discrete diffusion models, despite their different parameterizations, can all be converted by identities into the same Bregman divergence. We first isolate the rate-space functional that all later parameterizations will share. 
+
+Definition 3.1. For any off-diagonal reverse-rate parameterization ̂ Rθ, the pointwise rate diver-gence and the master objective are 
+
+Dt(xt, x 0; θ) := ∑ 
+
+> y̸=xt
+
+f (̂ Rt(xt, y | x0),̂ Rθt (xt, y )), L(θ) = 
+
+∫ T
+
+> 0
+
+Ex0, x t∼qt|0 [Dt] d t. (4) Here f (r, c ) = Dϕ(r, c ) is the Bregman divergence generated by ϕ(u) = u log u:
+
+Dϕ(r, c ) = ϕ(r) − ϕ(c) − ϕ′(c)( r − c) = r log rc − r + c ≥ 0, r, c > 0.
+
+For boundary cases, we use f (0 , c ) = c, f (0 , 0) = 0 , and f (r, 0) = + ∞ for r > 0. All time integrals are over 0 < t < T .The next proposition connects L to likelihood training: L upper-bounds the negative log-likelihood up to a constant. 
+
+Proposition 3.2. For every x0 with pdata (x0) > 0, assume that 
+
+(1) pprior (k) > 0 whenever qT |0(k | x0) > 0, for every k;
+
+(2) for every i̸ = j and almost every t ∈ (0 , T ),̂ Rθt (j, i ) > 0 whenever qt|0(j | x0) > 0 and ̂
+
+Rt(j, i | x0) > 0;
+
+(3) the reverse model starts from XT ∼ pprior and has marginal ρθt ; each entry of ̂ Rt(·, · | x0)
+
+and ̂ Rθt is integrable on every [δ, T − ε] ⊂ (0 , T ), with the endpoint limits lim t↓0 DKL (qt|0(· | 
+
+x0)∥ρθt ) = − log pθ(x0) and lim t↑T DKL (qt|0(· | x0)∥ρθt ) = DKL (qT |0(· | x0)∥pprior ).Then 
+
+Epdata [− log pθ(X0)] ≤ L(θ) + CELBO , CELBO := Ex0∼pdata DKL 
+
+(
+
+qT |0(· | x0)
+
+∥∥∥ pprior 
+
+)
+
+.
+
+The master objective has the following conditional and marginal rate representations: 
+
+L(θ) = 
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+E
+
+[
+
+f (̂ Rt(j, i | X0),̂ Rθt (j, i )) ∣∣∣ Xt = j
+
+]
+
+dt, (5) 
+
+=
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i ),̂ Rθt (j, i ))dt + Cgap (6) 
+
+Here Cgap ≥ 0 is independent of θ.
+
+Since Cgap is independent of θ, the conditional and marginal objectives have the same gradients whenever they are finite and differentiable. We next show that the SEDD, MDLM/GIDD, M2S, and Neural CTMC conditional losses all reduce to L when written in terms of their induced reverse rates. 4Theorem 3.3. The prediction heads introduced in Section 2 induce off-diagonal model reverse rates through the following mappings:     
+
+> Method Parameterization Relation SEDD [13] Concrete score sθ
+
+̂ Rθt (j, i ) = Rt(i, j )sθ (j, t )i  
+
+> MDLM/GIDD [18, 22, 26] Clean-token prediction xθ
+
+̂ Rt(j, i | xθ ) = Rt(i, j ) qt(i | xθ )     
+
+> qt(j|xθ)
+> M2S [12] Mean-to-score μθ
+
+̂ Rθt (j, i ) = Rt(i, j )( Bj,t μθ )i    
+
+> Neural CTMC [11] Exit rate / jump (λθ, r θ)
+
+̂ Rθt (j, i ) = λθ (j, t )rθ (i | j, t )
+
+For the clean-token row with Rt(i, x t) > 0 for some i̸ = xt, assume qt(xt | xθ) > 0. For qt|0(xt |
+
+x0) > 0, substituting any row into Theorem 3.1 gives the corresponding published rate-space loss exactly. Thus these losses are the master objective written in different reverse-rate coordinates. 
+
+The following corollary summarizes their equivalence in reverse-rate space. 
+
+Corollary 3.4. Under the same forward CTMC and noise schedule, expressing each parameteriza-tion through its induced off-diagonal model reverse rate ̂ Rθ yields the following equivalent conditional losses: 
+
+LSEDD (̂Rθ) = LGIDD (̂ Rθ) = LM2S (̂Rθ) = LNCTMC (̂Rθ) = L(̂Rθ).
+
+Consequently, their gradients with respect to the reverse rates are identical. Over unconstrained reverse rates, all four losses are minimized at ̂ Rθt (j, i ) = ̂ Rt(j, i ) on states with qt(j) > 0.
+
+The AR model provides an x0 prediction. To use it with the other three parameterizations, the next theorem converts this prediction into the corresponding SEDD, M2S, and Neural CTMC coordinates. 
+
+Theorem 3.5. Using the notation of Section 2, let xθ(· | j, t ) ∈ ∆( V) be an x0 prediction for a state j that is reachable at time t from every z ∈ V . Define 
+
+qt(k | xθ) := ∑
+
+> z∈V
+
+xθ(z)qt|0(k | z),̂ Rt(j, i | xθ) := Rt(i, j ) qt(i | xθ)
+
+qt(j | xθ) (i̸ = j).
+
+For a nonzero induced reverse-rate row, the corresponding SEDD, M2S, and Neural CTMC outputs are 
+
+sθ(j, t )i = qt(i | xθ)
+
+qt(j | xθ) ,μθ(z) = xθ(z)qt|0(j | z)
+
+qt(j | xθ) , (Bj,t μθ)i = qt(i | xθ)
+
+qt(j | xθ) ,λθ(j, t ) = ∑ 
+
+> k̸=j
+
+̂
+
+Rt(j, k | xθ), rθ(i | j, t ) = ̂ Rt(j, i | xθ)
+
+λθ(j, t ) .
+
+## 3.2 Method 
+
+Unifusion adapts a pretrained AR transformer to uniform-noise diffusion through the following techniques. 
+
+AR as the x0 model. After a one-position shift, an AR checkpoint’s next-token distribution for 
+
+xi given x<i can be used either as the clean-token prediction xiθ(· | xt, t ) or as the M2S prediction 
+
+μθ.5Figure 1 compares these two choices. We initialize two models from the same AR checkpoint (GPT2-small) and train them with the same uniform-kernel M2S loss (11), differing only in how the shifted AR output is used. The 
+
+x0 model has 48 .6% lower average loss during the first 
+
+2k updates and 27 .9% lower average loss during updates 
+
+5k– 10 k, before the loss of the μ model catches up after roughly 10 k updates. This comparison indicates that the pretrained AR output already behaves as an x0 predic-tion, while using it directly as μθ requires the model to adapt during training. We therefore use the shifted AR output as xθ and convert it to SEDD, M2S, or Neural CTMC using Theorem 3.5. 0.1 1 10 100     
+
+> Training steps (×10 3, log scale)
+> 2000
+> 4000
+> 6000
+> 8000
+> M2S loss
+> AR as x0
+> AR as μFigure 1: M2S loss comparison under different parameterizations.
+
+Causal-to-bidirectional annealing. AR pretraining uses causal attention, whereas diffusion denoising requires bidirectional attention over visible corrupted tokens. We anneal the attention mask from causal to fully bidirectional, so optimization starts from the AR conditioning pattern and gradually opens the full context. Because the AR checkpoint does not include diffusion-time conditioning, we learn the t-conditioning parameters during adaptation while retaining the AR initialization for the remaining model parameters. 
+
+Uniform corruption with a linear schedule. We train with the uniform prior π = 1/S . After rescaling time to t ∈ (0 , 1) , the cumulative forward corruption kernel is qt|0(j | i) = αtδij + βt 1 
+
+> S
+
+,where αt = 1 − t and βt = t. The uniform kernel has two advantages over an absorbing mask kernel: corrupted tokens remain editable throughout sampling, and generation retains higher lexical diversity. 
+
+# 4 Experiments 
+
+## 4.1 Trainability of Rate-Equivalent Losses 
+
+We test the finite-budget trainability of four rate-equivalent formulations initialized from the same GPT2-small AR checkpoint. All runs used uniform corruption, the same FineWeb split, and the same 60 B-token training window. GIDD directly used the shifted AR softmax as its clean-token 
+
+x0 prediction. For SEDD, M2S, and Neural CTMC, we converted the same x0 prediction using Theorem 3.5 and optimized each method’s native loss. Each checkpoint was evaluated with its native 256 -step sampler. Training and evaluation details are provided in Section C.1. Figure 2 shows the GenPPL trajectories, and Table 1 reports the minimum GenPPL within the shared training window. Rate-space equivalence (Theorem 3.4) means that the four conversions produce the same reverse rates from the same logits, which we verify within 10 −11 in Section B. Their native training runs can still follow different trajectories because their loss weighting and batch sizes differ. GIDD uses dynamic weighting and clips loss weights at 2.0, limiting the extreme endpoint weights identified in GIDD [26]. GIDD reached a minimum GenPPL of 100 .7 at epoch 1.92 ; SEDD, Neural CTMC, and M2S reached 110 .0, 113 .5, and 124 .7 at epochs 1.20 , 1.64 , and 2.00 , respectively. We therefore use GIDD’s native loss and sampler in the remaining experiments. 6Figure 2: Finite-budget training trajectories. 
+
+GenPPL trajectories for the four rate-equivalent ob-jectives. Table 1: Minimum GenPPL by training objective. Minimum GenPPL and corresponding epoch within the shared training window.            
+
+> Objective Epoch Min. GenPPL ↓
+> GIDD [26] 1.92 100.7
+> SEDD [13] 1.20 110.0 Neural CTMC [11] 1.64 113.5 M2S [12] 2.00 124.7
+
+## 4.2 Transfer via x0 Prediction 
+
+We next test whether the clean-token x0 output can transfer a pretrained AR model to masked and uniform diffusion. After a one-position shift, the AR next-token prediction is used as the x0
+
+prediction, and training then adapts it to the target corruption kernel. We evaluate four conversion paths: AR →mask, AR →uniform, AR →mask →uniform, and AR →uniform →mask.  
+
+> Figure 3: Conversion paths.
+
+All four paths started from the same GPT2-small AR checkpoint and were optimized with GIDD under the same data budget and optimization settings. Full training and evaluation details are provided in Section C.2. Figure 3 shows the GenPPL trajec-tory for each path and marks its min-imum value. The direct and two-stage AR-to-uniform paths attained compara-ble minimum GenPPL. This indicates that uniform diffusion can inherit the AR initialization without an inter-mediate masked-diffusion stage. In contrast, uniform-to-mask conversion reached a substantially higher mini-mum GenPPL of 116 .33 under the same training budget. We therefore adopt direct AR-to-uniform conversion in subsequent experiments. 
+
+## 4.3 Perplexity–Entropy Frontier 
+
+GenPPL and unigram entropy are complementary but individually insufficient diagnostics: low GenPPL may favor repetitive, high-probability text, whereas high entropy may reflect noise or random symbols rather than meaningful diversity. We therefore analyze their Pareto frontier to-ward low GenPPL and high entropy. The complete evaluation protocol and five-seed statistics are reported in Appendix C.3. 7better       
+
+> Generative PPL by GPT2-large (log scale, inverted; lower is better  ↑)
+> Unifusion-S, 256 steps
+> GenPPL = 97 .783 , H = 5 .2626
+> Balanced frontier point. Sample: A Center of Food and Agricultural Development provides training to agricultural industry professionals and consultants. With a degree in consulting and curriculum-based marketing. . .
+> DiffuGPT-S, 16 steps
+> GenPPL = 494 .491 , H = 5 .5106
+> High entropy, noise-like text. Sample: M0742 072 4TFD Fathers and Solop Over Guardians 8671 = Captain Lewis & One Elf Piece 8670 = Hero Action Only the Queen. . .
+> SEDD-mask, 256 steps
+> GenPPL = 60 .045 , H = 5 .0121
+> Low GenPPL, repetitive collapse. Sample: 6 (4) of 3:00. Terminator September 3:59:00 C 20:00 9:00 C ((-c) CLINARY. . .
+
+Figure 4: (a) GenPPL–entropy frontier. (b) Selected samples. 
+
+Across 16–256 steps, Unifusion -S improves monotonically from 143 .944 ±0.872 to 97 .783 ±1.901 
+
+GenPPL while its mean sample-level entropy rises from 5.2461 ± 0.0022 to 5.2626 ± 0.0041 nats. Its 64-step point already Pareto-dominates the 256-step endpoints of SEDD-uniform, Neural CTMC, and every evaluated GIDD variant. At 256 steps, Unifusion -S occupies a favorable knee of the GenPPL–entropy Pareto frontier. Compared with DiffGPT-S, it reduces GenPPL from 117 .334 
+
+to 97 .783 , a 16 .7% improvement, while preserving nearly the same entropy ( 5.2626 versus 5.2792 ). Conversely, the baselines achieving lower GenPPL incur substantially larger diversity losses: the entropy decreases to 5.1649 for DOU, 5.0624 for M2S, and 5.0121 for SEDD-mask. Consequently, no competing small model simultaneously improves upon Unifusion -S in both metrics, demonstrating its favorable balance between fluency and lexical diversity. At medium scale, Unifusion -M improves from 128 .832 ± 1.968 GenPPL and 5.6386 ± 0.0027 
+
+entropy at 16 steps to a GenPPL of 71 .516 ± 1.165 and an entropy of 5.6669 ± 0.0053 at 256 steps. It Pareto-dominates DiffGPT-M at 256 steps, whose corresponding values are 90 .645 ± 2.195 and 
+
+5.6472 ± 0.0036 . Moreover, the 64-step Unifusion -M point ( 79 .207 /5.6609 ) already dominates the 256-step DiffGPT-M point, showing that the improvement persists under a fourfold smaller sampling budget. Additional samples are provided in Appendix D.1. 
+
+## 4.4 Downstream tasks 
+
+We evaluate zero-shot accuracy on HellaSwag, WinoGrande, SocialIQA, PIQA, and BBH; the shared evaluation protocol is detailed in Appendix C.4. As shown in Table 2, Unifusion achieves the highest accuracy on three of the five benchmarks at both scales. Unifusion -S ranks first among all evaluated small models on WinoGrande ( 53 .0), SIQA ( 37 .8), and BBH ( 32 .0); Unifusion -M retains the same three-task lead at medium scale, reaching 53 .7 on WinoGrande, 39 .7 on SIQA, and 32 .7 on BBH. Both models also outperform their GPT2 initializations on all three tasks. 8Table 2: Zero-shot downstream accuracy (%). Type: AR = autoregressive, DD = discrete diffusion. 
+
+Scale Model Size Type Kernel HSwag Wino. SIQA PIQA BBH Small GPT2 124M AR − 29.9 48.5 35.7 62.1 31.3 DiffuGPT 124M DD mask 33.4 50.8 37.0 57.7 31.2 SEDD 170M DD mask 30.2 50.1 34.4 55.6 30.6 SEDD 170M DD uniform 30.4 48.5 35.4 54.6 30.9 GIDD 170M DD hybrid ( punif =0 .0) 31.7 51.5 36.0 56.0 31.0 GIDD 170M DD hybrid ( punif =0 .1) 30.6 51.3 36.7 54.5 31.1 GIDD 170M DD hybrid ( punif =0 .2) 30.6 48.8 34.0 53.7 31.4 GIDD 170M DD uniform 29.4 49.3 33.2 50.5 31.5 Neural-CTMC 170M DD uniform 29.4 48.1 36.9 53.3 31.9 M2S 170M DD uniform 30.2 48.4 36.4 53.4 31.5 
+
+UnifusionGPT 124M DD uniform 29.6 53.0 37.8 57.2 32.0 
+
+Medium GPT2 355M AR − 38.3 50.7 37.7 67.4 32.6 DiffuGPT 355M DD mask 37.2 52.6 39.0 59.6 31.3 SEDD 424M DD mask 31.5 49.0 35.4 56.1 32.4 
+
+UnifusionGPT 355M DD uniform 35.6 53.7 39.7 56.8 32.7 
+
+# 5 Related Work 
+
+Discrete diffusion language models build on D3PM [1] and its continuous-time Markov-chain for-mulation [3]. Subsequent work follows two related directions. The first develops different reverse-process parameterizations: SEDD predicts concrete scores [13], MDLM and GIDD predict clean tokens [18, 22, 26], Neural CTMC predicts exit rates and jump distributions [11], and M2S maps posterior means to scores [12]. The second connects absorbing diffusion to order-agnostic AR mod-eling and learned generation orders [25, 10, 15, 6]. DiffuGPT/DiffuLLaMA and Dream-7B use this connection to adapt pretrained AR checkpoints to absorbing diffusion [7, 27]. 
+
+# 6 Conclusion 
+
+We unified the conditional losses of SEDD, MDLM/GIDD, M2S, and Neural CTMC as the same generalized KL objective in model reverse-rate space. We further derived explicit conversions among their parameterizations. Using the clean-token x0 prediction, Unifusion adapts GPT2 checkpoints to uniform diffusion. On the five-seed GenPPL–entropy frontier, Unifusion -S reduces GenPPL by 
+
+16 .7% relative to DiffGPT-S at similar entropy, while Unifusion -M Pareto-dominates DiffGPT-M at 256 steps. On zero-shot downstream tasks, both Unifusion -S and Unifusion -M achieve the best WinoGrande, SIQA, and BBH scores among diffusion models at their respective scales. 
+
+# References   
+
+> [1] Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Struc-tured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems , 34:17981–17993, 2021.
+
+9[2] Yonatan Bisk, Rowan Zellers, Ronan Le Bras, Jianfeng Gao, and Yejin Choi. PIQA: Reasoning about physical commonsense in natural language. In Proceedings of the AAAI Conference on Artificial Intel-ligence , 34(5):7432–7439, 2020. [3] Andrew Campbell, Joe Benton, Valentin De Bortoli, Thomas Rainforth, George Deligiannidis, and Arnaud Doucet. A continuous time framework for discrete denoising models. In Advances in Neural Information Processing Systems , 35:28266–28279, 2022. [4] Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Train-ing verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 , 2021. [5] Itai Gat, Tal Remez, Neta Shaul, Felix Kreuk, Ricky T. Q. Chen, Gabriel Synnaeve, Yossi Adi, and Yaron Lipman. Discrete flow matching. In Advances in Neural Information Processing Systems , 37:133345– 133385, 2024. [6] Prateek Garg, Bhavya Kohli, and Sunita Sarawagi. Masked diffusion models are secretly learned-order autoregressive models. arXiv preprint arXiv:2511.19152 , 2025. [7] Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao, Wei Bi, Jiawei Han, Hao Peng, and Lingpeng Kong. Scaling diffusion language models via adaptation from autoregressive models. In International Conference on Learning Representations , 2025. [8] Ishaan Gulrajani and Tatsunori B. Hashimoto. Likelihood-based diffusion language models. In Advances in Neural Information Processing Systems , 36:16693–16715, 2023. [9] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Advances in Neural Information Processing Systems , 33:6840–6851, 2020. [10] Emiel Hoogeboom, Alexey A. Gritsenko, Jasmijn Bastings, Ben Poole, Rianne van den Berg, and Tim Salimans. Autoregressive diffusion models. In International Conference on Learning Representations ,2022. [11] Jingyuan Li, Xiaoyi Jiang, Fukang Wen, Wei Liu, Renqian Luo, Yi Zhu, Zuoqiang Shi, and Pipi Hu. Neural continuous-time Markov chain: Discrete diffusion via decoupled jump timing and direction. 
+
+arXiv preprint arXiv:2604.15694 , 2026. [12] Jingyuan Li, Xiaoyi Jiang, Yixuan Jiang, Wei Liu, Yi Zhu, Zuoqiang Shi, and Pipi Hu. Mean-to-score discrete diffusion: Posterior-mean denoisers for score entropy. arXiv preprint arXiv:2607.21372 , 2026. [13] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pages 32819–32848, 2024. [14] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. arXiv preprint arXiv:2502.09992 , 2025. [15] Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. In International Conference on Learning Representations , 2025. [16] Guilherme Penedo, Hynek Kydlíček, Loubna Ben Allal, Anton Lozhkov, Margaret Mitchell, Colin Raffel, Leandro von Werra, and Thomas Wolf. The FineWeb datasets: Decanting the web for the finest text data at scale. In Advances in Neural Information Processing Systems , 37:30811–30849, 2024. [17] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language models are unsupervised multitask learners. Technical report, OpenAI, 2019. 
+
+10 [18] Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T. Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. In Advances in Neural Information Processing Systems , 37:130136–130184, 2024. [19] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin T. Chiu, and Volodymyr Kuleshov. The diffusion duality. In Forty-second International Conference on Machine Learning , 2025. [20] Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavatula, and Yejin Choi. WinoGrande: An adversarial winograd schema challenge at scale. Communications of the ACM , 64(9):99–106, 2021. [21] Maarten Sap, Hannah Rashkin, Derek Chen, Ronan Le Bras, and Yejin Choi. Social IQa: Commonsense reasoning about social interactions. In Proceedings of the 2019 Conference on Empirical Methods in Nat-ural Language Processing and the 9th International Joint Conference on Natural Language Processing ,pages 4463–4473, 2019. [22] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis K. Titsias. Simplified and generalized masked diffusion for discrete data. In Advances in Neural Information Processing Systems , 37:103131– 103167, 2024. [23] Yang Song, Jascha Sohl-Dickstein, Diederik P. Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equations. In International Conference on Learning Representations , 2021. [24] Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung, Aakanksha Chowdhery, Quoc V. Le, Ed H. Chi, Denny Zhou, and Jason Wei. Challenging BIG-Bench tasks and whether chain-of-thought can solve them. arXiv preprint arXiv:2210.09261 , 2022. [25] Benigno Uria, Iain Murray, and Hugo Larochelle. A deep and tractable density estimator. In Proceed-ings of the 31st International Conference on Machine Learning , volume 32 of Proceedings of Machine Learning Research , pages 467–475, 2014. [26] Dimitri von Rütte, Janis Fluri, Yuhui Ding, Antonio Orvieto, Bernhard Schölkopf, and Thomas Hof-mann. Generalized interpolating discrete diffusion. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 61810–61843, 2025. [27] Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7B: Diffusion large language models. arXiv preprint arXiv:2508.15487 , 2025. [28] Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. HellaSwag: Can a ma-chine really finish your sentence? In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics , pages 4791–4800, 2019. 
+
+11 Appendix: contents 
+
+A Proofs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 A.1 The losses of discrete diffusion . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 A.2 Proofs of Section 3.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13 B Numerical verification . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 C Additional experimental details . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 C.1 Trainability of Rate-Equivalent Losses. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .22 C.2 Transfer via x0 Prediction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 C.3 Perplexity–Entropy Frontier . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 C.4 Downstream Evaluation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24 C.5 Algorithms. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .26 C.6 Inference Speed . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26 D Generated samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 D.1 Samples across sampling steps. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .27 D.2 UnifusionGPT -M samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36 
+
+# A Proofs 
+
+We first collect the discrete-diffusion losses in the notation of their sources in Section A.1 and then prove the results of Section 3.1 in Section A.2. 
+
+## A.1 The losses of discrete diffusion 
+
+Throughout, x0 ∼ pdata is the clean token/sequence and xt (or zt) the corrupted sample. 
+
+SEDD. Let sθ(x, t )y ≈ pt(y)/p t(x) and K(a) := a(log a − 1) . The training term [13] is 
+
+LSEDD (θ) =  
+
+> ∫T
+> 0
+
+Ext∼pt|0(·| x0) 
+
+> ∑
+> y̸=xt
+
+Qt(xt, y )
+
+> (
+
+sθ(xt, t )y − pt|0(y|x0) 
+
+> pt|0(xt|x0)
+
+log sθ(xt, t )y + K( pt|0(y|x0)
+
+> pt|0(xt|x0)
+> ))
+
+dt. 
+
+(7) SEDD’s rate-matrix convention is the transpose of ours, Qt = R⊤ 
+
+> t
+
+. For the uniform kernel, the rate matrix is symmetric, so Qt = Rt.
+
+MDLM. Under the absorbing kernel, MDLM uses the clean-token prediction xθ. The training term [18] is 
+
+LMDLM (θ) = Eq 
+
+> ∫10
+
+α′
+
+> t
+
+1 − αt  
+
+> ∑
+> ℓ:zℓt=m
+
+log 〈xℓθ(zt, t ), xℓ〉 dt (≥ 0) , (8) 12 GIDD. GIDD predicts xθ ∈ ∆S−1 and applies qt(zt | u) = Cat( zt; αtu + βtπt) to both u = x and 
+
+u = xθ. The training term [26] is 
+
+LGIDD (θ) = Et∼Unif(0 ,1) 
+
+> zt∼qt(·| x)
+
+[
+
+wt(zt, x )
+
+(
+
+DKL 
+
+(qt(· | x)∥qt(· | xθ)) + qt(zt|x)  
+
+> qt(zt|xθ)
+
+− log qt(zt|x)  
+
+> qt(zt|xθ)
+
+− 1
+
+)] 
+
+, (9) with 
+
+wt(zt, x ) = 1
+
+qt(zt | x) z⊤
+
+> t
+
+(
+
+βtπ′ 
+
+> t
+
+− α′
+
+> t
+
+αt
+
+πt
+
+)
+
+.
+
+Neural CTMC. The conditional exit rate and jump distribution are defined as 
+
+ˆλt(j | x0) := ∑
+
+> i̸=j
+
+̂
+
+Rt(j, i | x0), ˆrt(i | j, x 0) := ̂ Rt(j, i | x0)ˆλt(j | x0) .
+
+The training term [11] is 
+
+LNCTMC (θ) = 
+
+∫ T
+
+> 0
+
+Ex0,x t
+
+[
+
+DPoi KL 
+
+(ˆλt(xt | x0)∥λθ(xt, t )) + ˆλt(xt | x0)DCat KL 
+
+(ˆrt(· | xt, x 0)∥rθ(· | xt, t ))]
+
+dt. 
+
+(10) The two KL divergences are defined as 
+
+DPoi KL (λ∥λ′) := λ log λλ′ − λ + λ′, DCat KL (r∥r′) := ∑
+
+> i
+
+r(i) log r(i)
+
+r′(i) .
+
+M2S. For the uniform kernel αt = e−σ(t), M2S [12] predicts μiθ ∈ ∆S−1 and maps it to the score 
+
+sθ,i = Bμ iθ. For y̸ = xit, define 
+
+ri(x0, x t, t ; y) := qt|0(y | xi
+
+> 0
+
+)
+
+qt|0(xit | xi
+
+> 0
+
+) , wt,i (xit, y ) := R(i) 
+
+> t
+
+(y, x it) = ˙σ(t)
+
+S .
+
+The score-entropy divergence is h(s, r ) := s − r log s + r log r − r, with h(s, 0) := s. The training term is 
+
+LM2S (θ) = Et,x 0,x t
+
+[ L∑
+
+> i=1
+
+∑ 
+
+> y̸=xit
+
+wt,i (xit, y ) h(sθ,i (xt, t ; y), r i(x0, x t, t ; y))]
+
+. (11) 
+
+## A.2 Proofs of Section 3.1 
+
+Below, x0 is the clean state, j = xt the corrupted state, and i̸ = j the reverse jump target. 
+
+Lemma A.1. Fix i̸ = j. For almost every t such that qt(j) > 0,
+
+E
+
+[̂ 
+
+Rt(j, i | X0)
+
+∣∣∣ Xt = j
+
+]
+
+=̂ Rt(j, i ).
+
+Proof. Bayes’ rule gives 
+
+E
+
+[̂ 
+
+Rt(j, i | X0)
+
+∣∣∣ Xt = j
+
+]
+
+= ∑ 
+
+> z:qt|0(j|z)>0
+
+pdata (z)qt|0(j | z)
+
+qt(j) Rt(i, j ) qt|0(i | z)
+
+qt|0(j | z)= Rt(i, j )
+
+qt(j)
+
+∑ 
+
+> z:qt|0(j|z)>0
+
+pdata (z)qt|0(i | z).
+
+13 If qt|0(j | z) = 0 , then, for almost every t,
+
+0 = ddt qt|0(j | z) = ∑ 
+
+> k̸=j
+
+qt|0(k | z)Rt(k, j ).
+
+Since qt|0(j | z) ≥ 0 is absolutely continuous, its derivative is zero for almost every t at which 
+
+qt|0(j | z) = 0 . Every term in the sum is nonnegative, so 
+
+qt|0(i | z)Rt(i, j ) = 0 .
+
+Thus the sum can be extended to all z, and 
+
+E
+
+[̂ 
+
+Rt(j, i | X0)
+
+∣∣∣ Xt = j
+
+]
+
+= Rt(i, j )
+
+qt(j)
+
+∑
+
+> z
+
+pdata (z)qt|0(i | z) = Rt(i, j ) qt(i)
+
+qt(j) =̂ Rt(j, i ).
+
+Theorem 3.2. For every x0 with pdata (x0) > 0, assume that 
+
+(1) pprior (k) > 0 whenever qT |0(k | x0) > 0, for every k;
+
+(2) for every i̸ = j and almost every t ∈ (0 , T ),̂ Rθt (j, i ) > 0 whenever qt|0(j | x0) > 0 and ̂
+
+Rt(j, i | x0) > 0;
+
+(3) the reverse model starts from XT ∼ pprior and has marginal ρθt ; each entry of ̂ Rt(·, · | x0)
+
+and ̂ Rθt is integrable on every [δ, T − ε] ⊂ (0 , T ), with the endpoint limits lim t↓0 DKL (qt|0(· | 
+
+x0)∥ρθt ) = − log pθ(x0) and lim t↑T DKL (qt|0(· | x0)∥ρθt ) = DKL (qT |0(· | x0)∥pprior ).Then 
+
+Epdata [− log pθ(X0)] ≤ L(θ) + CELBO , CELBO := Ex0∼pdata DKL 
+
+(
+
+qT |0(· | x0)
+
+∥∥∥ pprior 
+
+)
+
+.
+
+The master objective has the following conditional and marginal rate representations: 
+
+L(θ) = 
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+E
+
+[
+
+f (̂ Rt(j, i | X0),̂ Rθt (j, i )) ∣∣∣ Xt = j
+
+]
+
+dt (5) 
+
+=
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i ),̂ Rθt (j, i ))dt + Cgap (6) 
+
+Here Cgap ≥ 0 is independent of θ.Remark A.2 . In (5), the sum over j is restricted to qt(j) > 0. For a nonnegative integrand singular at an endpoint, we use ∫ T 
+
+> 0
+
+gtdt := lim δ,ε ↓0
+
+∫ T −εδ gtdt, possibly +∞.
+
+Proof. Step 1: likelihood bound. Fix x0, write qx0 
+
+> t
+
+:= qt|0(· | x0), and let ρθt be the model marginal at time t. Then 
+
+qx0 
+
+> 0
+
+= δx0 , qx0 
+
+> T
+
+= qT |0(· | x0), ρθ 
+
+> 0
+
+= pθ, ρθT = pprior .
+
+Set 
+
+Ht := DKL 
+
+(
+
+qx0
+
+> t
+
+∥∥∥ ρθt
+
+)
+
+.
+
+14 For 0 < t < T , the two marginals satisfy 
+
+ddt qx0 
+
+> t
+
+= −qx0
+
+> t
+
+̂ Rt(·, · | x0), ddt ρθt = −ρθt̂ Rθt .
+
+The terminal KL limit is finite by the prior support condition, so qx0 
+
+> t
+
+(i) > 0 ⇒ ρθt (i) > 0 for t
+
+sufficiently close to T . Local integrability and the rate support condition preserve this implication backward on every truncated interval. Hence it holds for all 0 < t < T . Fix t, set q = qx0 
+
+> t
+
+, ρ = ρθt ,
+
+aji := ̂ Rt(j, i | x0), bji := ̂ Rθt (j, i ), uji := q(i)ρ(j)
+
+ρ(i)q(j) .
+
+For positive entries, direct differentiation gives 
+
+− ddt DKL (q∥ρ) = ∑
+
+> j
+
+q(j) ∑
+
+> i̸=j
+
+{aji log uji − bji uji + bji 
+
+} ≤ ∑
+
+> j
+
+q(j) ∑
+
+> i̸=j
+
+f (aji , b ji ),
+
+because 
+
+a log u − bu + b ≤ a log ab − a + b = f (a, b ).
+
+The boundary cases follow from the conventions in Theorem 3.1. Integrating over [δ, T − ε] gives 
+
+Hδ ≤ HT −ε +
+
+∫ T −εδ
+
+∑
+
+> j
+
+qt|0(j | x0) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i | x0),̂ Rθt (j, i ))dt. 
+
+The endpoint assumptions and Theorem A.2 then give 
+
+− log pθ(x0) ≤ DKL 
+
+(
+
+qT |0(· | x0)
+
+∥∥∥ pprior 
+
+)
+
++
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt|0(j | x0) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i | x0),̂ Rθt (j, i ))dt. 
+
+Averaging over x0 ∼ pdata gives the stated likelihood bound. Since 
+
+Pr( X0 = x0, X t = j) = pdata (x0)qt|0(j | x0),
+
+we have 
+
+L(θ) = 
+
+∫ T
+
+> 0
+
+∑
+
+> x0
+
+pdata (x0) ∑
+
+> j
+
+qt|0(j | x0) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i | x0),̂ Rθt (j, i ))dt
+
+=
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+E
+
+[
+
+f (̂ Rt(j, i | X0),̂ Rθt (j, i )) ∣∣∣ Xt = j
+
+]
+
+dt, (12) 
+
+Step 2: conditional-to-marginal Bregman identity. Fix (t, j, i ) with qt(j) > 0, and write 
+
+R := ̂ Rt(j, i | X0), ¯R := E[R | Xt = j], c := ̂ Rθt (j, i ).
+
+By Theorem A.1, ¯R =̂ Rt(j, i ). If c = 0 , the support condition gives 
+
+Pr( R = 0 | Xt = j) = 1 , ¯R = 0 , E[f (R, c ) | Xt = j] = f ( ¯R, c ) = 0 .
+
+For c > 0,
+
+f (r, c ) = r log r − r − r log c + c, 
+
+15 and therefore 
+
+E[f (R, c ) | Xt = j] = E[R log R | Xt = j] − ¯R − ¯R log c + c, (13) 
+
+f ( ¯R, c ) = ¯R log ¯R − ¯R − ¯R log c + c. (14) Thus 
+
+E[f (R, c ) | Xt = j] = f ( ¯R, c ) + ∆ t(j, i ), ∆t(j, i ) := E[R log R | Xt = j] − ¯R log ¯R, (15) where 0 log 0 = 0 . Jensen’s inequality gives ∆t(j, i ) ≥ 0, and ∆t(j, i ) does not depend on c or θ.Multiplying by qt(j), summing, and integrating gives 
+
+L(θ) = 
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+E
+
+[
+
+f (̂ Rt(j, i | X0),̂ Rθt (j, i )) | Xt = j
+
+]
+
+dt (16) 
+
+=
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+f (̂ Rt(j, i ),̂ Rθt (j, i ))dt + Cgap , (17) where 
+
+Cgap := 
+
+∫ T
+
+> 0
+
+∑
+
+> j
+
+qt(j) ∑
+
+> i̸=j
+
+∆t(j, i )d t ≥ 0.
+
+This proves (6). 
+
+Theorem 3.3. The prediction heads introduced in Section 2 induce off-diagonal model reverse rates through the following mappings:     
+
+> Method Parameterization Relation SEDD [13] Concrete score sθ
+
+̂ Rθt (j, i ) = Rt(i, j )sθ (j, t )i  
+
+> MDLM/GIDD [18, 22, 26] Clean-token prediction xθ
+
+̂ Rt(j, i | xθ ) = Rt(i, j ) qt(i | xθ )     
+
+> qt(j|xθ)
+> M2S [12] Mean-to-score μθ
+
+̂ Rθt (j, i ) = Rt(i, j )( Bj,t μθ )i    
+
+> Neural CTMC [11] Exit rate / jump (λθ, r θ)
+
+̂ Rθt (j, i ) = λθ (j, t )rθ (i | j, t )
+
+For the clean-token row with Rt(i, x t) > 0 for some i̸ = xt, assume qt(xt | xθ) > 0. For 
+
+qt|0(xt | x0) > 0, substituting any row into Theorem 3.1 gives the corresponding published rate-space loss exactly. Thus these losses are the master objective written in different reverse-rate coordinates. Proof. Setup. 
+
+Fix (x0, j, t ) with qt|0(j | x0) > 0. If Rt(i, j ) = 0 for all i̸ = j, set the induced reverse-rate row to zero. Otherwise, for the clean-token row, qt(j | xθ) > 0 by assumption and the displayed ratio is well defined. For each reverse target i̸ = j, the true conditional reverse branch is ̂ Rt(j, i | x0) = 
+
+Rt(i, j )qt|0(i | x0)/q t|0(j | x0).16 SEDD. 
+
+Using Qt(j, i ) = Rt(i, j ) from Section A.1, the corresponding term in the master objective is 
+
+f (̂ Rt(j, i | x0),̂ Rθt (j, i )) = f
+
+(
+
+Qt(j, i ) qt|0(i | x0)
+
+qt|0(j | x0) , Q t(j, i )sθ(j, t )i
+
+)
+
+= Qt(j, i ) qt|0(i|x0) 
+
+> qt|0(j|x0)
+
+log 
+
+Qt(j, i ) qt|0(i|x0)
+
+> qt|0(j|x0)
+
+Qt(j, i )sθ(j, t )i
+
+− Qt(j, i ) qt|0(i|x0) 
+
+> qt|0(j|x0)
+
++ Qt(j, i )sθ(j, t )i
+
+= Qt(j, i )
+
+
+
+qt|0(i | x0)
+
+qt|0(j | x0) log 
+
+> qt|0(i|x0)
+> qt|0(j|x0)
+
+sθ(j, t )i
+
+− qt|0(i | x0)
+
+qt|0(j | x0) + sθ(j, t )i
+
+
+
+= Qt(j, i )
+
+{
+
+sθ(j, t )i − qt|0(i | x0)
+
+qt|0(j | x0) log sθ(j, t )i + K
+
+( qt|0(i | x0)
+
+qt|0(j | x0)
+
+)} 
+
+. (18) Relabeling j = xt and i = y, summing over y̸ = xt, and averaging over xt ∼ qt|0(· | x0) gives (7). Terms with Qt(xt, y ) = 0 contribute zero to both L and LSEDD .
+
+GIDD. 
+
+For the interpolating kernel and i̸ = j, the weight in Section A.1 satisfies 
+
+wt(j, x 0) = Rt(i, j )
+
+qt|0(j | x0) = βtπ′
+
+> t
+
+(j) − α′ 
+
+> t
+> αt
+
+πt(j)
+
+qt|0(j | x0) .
+
+Using qt(· | xθ) from Section A.1, the true and model reverse rates are ̂
+
+Rt(j, i | x0) = Rt(i, j ) qt|0(i | x0)
+
+qt|0(j | x0) ,̂ Rθt (j, i ) = Rt(i, j ) qt(i | xθ)
+
+qt(j | xθ) .
+
+For y̸ = j, substituting these rates into f gives 
+
+f
+
+(
+
+Rt(y, j ) qt|0(y | x0)
+
+qt|0(j | x0) , R t(y, j ) qt(y | xθ)
+
+qt(j | xθ)
+
+)
+
+= wt(j, x 0)
+
+[
+
+qt|0(y | x0) log qt|0(y | x0) qt(j | xθ)
+
+qt|0(j | x0) qt(y | xθ) − qt|0(y | x0) + qt|0(j | x0) qt(y | xθ)
+
+qt(j | xθ)
+
+]
+
+. (19) Using ∑  
+
+> y̸=j
+
+qt|0(y | x0) = 1 − qt|0(j | x0) and ∑  
+
+> y̸=j
+
+qt(y | xθ) = 1 − qt(j | xθ), summing over y̸ = j
+
+gives 
+
+Dt = wt(j, x 0)
+
+[
+
+DKL 
+
+(
+
+qt|0(· | x0)
+
+∥∥∥ qt(· | xθ)
+
+)
+
++ qt|0(j | x0)
+
+qt(j | xθ) − log qt|0(j | x0)
+
+qt(j | xθ) − 1
+
+]
+
+. (20) Setting j = zt and averaging over t, x0, and zt gives (9). 
+
+MDLM. 
+
+Under the absorbing kernel π = em, a clean token can only stay unchanged or jump to m, while m
+
+never changes. Therefore, the reverse process can jump only from the masked state m; an unmasked state has zero reverse rates and contributes no loss. For i ∈ V ,
+
+qt|0(i | x0) = αt1{i = x0}, qt|0(m | x0) = 1 − αt, Rt(i, m ) = − α′
+
+> t
+
+αt
+
+.
+
+17 Since xθ(· | m, t ) is a distribution on V, the same kernel gives qt(i | xθ) = αtxθ(i | m, t ) and 
+
+qt(m | xθ) = 1 − αt. Thus, at j = m, the true and model reverse rates are ̂
+
+Rt(m, i | x0) = Rt(i, m ) qt|0(i | x0)
+
+qt|0(m | x0) = − α′
+
+> t
+
+1 − αt
+
+1{i = x0},̂
+
+Rθt (m, i ) = Rt(i, m ) qt(i | xθ)
+
+qt(m | xθ) = − α′
+
+> t
+
+1 − αt
+
+xθ(i | m, t ).
+
+Substituting these rates into f and summing over i ∈ V gives 
+
+Dt = f
+
+(
+
+− α′
+
+> t
+
+1 − αt
+
+, − α′
+
+> t
+
+1 − αt
+
+xθ(x0 | m, t )
+
+)
+
++ ∑
+
+> i∈V
+> i̸=x0
+
+f
+
+(
+
+0, − α′
+
+> t
+
+1 − αt
+
+xθ(i | m, t )
+
+)
+
+= − α′
+
+> t
+
+1 − αt
+
+log 1
+
+xθ(x0 | m, t ) − 1 + xθ(x0 | m, t ) + ∑
+
+> i∈V
+> i̸=x0
+
+xθ(i | m, t )
+
+
+
+= − α′
+
+> t
+
+1 − αt
+
+[− log xθ(x0 | m, t )],
+
+where the last equality uses ∑ 
+
+> i∈V
+
+xθ(i | m, t ) = 1 . For a sequence, at each masked position ℓ,
+
+xθ(x0 | m, t ) = 〈xℓθ(zt, t ), xℓ〉.
+
+Summing over masked positions and integrating over t gives (8). 
+
+M2S. 
+
+At position ℓ, let j = xℓt be the current token and y̸ = j a candidate reverse jump. M2S defines 
+
+sθ,ℓ (xt, t ; y) = ( Bj,t μℓθ)y = ∑
+
+> z∈V
+
+[μℓθ(xt, t )] z
+
+qt|0(y | z)
+
+qt|0(j | z) ,rℓ(x0, x t, t ; y) = qt|0(y | xℓ
+
+> 0
+
+)
+
+qt|0(j | xℓ
+
+> 0
+
+) , wt,ℓ (j, y ) = R(ℓ) 
+
+> t
+
+(y, j ).
+
+The true and model reverse rates for the jump j → y are therefore ̂
+
+Rt(j, y | x0) = wt,ℓ (j, y )rℓ(x0, x t, t ; y),̂ Rθt (j, y ) = wt,ℓ (j, y )sθ,ℓ (xt, t ; y).
+
+Substituting these rates into f (r, c ) = r log( r/c ) − r + c gives 
+
+f (̂ Rt(j, y | x0),̂ Rθt (j, y )) = wt,ℓ (j, y ) [ sθ,ℓ − rℓ log sθ,ℓ + rℓ log rℓ − rℓ]= wt,ℓ (j, y ) h(sθ,ℓ (xt, t ; y), r ℓ(x0, x t, t ; y)).
+
+Summing over y̸ = xℓt and all positions ℓ, then averaging over (t, x 0, x t), gives (11). 
+
+Neural CTMC. 
+
+At the current state j, Neural CTMC predicts a total jump rate λθ(j, t ) and probabilities rθ(i | j, t )
+
+for the targets i̸ = j. Thus ̂
+
+Rθt (j, i ) = λθ(j, t )rθ(i | j, t ), ∑
+
+> i̸=j
+
+rθ(i | j, t ) = 1 .
+
+18 The true total jump rate and the corresponding jump probabilities are 
+
+ˆλt(j | x0) = ∑
+
+> i̸=j
+
+̂
+
+Rt(j, i | x0) = ∑
+
+> i̸=j
+
+Rt(i, j ) qt|0(i | x0)
+
+qt|0(j | x0) , ˆrt(i | j, x 0) = ̂ Rt(j, i | x0)ˆλt(j | x0) .
+
+Therefore ̂ Rt(j, i | x0) = ˆλt(j | x0)ˆ rt(i | j, x 0) and ∑ 
+
+> i̸=j
+
+ˆrt(i | j, x 0) = 1 . Substituting the true and model rates into f and using that both jump distributions sum to one gives 
+
+Dt = ∑
+
+> i̸=j
+
+f
+
+(ˆλt(j | x0)ˆ rt(i | j, x 0), λ θ(j, t )rθ(i | j, t )
+
+)
+
+= ˆλt(j | x0) log ˆλt(j | x0)
+
+λθ(j, t ) − ˆλt(j | x0) + λθ(j, t ) + ˆλt(j | x0) ∑
+
+> i̸=j
+
+ˆrt(i | j, x 0) log ˆrt(i | j, x 0)
+
+rθ(i | j, t )= DPoi KL 
+
+(ˆλt(j | x0)
+
+∥∥∥λθ(j, t )
+
+)
+
++ ˆλt(j | x0)DCat KL (ˆ rt(· | j, x 0)∥rθ(· | j, t )) .
+
+If ˆλt(j | x0) = 0 , every true edge rate is zero and 
+
+Dt = ∑
+
+> i̸=j
+
+f (0, λ θ(j, t )rθ(i | j, t )) = λθ(j, t ) = DPoi KL 
+
+(0∥λθ(j, t ));
+
+the categorical term is zero because it is multiplied by ˆλt(j | x0). Averaging over (X0, X t, t ) gives (10). 
+
+Theorem 3.4. Under the same forward CTMC and noise schedule, expressing each parame-terization through its induced off-diagonal model reverse rate ̂ Rθ yields the following equivalent conditional losses: 
+
+LSEDD (̂ Rθ) = LGIDD (̂ Rθ) = LM2S (̂Rθ) = LNCTMC (̂Rθ) = L(̂Rθ).
+
+Consequently, their gradients with respect to the reverse rates are identical. Over unconstrained reverse rates, all four losses are minimized at ̂ Rθt (j, i ) = ̂ Rt(j, i ) on states with qt(j) > 0.Proof. By Theorem 3.3, substituting any of these heads into the conditional objective Theorem 3.1 gives the same functional of the induced off-diagonal reverse rate: 
+
+LSEDD (̂Rθ) = LGIDD (̂ Rθ) = LM2S (̂Rθ) = LNCTMC (̂Rθ) = L(̂Rθ).
+
+Thus the values are identical. For an edge with qt(j) > 0 and ̂ Rθt (j, i ) > 0, compute the functional derivative directly from the conditional form of L:
+
+δL
+
+δ̂ Rθt (j, i ) = qt(j) E
+
+[
+
+∂cf (̂ Rt(j, i | X0),̂ Rθt (j, i )) ∣∣∣ Xt = j
+
+]
+
+= qt(j) E
+
+[
+
+1 −̂ Rt(j, i | X0)̂
+
+Rθt (j, i )
+
+∣∣∣∣∣ Xt = j
+
+]
+
+= qt(j)
+
+(
+
+1 −̂ Rt(j, i )̂
+
+Rθt (j, i )
+
+)
+
+.
+
+19 The last equality uses E[̂ Rt(j, i | X0) | Xt = j] = ̂ Rt(j, i ) from Theorem A.1. The corresponding second variation on this edge is 
+
+δ2L
+
+δ(̂ Rθt (j, i ))2 = qt(j)̂ Rt(j, i )
+
+(̂ Rθt (j, i ))2 .
+
+It is strictly positive whenever qt(j)̂ Rt(j, i ) > 0. Thus the shared rate-space functional is strictly convex on every active true edge, and its unique minimizer there is ̂ Rθt (j, i ) = ̂ Rt(j, i ) for i̸ = j. If ̂
+
+Rt(j, i ) = 0 , then f (0,̂ Rθt (j, i )) =̂ Rθt (j, i ), so the minimum is attained at ̂ Rθt (j, i ) = 0 .
+
+Theorem 3.5. Using the notation of Section 2, let xθ(· | j, t ) ∈ ∆( V) be an x0 prediction for a state j that is reachable at time t from every z ∈ V . Define 
+
+qt(k | xθ) := ∑
+
+> z∈V
+
+xθ(z)qt|0(k | z),̂ Rt(j, i | xθ) := Rt(i, j ) qt(i | xθ)
+
+qt(j | xθ) (i̸ = j).
+
+For a nonzero induced reverse-rate row, the corresponding SEDD, M2S, and Neural CTMC outputs are 
+
+sθ(j, t )i = qt(i | xθ)
+
+qt(j | xθ) ,μθ(z) = xθ(z)qt|0(j | z)
+
+qt(j | xθ) , (Bj,t μθ)i = qt(i | xθ)
+
+qt(j | xθ) ,λθ(j, t ) = ∑ 
+
+> k̸=j
+
+̂
+
+Rt(j, k | xθ), rθ(i | j, t ) = ̂ Rt(j, i | xθ)
+
+λθ(j, t ) .
+
+Proof. Fix j and t, and abbreviate xθ(z | j, t ) by xθ(z). Reachability gives qt|0(j | z) > 0 for every 
+
+z, so qt(j | xθ) = ∑ 
+
+> z
+
+xθ(z)qt|0(j | z) > 0. Thus all kernel ratios below are well defined. 
+
+SEDD. 
+
+SEDD represents the rate on j → i as Rt(i, j )sθ(j, t )i, whereas the clean-token prediction gives ̂
+
+Rt(j, i | xθ) = Rt(i, j )qt(i | xθ)/q t(j | xθ). Matching the two expressions gives the stated choice 
+
+sθ(j, t )i = qt(i | xθ)
+
+qt(j | xθ) .
+
+M2S. 
+
+To represent the clean-token-induced score with the M2S head, choose μθ so that (Bj,t μθ)i = qt(i |
+
+xθ)/q t(j | xθ). Expanding both sides gives 
+
+∑
+
+> z
+
+μθ(z)
+
+qt|0(j | z) qt|0(i | z) = ∑
+
+> z
+
+xθ(z)
+
+qt(j | xθ) qt|0(i | z).
+
+Making the two sums equal term by term gives μθ(z)/q t|0(j | z) = xθ(z)/q t(j | xθ), hence 
+
+μθ(z) = xθ(z)qt|0(j | z)
+
+qt(j | xθ) .
+
+20 Its numerator sums to qt(j | xθ), so μθ is a probability distribution. Substituting it into Bj,t gives 
+
+(Bj,t μθ)i = ∑
+
+> z
+
+xθ(z)qt|0(j | z)
+
+qt(j | xθ)
+
+qt|0(i | z)
+
+qt|0(j | z)=
+
+∑ 
+
+> z
+
+xθ(z)qt|0(i | z)
+
+qt(j | xθ) = qt(i | xθ)
+
+qt(j | xθ) .
+
+Here qt|0(j | z) > 0 justifies the cancellation. Thus the M2S score equals the SEDD score above and induces ̂ Rt(j, i | xθ).
+
+Neural CTMC. 
+
+Neural CTMC writes ̂ Rt(j, i | xθ) = λθ(j, t )rθ(i | j, t ), where the jump probabilities sum to one. Summing over all targets gives 
+
+λθ(j, t ) = λθ(j, t ) ∑ 
+
+> k̸=j
+
+rθ(k | j, t ) = ∑ 
+
+> k̸=j
+
+̂
+
+Rt(j, k | xθ).
+
+The row is nonzero, so λθ(j, t ) > 0. Dividing each edge rate by this total gives 
+
+rθ(i | j, t ) = ̂ Rt(j, i | xθ)
+
+λθ(j, t ) .
+
+These probabilities are nonnegative and sum to one. Hence all three outputs induce the stated reverse-rate row. 
+
+# B Numerical verification 
+
+This appendix tests whether mathematically equivalent formulas and code paths return the same numerical result for the same input. Table 3: Numerical verification.                
+
+> Check Question answered Result
+> Formula-level checks
+> Formula values Do the two sides of every identity in Section A give the same value?
+> <10 −13
+> Formula gradients Does the analytic gradient match a finite-difference estimate?
+> <10 −10
+> Formula optima Does the closed-form optimum match the result of numerical optimization?
+> <10 −8
+> Code-level checks
+> Checkpoint rates For the same Unifusion -S logits, do the SEDD, M2S, and Neural-CTMC rates match the GIDD rates?
+> <10 −11
+> Checkpoint loss Does the GIDD loss match Dt?<10 −6
+
+Small-state checks. We directly compare both sides of every identity in Section A, analytic gra-dients with finite-difference estimates, and closed-form optima with numerical optimization. Each check uses 20 random instances with vocabulary size S ∈ { 3, . . . , 8}, random data distributions, kernels, and model heads. For sequence identities, we set L = 3 and sum over all clean sequences and all masking patterns or permutations. 21 Code checks. We hold a trained Unifusion -S checkpoint fixed and use the same logits to com-pare the reverse rates produced by GIDD, SEDD, M2S, and Neural CTMC. We also compare the GIDD loss with Dt. Table 3 reports the largest observed difference for each comparison. 
+
+# C Additional experimental details 
+
+## C.1 Trainability of Rate-Equivalent Losses 
+
+All four runs in Section 4.1 start from the same GPT2-small AR checkpoint and use the FineWeb training split with a cumulative training budget of 60 B tokens. We keep the model initialization and optimization recipe fixed across objectives: AdamW with a cosine learning-rate schedule peaking at 3 × 10 −4, linear uniform noise, and 10 k-step causal-to-bidirectional attention annealing. For GIDD, the shifted AR softmax directly parameterizes the clean-token x0 predictor. For SEDD, M2S, and Neural CTMC, we map the same x0 prediction to the corresponding parameterization using Theorem 3.5 and optimize each method’s native loss. For each checkpoint, we generate 1024 unconditional samples of length 512 using 256 sampling steps and compute GenPPL on the complete generated text with GPT2-large. 
+
+## C.2 Transfer via x0 Prediction 
+
+All four conversion paths in Section 4.2 start from the same GPT2-small AR checkpoint and are optimized with GIDD. Each run uses the FineWeb training split with a cumulative training budget of 120 B tokens, AdamW with a cosine learning-rate schedule peaking at 3 × 10 −4, a linear noise schedule, and 10 k-step causal-to-bidirectional attention annealing. Apart from the kernel transitions, the training recipe is fixed across paths. We evaluate every checkpoint using the protocol of Section C.1: 1024 unconditional samples of length 512 , 256 sampling steps, and GPT2-large GenPPL computed on the complete generated text. 
+
+## C.3 Perplexity–Entropy Frontier 
+
+UnifusionGPT-S. We initialize the 124M-parameter model from the pretrained GPT2-small checkpoint and apply the one-position shift. We train it on a 30B-token subset of FineWeb [16] with the GIDD loss under linear uniform corruption ( αt = 1 − t, βt = t). The global batch size is 864 across 24 H100 GPUs. With a maximum sequence length of 512 and 240,000 training steps, the model processes approximately 106.2B tokens, equivalent to 3.54 epochs. We use AdamW with a learning rate of 3×10 −4 with a cosine scheduler and 3,000 warmup steps. The attention mask is annealed from causal to fully bidirectional over the first 10,000 steps. We train in bf16 with DeepSpeed ZeRO-2 parallelization. 
+
+UnifusionGPT-M. We initialize the 355M-parameter model from the pretrained GPT2-medium checkpoint and apply the one-position shift. We train it on a 30B-token subset of FineWeb [16] with the GIDD loss under linear uniform corruption ( αt = 1 − t, βt = t). The global batch size is 864 across 24 H100 GPUs. With a maximum sequence length of 1024 and 255,000 training steps, the model processes approximately 225.6B tokens, equivalent to 7.52 epochs. We use AdamW with a learning rate of 3×10 −4 with a cosine scheduler and 3,000 warmup steps. The attention mask is annealed from causal to fully bidirectional over the first 10,000 steps. We train in bf16 with DeepSpeed ZeRO-2 parallelization. 22 Baseline checkpoints. To reflect the strongest available performance of each baseline, we use the officially released checkpoint and accompanying sampling procedure whenever available; otherwise, we train the model under the matched protocol described below. We use the officially released checkpoints for DiffGPT-S (mask, small) and DiffGPT-M (mask, medium) . DiffGPT-S contains 124.4M parameters and uses the GPT2-small architecture (12 layers, 12 heads, hidden size 768), with a maximum sequence length of 512. DiffGPT-M contains 354.8M parameters and uses the GPT2-medium architecture (24 layers, 16 heads, hidden size 1024), with a maximum sequence length of 1024. Both are adapted on a 30B-token FineWeb subset; their cumulative training budgets are approximately 131B tokens for DiffGPT-S and 210B tokens for DiffGPT-M. Both are sampled with the Bayesian reverse process [7]. 
+
+SEDD(mask, small) is the official 169.6M-parameter OpenWebText checkpoint trained for approximately 682B tokens with a maximum sequence length of 1024, while SEDD(uniform, small) is our locally trained 169.6M-parameter checkpoint trained on 131B OpenWebText to-kens with a maximum sequence length of 512. To facilitate a controlled comparison, the latter matches the 12-block, 12-head DDiT backbone (hidden size 768) and optimization hyperparame-ters of SEDD(mask, small) , changing the forward kernel from absorbing to uniform. For both checkpoints, we use the official score-based ancestral sampler [13]. 
+
+GIDD (p_unif=0.0, small) , GIDD (p_unif=0.1, small) , and GIDD (p_unif=0.2, small) are 169.8M-parameter DiTs (12 layers, 12 heads, hidden size 768) with a maximum sequence length of 512, trained on 131B OpenWebText tokens, and sampled with the official ancestral de-noising method [26]. GIDD(uniform, small) is trained locally using the same configuration but with a uniform forward noising kernel, and is sampled with the official ancestral denoising method. 
+
+DOU(uniform, small) is the officially released 169.6M-parameter Duo checkpoint, based on a modified DiT with 12 layers, 12 attention heads, a hidden size of 768, and a maximum sequence length of 1024, trained on approximately 524B OpenWebText tokens and sampled with the official ancestral sampler [19]. 
+
+Neural CTMC (uniform, small) [11] and M2S (uniform, small) [12] are 169.7M-parameter, 12-block, 12-head DiT models with hidden size 768 and a maximum sequence length of 512, trained on 131B OpenWebText tokens and sampled with Euler integration. 
+
+Evaluation protocol. For each model, sampling budget in {16 , 32 , 64 , 128 , 256 }, and seed in 
+
+{123 , 456 , 789 , 2024 , 3407 }, we draw (1024) unconditional samples at temperature 1.0, with genera-tion lengths of (512) tokens for small models and (1024) tokens for medium models. Within a seed, GenPPL is evaluated with GPT2-large by summing shifted next-token negative log-likelihood over valid non-padding tokens, dividing by the corresponding valid-token count, and exponentiating. We report the arithmetic mean and sample standard deviation of the five per-seed GenPPL values. For entropy, each saved text is independently retokenized with the GPT2 tokenizer without special tokens. For a sample (x), we compute its empirical unigram Shannon entropy ̂
+
+H(x) = − ∑ 
+
+> v:cv(x)>0
+
+cv(x)
+
+Nx
+
+log cv(x)
+
+Nx
+
+, Nx = ∑
+
+> v
+
+cv(x).
+
+The (1024) sample-level entropies are averaged to obtain one value per seed; the reported entropy is the mean and sample standard deviation of these five seed-level averages. 23 Table 4: Five-seed values displayed in Figure 4. Each entry reports mean ± sample standard deviation across five seeds. Panel (a) reports GPT2-large GenPPL; panel (b) reports sample-level unigram entropy, averaged within each seed before aggregation across seeds.   
+
+> (a) GenPPL mean ±std
+
+Model Kernel 16 32 64 128 256 
+
+UnifusionGPT -S uniform 143 .944 ± 0.872 114 .571 ± 0.850 103 .441 ± 1.394 99 .199 ± 0.930 97 .783 ± 1.901 
+
+DiffGPT-S mask 494 .491 ± 4.839 271 .210 ± 4.260 185 .117 ± 0.621 144 .980 ± 2.223 117 .334 ± 0.894 
+
+SEDD uniform 334 .007 ± 10 .592 171 .825 ± 2.967 130 .487 ± 2.213 115 .904 ± 0.616 112 .059 ± 0.664 
+
+SEDD mask 230 .571 ± 1.500 136 .543 ± 1.691 95 .625 ± 1.052 74 .196 ± 0.624 60 .045 ± 0.400 
+
+GIDD ( punif =0 .0) hybrid 566 .066 ± 10 .590 297 .354 ± 4.299 205 .251 ± 5.606 169 .339 ± 3.386 155 .875 ± 3.181 
+
+GIDD ( punif =0 .1) hybrid 239 .518 ± 2.855 166 .977 ± 1.344 136 .454 ± 2.193 124 .020 ± 2.357 118 .165 ± 1.459 
+
+GIDD ( punif =0 .2) hybrid 245 .696 ± 4.107 176 .264 ± 1.199 150 .196 ± 2.064 140 .027 ± 2.121 134 .277 ± 1.256 
+
+GIDD uniform 574 .170 ± 15 .752 202 .289 ± 4.054 139 .239 ± 1.750 123 .097 ± 1.535 115 .513 ± 0.909 
+
+Neural CTMC uniform 227 .430 ± 3.214 135 .640 ± 2.144 113 .019 ± 0.772 109 .279 ± 0.727 111 .516 ± 1.070 
+
+M2S uniform 134 .526 ± 1.115 108 .765 ± 0.904 95 .384 ± 0.326 91 .197 ± 1.308 89 .204 ± 0.499 
+
+DOU uniform 132 .835 ± 1.205 108 .972 ± 0.844 100 .086 ± 1.525 95 .529 ± 1.502 93 .433 ± 1.005 
+
+UnifusionGPT -M uniform 128 .832 ± 1.968 92 .007 ± 1.547 79 .207 ± 1.215 74 .162 ± 0.901 71 .516 ± 1.165 
+
+DiffGPT-M mask 535 .982 ± 7.893 229 .408 ± 2.128 147 .867 ± 1.495 111 .603 ± 1.412 90 .645 ± 2.195   
+
+> (b) Unigram entropy mean ±std
+
+Model Kernel 16 32 64 128 256 
+
+UnifusionGPT -S uniform 5.2461 ± 0.0022 5.2530 ± 0.0020 5.2563 ± 0.0027 5.2613 ± 0.0021 5.2626 ± 0.0041 
+
+DiffGPT-S mask 5.5106 ± 0.0017 5.4427 ± 0.0023 5.3821 ± 0.0013 5.3333 ± 0.0034 5.2792 ± 0.0071 
+
+SEDD uniform 5.3500 ± 0.0111 5.2536 ± 0.0063 5.2114 ± 0.0059 5.1973 ± 0.0023 5.1907 ± 0.0026 
+
+SEDD mask 5.3001 ± 0.0047 5.2284 ± 0.0054 5.1597 ± 0.0022 5.0858 ± 0.0063 5.0121 ± 0.0072 
+
+GIDD ( punif =0 .0) hybrid 5.2081 ± 0.0052 5.1335 ± 0.0074 5.0941 ± 0.0108 5.1061 ± 0.0040 5.1166 ± 0.0112 
+
+GIDD ( punif =0 .1) hybrid 5.1761 ± 0.0033 5.0730 ± 0.0043 5.0427 ± 0.0061 5.0342 ± 0.0109 5.0380 ± 0.0083 
+
+GIDD ( punif =0 .2) hybrid 5.1815 ± 0.0042 5.1245 ± 0.0109 5.0963 ± 0.0062 5.0954 ± 0.0056 5.0876 ± 0.0068 
+
+GIDD uniform 5.4563 ± 0.0064 5.2433 ± 0.0060 5.1897 ± 0.0046 5.1703 ± 0.0029 5.1647 ± 0.0027 
+
+Neural CTMC uniform 5.2380 ± 0.0031 5.1616 ± 0.0033 5.1187 ± 0.0032 5.1072 ± 0.0028 5.1138 ± 0.0022 
+
+M2S uniform 5.0175 ± 0.0048 5.0442 ± 0.0085 5.0521 ± 0.0065 5.0525 ± 0.0047 5.0624 ± 0.0058 
+
+DOU uniform 5.2054 ± 0.0033 5.2049 ± 0.0011 5.1982 ± 0.0053 5.1817 ± 0.0053 5.1649 ± 0.0064 
+
+UnifusionGPT -M uniform 5.6386 ± 0.0027 5.6515 ± 0.0027 5.6609 ± 0.0038 5.6657 ± 0.0057 5.6669 ± 0.0053 
+
+DiffGPT-M mask 5.9229 ± 0.0043 5.8319 ± 0.0032 5.7685 ± 0.0037 5.7099 ± 0.0020 5.6472 ± 0.0036 
+
+## C.4 Downstream Evaluation 
+
+UnifusionGemma. We initialize the 4.6B-parameter text model from the pretrained Gemma 4 E2B checkpoint and apply the one-position shift. We freeze its per-layer embeddings (2.36B parameters), leaving 2.28B parameters trainable, and train it on a 30B-token subset of FineWeb [16] with the GIDD loss under linear uniform corruption ( αt = 1 − t, βt = t). The global batch size is 576 across 24 H100 GPUs. With a maximum sequence length of 1024 and 16,400 training steps, the model processes approximately 9.67B tokens, equivalent to 0.322 epochs. We use AdamW with a learning rate of 3×10 −4 with a cosine scheduler and 3,000 warmup steps. The attention mask is annealed from causal to fully bidirectional over the first 6,000 steps. We train in bf16 with DeepSpeed ZeRO-3 parallelization. 24 0 4 8 12 16        
+
+> Early steps (×10 3)
+> 0.8
+> 1.2
+> 1.6
+> 2.0
+> 2.4
+> Training loss
+> (a) Early training
+> 050 100 150 200 250
+> Training steps (×10 3)
+> (b) Full trajectories
+> UnifusionGemma UnifusionGPT-M UnifusionGPT-S
+
+Figure 5: Training-loss trajectories. 
+
+We report zero-shot accuracy on HellaSwag [28], WinoGrande [20], SocialIQA [21], PIQA [2], and BBH [24]. For a fair comparison, all models use identical prompts, GPT2 tokenization, candi-date construction, clean contexts, target-only corruption and scoring, a maximum sequence length of 512, and the same 32-point time grid tk = 1 − (k − 1) /32 , with each candidate token selected independently with probability tk. For candidate a, the score is 
+
+S(a) = 132 
+
+> 32
+
+∑
+
+> k=1
+
+mean  
+
+> i∈Ik(a)
+
+[− log xiθ(ai | ztk , t k)] ,
+
+where Ik(a) is the set of noised target positions. The prediction is the candidate with the lowest score. For BBH, the parser converts 5,508 of 6,511 examples into multiple-choice questions. Because some candidate answers are easier to predict regardless of the question, the standard score may favor them unfairly. We therefore use Fair-PMI to remove this answer-only bias. We corrupt only the answer span and estimate its x0-NLL, L(a | c), using 128 stratified time samples with a minimum time of 10 −3. The score is 
+
+SPMI (a | c) = L(a | c) − L(a | Answer: )
+
+|a| .
+
+The subtraction removes this bias, and division by |a| normalizes answer length. We select the minimum-scoring answer. Each model retains its native replacement kernel (mask, uniform, or hybrid) and required output alignment (shifted or same-position), while sharing the task construction, target span, time grid, and x0-based scoring rule. Table 5: Large-scale zero-shot downstream accuracy (%). 
+
+# Scale Model Size Type Kernel HSwag Wino. SIQA PIQA BBH Large UnifusionGemma 4.6B DD uniform 46.4 54.1 40.0 62.2 35.9 
+
+25 C.5 Algorithms 
+
+At update k, the attention mask is sampled as 
+
+γk = min {1, k/K ann }, A(k) 
+
+> ij
+
+= 1{j ≤ i} ∨ B(k) 
+
+> ij
+
+, B(k) 
+
+> ij
+
+∼ Bernoulli( γk).
+
+Thus A(k) changes from causal to fully bidirectional over Kann updates; inference uses γk = 1 .
+
+Algorithm 1: AR-initialized uniform-diffusion training. Input: AR checkpoint θAR , updates K, annealing horizon Kann , and objective Lobj .1. Set θ ← θAR .2. for k = 1 , . . . , K do 
+
+x0 ∼ pdata , t ∼ Unif[10 −3, 1) , zt ∼ qt|0(· | x0).Sample A(k) and compute the shifted clean-token prediction xθ(· | zt, t ).
+
+θ ← AdamW( θ, ∇θLobj (xθ, z t, x 0, t )) .3. end for Return: θ.The implementation uses t in the corruption and loss, but does not pass an explicit time embedding to the Transformer. For t > s , Bayesian sampling uses 
+
+qt|s(b | a) = 1 − t
+
+1 − s 1{a = b} + t − s
+
+1 − s π(b),̂ pis|t(a | b) = qt|s(b | a) qs(a | xiθ)
+
+qt(b | xiθ) .
+
+Algorithm 2: Bayesian sampling from the shifted x0 model. Input: θ, steps N , endpoint ε, and length L.1. Set tn = (1 − ε)(1 − n/N ) and draw z it0 ∼ π, i = 1 , . . . , L .2. for n = 0 , . . . , N − 1 do 
+
+Set t = tn, s = tn+1 , and predict xθ(· | zt, t ) with fully bidirectional attention. For each position i, sample zis ∼̂ pis|t(· | zit).3. end for Return: the generated sequence z1: L 
+
+> 0
+
+.
+
+## C.6 Inference Speed 
+
+We measure inference speed on a single NVIDIA H100 80GB GPU with batch size 1, bf16 precision, and SDPA. The AR models use KV caching. For each setting, we run one warm-up and three timed trials and report the median token-generation latency, excluding model loading, tokenization, and text decoding. The sequence length is 512 for the small models and 1024 for the medium models. 26 Table 6: Single-sequence sampling speed on one NVIDIA H100 80GB GPU. 
+
+Model Steps Time (ms) Tokens/s vs. AR GPT2-small (AR) – 1478.6 345.6 1.00 ×
+
+UnifusionGPT -S 16 87.1 5863.8 16 .97 ×
+
+UnifusionGPT -S 32 170.9 2989.2 8.65 ×
+
+UnifusionGPT -S 64 348.4 1466.7 4.24 ×
+
+UnifusionGPT -S 128 689.5 741.1 2.14 ×
+
+UnifusionGPT -S 256 1390.7 367.4 1.06 ×
+
+GPT2-medium (AR) – 5527.9 185.1 1.00 ×
+
+UnifusionGPT -M 16 171.6 5960.2 32 .21 ×
+
+UnifusionGPT -M 32 341.5 2995.8 16 .19 ×
+
+UnifusionGPT -M 64 682.3 1499.3 8.10 ×
+
+UnifusionGPT -M 128 1363.9 750.1 4.05 ×
+
+UnifusionGPT -M 256 2729.7 374.8 2.03 ×
+
+# D Generated samples 
+
+## D.1 Samples across sampling steps 
+
+We present approximately 100-token generation excerpts from each small model at every sampling budget evaluated in Figure 4. 
+
+UnifusionGPT-S (uniform, small) Step 16 GenPPL 143 .944 | entropy 5.2461 
+
+We highlight critical obstacles to working in new systems, in a relatively traditional AI controlled space. This future of innovation is based upon AI that promotes intelligent Nvidia. In this, Peter is talking about a method to understand brain lops in brain processes. An interactive poster session, Peter Craig, is at work. He has completed discussion for the article and the full poster paper. We are about to share tips to help the poster session. In such a world the challenge of supervisory AI is that you then get the right specific response to brain-h needs simultaneously. Or is that ... 
+
+Step 32 GenPPL 114 .571 | entropy 5.2530 
+
+The program also builds a deep understanding of the set of standards for students to in teaching and master-ing the subject, and using science, engineering and human sciences pedagogy, and to develop collaborative resources on chemistry and engineering. The core of the HEHE Studies Program is the Comparative module where students study different models that work with consistently engaging science and math work that will further advance their knowledge and understanding of the history of chemistry by grounding them in theoretical concepts to algebra, electricism, astronomy, and calculus and studying the mathematical case of chemistry and the physics. Students will ... 
+
+Step 64 GenPPL 103 .441 | entropy 5.2563 
+
+Walking through festivities or fasting or work, one of the main significant experiences, in long days of cleaning and hot cooking is inseparably the transport into a flurry of sweet, savory meals. From canning around the campfire of rural Turkey; our nomadic walk into the m of vegetation was framed as a bicycle in the festive, textured scenery. One of the biggest changes we’ve all made is this. In itself a tree is inherently life-saving. One of the changes, although ambivalent about the little misquote, has been its becoming more accessible and acceptable when it comes to other holidays and ... 
+
+27 Step 128 GenPPL 99 .199 | entropy 5.2613 
+
+The transition to electronic health systems and the massive fines courts and service providers’s can be stressful, if not in the right way. The way to do is implicate service users with information they should not perceive themselves based on any charge that they have faced or the level of threat the organisation is under, especially if their own wellbeing lies on the line. Additionally it has new legislations and national standards for expert advice. Ideally, it will become more essential to us as a specialist organisation for just taking any complaints. Instead, we will only have colleagues with high-level ... 
+
+Step 256 GenPPL 97 .783 | entropy 5.2626 
+
+A Center of Food and Agricultural Development provides training to agricultural industry professionals, and consultants. With a degree in consulting and curriculum-based marketing and expertise, the Center specializes in working with suppliers and partners on all aspects of food and agriculture products. The Center Development and Division is housed in the U.S. State Department of Economic Development, a nonprofit organization working for change and development in the United States among others. For any inquiries please contact us: Head of Consumer Affairs or visit the Web-site page about the Center for Agriculture DevelopmentChapter 9: Timberliner Development, Over Structure-Safety Implementation (HAOP), Water ... 
+
+DiffGPT-S (mask, small) Step 16 GenPPL 494 .491 | entropy 5.5106 
+
+M0742 072 4TFD Fathers and Solop Over Guardians 8671 = Captain Lewis & One Elf Piece 8670 = Hero Action Only the Queen Carriess Special Treasures English "8ton D" "bound" Wolverham THE BU-TASHAO ORTIXO AT THE BOLAK HOMWAY CE ID#02 ( 2010 Australia Games ) (All Australian Games, CANADA) The Minties in Memoriam of Crushed a THE LOSS OF THE DERJORTER.. (5771031 iphone) The Star was photographed over 20 years ago, and one yukoi chose the Star... This was his armored taperower of the "Broken army" (set in below) on the October 14th that he headed into the war. One ... 
+
+Step 32 GenPPL 271 .210 | entropy 5.4427 
+
+- (possibly) About Relocating Plastic Socks to Rakonar | Nordic Symbolism: We Divide With Love | Mona Dhamma and Tibetmaint | Guiveness Wed Poetic > to b Sapek, University of Rwanda. K rn Dulm3Section 5) Laser Ever Crip Change Record - Save the Digital Way - Dr Ltderve shows the count of patients recorded with an oximeter. - Results of liquids are applied into the blood so that sensors are sensed not with notable local overlay. Put on your new device. It must come with a following service plan that medication you are receiving to take care of your patients ... 
+
+Step 64 GenPPL 185 .117 | entropy 5.3821 
+
+vegetable column.Since this dateworce can be seen in the Schedules page, you can see where each available setting sh. Is in the trailing middle, In the trailing middle the last in row is each production unit, Generally, can be used to create new tables because there is no detail you may need about last in row. Adjustment table for a year end balrics is the product is basic than one goeson. The aligns year end years based year end injury table is the standard scale for the disputes year end and simplifies automation. Adjustment table for an excel table shows ... 
+
+Step 128 GenPPL 144 .980 | entropy 5.3333 
+
+authorization in granting this to data subject ( B.1 data request (Archiverant’s rights to process the personal data in the B.2 right request for the personal data in the Contracting Authority B.3attendance, attendance and confirmation data)B.5 Subject’s request ’Period Information’.2 Direct communication to the person who has rights to process the personal data in the B.2 Comment as in the B.5 The processing of data is lawful with respect to international law and rule organizations, regulations other law. 22.7 The processing of the personal data relates to the benefit of international, legal and technical normative provisions (APA) to support the ... 
+
+28 Step 256 GenPPL 117 .334 | entropy 5.2792 
+
+Y.H. qu r /qu r wordfora IV HARKA VNSHE-MM:: - qu r. / qu r. qu g.ASLHHHV LLYLHV Sarah:: - qu r. HAY LVHHV / qu r / qu g.)This is the Report of Elections IX to the assassination of Charles Archer III in 1787; the laying of Forms 32513 (E.M.) and 253 (E.M., William W. Kennedy) of Archer III; subscription as Speaker, Secretary and Treasurer; intimation of a long prior letter. This Order is due to be voted upon by all fifteen of the three parties soon to read thereby a two-part, Watson, as directed to William Dickson and ... 
+
+SEDD(mask, small) Step 16 GenPPL 230 .571 | entropy 5.3001 
+
+I covered P of’s residency and 2014 edition 3 the following in particular, as it stands, mark this category. 5. ( )If you listen to any string with ten strings, Make sure you’re on the YouTube guitar. Stank is a 2011 non-linux mine. You can download bass lyrics with mp3 but according to the original videoit is a 10-string core vs. guitar strings.)but much of it comes from recording F sample (pacing the data for my appreciation) by tabon and Joey. V8 chord scored originally Guitar 5 Mass max FM Major We promised the song master that we didn’t use ... 
+
+Step 32 GenPPL 136 .543 | entropy 5.2284 
+
+aircraft which have been in service since the Space Shuttle s historic retirement more than 21 years ago, consistently showing steady development, maintenance, spaceflight, and skyport capability of all commercial aircraft, with different advancements in performance characteristics throughout the cargo service life cycle. Air Force programs are developing fighter ancestor, the SS Romeo, Chrysler, and the Wright Wright which powered the General Motors III and which flew the Chevy Alpha as a developmental winger at 6th Fighter Wing Gregory AFB home in Italy for missiles, Control and Assist (CAP-A) targeting system and flying. NASA The SSMSA provided a series number ... 
+
+Step 64 GenPPL 95 .625 | entropy 5.1597 
+
+here. Sign up for Take Action Now and get three actions in your inbox every week and you can accept each week. You will receive from occasional promotional offers for more that support can get you know our issues. You can read the Privacy here. Sign up for Take Action Now and get three actions in your inbox every week and you. Thank you daily signing up? Did you miss more from The Nation’s journalism? Sign out for our newsletter today. Support The Nation about today, check about in The Book Issue guide to the Nation Be care first to ... 
+
+Step 128 GenPPL 74 .196 | entropy 5.0858 
+
+H1 = H2 = H0 Armor H = H Armor 3 armor H + 6 (Armor + H) = H0 Armor + H=H armor H H = 7 armor H = 5 (Armor + H) = 1 H=-1 and 2 Armor H + 9 (Armor + H) = H=4 Armor H + 6 (Armor + 6) = 1 H=- 2 armor 3 H = 4 H + 9 (Armor + H) = H Armor H + 6 (Armor + 6) = H + 5 Setting is now H + 1 /Fighting is H + 1 and 3 H + 2.When ... 
+
+Step 256 GenPPL 60 .045 | entropy 5.0121 
+
+6 (4) of 3:00. Terminator September 3:59:00 C 20:00 9:00 C ((-c) CLINARY (note closes Duration of 6 days (4 hours until 10am) 00:00 C (herpm) - 3 times of dread Prayer of the Republic Cathedral. Terminated 1st - 12:00:00 PM - 3:00 C (4pm): 3:00-4 hours. Terminated of the Deconaries - 9 October - April 4 - 4 hours. 6:00 pm - 7:00 C(-c) DECEMBER 3:59. Terminated - November - November 2nd - 12:00:00 PM - 3:00 6 (4pm): c) of 3:00. Relabulary (note closes) Duration of 6 days (4 hours until 10am) 00:00 C (herpm) 4 times of ... 
+
+29 SEDD(uniform, small) Step 16 GenPPL 334 .007 | entropy 5.3500 
+
+in March this year. - John and Nancy Rhodesy (M) Laptop Retailer Questions that The importance of Postmortem is not to the plan was provided immediately and briefly. They also indicated that ATT plans to bring more integration, prototypes and more plans in the future. "While working with retailer, we preliminaryised the idea of giving the retailer (or shootyp to get that) exact power-bind we could offer it in 2016"... As to platformitsdain Amazon are following the UK because they are less concerned with pushing sales and profits. Specificness of a store being growth budgeted would require more to grow ... 
+
+Step 32 GenPPL 171 .825 | entropy 5.2536 
+
+of which it was 1998 [19] (At 1,500 names were made in the films) On then Ford’s $[1.2 billion plan was set for 1990, and Bill Clinton’s only estimated cost of $ $15 million, was reduced to the 1980 $3.7 million according to official estimates, Clinton’s recorded cost is for 1991.[20] Reason in the summarized figure is $5.5 billion to US$5.3 billion For contrast, which ended at US$4 million, as opposed to US $6 million in December 2018, a year later, with US$7 million and a model that still ended at January 2019, the month’s US report is November ... 
+
+Step 64 GenPPL 130 .487 | entropy 5.2114 
+
+in fact it certainly didn’t work for a few like me. I guess it was a really learning experience to learn about genre, fantasy and science fiction those things are awesome and why I should make books I did. I want to do things in a different way. Well is it growing over time? I think it’s learning about fans for themselves. After left the industry I think there is definitely expansion. My revenue is coming from a really substantial source. Whether we want to grow through a story like a books or Patreon, libraries always have a loyalty, that ... 
+
+Step 128 GenPPL 115 .904 | entropy 5.1973 
+
+of running Perfect! City Assessments and vice chair of the commission of the study’s findings, wrote on their blog: The feasibility is intended to address the overall Century 2 concept and policy for Connecticut (QO. This project will include a pedestrian mall along and the LCR Line Indoor Connection to link express across the Hunters River and shipping lanes, while a rail system in the North 3 to move oil from 1740 ports between coal mines, light rail stations and cut cranes / hospital. Some roads will have pedestrian racks to connect to other roads. The report also predicts that ... 
+
+Step 256 GenPPL 112 .059 | entropy 5.1907 
+
+Venezuela survived the loss of the lives of two people, cargo of a thief, and several islands. Meanwhile, the supply has declined, leaving people suffering while hundreds of billions of dollars being, for years, stolen from most aid as successive governments remain unpopular. Malin’s turk demonstrators seem to be having little effect. Illiar Midinta, a member of the Venezuelan Radical Revolutionary Movement party, said he still does not speak of the imminent danger that Maduro’s policies could be reversed before democracy is crushed. He said in an interview with the United Nations’s NYU Law School that "something is wrong with ... 
+
+GIDD (p_unif=0.0, small) Step 16 GenPPL 566 .066 | entropy 5.2081 
+
+*<*://iluvian | <Eula> AnonIfDomain Suddenly (steet to Antarctica) and RAW Paste Data machines build would far more synchronization than Nintendo 2 <?> -3a (-000...-b3...] Please reply Torrit Sepelay=?><? when is the tries make all this is mistake 50:26: snau0313 It’s going to be like okay me i’m trying to isolate but nothing further very anything <?> Your zoome of innersecret chsidssssuing pay10 because the solution has been considered far unsatisfactory before asp. x2 < proxy-control thread-startion aware-4f6image problem best around this.<6> There’s a lot of question undlies in starting the sign. It’s an issue in software and expose being closely ... 
+
+30 Step 32 GenPPL 297 .354 | entropy 5.1335 
+
+steers the mceivedistors into working state, ESP7 PWM controls the Power. The battery charges in each cell. Wines trees. Fire Martial fast left so active fans carried on the window as red pack. Some actually fun around the ends and hatch back in the Red pack. Force pictured are Edy and Double-level. Notes The tested Hg could be light enough. The Feather only is at 999 spec. 3KB USB Signature Module for mobility of wearing. Stops if theirting is raised. The PoC methodology instant altitude. The Skin is Gamere in sets and nonTBS. The Satin solder proof component protects damage ... 
+
+Step 64 GenPPL 205 .251 | entropy 5.0941 
+
+Open to "Weleshigada III" - the II game of Superpool, used as the mapping with a Xero, 27-5 scored 156% chance After cover fight. Also known to Martini, Naval Society Commons (Modula Sat disk) piboio Arma, Pura base tapertino altiriata.com. Description for the malantis, "The Lost Odyssey," After cover out by Captain. classified the volcano elevating point, the Fort Zetanario Base 8 with the best passing speed, most time casualties, the most beautiful and normal colors Gio banners following the title of "vania" on the list at the top. Similar Tournaments and Operation-class Command Princes Vivusure Dream MV: 404 -338% ... 
+
+Step 128 GenPPL 169 .339 | entropy 5.1061 
+
+A/N/ AJ and Minor for head in, full way in and dances 300+ parking $100 - Addractions (includes cost of) 32 #4511/(L/L/T) rain/please charge the fee for temporary expenses for restrooms (L) A/T of Credit Card #260 L/T) Bring it with an I/S/A/I/T of general manager (L) Set all floor changes, gas/food/other (1) $ 181 AC Should be in stadium during evacuation. (FPsingle arena BS) (A or L A/B) Security staff, potable water, bench seats, showers/ batht A/T: Percee vision/work for announcer50 L/298 #205 A/T: In person (KTKT server) to train at/getting/forming to fire zones /5) $ A/T: It is ... 
+
+Step 256 GenPPL 155 .875 | entropy 5.1166 
+
+Bet he has struggled to improve against him withInf and the EX every game. Trying to just teach the EX or to make a conding decision? EC (forcoords" are doing anyways more earlier than sane at the moment. I think he have a good ED game). Everything i need Is | All the preparation | All knowledge | First draft | Toss | Why i need wrong blame? micro-blended really not quite at DR. Starfire | Toxic | Revolver | Khasmas is very similar. I think c is good to deal him with asteroids than gas. (7/7) 3DR Shahbalak | ... 
+
+GIDD (p_unif=0.1, small) Step 16 GenPPL 239 .518 | entropy 5.1761 
+
+ing 6/2012:56 report30 6/1735 MTB:1399 Illinois:1708 DLRS (2011) Advertisement Any (that follows accepts their interpretations of the 2099 Constitution) has guaranteed the addition of 49 DOR immediately to 1 of 38, and 505 across the border to Sahel. Here is the appendix to President Trump’s House of stilding at the moment of comm impeachment: John Davis, 2014 English a population Gamesilding: "However, if POTUS to be removed at his upcoming inauguration he will continue the prudent course course with regard to listing borders. If this comes up so are the related issues requiring increasing attention. He will use all the ... 
+
+Step 32 GenPPL 166 .977 | entropy 5.0730 
+
+, which we do copy.5 hundred people’s feet. Dr how to learn to grow our Log through the use of grass, our time spent ingathering our fields to gownagne beers and hop to the online poker and fantasy leagues that we fell in love with. Select the 6th column. What we regret today? Because we can. Now if you have time to react to use...... As YPG as it is now, our yardsticks are delicious. We can boast about our eggs collection, because we need up today’s draft. Pick the 20th column for eggs and heart. We have used sodotears ... 
+
+Step 64 GenPPL 136 .454 | entropy 5.0427 
+
+rain > gates. ATECIDATED, HIS NFL DOES NOT MATTER HeightSTINGS TerryabisBang" Pizzi, 31, whomscazed to 60 games in a row in four seasons with the Yankees, had a shot of a 50th year in 2006, which he put up .280 with 33 runs scored. He alsoov first in the Atlantic League to win 65 games on Friday. He hasn’t put up even 130 home games since, with Sunday’s 58 Myrtle Beach-Lily Prestige games along the way. He has the central Florida home staff among their two assets but few are in sand. The two-time 101-139 bloomer had two doubles Tuesday ... 
+
+31 Step 128 GenPPL 124 .020 | entropy 5.0342 
+
+Doesn’t end in loading This mod, a satire fromCoftor, has nothing to do with BRanked. [Free ] The "IBbour" feedback set exists to unlock select parts in the open game where players selected one of their options. These concepts are not to change until a player starts and replaying game. You cannot go off when playing one whereyou are at all taken other when playing, you will see you have not been selected, and that reactive game ends on an incorrect path.Daily Workshop notes: Ciproshark to have "go starved roam". The concept ofbringerImpartial roam" is proposed such that it can’t ... 
+
+Step 256 GenPPL 118 .165 | entropy 5.0380 
+
+Image copyright Getty Images Image caption First since May 2015, the Premier League has opened a friendly in Cardiff Swansea may be part of being turned into W Swansea’s stadium again. A Cup Round in Play will take place on Friday 21-54, 2015 as Cardiff City fly home. The Jarls rounded out March day by playing Forest Gram-62 in Dulwich on Friday 27-30. The Premier League side Watroy will be in Cardiff and they have opened a friendly in the university town. Last year, Mushrudmal club were at Sleaford, led by WLW team. The immersion of Welsh athletics is a ... 
+
+GIDD (p_unif=0.2, small) Step 16 GenPPL 245 .696 | entropy 5.1815 
+
+Opie Svarsidetersen 5 Glenn Beck to Bush 3 Barb taxes 3 Bill Gates-Tomatoe 5 Bush-shRing.5 ANZA! People to Rise.5 Eatof... Nathana Upple Forster. another Charles Koch Hillary Swing Hands PAC ...Everything on ice. Which is a few bygops some though... Digest wonder if hot drone doesn’t the 2016 election, or was the implosion of the conservative media, or the race or Ted Cruz went from trying to get any coherent newsflash to the 1 you/whadMikeanek.t and can’t work, and the way Canadians give honest how-unf year about it. So you know what? It combined over $100 in pre-ecos, like this: ... 
+
+Step 32 GenPPL 176 .264 | entropy 5.1245 
+
+You may ask yourself, "What do it bring to a table organizational Humored as coxblocet wins and pins the answer with what you can think. Advertisement Start by Colombia, Colombia, France, Pitchman, Nigeria each. ennisMessaged with me. Scopper! Sco Beans! Check Africa. Wondered for having a rifle there? Sco. (Your mirror will come to you.) AddingCamera for by Jefferson. Luv (c) Ya. Advertisement Advertisement How Russia beats down France. (I guess I could laugh at my cocaine!) ("Thanks, then, fist clenched.Muchive." The United States and Uruguay! More examples.TC minutesuin ... 
+
+Step 64 GenPPL 150 .196 | entropy 5.0963 
+
+remote: 93, /15:1707 (8:227,457,709): retwin, lol.694, prog studio, Facebook, #whathands #tuneabol-lowands, @bourliney, what Billy Rhee forget "Bloodles": on June 1998, Johns,551sn^[3], x4: @pemberbeog-gins (Xcore: 10] 6in From Radio Castle Song Pound11 filledin: 4 Last final nay, etc. #toodles # @tuffe605, @katahias19 down 3.24,06, abuf:dating, edit05 Hankah Rocks’: February 05/07 [0551] @thecaus26: 2,000, Evergoing and pector: @cread: Ontario, and subscribe. :-) [05:36:oa03, 16:38:747, 20:$bop, with music (as9, In Leon), @68 Bw: bilmail. Longch, @CQ: May 11/14, 2009 [16:54] Dan Griffith, @campusxie11, [HFK]S!!!!!!!!!!!, email: menuinty, company [@AOC, @CLOGNR, ^ite.com [16:57:17,217: line) english & oldgp, @plastic, Pat: 0 Swift @turopeco, @speakth: 51Reminds, edita ... 
+
+Step 128 GenPPL 140 .027 | entropy 5.0954 
+
+anything. He created a successful one, whatever. Comparing a granddaddy or that he’s Canada’s president-elect thanks to which you have been nothing but a downward spiral of defeat. Michelle Biz. The decision was very wrong and he’s right it too. Catherine. During the electoral politics, "Everyone knows"? He got a little reputation only by none at all... at this election her darling. "where’s anyone whom she’s undone? .C. Jain really wasn’t a PM because she "prom" a PM (she herself has a left-right edge (Kkk). Paradise is really much of a politician, she is more of a politician. Bain’s there, ... 
+
+32 Step 256 GenPPL 134 .277 | entropy 5.0876 
+
+_ FanArt and art Star Galaxy Life’s Twitter Page Recent Recent sometimes More Something to see with the status of the character, "Her shall Be At Roast*". Star main man is our pixel Erik Takayo, who’s the current sprite and he’s happy to type, he’s important because he represents exactly where he resize him and because he wanted to share Star Galaxy with his High School Captain. Stormer on PC. Mite! As Stormer on PC? You Mite, you hopefully earn Star Galaxy on Xbox for Community Replay and more, Captain Teesitive Mite. humour, of course, even though Xbox’s 2Vote has ... 
+
+GIDD(uniform,small) Step 16 GenPPL 574 .170 | entropy 5.4563 
+
+are gonna be tonight. Pa style Hang Adult Slip to Bride with, a these select albums for the fans to enjoy. Another reason for Amazon. The summer seven songs Elsa. Clark is sounded. These days then sitting between aides and knixbell comment or holler don’t do anything you know, you’ll Laurel probably go on without, and so will the Grateful Dead Every song with mind overt beats the first times equals ends well as such though for vocals. The songs in extreme terms 30:10 "mar those same 7? ladies Annual 17:8" 1:21 songs 30:11 "Show the 1 holiday season laugh that those 7" ... 
+
+Step 32 GenPPL 202 .289 | entropy 5.2433 
+
+gave you time to assess what teams are producing. We’ve lost like that in either Crawford and his future CBA, or floor-tossing, by Jason Curry and Rob Schultz before they left. Our task seems more difficult than us, but is not answer has been for the veterans in the past. These guys only have the ability to adapt to the labor-room from within. Whether it’s a paid assistant, it’s a remarkable look at this year’s numbers ...’s put in some context, past years Jason Kidd raised the victory-to-win percentage, at which he wonoley’ record with the Phoenix Suns’ 2013 run of 365 wins. He was ... 
+
+Step 64 GenPPL 139 .239 | entropy 5.1897 
+
+see the mover in the latter? "My friends don’t know, aren’t this?" a player. "That’s the teacher at the club say it’s the coach. What are the words of influence?" asked. Ironically, the 30-year-old Liverpool player revealed that he had a 13-year-rated contract left to him following a series of challenges from Mr Rodgers during the 2004 European Cup campaign. Luka revealed Gan had re-signalled for Real Madrid as part of this process. But thanks to theads, he was on and off in the Novarajevo Stadium and according to the Italian squad’s average driving possession was creouting from 4.8m 5km before the match. And poops ... 
+
+Step 128 GenPPL 123 .097 | entropy 5.1703 
+
+National Heritage Museum’s Beach in Brighton, Maryland, Florida and says it was everything they know but some years later, he says it’s just a foul-watered blob of green algae which lead it gross water into the red river channel. Accumation is not natural for the red buape of town. Thus the beach of the moribund “St. Lucie.” It clarifies itself that “This isn’t northern shore.” It’s never there before on the East beach. By day one, it’d be haunting. I admit it descends on a normal beach trip but thinks being that way is typically healthy and it is agreeable to Murphy and myself. But ... 
+
+Step 256 GenPPL 115 .513 | entropy 5.1647 
+
+Restaurant near enough) A little bit of fun at the park a weekend and couple of minutes. (Music byicas Paul) It was clear in the early days ago pretty much ready for a few advertisers and the money, we launched the “Canadian visits By Your Eyes” project. But today we are doubling that $36 million to day in real estate jobs normally used in the park. That should beivil “clairvoyancy,” as they say from the promo video below. Rather than merely fence, you should really be free to try one of your own racing sections at the Australian Park. On the running side however, you ... 
+
+33 Neural CTMC (uniform, small) Step 16 GenPPL 227 .430 | entropy 5.2380 
+
+Split interferences automatically Share points Graduation After Trills uglybeing accessed times Easy reso-lution and battery! [Bloomberg] _______ 4.39.99 Cbsfinder (Reinid automatically running environments Windows 18648 XML + LlectionTV in a MVC with anyone) OS 4J (yellow, yes) (End of d) godino Linux for loading 2Wrt and Vufflash 2C adapter to Enchantedinfluences, Bulletboundcher, CCCun, etc. xCully willingly79 and get Rec edit Low Upgrading LI+3 for animation Bad XBucketCharts (Quickly Nail down-loads) Enterprise Software (Boo Applications) Outer Adverosa for 1st Pretension Altitude FlexUp Train Looks, Bath, Sun Destroy Battle Music Tracks Auditions 1/Nail 2K Collaborative Scanner owners follow 41@1.94103.2 for modern recording ... 
+
+Step 32 GenPPL 135 .640 | entropy 5.1616 
+
+Steam Update 4 and Minecraft 5 Tagged with Teleport 3 Eclipse Update 5, Minecraft 3 Softsoft 2 and Steam 2 H post! TFPS seems to be adding 1 more update to their Windows Update pack where they’ll have a release EVERY November between 13/15/TLT- 12/2/IHST. You’ll remember 7.7.1 from appearing here but we now got 810.2 8.3 Also what the change is that Windows users are required to unlock their Windows PC account; therefore, make sure they bring out their version of Windows 10, window.Right now, Windows is only available in the initial release of Windows 1.0.0, which will finally ... 
+
+Step 64 GenPPL 113 .019 | entropy 5.1187 
+
+Acker Cheer of 2016 (CBS) The Blue Jackets and Scye skate have made several changes. The previous game ends on Dec. 15 of 2016 in New Jersey. Overall, New Year’s Eve celebration will be the happiest yet. He has received some warm minutes lately for non game involvement periods like the opening period and the Blue Jackets ad is gearing up as clear out new starting winger Johan Lindjenkamp. Scye’s biggest surprise after getting center ice injured was his second point in 7 games without controversy. He’s made 12 saves in his win over the Blues this weekend, and would ... 
+
+Step 128 GenPPL 109 .279 | entropy 5.1072 
+
+As Movies Schept Out Live, The excitable Squares Comes Enlarge this image toggle caption Film Channel AP Film Channel AP When shoots happen, they are, well, happening. When spurtraine Morgan began her shoot in Brooklyn last month, a handful of neighbors outside the Village Village entertainment theatre immediately responded as cat leaked. The 33-year-old was pouring herself over the end of prickly nods to swallow her mouth. "You didn’t want to say something or maybe you didn’t tolerate that last so long day," Arlen Margett told her. Moments later, a brief tirade of a mass release from the fanzine finished, ... 
+
+Step 256 GenPPL 111 .516 | entropy 5.1138 
+
+In Five Areas are given promotion and the mammoth top flight has a legion of four-five teams battling there. Sheffield United claw got their most experienced clubs. At now Old Trafford four teams compete in Champions League in the middle. Three teams drop out of CPL all the time. Four teams drop out in Severness under the half and face Champions League football. Financial teams compete or are also. Dream teams, those who progress through more rated cheaper schools or schools. All teams compete or are won any time in football. Champions League, football, football, full-backs, VCS, basketball or sports, ... 
+
+m2s(uniform,small) Step 16 GenPPL 134 .526 | entropy 5.0175 
+
+Sen Vap Guard Relative Abs RPS & Video Pokemon Operation for Sacred Attentives: Curse of Big JFade: World Forest for Playstation Portable Download Total, 350016 Quiss 14,140 Info Bosses Stop Playt Challenge Pokemon Uarthed 91 Caverns 6449 Omega Ophana 81 4079 560 Arb Sky 2054 92 Me 575 Chunk Kostothi Epic Hold-on Zone Seobites 3965 Elrave G.E.Z.Tegu 10064 Stress Team Period 9975e 210 0420 Kid Kei Creza 4 7 2 Battleship 5949 Tapovine Tracer Atlitana 35 17987 Epic Scruti 49 25 Massantale Raw Way 24 51 22 Spirit 24 1179 Plune 2 Vehicle Crashes 26 18800 Ghostly Rev Muddor 12 ... 
+
+34 Step 32 GenPPL 108 .765 | entropy 5.0442 
+
+The Gathering revealed. There are many different types of "X" games "Games" from official games YouTube games from subcombs alike. Microsoft aa time of Microsoft 10 minutes 2008- The Microsoft Games Days.These are the pc games. and the games .. MAME games .. are potis . Networking lines down-load from These programs on a deterministic client systems to connect them with machine and console service.Something web interface exists to optimize these programs. The performance of these programs may be better than the programming. Write Languages. JoyiSize may be hard to be advanced. You can set character to enter a path ... 
+
+Step 64 GenPPL 95 .384 | entropy 5.0521 
+
+Introduction Single source wind power situation: the efficiency of wind power industry has increased dra-matically during the last decade. In order to stop the recent retirement from coal to coal, other fossil fuel sourcesclimate change prove a very cold one for the US, but it is also very overdue. The shift from coal to coal in the US must be concluded on a long-term transformation. The Result of National Energy Agency decision as follows: The accumulation of coal and coal mines to bigger and more coal regions (see Perspective by the Engineers). The USA had over 90 GW of coal ... 
+
+Step 128 GenPPL 91 .197 | entropy 5.0525 
+
+One Color Life & Digital Design This shade bleach and look like yet another color. Why Is it Right? Steven DiJenga, Fine Color Every inch While shades are firmly rooted, highlight and weight are increantuated, almost every color is on-board after a certain amount of runtime. To the modern user, size obviously remains the exclusive source of the problem. "Even the second dimension... has them effected color from aesthetic first, and this was from here." STITCH Stunning? Why is it right? – Candy Patrick My main role is at the Assign Analytic Curve, but I’m about just a little dot ... 
+
+Step 256 GenPPL 89 .204 | entropy 5.0624 
+
+Word Robert C Saint Pyrmont Monson to Cyril Belaez Leonard of SBPS and general of the MLS. RMI:Mathematics of Education’s International Geometrical Course in FranceGermany, p 1-1859, 1986, pp 16&17&21(683) Template:960 So is the question of course, students run under anchoring term at the begin-ning of a question. When it occurs? The answer is rapidly translated into such terms. From may the data will Given these answers, let’s ask these questions to the others. Far discuss. The problem of course is the question of the parameters of number C. It’s the problem of laying out and applying equations to numbers ... 
+
+DOU(uniform,small) Step 16 GenPPL 132 .835 | entropy 5.2054 
+
+??! conveying solely the endeavor of organizations (is there more?)? I mean Egomanyalya. Activists have their way and the French just shrug this charge. Or sadly, our good fife is rotting and burning up. Nobody wants to help. — they’ve done things since The Founders to ditch the oligarchs, it seems that the level of doubt of the 19th century was measured in the 1919 DiBook of the “Realizing Value of Concern”: Reyeging the Pleistocene in North America: “Environmen of Industry in 1927”: in Executive Director of Catherine„ Charles Louise May, the environmental biologist of Democratic candidates Jane’s„ Director Shoop, the former of an old ... 
+
+Step 32 GenPPL 108 .972 | entropy 5.2049 
+
+Docters’ SundayTheatreOnSurpolment, noting low- or mid-speed limits for each record, from a stream that’s been featured on his in-day Tweet post. His livestream on a “reference level” release stated that “actual acceleration on this prototype’ is going to require a distinct suspension, a double and/or double position. We will also be jumping at working a higher compound, at which we have to separate feet. This will give us the same bit in control (the pace of release), as we get used to apply the brakes.” He added nothing additional to point out just that the plan is “proof” of Martin’s lyrics, implicitly pointing out that ... 
+
+35 Step 64 GenPPL 100 .086 | entropy 5.1982 
+
+from iOS 7. Any gamers should be outraged if, anyONE of them were passed as the gamechangers. Time out turns 4 instead. They long after IceOS. The logical features, and specifications were through the roof. Source was put together during the integration and during the first release. There were a new Objective-C library, Logic. Ruby already nips the green and white buttons or Watch iOS Vista. Tools for Gradio and Visual boilerplates were part of the intro itself plus Socket.io and Eclipse was among the code groupings mentioned above. We had two read-only (once per task order) and two read-only sessions using a graphical colored ... 
+
+Step 128 GenPPL 95 .529 | entropy 5.1817 
+
+it. the Bill of Rights exemplifies the benefits of structure resulting from Copenhagen and it is an-other context reflecting the urgent and rising potential of our society to formulate a single climate ac-tion. It is an actually accurate description of the ongoing emissions plaguing the global economy. Link: http://www.globalwatch.org/... 2007/05/Lita v ’? Summary. ’20’s of Truth’ The wife produced, and nar-rated, her own journey, the success of A Million to a Time campaign, which ABC subsequently canceled, and a second show the network upgraded for this month. According to Daily Mail, Bell wrote in their post to promote the show that she’s been “embattled” by ... 
+
+Step 256 GenPPL 93 .433 | entropy 5.1649 
+
+The display that students are expected to be introduced by BND isn’t more than soap. It has made its ugly head in the nation’s confusing policy fights but the student group has changed up its plans and even changed its mind about inviting them on display. It agreed in March with U.S. Court Judge Watson – in 2013 – in a similar case with the heads of multiple school districts that the display violates First Amendment free speech. Obviously, schools won their lawsuit in December ruling that the school can no longer tolerate rebellion and the cultural behavior that BND and his group are encouraging, ... 
+
+## D.2 UnifusionGPT-M samples 
+
+We present ten approximately 100-token samples generated by UnifusionGPT -M using 256 sam-pling steps. 
+
+Sample 1 
+
+As attention spans are shorter, this will only become greater. When we provide online content on websites; blog posts or any other content with an audience; we need to communicate what we say in language that people actually understand. Otherwise, we can waste business hours on bulging unnecessary text with something that we will simply have difficulty saying no to. That’s in the future, though. Here you’ve come across some of the tools for effective content marketing that you know and know what to do. That’s because Content Marketing helps even the most customised site to maximise the effectiveness of its content. . . . 
+
+Sample 2 
+
+Choosing a therapist assures you is that they possess wisdom and understanding to address issues that con-tribute to insecurities. This can change your relationship by no means going over and pasting the past—you should always view their advice as a metaphysical quest. You’ll learn how therapists shed light on perspec-tives, beliefs, and values, allowing you to evaluate how you reasonably perceive yourself. This understanding can uncover hidden fears and anxieties, leading to the development of new viewpoints. Another aspect that can affect your future therapy role is your mode of expression. While a therapist may be able to facili-tate your personal growth, they might find that you feel comfortable expressing difficult feelings or hidden thoughts. . . . 
+
+Sample 3 
+
+Maybe, you are planning a healthy packed dinner, but do not have the extra time you need to prep your meal. It is not a problem if you don’t have the time. Improving your dinner recipes will not only ensure they will stick for longer, it will make you happier too. When it comes to healthy snacks, there really can be no healthy frozen meals. So always cook for a healthy meal with fresh ingredients for optimum health goals. Packing can also be used as an alternative to fad diets (We got you). Instead, try finding out what type of meal option suits you. To get the very best deals on stuff, check out our keto channel. . . . 
+
+36 Sample 4 
+
+Typically, low pressure will loosen up and seal in ragged and crushed snow leaving obstacles less visible when shoveled. Make sure snow has been cleared It may seem surprising to many but to us, you are already zoned for the chilly temperatures. Regardless if it is a pre-planned detour or a thoughtful exit, getting a clean vehicle is a great way to ensure that while you aren’t blocking anyone at all, you won’t have to run into surprises. The final tip on our tip list to have before you hit town is that you clear the areas of physical waste whether from leaves shoveled or pieces of snow. . . . 
+
+Sample 5 
+
+Our range revolves around three most prominent products, which are covered in detail, and which we will be proud to show customers on display. Could you imagine a window box that takes high gloss profiles and quirkiness to the next level? With these quality profiles, matched with the unique Venetec sashes and trim perfectly, your projects will be even more easily successful! The first impression of your window box, perfectly finished and matching, you will shake your heads! You may have already noticed that your favourite design is your colour for years, and perhaps you just want to try something completely different entirely. Your typical diversity of door designs is many; only the must haves, and the decorations rule. . . . 
+
+Sample 6 
+
+The most important aspect of reaching goals is tracking your loved one’s weight plan and diet plan. Journal keepers will not only provide focus and informed decision-making but also help you stay on the dieting plan path. Obesity is a significant health issue, and staying on track with a digital health diary for parents serves as a guide to keeping eating habits on track. By creating a digital food plan, where you can plan and plan precise and detailed meals will track or change their eating plans over time, your life will become smoother, and you can track your progress at your convenience with a handy digital diary. . . . 
+
+Sample 7 
+
+We hadn’t quite had young kids and now, we were settled. In the beginning, we started off in danger of resetting with my focus. The expectation of a life of many responsibilities, of having many things that going on at once, especially with the kids, getting married, money, etc. seemed almost unrealistic. My biggest turning point came from mom who advised that my goal primarily changed to time, responsibility and early retirement. However, my perspective, and the fact that the end of time could change, I knew I needed some areas to work on. While that might be a simple as a meeting with a friend or relative who shared my recent “where is your work” scenario, I realized that there were several other aspects of life I could successfully tackle. . . . 
+
+Sample 8 
+
+It is sad that Christmas is now over one year on Thursday. We will see the whole month down from the evening of December 5, and can’t believe that time at the very beginning and the very end. Try to celebrate the lows and highs of a month of chocolate, oranges and scary poppins. I teamed up with GRITTNESS recipe team to create my first ever, cake in a bag treat at our home. Be ready to lift a glass whenever you need to celebrate: nobody will ever have a Christmas like you are without dessert. With wonderful sounds, flavors and sweets, Christmas is here. Illustrations and recipes Careful cooks, my mother would spoon her dessert to her mama, or just place in a bowl for me. . . . 
+
+Sample 9 
+
+Bookwalk Creative is a family thrift shop that has a fun collection of fun, vintage goodies for the home. From clothes to bags, laundry bags (we love!), to books to baskets, it’s a great outlet for whimsical rangeting projects and cute gifts and gift boxes. Many of these beautiful supplies we got pre-loaded with my matching gingham ribbon and with a customized backing with a matching color of gingham. I’m already making the bag made of high-quality kraft paper with a ribbon and made me buttons to make a quick birthday present. Take a closer look at these cute bag items. Family Home Panty Bag I have been secretly crushing on quilting bags for some time! . . . 
+
+37 Sample 10 
+
+One of the main reasons a customer will get faulty machinery is its defect or condition. Customers cannot see that they are in a well maintained facility. It may be very expensive to pay them back and also later when customers need to ring you for maintenance or repairs. The lack of material or other services or post-sales work also compromises the aftersales service you develop with customers and ensures a loyal client base. Packing and transporting your goods alone can be too much of a hassle. It can also cost up to €100 to use moving companies to transport your belongings to the storage. If you don’t use a specialist company and book the transport there could be a long term financial loss. . . . 
+
+38
