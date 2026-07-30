@@ -6,43 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-29
-- 运行时间：2026-07-29 20:01:33 UTC
+- 最新运行日期：2026-07-30
+- 运行时间：2026-07-30 20:30:04 UTC
 - 运行状态：成功
-- 本次总论文数：7
-- 精读区：5
+- 本次总论文数：5
+- 精读区：3
 - 速读区：2
 
 ### 今日简报（AI）
-今日深度复盘 7 篇前沿论文，聚焦扩散模型在语言建模与架构优化上的范式革新。
-重点推荐 Block Diffusion 生成顺序的重构及 AR 模型向离散扩散转化的统一目标函数研究。
-建议关注扩散与自回归架构融合的趋势，探索生成式模型在效率与质量上的新平衡。
-- 详情：[/202607/29/README](/202607/29/README)
+今日聚焦视频与音频生成前沿，深度解析如何通过频谱锚定与表征正则化攻克长视频生成的误差累积难题。
+重点推荐 FreqForcing 带来的长视频自回归新范式，以及兼顾内存效率与生成质量的解耦时域扩散音频合成技术。
+建议优先研读两篇 9 分视频论文，掌握提升生成内容连贯性与系统稳定性的核心算法。
+- 详情：[/202607/30/README](/202607/30/README)
 
 ### 精读区论文标签
-1. [Rethinking the Generation Order of Block Diffusion Language Models](/202607/29/2607.24306v1-rethinking-the-generation-order-of-block-diffusion-language-models)  
+1. [Mitigating Compounding Error via Video Representation Regularization](/202607/30/2607.27036v1-mitigating-compounding-error-via-video-representation-regularization)  
+   标签：评分：9.0/10、query:genad
+   evidence：用于自动驾驶的视频扩散世界模型及自回归生成误差研究
+2. [FreqForcing: Autoregressive Long Video Generation via Spectral Self-Anchoring](/202607/30/2607.27110v1-freqforcing-autoregressive-long-video-generation-via-spectral-self-anchoring)  
    标签：评分：9.0/10、query:ardm
-   evidence：块扩散语言模型的并行自回归解码
-2. [UNIFUSION: Adapting Autoregressive Language Models into Discrete Diffusion under a Unified Reverse-Rate Objective](/202607/29/2607.24507v1-unifusion-adapting-autoregressive-language-models-into-discrete-diffusion-under-a-unified-reverse-rate-objective)  
-   标签：评分：9.0/10、query:ardm
-   evidence：将自回归语言模型适配到离散扩散模型
-3. [PreDiff-LM: Pretrained Discrete Masked Diffusion Language Modeling with Hybrid Attention](/202607/29/2607.25157v1-prediff-lm-pretrained-discrete-masked-diffusion-language-modeling-with-hybrid-attention)  
-   标签：评分：9.0/10、query:ardm
-   evidence：将预训练的自回归Transformer适配于扩散语言建模
-4. [ViDS: Video Diffusion Shader using 3D Face Tracking](/202607/29/2607.24124v1-vids-video-diffusion-shader-using-3d-face-tracking)  
+   evidence：自回归视频扩散模型及长视频生成中的误差累积
+3. [From Interface to Inference: Eliciting Any-Order Inference from Any-Order Models](/202607/30/2607.26504v1-from-interface-to-inference-eliciting-any-order-inference-from-any-order-models)  
    标签：评分：8.0/10、query:ardm
-   evidence：用于视频生成的自回归扩散采样过程
-5. [Neuromorphic Diffusion Language Models: Addressing Compute and Memory Bottlenecks via Sparsity and Block Denoising](/202607/29/2607.24841v1-neuromorphic-diffusion-language-models-addressing-compute-and-memory-bottlenecks-via-sparsity-and-block-denoising)  
-   标签：评分：8.0/10、query:ardm
-   evidence：类脑扩散语言模型与块去噪
+   evidence：掩码扩散模型作为自回归模型在任意顺序推理中的替代方案
 
 ### 速读区论文标签
-1. [MMOE: Modernizing Diffusion Transformers with Efficient Expert Design](/202607/29/2607.24665v1-mmoe-modernizing-diffusion-transformers-with-efficient-expert-design)  
+1. [Memory Efficient Audio Synthesis with Decoupled Temporal Depth Diffusion Transformers](/202607/30/2607.23811v1-memory-efficient-audio-synthesis-with-decoupled-temporal-depth-diffusion-transformers)  
+   标签：评分：7.0/10、query:ardm
+   evidence：用于处理基础模型语义标记的扩散Transformer音频合成
+2. [Qwen-Audio-3.0-Gen-Preview Technical Report](/202607/30/2607.27011v1-qwen-audio-30-gen-preview-technical-report)  
    标签：评分：6.0/10、query:ardm
-   evidence：通过高效专家设计现代化扩散Transformer
-2. [Instruction-based Image Editing: A Survey on Data, Models, Evaluation, and Applications](/202607/29/2607.25642v1-instruction-based-image-editing-a-survey-on-data-models-evaluation-and-applications)  
-   标签：评分：6.0/10、query:ardm
-   evidence：从GAN到扩散和自回归范式的演进
+   evidence：使用扩散Transformer进行音频生成的非自回归框架
 
 
 <div class="dpr-home-promo-card">

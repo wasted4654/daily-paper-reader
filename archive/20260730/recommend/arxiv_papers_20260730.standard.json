@@ -1,0 +1,221 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-30T20:28:12.386582+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.27036v1",
+      "title": "Mitigating Compounding Error via Video Representation Regularization",
+      "abstract": "Video diffusion-based world models enable long autoregressive video generation for robotics, autonomous driving and simulation tasks, yet sliding-window autoregressive inference suffers from severe error accumulation that degrades frame quality over time. Although this phenomenon has been widely observed, the underlying mechanism of compounding error and how to achieve stable long-horizon generation remain largely unresolved. In this paper, we investigate the internal representation dynamics of video world models and discover that compounding error is tightly coupled with dimensional collapse of hidden representations. Specifically, the effective rank of model representations sharply decreases at the onset of generation drift, revealing a strong connection between representational degradation and long-term rollout instability. Furthermore, we find that pure training data scaling fails to boost model resistance to error drift, contradicting mainstream scaling paradigms. To address this problem, we propose video representation regularization, a lightweight training constraint that stabilizes latent representations and suppresses iterative error accumulation. Compared with Diffusion Forcing, our method achieves improvements from 38.65 to 55.56 and from 44.37 to 72.08 on the Aesthetic Quality and Imaging Quality metrics of VBench. Our work establishes the first connection between autoregressive video drifting and model internal representations, adopts erank as a quantitative metric for error accumulation, reveals counterintuitive scaling limitations for video world models, and presents a simple yet effective regularization strategy to improve long video generation robustness.",
+      "authors": [
+        "Taiye Chen",
+        "Qi Zhang",
+        "Yisen Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-29T15:29:39+00:00",
+      "link": "https://arxiv.org/pdf/2607.27036v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "video diffusion-based world models for autonomous driving and autoregressive generation error",
+      "llm_evidence_cn": "用于自动驾驶的视频扩散世界模型及自回归生成误差研究",
+      "llm_evidence": "用于自动驾驶的视频扩散世界模型及自回归生成误差研究",
+      "canonical_evidence": "用于自动驾驶的视频扩散世界模型及自回归生成误差研究",
+      "llm_tldr_en": "Investigates compounding errors in autoregressive video diffusion models for autonomous driving and robotics.",
+      "llm_tldr_cn": "研究了用于自动驾驶和机器人的自回归视频扩散模型中的复合误差及稳定性问题。",
+      "llm_tldr": "研究了用于自动驾驶和机器人的自回归视频扩散模型中的复合误差及稳定性问题。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.27110v1",
+      "title": "FreqForcing: Autoregressive Long Video Generation via Spectral Self-Anchoring",
+      "abstract": "Autoregressive video diffusion models enable real-time streaming video generation. However, errors introduced during self-rollout accumulate over long horizons, manifesting as color drift, motion stagnation, and eventual visual collapse. In this paper, we characterize this phenomenon from a frequency-domain perspective: error accumulation appears as a pronounced energy drift in the low-frequency bands. We further investigate the effectiveness of attention sink in the frequency domain, and find that it improves the video quality by alleviating the spectral energy drift to some extent, but cannot fully resolve it. Motivated by the above analysis, we propose FreqForcing, a training-free framework that addresses error accumulation in long-video generation via Spectral Self-Anchoring (SSA). The proposed SSA leverages the low-frequency components of anchor attention to maintain long-horizon visual stability, while preserving dynamic motion through the high-frequency components of local attention. Our FreqForcing extends Self-Forcing pretrained on 5s clips to two-minute generation, achieving 24x extrapolation. Extensive experiments show that FreqForcing outperforms existing training-free methods quantitatively and qualitatively while remaining competitive with representative training-based approaches.",
+      "authors": [
+        "Jiatong Li",
+        "Leo Liang",
+        "Linghe Kong",
+        "Yulun Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-29T16:38:47+00:00",
+      "link": "https://arxiv.org/pdf/2607.27110v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Autoregressive video diffusion models and error accumulation in long video generation",
+      "llm_evidence_cn": "自回归视频扩散模型及长视频生成中的误差累积",
+      "llm_evidence": "自回归视频扩散模型及长视频生成中的误差累积",
+      "canonical_evidence": "自回归视频扩散模型及长视频生成中的误差累积",
+      "llm_tldr_en": "FreqForcing addresses error accumulation in autoregressive video diffusion models using frequency-domain analysis.",
+      "llm_tldr_cn": "FreqForcing 通过频域分析解决了自回归视频扩散模型在长视频生成中的误差累积问题。",
+      "llm_tldr": "FreqForcing 通过频域分析解决了自回归视频扩散模型在长视频生成中的误差累积问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.26504v1",
+      "title": "From Interface to Inference: Eliciting Any-Order Inference from Any-Order Models",
+      "abstract": "Many discrete reasoning tasks, such as code generation, are inherently non-causal: programmers move between high-level structure and local details, a process we call any-order inference. For autoregressive language models, which lack a native any-order interface, non-causal abilities such as infilling and next-edit prediction require hand-designed mechanisms. Can we instead design models that natively support any-order inference? Masked diffusion models have recently emerged as compelling candidates, as their any-order training objective naturally offers an any-order prediction interface. This interface, however, does not automatically yield any-order inference. We demonstrate that this interface-inference gap stems from positional uncertainty: fixed-canvas, token-level models may know what semantic component should appear without knowing where to place it. In light of this, we propose two complementary approaches: (1) Insertion-based masked diffusion, building on FlexMDM (Kim et al, 2025), relaxes fixed-position commitments via insertions, enabling generation across non-contiguous regions. (2) Latent-space masked diffusion shifts prediction to coarser semantic segments, enabling search over latent generation orders. Empirically, we train a 7B FlexMDM for Python coding and a 125M LatentMDM for GSM8K and show that both approaches induce distinct any-order inference behaviors and improve downstream performance. We release our codebase at https://github.com/SeunggeunKimkr/genuine-any-order.",
+      "authors": [
+        "Seunggeun Kim",
+        "Jaeyeon Kim",
+        "Taekyun Lee",
+        "Yuyuan Chen",
+        "Yilun Du",
+        "Sham Kakade",
+        "Sitan Chen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-29T06:09:12+00:00",
+      "link": "https://arxiv.org/pdf/2607.26504v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "masked diffusion models as candidates for any-order inference compared to autoregressive models",
+      "llm_evidence_cn": "掩码扩散模型作为自回归模型在任意顺序推理中的替代方案",
+      "llm_evidence": "掩码扩散模型作为自回归模型在任意顺序推理中的替代方案",
+      "canonical_evidence": "掩码扩散模型作为自回归模型在任意顺序推理中的替代方案",
+      "llm_tldr_en": "Explores any-order inference in masked diffusion models as a native alternative to autoregressive sequence generation.",
+      "llm_tldr_cn": "探讨了掩码扩散模型在任意顺序推理中作为自回归序列生成原生替代方案的潜力。",
+      "llm_tldr": "探讨了掩码扩散模型在任意顺序推理中作为自回归序列生成原生替代方案的潜力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.23811v1",
+      "title": "Memory Efficient Audio Synthesis with Decoupled Temporal Depth Diffusion Transformers",
+      "abstract": "Siri Expressive Voices synthesize rich, configurable speech in real time and entirely on device, powered by AFM 3 Core Advanced, Apple's most powerful on-device foundation model. This work presents the memory-efficient audio synthesis architecture behind that capability: a detokenizer that converts the semantic audio tokens emitted by the foundation model into high-fidelity audio within the tight compute and memory budget of the Apple Matrix Coprocessor (AMX). We convert semantic audio tokens to a residual vector quantization (RVQ) representation with a three-component design, a streaming encoder, a temporal decoder, and a depth decoder, that systematically decouples temporal and depth processing. A single reusable depth decoder with Diffusion Transformer (DiT)-style stage conditioning generates all RVQ levels autoregressively, replacing the dedicated per-level decoders of prior multi-decoder architectures, while causal sliding window attention with fixed-window key-value caching yields constant memory complexity independent of sequence length. Deployed on the AMX, the detokenizer sustains roughly 10 ms per generation step, about 16x faster than real time, with a peak runtime memory of only 21 MB and 329 MB of on-device assets, enabling continuous streaming synthesis of 20-320 seconds of audio. This constant, small footprint replaces the linear and quadratic memory scaling of conventional transformer- and GAN-based approaches. Ablation studies validate the key architectural components, and audio quality assessment confirms that the architecture maintains synthesis fidelity while achieving efficiency gains over existing methods. Operating at a 1-billion-parameter activation size within AFM 3 Core Advanced, it improves Mean Opinion Score by +0.28 overall (4.15 vs. 3.87) and by +0.42 on conversational speech (4.24 vs. 3.82) over the prior on-device text-to-speech system.",
+      "authors": [
+        "Dongseong Hwang",
+        "Prasanth Yadla",
+        "Kaan Elgin",
+        "Shifas Padinjaru Veettil",
+        "Sivanand Achanta",
+        "Dipjyoti Paul",
+        "Ramya Rasipuram",
+        "Tyler Johnson",
+        "Emad Soroush",
+        "Chung-Cheng Chiu",
+        "Zhifeng Chen"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.CL"
+      ],
+      "published": "2026-07-26T19:20:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.23811v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "diffusion transformers for audio synthesis from semantic tokens emitted by foundation models",
+      "llm_evidence_cn": "用于处理基础模型语义标记的扩散Transformer音频合成",
+      "llm_evidence": "用于处理基础模型语义标记的扩散Transformer音频合成",
+      "canonical_evidence": "用于处理基础模型语义标记的扩散Transformer音频合成",
+      "llm_tldr_en": "Presents a memory-efficient diffusion-based architecture for synthesizing audio from foundation model tokens.",
+      "llm_tldr_cn": "提出了一种高效的扩散架构，用于将基础模型输出的语义标记合成为高质量音频。",
+      "llm_tldr": "提出了一种高效的扩散架构，用于将基础模型输出的语义标记合成为高质量音频。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.27011v1",
+      "title": "Qwen-Audio-3.0-Gen-Preview Technical Report",
+      "abstract": "Existing single-domain and multi-task audio systems remain limited in directly organizing speech, music, sound effects, ambience, and multiple roles into long-form temporal scenes. We present Qwen-Audio-3.0-Gen-Preview, a unified non-autoregressive framework that uses a Diffusion Transformer (DiT) and a shared variational autoencoder (VAE) to generate the complete mixed waveform. Prompt enhancement converts free-form requests into structured temporal records that are rendered as textual conditions, while a two-stage data curriculum and semantic conditional views train the proposed model to use these conditions across domains. A shared continuous VAE compresses 48kHz stereo waveforms into 25Hz latent sequences and incorporates semantic supervision, providing one representation for speech, music, sound effects, and their mixtures. On Seed-TTS-Eval, speaker similarity is the proposed model's clearest strength across all three subsets, and on the multi-speaker benchmark, the proposed model shows higher cross-turn consistency than Seed-Audio-1.0 in both languages. On AudioCaps, its advantages are concentrated in evaluations using large audio-language models and AudioBox. Relative to Seed-Audio-1.0, it achieves stronger temporal localization. Using approximately 10% music data of a dedicated in-house model, the proposed model remains close across all seven SongBench components and leads in three while retaining speech and general-audio capabilities. These results demonstrate the potential of unified generation for temporally structured, multi-domain audio.",
+      "authors": [
+        "Junyu Dai",
+        "Xiaoyue Duan",
+        "Xinyue Fan",
+        "Yihan Feng",
+        "Xiangang Li",
+        "Yunjia Li",
+        "Lejun Min",
+        "Yufei Shi",
+        "Xingchen Song",
+        "Yiran Wang",
+        "Cheng Wen",
+        "Menglin Wu",
+        "Bajian Xiang",
+        "Huaicheng Zhang",
+        "Han Zhao",
+        "Ruichen Zheng"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-07-29T15:06:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.27011v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "non-autoregressive framework using Diffusion Transformer for audio generation",
+      "llm_evidence_cn": "使用扩散Transformer进行音频生成的非自回归框架",
+      "llm_evidence": "使用扩散Transformer进行音频生成的非自回归框架",
+      "canonical_evidence": "使用扩散Transformer进行音频生成的非自回归框架",
+      "llm_tldr_en": "Introduces a non-autoregressive Diffusion Transformer framework for complex, long-form audio scene generation.",
+      "llm_tldr_cn": "介绍了一种用于复杂长音频场景生成的非自回归扩散Transformer框架。",
+      "llm_tldr": "介绍了一种用于复杂长音频场景生成的非自回归扩散Transformer框架。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "label": "2026-07-30",
+  "date": "2026-07-30",
+  "generated_at": "2026-07-30T20:30:14",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202607/30/2607.27036v1-mitigating-compounding-error-via-video-representation-regularization",
+      "section": "deep",
+      "title_en": "Mitigating Compounding Error via Video Representation Regularization",
+      "authors": "Taiye Chen, Qi Zhang, Yisen Wang",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.27036v1",
+      "score": "9.0",
+      "evidence": "用于自动驾驶的视频扩散世界模型及自回归生成误差研究",
+      "tldr": "针对视频扩散世界模型在长程自回归生成中存在的复合误差问题，本文研究发现该现象与隐藏层表示的维度坍缩（有效秩下降）密切相关。研究指出单纯增加训练数据无法解决漂移问题，并提出了一种轻量级的视频表示正则化方法。该方法通过稳定潜空间表示，显著抑制了迭代误差累积，在VBench指标上大幅提升了长视频生成的鲁棒性和画面质量。",
+      "tags": "query:genad",
+      "abstract_en": "Video diffusion-based world models enable long autoregressive video generation for robotics, autonomous driving and simulation tasks, yet sliding-window autoregressive inference suffers from severe error accumulation that degrades frame quality over time. Although this phenomenon has been widely observed, the underlying mechanism of compounding error and how to achieve stable long-horizon generation remain largely unresolved. In this paper, we investigate the internal representation dynamics of video world models and discover that compounding error is tightly coupled with dimensional collapse of hidden representations. Specifically, the effective rank of model representations sharply decreases at the onset of generation drift, revealing a strong connection between representational degradation and long-term rollout instability. Furthermore, we find that pure training data scaling fails to boost model resistance to error drift, contradicting mainstream scaling paradigms. To address this problem, we propose video representation regularization, a lightweight training constraint that stabilizes latent representations and suppresses iterative error accumulation. Compared with Diffusion Forcing, our method achieves improvements from 38.65 to 55.56 and from 44.37 to 72.08 on the Aesthetic Quality and Imaging Quality metrics of VBench. Our work establishes the first connection between autoregressive video drifting and model internal representations, adopts erank as a quantitative metric for error accumulation, reveals counterintuitive scaling limitations for video world models, and presents a simple yet effective regularization strategy to improve long video generation robustness.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/30/2607.27110v1-freqforcing-autoregressive-long-video-generation-via-spectral-self-anchoring",
+      "section": "deep",
+      "title_en": "FreqForcing: Autoregressive Long Video Generation via Spectral Self-Anchoring",
+      "authors": "Jiatong Li, Leo Liang, Linghe Kong, Yulun Zhang",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.27110v1",
+      "score": "9.0",
+      "evidence": "自回归视频扩散模型及长视频生成中的误差累积",
+      "tldr": "针对自回归视频扩散模型在长视频生成中出现的颜色漂移和视觉崩溃问题，本文从频域视角分析发现其本质是低频能量漂移。为此提出了无需训练的 FreqForcing 框架，通过频谱自锚定（SSA）机制，结合锚点注意力的低频成分维持稳定性与局部注意力的高频成分保持动态，成功将 5 秒预训练模型扩展至 2 分钟长视频生成，实现了 24 倍的长度外推。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive video diffusion models enable real-time streaming video generation. However, errors introduced during self-rollout accumulate over long horizons, manifesting as color drift, motion stagnation, and eventual visual collapse. In this paper, we characterize this phenomenon from a frequency-domain perspective: error accumulation appears as a pronounced energy drift in the low-frequency bands. We further investigate the effectiveness of attention sink in the frequency domain, and find that it improves the video quality by alleviating the spectral energy drift to some extent, but cannot fully resolve it. Motivated by the above analysis, we propose FreqForcing, a training-free framework that addresses error accumulation in long-video generation via Spectral Self-Anchoring (SSA). The proposed SSA leverages the low-frequency components of anchor attention to maintain long-horizon visual stability, while preserving dynamic motion through the high-frequency components of local attention. Our FreqForcing extends Self-Forcing pretrained on 5s clips to two-minute generation, achieving 24x extrapolation. Extensive experiments show that FreqForcing outperforms existing training-free methods quantitatively and qualitatively while remaining competitive with representative training-based approaches.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/30/2607.26504v1-from-interface-to-inference-eliciting-any-order-inference-from-any-order-models",
+      "section": "deep",
+      "title_en": "From Interface to Inference: Eliciting Any-Order Inference from Any-Order Models",
+      "authors": "Seunggeun Kim, Jaeyeon Kim, Taekyun Lee, Yuyuan Chen, Yilun Du, Sham Kakade, Sitan Chen",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.26504v1",
+      "score": "8.0",
+      "evidence": "掩码扩散模型作为自回归模型在任意顺序推理中的替代方案",
+      "tldr": "针对代码生成等非因果推理任务，传统自回归模型缺乏原生任意顺序推理能力。本文指出掩码扩散模型虽有任意顺序接口，但因位置不确定性存在推理鸿沟。为此，作者提出了基于插入的FlexMDM和潜空间LatentMDM，分别通过放宽位置约束和在语义段上搜索生成顺序，实现了真正的任意顺序推理，并在Python编程和数学推理任务中验证了其有效性。",
+      "tags": "query:ardm",
+      "abstract_en": "Many discrete reasoning tasks, such as code generation, are inherently non-causal: programmers move between high-level structure and local details, a process we call any-order inference. For autoregressive language models, which lack a native any-order interface, non-causal abilities such as infilling and next-edit prediction require hand-designed mechanisms. Can we instead design models that natively support any-order inference? Masked diffusion models have recently emerged as compelling candidates, as their any-order training objective naturally offers an any-order prediction interface. This interface, however, does not automatically yield any-order inference. We demonstrate that this interface-inference gap stems from positional uncertainty: fixed-canvas, token-level models may know what semantic component should appear without knowing where to place it. In light of this, we propose two complementary approaches: (1) Insertion-based masked diffusion, building on FlexMDM (Kim et al, 2025), relaxes fixed-position commitments via insertions, enabling generation across non-contiguous regions. (2) Latent-space masked diffusion shifts prediction to coarser semantic segments, enabling search over latent generation orders. Empirically, we train a 7B FlexMDM for Python coding and a 125M LatentMDM for GSM8K and show that both approaches induce distinct any-order inference behaviors and improve downstream performance. We release our codebase at https://github.com/SeunggeunKimkr/genuine-any-order.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/30/2607.23811v1-memory-efficient-audio-synthesis-with-decoupled-temporal-depth-diffusion-transformers",
+      "section": "quick",
+      "title_en": "Memory Efficient Audio Synthesis with Decoupled Temporal Depth Diffusion Transformers",
+      "authors": "Dongseong Hwang, Prasanth Yadla, Kaan Elgin, Shifas Padinjaru Veettil, Sivanand Achanta, Dipjyoti Paul, Ramya Rasipuram, Tyler Johnson, Emad Soroush, Chung-Cheng Chiu, Zhifeng Chen",
+      "date": "2026-07-26",
+      "pdf": "https://arxiv.org/pdf/2607.23811v1",
+      "score": "7.0",
+      "evidence": "用于处理基础模型语义标记的扩散Transformer音频合成",
+      "tldr": "本文介绍了用于Siri Expressive Voices的高效音频合成架构，旨在Apple Matrix Coprocessor (AMX)上实现实时、低内存的语音合成。通过解耦时间与深度处理的扩散Transformer（DiT）架构，结合因果滑动窗口注意力和KV缓存，实现了恒定的内存复杂度。该方法在保持高保真度的同时，显著降低了内存占用并提升了推理速度，在AFM 3 Core Advanced模型中表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Siri Expressive Voices synthesize rich, configurable speech in real time and entirely on device, powered by AFM 3 Core Advanced, Apple's most powerful on-device foundation model. This work presents the memory-efficient audio synthesis architecture behind that capability: a detokenizer that converts the semantic audio tokens emitted by the foundation model into high-fidelity audio within the tight compute and memory budget of the Apple Matrix Coprocessor (AMX). We convert semantic audio tokens to a residual vector quantization (RVQ) representation with a three-component design, a streaming encoder, a temporal decoder, and a depth decoder, that systematically decouples temporal and depth processing. A single reusable depth decoder with Diffusion Transformer (DiT)-style stage conditioning generates all RVQ levels autoregressively, replacing the dedicated per-level decoders of prior multi-decoder architectures, while causal sliding window attention with fixed-window key-value caching yields constant memory complexity independent of sequence length. Deployed on the AMX, the detokenizer sustains roughly 10 ms per generation step, about 16x faster than real time, with a peak runtime memory of only 21 MB and 329 MB of on-device assets, enabling continuous streaming synthesis of 20-320 seconds of audio. This constant, small footprint replaces the linear and quadratic memory scaling of conventional transformer- and GAN-based approaches. Ablation studies validate the key architectural components, and audio quality assessment confirms that the architecture maintains synthesis fidelity while achieving efficiency gains over existing methods. Operating at a 1-billion-parameter activation size within AFM 3 Core Advanced, it improves Mean Opinion Score by +0.28 overall (4.15 vs. 3.87) and by +0.42 on conversational speech (4.24 vs. 3.82) over the prior on-device text-to-speech system.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/30/2607.27011v1-qwen-audio-30-gen-preview-technical-report",
+      "section": "quick",
+      "title_en": "Qwen-Audio-3.0-Gen-Preview Technical Report",
+      "authors": "Junyu Dai, Xiaoyue Duan, Xinyue Fan, Yihan Feng, Xiangang Li, Yunjia Li, Lejun Min, Yufei Shi, Xingchen Song, Yiran Wang, Cheng Wen, Menglin Wu, Bajian Xiang, Huaicheng Zhang, Han Zhao, Ruichen Zheng",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.27011v1",
+      "score": "6.0",
+      "evidence": "使用扩散Transformer进行音频生成的非自回归框架",
+      "tldr": "针对现有音频系统在处理复杂多领域长音频场景方面的局限，本文提出了Qwen-Audio-3.0-Gen-Preview。这是一个基于扩散Transformer（DiT）和共享变分自编码器（VAE）的统一非自回归框架，能够生成包含语音、音乐和音效的混合波形。通过提示增强和两阶段课程学习，该模型在语音相似度、跨轮一致性、时间定位及多领域音频生成方面均表现出色，展示了统一音频生成的巨大潜力。",
+      "tags": "query:ardm",
+      "abstract_en": "Existing single-domain and multi-task audio systems remain limited in directly organizing speech, music, sound effects, ambience, and multiple roles into long-form temporal scenes. We present Qwen-Audio-3.0-Gen-Preview, a unified non-autoregressive framework that uses a Diffusion Transformer (DiT) and a shared variational autoencoder (VAE) to generate the complete mixed waveform. Prompt enhancement converts free-form requests into structured temporal records that are rendered as textual conditions, while a two-stage data curriculum and semantic conditional views train the proposed model to use these conditions across domains. A shared continuous VAE compresses 48kHz stereo waveforms into 25Hz latent sequences and incorporates semantic supervision, providing one representation for speech, music, sound effects, and their mixtures. On Seed-TTS-Eval, speaker similarity is the proposed model's clearest strength across all three subsets, and on the multi-speaker benchmark, the proposed model shows higher cross-turn consistency than Seed-Audio-1.0 in both languages. On AudioCaps, its advantages are concentrated in evaluations using large audio-language models and AudioBox. Relative to Seed-Audio-1.0, it achieves stronger temporal localization. Using approximately 10% music data of a dedicated in-house model, the proposed model remains close across all seven SongBench components and leads in three while retaining speech and general-audio capabilities. These results demonstrate the potential of unified generation for temporally structured, multi-domain audio.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
