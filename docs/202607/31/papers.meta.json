@@ -1,0 +1,37 @@
+{
+  "label": "2026-07-31",
+  "date": "2026-07-31",
+  "generated_at": "2026-07-31T21:28:05",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202607/31/2607.27386v1-beyond-the-bidirectional-promise-re-evaluating-the-robustness-of-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Beyond the Bidirectional Promise: Re-evaluating the Robustness of Diffusion Language Models",
+      "authors": "Saurabh Yadav, Badri Narayana Patro, Vijay Srinivas Agneeswaran",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.27386v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型与自回归基准的对比评估",
+      "tldr": "本研究系统评估了扩散语言模型（DLM）在自然噪声和对抗攻击下的鲁棒性与校准表现。通过对比参数匹配的DLM与自回归模型（如LLaDA与LLaMA-3），研究发现DLM虽能凭借随机损失景观抵御梯度对抗攻击，但在自然噪声下并无架构优势，且存在严重的过度自信问题。内部机制分析表明，鲁棒性缺失源于解码路由失败而非编码不足，强调了将鲁棒性整合进迭代解码过程的必要性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Language Models (DLMs) offer a compelling alternative to autoregressive (AR) generation by enabling bidirectional context and iterative refinement. However, their reliability under natural input noise and adversarial attacks remains under-explored. To address this, we systematically evaluate DLM robustness and calibration against AR baselines, using two parameter-matched pairs (LLaDA-8B vs. LLaMA-3-8B and Dream-7B vs. Qwen2.5-7B) across 32 natural perturbation conditions, adversarial gradient probes, and mechanistic hidden-state analyses. This paired design effectively isolates architecture-intrinsic properties from weight-dependent behaviors. We find a nuanced robustness profile: while highly stochastic DLM loss landscapes naturally resist gradient-based adversarial suffixes, they provide no guaranteed defense against natural noise, proving that everyday robustness is weight-dependent rather than inherently architectural. Furthermore, DLMs exhibit systematic overconfidence, presenting a practical deployment hazard. Most crucially, mechanistic probing reveals that all models perfectly encode input corruption, isolating behavioral fragility entirely to a decoder routing failure. Consistent with this diagnosis, we show that surface-level prompt patching fails to improve over noisy baselines. Ultimately, DLM robustness cannot be patched on; it must be fundamentally integrated into the iterative decoding loop.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/31/2607.27529v1-latent-kernel-discrete-flow-maps-for-few-step-generation",
+      "section": "quick",
+      "title_en": "Latent-Kernel Discrete Flow Maps for Few-Step Generation",
+      "authors": "Mansoor Ahmed, Yue-Tsz Fan, Hemanth Venkateswara, Murray Patterson",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.27529v1",
+      "score": "7.0",
+      "evidence": "用于序列生成和标记耦合的离散流映射",
+      "tldr": "本研究针对离散扩散和流匹配模型在少步生成时难以处理位置间相关性（如主谓一致）的问题，提出了潜核离散流图（LKF）。LKF通过引入共享潜变量将多个分解组件组合，使模型能够原生表达相关步骤，而无需依赖蒸馏技术。实验表明，LKF在保持采样效率的同时，显著提升了文本生成的困惑度，在M=8时性能超越了经过蒸馏的采样器，为高效离散生成提供了新方案。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion and flow-matching models denoise a sequence over many steps, but to keep each step cheap, they factorize the transition across positions and decide every token independently. This makes few-step generation challenging for text when the target couples two positions, such as a subject and a verb that must agree. An independent update commits to them separately, and many function evaluations are spent repairing the mismatch. Existing few-step methods buy back the lost correlation by distilling or rectifying a slow teacher, and so inherit the teacher's quality ceiling. We ask instead whether a model can express correlated steps natively, and answer with Latent-Kernel Discrete Flow Maps (LKF), a from-scratch flow-map kernel that is a mixture of M factorized components tied by a single shared latent. Conditioned on the latent, each component is cheap, and the mixture is summed over the latent in closed form for small M. We show that a single step places mass on correlated completions with the same sampling time complexity as a factorized model, since one latent is drawn per sequence and reused across the entire denoising trajectory. We also show that the Masked Diffusion Language Model (MDLM) is a special case of our LKF model at M=1. The experiments for unconditional text generation on the One-Billion-Word (LM1B) and WikiText-103 benchmarks show that our LKF model learns strongly heterogeneous components and improves generative perplexity by 2.1x to 3.3x over the likelihood baselines without losing diversity. The gain grows with M, and at M=8, it surpasses distilled and rectified few-step samplers. The source code is available at: https://github.com/mansoor181/lkf.git",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

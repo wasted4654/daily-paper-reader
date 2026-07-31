@@ -1,0 +1,91 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-31T21:26:50.048273+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2607.27386v1",
+      "title": "Beyond the Bidirectional Promise: Re-evaluating the Robustness of Diffusion Language Models",
+      "abstract": "Diffusion Language Models (DLMs) offer a compelling alternative to autoregressive (AR) generation by enabling bidirectional context and iterative refinement. However, their reliability under natural input noise and adversarial attacks remains under-explored. To address this, we systematically evaluate DLM robustness and calibration against AR baselines, using two parameter-matched pairs (LLaDA-8B vs. LLaMA-3-8B and Dream-7B vs. Qwen2.5-7B) across 32 natural perturbation conditions, adversarial gradient probes, and mechanistic hidden-state analyses. This paired design effectively isolates architecture-intrinsic properties from weight-dependent behaviors. We find a nuanced robustness profile: while highly stochastic DLM loss landscapes naturally resist gradient-based adversarial suffixes, they provide no guaranteed defense against natural noise, proving that everyday robustness is weight-dependent rather than inherently architectural. Furthermore, DLMs exhibit systematic overconfidence, presenting a practical deployment hazard. Most crucially, mechanistic probing reveals that all models perfectly encode input corruption, isolating behavioral fragility entirely to a decoder routing failure. Consistent with this diagnosis, we show that surface-level prompt patching fails to improve over noisy baselines. Ultimately, DLM robustness cannot be patched on; it must be fundamentally integrated into the iterative decoding loop.",
+      "authors": [
+        "Saurabh Yadav",
+        "Badri Narayana Patro",
+        "Vijay Srinivas Agneeswaran"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-29T18:46:43+00:00",
+      "link": "https://arxiv.org/pdf/2607.27386v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Evaluation of Diffusion Language Models against Autoregressive baselines",
+      "llm_evidence_cn": "扩散语言模型与自回归基准的对比评估",
+      "llm_evidence": "扩散语言模型与自回归基准的对比评估",
+      "canonical_evidence": "扩散语言模型与自回归基准的对比评估",
+      "llm_tldr_en": "Systematically evaluates the robustness and calibration of diffusion language models compared to AR models.",
+      "llm_tldr_cn": "系统评估了扩散语言模型与自回归模型相比的鲁棒性和校准能力。",
+      "llm_tldr": "系统评估了扩散语言模型与自回归模型相比的鲁棒性和校准能力。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.27529v1",
+      "title": "Latent-Kernel Discrete Flow Maps for Few-Step Generation",
+      "abstract": "Discrete diffusion and flow-matching models denoise a sequence over many steps, but to keep each step cheap, they factorize the transition across positions and decide every token independently. This makes few-step generation challenging for text when the target couples two positions, such as a subject and a verb that must agree. An independent update commits to them separately, and many function evaluations are spent repairing the mismatch. Existing few-step methods buy back the lost correlation by distilling or rectifying a slow teacher, and so inherit the teacher's quality ceiling. We ask instead whether a model can express correlated steps natively, and answer with Latent-Kernel Discrete Flow Maps (LKF), a from-scratch flow-map kernel that is a mixture of M factorized components tied by a single shared latent. Conditioned on the latent, each component is cheap, and the mixture is summed over the latent in closed form for small M. We show that a single step places mass on correlated completions with the same sampling time complexity as a factorized model, since one latent is drawn per sequence and reused across the entire denoising trajectory. We also show that the Masked Diffusion Language Model (MDLM) is a special case of our LKF model at M=1. The experiments for unconditional text generation on the One-Billion-Word (LM1B) and WikiText-103 benchmarks show that our LKF model learns strongly heterogeneous components and improves generative perplexity by 2.1x to 3.3x over the likelihood baselines without losing diversity. The gain grows with M, and at M=8, it surpasses distilled and rectified few-step samplers. The source code is available at: https://github.com/mansoor181/lkf.git",
+      "authors": [
+        "Mansoor Ahmed",
+        "Yue-Tsz Fan",
+        "Hemanth Venkateswara",
+        "Murray Patterson"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-29T23:46:31+00:00",
+      "link": "https://arxiv.org/pdf/2607.27529v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Discrete flow maps for sequence generation and token coupling",
+      "llm_evidence_cn": "用于序列生成和标记耦合的离散流映射",
+      "llm_evidence": "用于序列生成和标记耦合的离散流映射",
+      "canonical_evidence": "用于序列生成和标记耦合的离散流映射",
+      "llm_tldr_en": "Introduces Latent-Kernel Discrete Flow Maps to improve token correlation in few-step discrete sequence generation.",
+      "llm_tldr_cn": "引入潜内核离散流映射，以改善少步离散序列生成中的标记相关性。",
+      "llm_tldr": "引入潜内核离散流映射，以改善少步离散序列生成中的标记相关性。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

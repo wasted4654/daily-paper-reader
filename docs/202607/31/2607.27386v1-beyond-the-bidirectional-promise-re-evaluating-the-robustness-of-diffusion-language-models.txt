@@ -1,0 +1,1987 @@
+Title: Beyond the Bidirectional Promise: Re-evaluating the Robustness of Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2607.27386v1
+
+Published Time: Fri, 31 Jul 2026 00:08:29 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+Beyond the Bidirectional Promise: Re-evaluating the Robustness of Diffusion Language Models 
+
+Saurabh Yadav 
+
+Microsoft 
+
+yadavsaurabh@microsoft.com 
+
+Badri Narayana Patro 
+
+Microsoft 
+
+badripatro@microsoft.com 
+
+Vijay Srinivas Agneeswaran 
+
+Microsoft 
+
+vagneeswaran@microsoft.com 
+
+Abstract 
+
+Diffusion Language Models (DLMs) offer a compelling alternative to autoregressive (AR) generation by enabling bidirectional context and iterative refinement. However, their relia-bility under natural input noise and adversarial attacks remains under-explored. To address this, we systematically evaluate DLM robust-ness and calibration against AR baselines, us-ing two parameter-matched pairs (LLaDA-8B vs. LLaMA-3-8B and Dream-7B vs. Qwen2.5-7B) across 32 natural perturbation conditions, adversarial gradient probes, and mechanistic hidden-state analyses. This paired design ef-fectively isolates architecture-intrinsic proper-ties from weight-dependent behaviors. We find a nuanced robustness profile: while highly stochastic DLM loss landscapes naturally re-sist gradient-based adversarial suffixes, they provide no guaranteed defense against natu-ral noise, proving that everyday robustness is 
+
+weight-dependent rather than inherently archi-tectural. Furthermore, DLMs exhibit system-atic overconfidence, presenting a practical de-ployment hazard. Most crucially, mechanistic probing reveals that all models perfectly encode input corruption ( > 0.93 linear probe accu-racy), isolating behavioral fragility entirely to a decoder routing failure. Consistent with this diagnosis, we show that surface-level prompt patching fails to improve over noisy baselines. Ultimately, DLM robustness cannot be patched on; it must be fundamentally integrated into the iterative decoding loop. 
+
+1 Introduction 
+
+Diffusion Language Models (DLMs) are emerging as a powerful alternative to traditional text gener-ation. Instead of predicting tokens strictly left-to-right, models like LLaDA (Nie et al., 2025) and Dream (Ye et al., 2025) start with a fully masked sequence and iteratively reveal tokens using a dis-crete reverse diffusion process (Austin et al., 2021; Lou et al., 2023; Sahoo et al., 2024). Because they What  of the  cpatial is  France?                 
+
+> ... ... cpatial ...
+> What of the cpatial is France?
+> What of the [MASK] is France?
+> ...
+> ... ... cpatial ... ... ...
+> Error cascades forward causing potential incorrectness
+> What of the capital is France? Paris
+> Iterative denoising refines the sequence
+> Autoregressive Model (AR) - Causal Decoding
+> Diffusion Language Model (DLM) - Iterative Denoising
+
+Figure 1: Autoregressive models (top) propagate early cor-ruptions forward via causal attention, whereas Diffusion Lan-guage Models (bottom) utilize bidirectional context to itera-tively route around local noise. 
+
+process all visible tokens simultaneously through bidirectional context, they are highly effective for tasks demanding global coherence. Despite their promise, it remains unclear how well DLMs han-dle natural input noise, such as typos or OCR mis-takes. While autoregressive (AR) models have been extensively tested under these conditions (Jin et al., 2020; Zhang et al., 2020; Belinkov and Bisk, 2018), DLMs remain largely unmapped territory. In theory, DLMs should be more robust: AR mod-els rely on causal attention, where early typos can trigger cascading errors, whereas DLMs process the entire input bidirectionally at every step. Yet, we do not fully understand how their iterative un-masking process interacts with noisy prompts. Fur-thermore, while recent studies explore DLM ro-bustness against adversarial jailbreaks (Wen et al., arXiv:2607.27386v1 [cs.AI] 29 Jul 2026 2025; Yamabe and Sakuma, 2025; Zhang et al., 2025), defending against benign user mistakes re-quires entirely different mitigation strategies. 
+
+Contributions: We systematically evaluate the robustness and calibration of DLMs compared to AR models. Our core contributions are: 1. Paired Evaluation Benchmark: We com-pare two architectures ( LLaDA-8B vs. LLaMA-3-8B and Dream-7B vs. Qwen2.5-7B ) across three datasets and 32 natural noise condi-tions, isolating architectural traits from model-specific quirks. 2. Behavioral Robustness & Calibration (RQ1–RQ3): We show that robustness to nat-ural noise is weight-dependent , not inherently architectural (RQ1)—the diffusion objective is not a silver bullet. However, two traits repli-cate across both pairs: DLMs are systemati-cally overconfident compared to AR models (RQ2), and they strongly resist gradient-based adversarial suffixes under our short-suffix bud-get (RQ3) (§6.2–§6.4). 3. Mechanistic Insights (RQ4): Using linear probes, we find that all models (DLM and AR) detect input corruption with > 93% ac-curacy. This indicates that DLM behavioral fragility is consistent with a decoding-stage bottleneck rather than a perceptual failure (§6.5). 4. Falsifiable Hypothesis Testing (IPM): If fragility lies at decoding, patching the input prompt should not help. We test five Input Prompt Masking (IPM) variants—none im-prove performance, indicating that DLM ro-bustness likely needs to be integrated directly into the generation process (§6.6). 
+
+2 Background 
+
+2.1 Masked Diffusion Language Models 
+
+DLMs define a forward process that corrupts clean text x0 by independently masking tokens with prob-ability t ∈ [0 , 1] , and learn a reverse denoising model pθ(x0 | xt) to recover the original sequence. Following Sahoo et al. (2024), the training objec-tive is: 
+
+Lmask = Et, m
+
+h
+
+− X 
+
+> i:mi=1
+
+log pθ(xi | x\m, t )
+
+i
+
+(1) where m ∼ Bernoulli (t)L is the binary mask. The key architectural choice is a bidirectional trans-former with no causal mask, enabling each po-sition to attend to all others. During inference, generation proceeds by initialising the response as 
+
+[MASK , . . . , MASK ] and iteratively unmasking the most confident tokens over T steps. 
+
+Critical architecture detail. In the inference loop, the prompt tokens are fixed and never masked. The reverse diffusion process acts only on the re-sponse tokens. This means the model does not 
+
+automatically correct noisy input tokens — it con-ditions on them unchanged. This is the central motivation for IPM. 
+
+2.2 Related Work DLM adversarial safety. Since early 2025, a body of work has studied intentional adversarial at-tacks on DLMs: DIJA (Wen et al., 2025) achieves near-100% jailbreak success via interleaved mask-text injections; DiffuGuard (Li et al., 2025) pro-poses training-free defences; Yamabe and Sakuma (2025) exploit affirmative token injection; and Tra-jHijack (Singh, 2026) manipulates the denoising trajectory. Neyroud and Corley (2025) adapted the GCG attack (Zou et al., 2023) to DLMs with prefix and random suffixes. Our work is complementary :we study benign natural noise, not intentional at-tacks, and propose IPM as a constructive remedy rather than a vulnerability analysis. 
+
+Robustness of AR LLMs to noise. Natural ro-bustness of AR models has been studied in terms of typos (Belinkov and Bisk, 2018), and adversarial word substitutions (Jin et al., 2020; Zhang et al., 2020). No analogous study exists for DLMs. 
+
+Masked LM as noise corrector. Ghazvininejad et al. (2019) showed that masked language models can fill in corrupted positions at inference time (Mask-Predict). We extend this insight to modern DLMs operating as generative models, proposing IPM as a pre-generation denoising stage. 
+
+3 Problem Formulation 
+
+Let M denote a DLM or AR language model. For a clean prompt x, let ˜x = ϕ(x, r ) be a perturbed prompt generated by noise function ϕ at corrup-tion rate r ∈ [0 , 1] . We structure our evaluation around four distinct research questions to system-atically unpack both model behavior and internal mechanics: • RQ1 (§6.2): How does task accuracy degrade as natural noise r increases, and do DLMs and AR models differ systematically? • RQ2 (§6.3): How does input noise impact confidence calibration, and are DLMs more susceptible to overconfidence? • RQ3 (§6.4): How do the architectures com-pare in their resistance to adversarial suffixes, and what do gradient probes reveal about their underlying loss landscapes? • RQ4 (§6.5): What mechanistic factors within the internal hidden states explain the observed behavioral differences? 
+
+3.1 Models and Datasets 
+
+We evaluate two parameter-matched DLM–AR pairs: LLaDA-8B-Instruct (Nie et al., 2025) vs. 
+
+LLaMA-3-8B-Instruct (Grattafiori et al., 2024), and Dream-7B-Instruct (Ye et al., 2025) vs. 
+
+Qwen2.5-7B-Instruct (Team, 2024). We test three core cognitive capabilities: factual recall (Trivi-aQA (Joshi et al., 2017)), mathematical reasoning (GSM8K (Cobbe et al., 2021)), and science QA (ARC-Challenge (Clark et al., 2018)). For DLM inference, we use the original au-thors’ recommended generation recipes: semi-autoregressive block decoding for LLaDA (block length 32, low-confidence remasking, T =128 ) and entropy-ranked confidence remasking for Dream (T =512 , τ =0 .2, top-p=0 .95 ). Our proposed IPM pre-processing uses Td=64 denoising steps. 
+
+3.2 Perturbation Taxonomy 
+
+We simulate natural input noise using nine deter-ministic perturbations across two levels, provid-ing a comprehensive stress test. Character-level (5): transpositions (e.g., teh → the ), random dele-tions, random insertions, keyboard adjacencies (QWERTY substitutions), and homoglyphs (Uni-code lookalikes, e.g., Cyrillic ‘ а’). Evaluated at 
+
+r ∈ { 0.05 , 0.10 , 0.20 , 0.30 }. Word-level (4): ran-dom content word deletion, local shuffling (window size 3), synonym substitution, and word repetition. Evaluated at r ∈ { 0.10 , 0.20 , 0.30 }.This taxonomy yields 5×4 + 4 ×3 = 32 distinct noise conditions per benchmark. 
+
+3.3 Evaluation Metrics 
+
+To quantify performance drops, we define the Ro-bustness Degradation Index (RDI) at noise rate r:RDI (r) = Aclean − Ar
+
+Aclean 
+
+(2) where Aclean is baseline clean accuracy and Ar is accuracy at rate r. RDI ∈ [0 , 1] , where 0 indicates no degradation. For cross-model comparisons, we compute the Area Under the RDI curve (AURDI): AURDI ≈ X
+
+> r
+
+RDI (r) · ∆r (3) For calibration, we calculate Expected Calibra-tion Error ( ECE ) using 15 equal-width bins (Guo et al., 2017). DLM confidence is the geometric mean of the per-token maximum softmax proba-bilities from a single bidirectional pass over the final committed sequence ˆy (not the chosen-token probability at commitment time): 
+
+cDLM (ˆ y) = exp 
+
+ 1
+
+> LL
+
+X
+
+> i=1
+
+log pθ(ˆ yi | ˆy\i)
+
+
+
+(4) The AR score uses the geometric mean of chosen-token probabilities under causal masking: the ag-gregation is identical across architectures, while the per-token basis differs. We ablate this definition (chosen/commit-time basis; mean/min aggregation) in Appendix I. 
+
+4 D-GCG Robustness Probe 
+
+While natural noise evaluates everyday robustness, adversarial attacks reveal a model’s true worst-case vulnerabilities. However, standard gradient-based attacks like the Greedy Coordinate Gradient (GCG) (Zou et al., 2023) are built for AR models, relying on deterministic, left-to-right gradient sig-nals. DLMs, which generate text iteratively over a learned reverse diffusion process, are structurally incompatible with this approach. To bridge this gap and probe the DLM gradi-ent landscape, we introduce Diffusion-GCG (D-GCG). 
+
+4.1 Formulation 
+
+Given a prompt x and a target response y, we aim to optimize an adversarial suffix s ∈ V K that maxi-mizes the model’s difficulty in predicting the target: 
+
+s∗ = arg max  
+
+> s
+
+Et∼U (0 ,1) , m∼Bern (t)
+
+h
+
+− X 
+
+> i:mi=1
+
+log pθ(yi | y\m, [x; s], t )
+
+i
+
+(5) Backpropagating through all T denoising steps would be computationally prohibitive and easily exceed standard VRAM limits. Instead, we esti-mate gradients using a single sampled timestep t
+
+and mask m:
+
+∇s ≈ ∇ s
+
+h
+
+− X 
+
+> i:mi=1
+
+log pθ(yi | y\m, [x; s], t )
+
+i
+
+(6) This single-step unbiased estimator mirrors stan-dard diffusion training and keeps memory usage feasible ( ≈ 1.5× standard inference). Concep-tually, this acts as gradient trajectory sampling .Because a DLM’s loss surface evolves continu-ously across T steps, sampling at a single timestep maps the local landscape at one specific point in the trajectory. Aggregating these gradients across optimization steps allows us to measure the overall coherence or incoherence of the loss landscape. We utilize D-GCG strictly as an analytical probe to uncover these hidden dynamics. 
+
+5 Mechanistic Probing Methodology 
+
+When a model fails on a noisy prompt, behavioral metrics (like accuracy degradation) cannot tell us 
+
+why . The failure could stem from the encoder (the model fails to represent the corrupted token prop-erly) or the decoder (the model recognizes the noise but fails to suppress it during generation). To iso-late this bottleneck and investigate the mechanisms driving behavioral robustness (RQ4), we employ three targeted probing techniques: 
+
+Token-Level Linear Probing. Our primary di-agnostic tool tests whether the encoder explicitly perceives input corruption. We extract hidden-state vectors from 17 evenly spaced layers (lay-ers {0, 2, 4, . . . , 30 , 31 } of 32 ) for perturbed in-puts. We then train an ℓ2-regularized logistic regres-sion ( C=1, max_iter =500) on a balanced 80/20 train/test split to classify tokens as either corrupted (1) or clean ( 0). Our crucial contribution here is the linearity of the classifier. Because a complex, non-linear trans-former block could theoretically extract any feature its activations support, achieving high accuracy with a simple linear probe indicates that the feature is already cleanly separable in the model’s embed-ding space. If the linear probe succeeds, the en-coder is not blind to the noise, so any downstream failure is consistent with a decoding-stage bottle-neck rather than an encoding failure. We report the maximum test accuracy and AUROC across the sampled layers and note the layer index at which the maximum occurs. 
+
+Denoising Trajectory Analysis (DLMs only). 
+
+Because DLMs refine text iteratively, we can trace exactly when and how corruption derails the gen-eration pathway. We compare token-prediction tra-jectories for clean versus perturbed inputs across eight logarithmically spaced snapshot steps (from 
+
+t=T down to t≈0.01 T ). We measure three key metrics: (i) ID divergence (the exact fraction of steps where noisy and clean predictions split), (ii) 
+
+confidence drop (mean reduction in prediction con-fidence), and (iii) stability drop (mean reduction in trajectory consistency). This maps the lifecycle of a corruption as it propagates through the diffusion process. 
+
+Attention Pattern Analysis. To understand how AR models dynamically react to noise, we use for-ward hooks to compute the corruption attention ratio —the fraction of total attention mass allocated specifically to corrupted-token positions, averaged across heads and output positions. A ratio > 1.0 in-dicates the model is actively concentrating attention on the noise (e.g., compensatory redistribution), while a ratio < 1.0 indicates active suppression. Contrasting these AR routing strategies against DLM trajectory behaviors allows us to pinpoint architectural differences in how noise is managed. 
+
+6 Experiments 
+
+6.1 Experimental Setup 
+
+We conducted all experiments on two NVIDIA RTX 4090 GPUs, which provided sufficient mem-ory to evaluate models in native precision with-out quantization. We used PyTorch 2.11, CUDA 13.0, and Transformers 4.45.2. To account for perturbation variance, we report the mean perfor-mance across three random seeds. Unless other-wise noted, each perturbation condition is eval-uated on n=200 samples; mechanistic probing uses n=100 sequences and the D-GCG probe uses 
+
+n=50 . Character- and word-level perturbations are applied to the entire formatted prompt (instructions, question, and any answer choices), identically for all four models. Exact prompt templates and hyper-parameters are detailed in Appendices D and E. GSM8K TriviaQA ARC-Challenge  
+
+> 0.05
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> Mean RDI advantage (AR  DLM)
+> ( DLM more robust)
+> +0.164
+> +0.088
+> +0.102
+> -0.059
+> -0.012 -0.004
+> Natural-perturbation robustness is model-specific, not architecture-intrinsic
+> LLaDA-8B vs LLaMA-3-8B
+> Dream-7B vs Qwen2.5-7B
+
+Figure 2: Mean RDI advantage across 32 noise conditions. LLaDA consistently outperforms LLaMA-3, while Dream’s advantage over Qwen2.5 varies by task, demonstrating that natural robustness is weight-dependent, not inherently archi-tectural. 
+
+Table 1: Clean accuracy and natural-perturbation robustness (mean over 32 conditions, n=200 each). Bold marks the within-pair winner. Acc clean : clean accuracy. Acc r : mean accuracy under noise. RDI: mean relative degradation (lower is better). Adv.%: conditions where the DLM beats its AR counterpart. RDI is relative and should be read jointly with Acc r (e.g., LLaDA’s low TriviaQA RDI coexists with low absolute accuracy). Paired significance in App. H. 
+
+Task Model Acc clean Acc r RDI Adv.% 
+
+TriviaQA LLaDA-8B 0.185 0.128 0.319 88% 
+
+LLaMA-3-8B 0.545 0.323 0.408 Dream-7B 0.220 0.144 0.345 41% Qwen2.5-7B 0.400 0.267 0.333 
+
+GSM8K LLaDA-8B 0.625 0.434 0.306 91% 
+
+LLaMA-3-8B 0.460 0.245 0.470 Dream-7B 0.190 0.121 0.374 34% Qwen2.5-7B 0.825 0.568 0.315 
+
+ARC-Chall. LLaDA-8B 0.860 0.643 0.252 88% 
+
+LLaMA-3-8B 0.840 0.542 0.354 Dream-7B 0.815 0.649 0.204 47% Qwen2.5-7B 0.900 0.720 0.200 
+
+6.2 RQ1: Natural Robustness Degradation 
+
+Table 1 reports clean baseline accuracy, mean RDI ,and the DLM advantage rate across 32 conditions. Figure 2 summarizes cross-pair divergence, while Figure 3 details GSM8K degradation curves (full heatmap in Appendix F). 
+
+Weight-Dependent, Not Architecture-Intrinsic: 
+
+Robustness to natural noise is not a guaranteed feature of the diffusion objective. LLaDA-8B is more robust than LLaMA-3-8B across 88–91% of conditions, and this advantage is statistically sig-nificant on all three tasks (paired bootstrap 95% CIs exclude zero; Wilcoxon p < 0.001 ; App. H). The Dream-7B versus Qwen2.5-7B comparison does not replicate this pattern: Dream surpasses Qwen2.5 on none of the three tasks—its RDI ad-vantage is statistically indistinguishable from zero on TriviaQA ( p=0 .49 ) and ARC ( p=0 .66 ) and sig-nificantly negative on GSM8K ( p=0 .013 ). This in-
+
+Table 2: Clean-baseline calibration. Bold marks the better model per pair. ECE: Expected Calibration Error (lower is better). Mean Conf: average assigned confidence. AUROC: selective prediction AUROC (higher is better). 
+
+Task Model ECE Mean Conf AUROC 
+
+TriviaQA LLaDA-8B 0.814 0.999 0.617 LLaMA-3-8B 0.292 0.837 0.627 
+
+Dream-7B 0.740 0.990 0.707 
+
+Qwen2.5-7B 0.535 0.852 0.681 GSM8K LLaDA-8B 0.351 0.976 0.681 
+
+LLaMA-3-8B 0.362 0.821 0.527 Dream-7B 0.183 0.983 0.516 Qwen2.5-7B 0.131 0.911 0.569 
+
+ARC-Chall. LLaDA-8B 0.140 1.000 0.772 
+
+LLaMA-3-8B 0.077 0.768 0.520 Dream-7B 0.144 0.994 0.745 
+
+Qwen2.5-7B 0.118 0.873 0.706 
+
+dicates robustness is tied to specific pretraining data and weights, so DLM robustness claims should be validated on a per-model basis. 
+
+Baseline Disparities Are Knowledge, Not Decod-ing: Dream’s lower clean accuracy on TriviaQA (0.220 vs. 0.400 for Qwen) occurs because it gen-erates fluent but factually incorrect answers (e.g., confidently stating a celebrity is a Virgo instead of a Scorpio). This points to weaker factual coverage in its pretraining data rather than a decoding failure. Because our RDI metric normalizes by clean accu-racy, this baseline gap does not skew the robustness comparison. 
+
+Consistent Trends Across Architectures: Three patterns hold across all models: (i) character-level noise degrades performance more heavily than word-level noise; (ii) AR models handle homo-glyph substitutions best, as modern tokenizers au-tomatically map these look-alikes to their Latin equivalents; and (iii) ARC-Challenge shows the least cross-model variance, likely due to its con-strained multiple-choice format. 
+
+6.3 RQ2: Calibration Under Noise Consistent DLM Overconfidence: DLMs are systematically more confident than AR models (Table 2, Figure 4). For example, LLaDA aver-ages near-perfect confidence ( 0.976 –1.000 ), while LLaMA-3 scores much lower ( 0.768 –0.837 ). This results in stark ECE gaps, particularly on TriviaQA (+0 .522 and +0 .205 for the two pairs). 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35                                           
+
+> Perturbation rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Transposition
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> Keyboard Adj.
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> Homoglyph
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> Char Deletion
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Word Deletion
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> Local Shuffle
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35
+> Perturbation rate
+> Synonym Subst.
+
+Accuracy vs.\ Perturbation Rate GSM8K (all 4 models)    
+
+> LLaDA-8B (DLM) LLaMA-3-8B (AR) Dream-7B (DLM) Qwen2.5-7B (AR)
+
+Figure 3: Accuracy vs. perturbation rate on GSM8K. Both DLMs (solid lines) maintain higher relative accuracy under noise compared to their AR counterparts (dashed lines) GSM8K TriviaQA ARC-Challenge    
+
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Clean accuracy  0.62
+> 0.18
+> 0.86
+> 0.46
+> 0.55
+> 0.84
+> 0.19
+> 0.22
+> 0.81 0.82
+> 0.40
+> 0.90
+> Clean accuracy
+> LLaDA-8B (DLM)
+> LLaMA-3-8B (AR)
+> Dream-7B (DLM)
+> Qwen2.5-7B (AR)
+> GSM8K TriviaQA ARC-Challenge
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Expected Calibration Error (ECE)
+> 0.35
+> 0.81
+> 0.14
+> 0.36
+> 0.29
+> 0.08
+> 0.74 0.75
+> 0.18
+> 0.09
+> 0.41
+> 0.07
+> Expected Calibration Error (ECE)
+> LLaDA-8B (DLM)
+> LLaMA-3-8B (AR)
+> Dream-7B (DLM)
+> Qwen2.5-7B (AR)
+> Clean baseline across both model pairs
+
+Figure 4: Clean baseline accuracy (left) and Expected Cal-ibration Error (ECE) (right). DLMs exhibit systematically higher ECE, indicating persistent overconfidence compared to AR models. 
+
+Confident Commitment Is a Hazard: Because DLMs commit to a token precisely when its proba-bility peaks, high marginal confidence is a mechan-ical byproduct of the architecture. However, this mechanism decouples confidence from correctness. Under heavy perturbation ( r=0 .30 ), DLM confi-dence remains ≥ 0.93 even as accuracy collapses, whereas AR confidence appropriately drops along-side accuracy (Figure 5). In practical deployment, a model that remains highly confident while answer-ing incorrectly is much harder to trust and filter than one that properly signals its uncertainty. The preserved AUROC scores (e.g., LLaDA GSM8K at 
+
+0.681 ) confirm that the model retains discrimina-tive signal; the issue lies in its absolute calibration. 
+
+Insensitivity of Per-Token Signals: This over-confidence also explains why internal token-level filters fail. DLMs assign near-1.0 log-probabilities even to corrupted tokens (e.g., teh ) because they evaluate each token within an otherwise clean, bidi-rectional context. DLM robustness is a dynamic, global process that cannot be reliably localized to 
+
+Table 3: D-GCG / AR-GCG probe results on TriviaQA. Min-len: shortest suffix causing ≥ 20% accuracy drop. Best deg.: maximum degradation across suffix lengths 4 and 8. Grad norm: mean per-step gradient norm at length 8. 
+
+Model Min-len Best deg. Grad norm 
+
+LLaDA-8B (DLM) None −0.020 2,100 LLaMA-3-8B (AR) 8 +0 .440 427 Dream-7B (DLM) None +0 .050 1,472 Qwen2.5-7B (AR) 4 +0 .250 1,627 
+
+individual token probabilities. 
+
+6.4 RQ3: Gradient Landscape via D-GCG Probe Adversarial Suffix Resistance: Under our short-suffix search budget (suffix lengths 4–8, 50 opti-mization steps, top-k=64 , n=50 ), D-GCG fails to degrade DLM performance. Neither DLM reaches a 20% degradation threshold; in fact, the optimizer marginally improves LLaDA’s accuracy ( −0.020 ). In contrast, standard GCG easily breaks AR mod-els under the same budget, degrading LLaMA-3 by +0 .440 and Qwen2.5 by +0 .250 . We there-fore claim resistance to this class of short gradient-based suffix attacks , not broad adversarial robust-ness; longer suffixes, larger budgets, and diffusion-native attacks (Wen et al., 2025) remain untested. 
+
+Incoherent Gradients: This resistance is not due to vanishing gradients, DLM gradient mag-nitudes actually match or exceed AR gradients (Ta-ble 3). Instead, the issue is gradient coherence. Fig-0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> ECE
+
+GSM8K ECE ( better) 
+
+0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+TriviaQA ECE ( better) 
+
+0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+ARC-Challenge ECE ( better) 
+
+0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> AUROC
+
+GSM8K AUROC ( better) 
+
+0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+TriviaQA AUROC ( better) 
+
+0.05 0.10 0.15 0.20 0.25 0.30 
+
+Perturbation rate (transposition) 
+
+0.4 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+ARC-Challenge AUROC ( better) 
+
+Calibration under noise both pairs on shared axes 
+
+LLaDA-8B (DLM) LLaMA-3-8B (AR) Dream-7B (DLM) Qwen2.5-7B (AR) Figure 5: ECE and AUROC vs. transposition rate for the LLaDA pair and Dream pair. DLMs remain uniformly overconfident (higher ECE) across all noise levels, while AUROC shows model-specific variance. 4 8
+
+> Suffix length (tokens)
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Accuracy degradation
+
+A. Adversarial degradation vs.\ suffix length 
+
+> 20% threshold
+> LLaDA-8B (DLM)
+> LLaMA-3-8B (AR)
+> Dream-7B (DLM)
+> Qwen2.5-7B (AR)
+> LLaDA-8B
+> (DLM)
+> LLaMA-3-8B
+> (AR)
+> Dream-7B
+> (DLM)
+> Qwen2.5-7B
+> (AR)
+> 0
+> 250
+> 500
+> 750
+> 1000
+> 1250
+> 1500
+> 1750
+> 2000
+> Mean gradient norm
+> 2100
+> 427
+> 1472
+> 1627
+
+B. Mean gradient norm (suffix\_len=8) 
+
+> LLaDA-8B
+> LLaMA-3-8B
+> slen=4
+> LLaDA-8B
+> LLaMA-3-8B
+> slen=8
+> Dream-7B
+> Qwen2.5-7B
+> slen=4
+> Dream-7B
+> Qwen2.5-7B
+> slen=8
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> Degradation on AR target
+> +0.120
+> +0.140
+> +0.100
+> +0.060
+
+C. DLM-optimized suffix transferred to AR      
+
+> 010 20 30 40 50
+> D-GCG optimization step
+> 1.0
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> 2.2
+> 2.4
+> 2.6
+> Loss (normalized)
+
+D. Loss trajectory (suffix\_len=8, normalized) 
+
+> LLaDA-8B (DLM)
+> LLaMA-3-8B (AR)
+> Dream-7B (DLM)
+> Qwen2.5-7B (AR)
+
+D-GCG adversarial probe replicated across both model pairs 
+
+Figure 6: D-GCG adversarial probe. (A) Accuracy degrada-tion vs. suffix length: neither DLM reaches the 20% degra-dation threshold, while both AR models exceed it at length 
+
+≤ 8. (B) Mean gradient norms at length 8: DLM gradients are comparable to (Dream) or much larger than (LLaDA) AR gradients magnitude is not the issue. (C) Transferability to AR targets is moderate. (D) Loss trajectory across 50 D-GCG optimization steps: AR curves ascend consistently (successful attack), while DLM curves oscillate erratically, showing the optimizer cannot exploit the DLM gradient direction. 
+
+ure 6 (D) illustrates this clearly. During optimiza-tion, AR loss curves ascend steadily, indicating the attack successfully finds adversarial tokens. The DLM loss curves, however, oscillate erratically. Despite large gradient magnitudes, the optimizer cannot successfully steer the DLM. 
+
+Loss Landscape Dynamics: This incoherence stems directly from the diffusion training objec-tive. The DLM loss (Eq. 1) averages over ran-LLaDA-8B 
+
+> GSM8K / transposition
+> LLaDA-8B
+> GSM8K / word_deletion
+> LLaDA-8B
+> TriviaQA / homoglyph
+> LLaDA-8B
+> TriviaQA / transposition
+> Dream-7B
+> GSM8K / transposition
+> Dream-7B
+> GSM8K / word_deletion
+> Dream-7B
+> TriviaQA / homoglyph
+> Dream-7B
+> TriviaQA / transposition
+> 0.86
+> 0.88
+> 0.90
+> 0.92
+> 0.94
+> 0.96
+> 0.98
+> 1.00
+> Best-layer linear probe accuracy
+> Mechanistic: corruption signal is recoverable from internal states in BOTH architectures and both pairs
+> LLaDA-8B (DLM)
+> LLaMA-3-8B (AR)
+> Dream-7B (DLM)
+> Qwen2.5-7B (AR)
+
+Figure 7: Best-layer linear probe accuracy for detecting per-turbed hidden states. All models exceed 93% accuracy (best-layer AUROC 0.92–0.99, near-identical for DLM and AR), in-dicating corruption is linearly decodable in both architectures— consistent with a decoding-stage bottleneck rather than a fail-ure to encode the corruption. 
+
+dom timesteps and mask patterns. Consequently, a single-step gradient estimate is highly stochas-tic. The local gradient points in wildly different directions depending on which mask is sampled, making the effective loss surface too jagged for greedy coordinate substitution. Thus, DLM re-sistance to GCG attacks is a natural byproduct of training-time noise marginalization, rather than an explicit defense mechanism. 
+
+Cross-Architecture Transferability: Suffixes optimized on DLMs transfer to AR targets with moderate success ( +0 .12 to +0 .15 degradation), but they are notably weaker than native AR attacks. This confirms that while the architectures share some representational overlap, their loss surfaces remain distinct. 
+
+6.5 RQ4: Mechanistic Analysis 
+
+We mechanistically probe 100 samples across four conditions per pair. Since DLMs do not expose Table 4: Best-layer linear probe accuracy on clean-vs-noisy hidden state classification. Darker and lighter blue shading indicate the highest and second-highest probe accuracies per condition across the four models. All values exceed 93% (best-layer AUROC 0.92–0.99), showing that corruption is linearly decodable in both architectures.                         
+
+> Pair Model GSM8K TriviaQA Transposition Word-deletion Homoglyph Transposition
+> Pair 1 LLaDA 0.947 0.963 0.971 0.955 LLaMA-3 0.938 0.984 0.946 0.946 Pair 2 Dream 0.958 0.979 0.944 0.964 Qwen2.5 0.969 0.986 0.953 0.954
+
+standard attention weights via their fused-kernel bidirectional implementations, our DLM analy-sis relies on hidden-state probing and generation trajectories, whereas AR baselines permit direct attention analysis. 
+
+Corruption Is Linearly Encoded in Both Archi-tectures: Hidden-state linear probes distinguish clean from perturbed inputs with > 0.93 accuracy (best-layer AUROC 0.92–0.99) across all models (Table 4, Figure 7). Crucially, the probe is near-identical for the DLM and its AR partner (e.g., transposition AUROC 0.982 vs. 0.983), so corrup-tion is linearly decodable in both architectures and cannot by itself explain their behavioral difference. Interestingly, while the corruption signal peaks in the middle-to-late layers for LLaDA, it peaks early for Dream and collapses by the final layer. Yet, in all cases, the corruption is present in states read by the decoder. 
+
+Toward a Decoding-Stage Bottleneck: If the corruption is encoded, why do models fail? Fig-ure 8 contrasts how each architecture reacts. AR models actively shift their attention: for example, redistributing focus after word-deletion, or sup-pressing attention to homoglyphs. DLMs, how-ever, lack this overt compensatory routing. On GSM8K, LLaDA’s denoising trajectory diverges by 28% from its clean path, accompanied by a drop in confidence. Because the corruption is lin-early decodable yet behavior still degrades, the fragility is consistent with a decoding-stage bottle-neck rather than an encoding failure. This probe is correlational; causally localizing the failure (e.g., via activation patching) is important future work. 
+
+6.6 Pre-Generation Mitigation Fails (IPM) 
+
+Our finding that every model explicitly encodes cor-ruption ( > 0.93 probe accuracy) leads to a clear hy-pothesis: pre-generation input patching should not fix DLM fragility if the bottleneck lies at decoding 0.0 0.2 0.4 0.6 0.8 1.0        
+
+> Denoising timestep ( t/T, late early)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> ID divergence (noisy vs.\ clean)
+> A. DLM trajectory disruption is task-dependent
+> GSM8K (transposition)
+> TriviaQA (transposition)
+> 0510 15 20 25 30
+> Transformer layer index
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> 1.1
+> 1.2
+> 1.3
+> Attention ratio (noisy / clean)
+> B. AR attention overtly re-routes around noise
+> Word-deletion (GSM8K)
+> Homoglyph (TriviaQA)
+> Mechanistic routing behaviors: DLM trajectory (decoder proxy) vs.\ AR attention
+
+Figure 8: Mechanistic routing behaviors. (A) DLM trajectory divergence varies significantly by task. (B) AR models exhibit active dynamic re-routing (e.g., suppressing homoglyphs or compensating for deletions), a compensatory mechanism ab-sent in DLMs. 
+
+rather than in the input the decoder receives. We test this using Input Denoising via Partial Mask-ing (IPM), which flags suspected corrupt tokens, masks them, and runs a short ( Td=64 ) diffusion infilling pass before standard generation. 
+
+Internal Detection Signal: We initially hypothe-sized that DLM per-token conditional probabilities could serve as a corruption detector. However, as noted in Section 6.3, DLMs assign near-1.0 log-probabilities even to corrupted tokens because they score them within an otherwise-clean context. As a result, internal-signal variants like IPM-Threshold and IPM-TopK perform worse than the noisy base-line. 
+
+Hybrid-IPM with External Signal: To bypass this, Hybrid-IPM uses an external spell-checker to flag out-of-vocabulary tokens (edit distance ≤ 2)for re-masking. Yet, as Table 5 shows, this still degrades task accuracy (e.g., dropping GSM8K keyboard-adjacency from 0.495 to 0.425 ). The external dictionary mistakenly flags valid domain-specific terms (like math variables or entity names), forcing the DLM to hallucinate replacements. Ul-timately, none of the five tested IPM variants out-perform the noisy baseline. This is consistent with our mechanistic diagnosis: for these pre-generation patching variants, surface-level input edits do not improve DLM robustness, pointing instead to a decoding-stage bottleneck. 
+
+7 Conclusion 
+
+In this work, we present a systematic, two-pair evaluation of Diffusion Language Model (DLM) robustness and calibration, effectively isolating architectural traits from model-specific artifacts. We find that robustness to natural input noise is weight-dependent rather than a guaranteed feature of the diffusion objective: LLaDA broadly out-Table 5: IPM variant accuracy on selected conditions. Darker / lighter blue mark best / second-best per column. None of the five tested IPM variants improves over the noisy baseline, con-sistent with a decoding-stage bottleneck that pre-generation patching does not address.                      
+
+> Variant GSM8K TriviaQA
+> kbd trans kbd trans Baseline (noisy) 0.495 0.350 0.100 0.060 IPM-TopK (best) 0.500 0.330 0.075 0.045 IPM-EditDist 0.475 0.340 0.090 0.075 IPM-Hybrid 0.425 0.315 0.070 0.070
+
+performs LLaMA-3, but Dream’s advantage over Qwen2.5 is task-specific. However, two architec-tural traits are universal: DLMs exhibit systematic overconfidence—a practical deployment hazard— and they naturally resist gradient-based adversar-ial attacks due to their highly stochastic loss land-scapes. Crucially, mechanistic probing reveals that all models perfectly encode input corruption, prov-ing that behavioral fragility stems entirely from the bidirectional decoder failing to quarantine noisy tokens. Because this is a decoder failure, our tests confirm that surface-level prompt patching (IPM) cannot resolve it. Ultimately, DLM robustness must be fundamentally trained into the decoding process rather than patched on after the fact, a re-search direction we support by releasing all our code. 
+
+Limitations 
+
+Scale and Generality: We evaluate models ex-clusively at the 7B–8B parameter scale. It re-mains an open question whether these robustness properties, calibration flaws, and routing behav-iors shift at larger scales (e.g., 70B+), where emer-gent resilience often appears. Furthermore, be-cause we demonstrate that natural robustness is weight-dependent, our findings are naturally tied to the specific training recipes of LLaDA and Dream. As diffusion pretraining techniques mature, future DLMs may exhibit different behavioral profiles. 
+
+Task and Perturbation Scope: While we test nine common real-world noise types across three factual and reasoning benchmarks, our taxonomy is not exhaustive. Future work should evaluate domain-specific corruptions (e.g., code syntax er-rors, multilingual switching) and longer-context tasks (such as document summarization or multi-turn dialogue) to verify if these trends hold in more complex environments. 
+
+Calibration Methodology: We calculate DLM confidence using the geometric mean of per-token softmax probabilities at the final committed step. While this is a principled metric derived directly from the generation mechanism, it is only one pos-sible aggregation strategy. We explore alternative confidence metrics in Appendix I. 
+
+Ethical Considerations 
+
+This work evaluates the robustness of publicly released models on standard open-source bench-marks. We do not introduce new attack capabilities; our D-GCG method is strictly a diagnostic probe for analyzing loss landscapes, not an offensive jail-break. We use no private or sensitive data, and our automated input perturbations do not generate harmful or toxic content. 
+
+References 
+
+Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. 2021. Structured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Sys-tems , volume 34. Yonatan Belinkov and Yonatan Bisk. 2018. Synthetic and natural noise both break neural machine transla-tion. In International Conference on Learning Rep-resentations .Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and Oyvind Tafjord. 2018. Think you have solved question an-swering? try ARC, the AI2 reasoning challenge. In 
+
+Proceedings of the 56th Annual Meeting of the Asso-ciation for Computational Linguistics .Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, and 1 others. 2021. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 .Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and Luke Zettlemoyer. 2019. Mask-predict: Parallel de-coding of conditional masked language models. In 
+
+Proceedings of the 2019 conference on empirical methods in natural language processing and the 9th international joint conference on natural language processing (EMNLP-IJCNLP) , pages 6112–6121. Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, and 1 others. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 .Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q. Wein-berger. 2017. On calibration of modern neural net-works. In International Conference on Machine Learning .Di Jin, Zhijing Jin, Joey Tianyi Zhou, and Peter Szolovits. 2020. Is BERT really robust? a strong baseline for natural language attack on text classifi-cation and entailment. In Proceedings of the AAAI Conference on Artificial Intelligence .Mandar Joshi, Eunsol Choi, Daniel S Weld, and Luke Zettlemoyer. 2017. TriviaQA: A large scale distantly supervised challenge dataset for reading comprehen-sion. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics .Zherui Li, Zheng Nie, Zhenhong Zhou, Yue Liu, Yitong Zhang, Yu Cheng, Qingsong Wen, Kun Wang, Yufei Guo, and Jiaheng Zhang. 2025. Diffuguard: How intrinsic safety is lost and found in diffusion large language models. arXiv preprint arXiv:2509.24296 .Aaron Lou, Chenlin Meng, and Stefano Ermon. 2023. Discrete diffusion modeling by estimating the ratios of the data distribution. Ruben Neyroud and Sam Corley. 2025. GCG attack on a diffusion LLM. arXiv preprint arXiv:2601.14266 .Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. 2025. Large language dif-fusion models. In Advances in Neural Information Processing Systems , volume 38. Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T Chiu, Alexander Rush, and Volodymyr Kuleshov. 2024. Simple and effective masked diffusion language mod-els. In Advances in Neural Information Processing Systems , volume 37. Arth Singh. 2026. Re-mask and redirect: Exploiting denoising irreversibility in diffusion language models. 
+
+arXiv preprint arXiv:2604.08557 .Qwen Team. 2024. Qwen2.5 technical report. arXiv preprint arXiv:2412.15115 .Zichen Wen, Jiashu Qu, Zhaorun Chen, Xiaoya Lu, Don-grui Liu, Zhiyuan Liu, Ruixi Wu, Yicun Yang, Xi-angqi Jin, Haoyun Xu, and 1 others. 2025. The devil behind the mask: An emergent safety vulnerability of diffusion llms. arXiv preprint arXiv:2507.11097 .Shojiro Yamabe and Jun Sakuma. 2025. Toward safer diffusion language models: Discovery and miti-gation of priming vulnerability. arXiv preprint arXiv:2510.00565 .Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. 2025. Dream 7b: Diffusion large language models. Tianyi Zhang, Varsha Kishore, Felix Wu, Kilian Q. Weinberger, and Yoav Artzi. 2019. BERTScore: Evaluating text generation with BERT. arXiv preprint arXiv:1904.09675 .Wei Emma Zhang, Quan Z. Sheng, Ahoud Alhazmi, and Chenliang Li. 2020. Adversarial attacks on deep-learning models in natural language processing: A survey. volume 11, New York, NY, USA. Associa-tion for Computing Machinery. Yuanhe Zhang, Fangzhou Xie, Zhenhong Zhou, Zherui Li, Hao Chen, Kun Wang, and Yufei Guo. 2025. Jail-breaking large language diffusion models: Revealing hidden safety flaws in diffusion-based text generation. 
+
+arXiv preprint arXiv:2507.19227 .Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J Zico Kolter, and Matt Fredrikson. 2023. Univer-sal and transferable adversarial attacks on aligned language models. arXiv preprint arXiv:2307.15043 .A Discussion 
+
+Weight-Dependent Robustness. Our results show that natural robustness is not an automatic feature of diffusion models. While LLaDA con-sistently outperforms LLaMA-3 by a wide margin, Dream shows no such advantage over Qwen2.5 on any of the three tasks (indistinguishable on Triv-iaQA/ARC, worse on GSM8K). This shifts the community’s core question from “Are DLM s in-herently more robust?” to “Which training recipes produce robust DLM s?” Ultimately, the burden of safety and reliability lies in a model’s pretraining mix, not just its diffusion objective. 
+
+Replicated Architectural Traits. Despite dif-ferences in natural robustness, two traits replicate across both DLM architectures. First, DLMs ex-hibit systematic overconfidence. This is a direct byproduct of the iterative-commitment decoder, which emits tokens precisely when their probability is highest. Second, DLMs naturally resist D-GCG adversarial suffixes. Their highly stochastic loss landscapes yield large but directionally incoherent gradients, preventing coordinate-wise attacks from succeeding under our short-suffix search budget. 
+
+The Decoder Bottleneck. The most striking find-ing of this work is the consistently high linear-probe accuracy ( > 0.93 ) across all tested models. Because the corruption is linearly decodable in both architectures, behavioral fragility is consistent with a decoding-stage bottleneck rather than a percep-tual failure. This mechanistic insight motivated a falsifiable prediction: surface-level prompt patch-ing should not help. Our IPM capstone (§6.6) is consistent with this across five variants. If the field wants to improve DLM robustness, defenses may need to intervene directly in the iterative decoding loop, not the input prompt. 
+
+Practical Implications. For real-world deploy-ment, our findings suggest three immediate take-aways: (i) DLM confidence scores require post-hoc calibration before being used for selective pre-diction; (ii) natural robustness must be audited on a per-model basis; and (iii) while DLMs nat-urally resist suffix attacks, diffusion-specific jail-breaks (Wen et al., 2025; Yamabe and Sakuma, 2025; Zhang et al., 2025) remain an independent threat requiring distinct mitigations. 
+
+B IPM Algorithm (Full Pseudocode) 
+
+Algorithm 1 provides the complete pseudocode for IPM-Threshold. Other variants (IPM-TopK, IPM-Uniform, IPM-Iterative) differ only in the mask selection criteria (line 7). 
+
+Algorithm 1 Input Denoising via Partial Masking (IPM-Threshold) 
+
+Require: Noisy prompt ˜x ∈ V L, DLM pθ, thresh-old τ , denoising steps Td, min-token-length 
+
+ℓmin 
+
+Ensure: Denoised prompt ˆx 
+
+> 1:
+
+// Phase 1: Noise Detection  
+
+> 2:
+
+B ← ˜x1 ⊤ ▷ L copies of ˜x, shape (L, L ) 
+
+> 3:
+
+for i = 1 , . . . , L do  
+
+> 4:
+
+B[i, i ] ← [MASK ] ▷ Mask position i 
+
+> 5:
+
+end for  
+
+> 6:
+
+s ← batch_forward (B) ▷ (L, ) log-probs via chunks of 16  
+
+> 7:
+
+// Phase 2: Targeted Re-masking  
+
+> 8:
+
+C ← { i : si < log τ ∧ len (˜ xi) ≥ ℓmin } 
+
+> 9:
+
+ˆx ← ˜x 
+
+> 10:
+
+for i ∈ C do  
+
+> 11:
+
+ˆxi ← [MASK ] 
+
+> 12:
+
+end for  
+
+> 13:
+
+// Phase 3: Short Diffusion Fill-in  
+
+> 14:
+
+for t = Td, T d − 1, . . . , 1 do  
+
+> 15:
+
+Compute logits ← pθ(ˆ x) 
+
+> 16:
+
+Unmask ⌈(Td − t + 1) /T d · |C|⌉ most-confident positions  
+
+> 17:
+
+end for  
+
+> 18:
+
+return ˆx
+
+Complexity. Phase 1 requires ⌈L/ 16 ⌉ batched forward passes (batch size 16, sequence length L). Phase 3 requires Td forward passes on a single sequence. The total overhead is roughly L/ 16 + Td
+
+forward passes. For standard generation parameters (L ≈ 64 , Td = 16 , T = 128 ), the overhead is just 20 additional passes, yielding ∼ 1.5× the base inference latency. 
+
+C D-GCG Implementation Details 
+
+Gradient Computation. To compute gradients with respect to discrete suffix tokens, we use a straight-through differentiable embedding. The suffix is represented as a one-hot matrix E ∈{0, 1}K×|V| and passed through the embedding matrix We as S = EW e ∈ RK×d. Gradients 
+
+∂L/∂ E are computed via standard backpropaga-tion; the argmax of this gradient over the vocab-ulary identifies the top-k candidate tokens (Zou et al., 2023). 
+
+Hyperparameters. Our search space includes suffix lengths K ∈ { 4, 8, 16 }, 50 optimization steps, 64 top-k candidates, and a mini-batch size of 1 per gradient step, evaluated on n=50 samples. We sample ntimestep = 1 (single-timestep estima-tion, see §4). The suffix is initialized randomly from the vocabulary. For cross-pair comparability we report results up to length 8 (not all configura-tions completed length 16), matching the main-text figures and Table 3. 
+
+VRAM Budget. The single-step gradient estima-tor requires approximately 1.5× standard inference VRAM ( ≈ 8 GB on an RTX 4090). We do not per-form backpropagation through time (BPTT) across the T denoising steps. 
+
+D Prompt Templates 
+
+Models receive prompts formatted through their official chat templates via 
+
+tokenizer.apply_chat_template . The user message for each benchmark is constructed as follows: 
+
+TriviaQA. 
+
+Answer the following question concisely in a few words. Question: {question} Answer: 
+
+GSM8K. 
+
+Solve the following math problem step by step. At the end, write the final answer as a number after '#### '.Problem: {question} Solution: 
+
+ARC-Challenge. 
+
+Answer the following multiple choice science question. Reply with just the letter (A, B, C, or D). Question: {question} Choices: A) {choice_A} B) {choice_B} C) {choice_C} D) {choice_D} Answer: 
+
+E Full Hyperparameter Tables 
+
+This section details the complete set of hyperparam-eters used across all experiments. Table 6 outlines the generation and architectural settings for both the DLM and AR models. Table 7 specifies the grid of parameters tested during our IPM ablation study, and Table 8 details the configurations used for our calibration metrics. 
+
+Table 6: Model hyperparameters used in all experi-ments.                              
+
+> Parameter DLMs AR models
+> Quantization none (BF16) none (BF16) Compute dtype bfloat16 bfloat16 Device map auto auto Diffusion steps ( T)128 (LLaDA) / 512 (Dream) —LLaDA block length 32 —LLaDA EOS suppression on (App. B.4 trick) —Dream remasking alg. entropy (αT=0 )—Dream temperature 0.2 —Dream top-p0.95 —Max new tokens 128 (512 for GSM8K) 128 (512 for GSM8K) Temperature (default) 0 (greedy) 0 (greedy) Attention impl. eager sdpa
+
+Table 7: IPM hyperparameters evaluated in the ablation study.              
+
+> Parameter Values
+> Variant Threshold, TopK, Uniform, Iterative Threshold τ0.05, 0.10, 0.20, 0.40 TopK K1, 2, 4, 8 Mask fraction ρ0.05, 0.10, 0.20 Denoising steps Td16 Min token length ℓmin 3 characters Max iterations (Iterative) 3
+
+Table 8: Calibration computation details. 
+
+Parameter Value 
+
+ECE bins 15 (equal-width) DLM confidence aggregation Geometric mean AUROC estimator Trapezoidal (scikit-learn) ELBO samples for scoring 10 
+
+DLM Sampler Configurations (Reproducibility Note). Both DLMs are evaluated using their au-thors’ officially recommended generation recipes, which differ significantly from Hugging Face de-faults: • LLaDA-8B: Uses semi-autoregressive block decoding with block_length =32, low-confidence remasking, T =128 , and EOS/EoT suppression in the confidence ranking (LLaDA paper App. B.4). • Dream-7B: Uses alg =“entropy” confidence remasking with T =512 (committing one to-ken per step), alg_temp =0, temperature 0.2,and top-p 0.95 . Note: The Hugging Face de-fault for Dream ( alg =“origin”, purely ran-dom unmasking) degrades long-output tasks by 3–4 × and should not be used. 
+
+Additionally, pipeline components that read DLM logits directly (IPM noise detection, infilling, D-GCG gradient computation) apply Dream’s causal-shift correction ( logits[:, :-1, :] ) to ensure to-ken i is scored from the logit at position i−1.
+
+F Full RDI Curves by Perturbation Type 
+
+Both Pairs, Side-by-Side (TriviaQA and ARC-Challenge) 
+
+To provide a complete view of model degrada-tion under noise, we present the full accuracy sweep curves and corresponding RDI heatmaps for all tested benchmarks. Figures 9 and 10 plot the absolute accuracy degradation across vary-ing perturbation rates for TriviaQA and ARC-Challenge, respectively, while Figure 13 repro-duces the GSM8K curves for completeness. The corresponding RDI heatmaps—visualizing the rel-ative robustness degradation for each specific noise type—are shown in Figures 11, 12, and 14. 
+
+Per-Pair Summary Panels 
+
+To easily contrast the overall behavioral profiles of the two architectures, Figures 15 and 16 summa-rize the RDI advantage, win rates, and calibration gaps for the LLaDA and Dream pairs, respectively. Additionally, Table 9 breaks down the Area Under the RDI curve (AURDI) by specific perturbation types for the LLaDA pair, providing granular in-sight into which noise categories drive the observed architectural differences. 
+
+Table 9: AURDI by perturbation type for the LLaDA pair on TriviaQA and GSM8K ( ↓ = lower is more ro-bust). The DLM yields a better (lower) AURDI across every perturbation type, detailing the win-rate results in §6.2.                                           
+
+> TriviaQA GSM8K Level Type LLaDA LLaMA-3 LLaDA LLaMA-3 Char Transposition 0.641 0.645 0.525 0.701 Deletion 0.551 0.635 0.580 0.749 Insertion 0.470 0.584 0.348 0.551 Keyboard 0.454 0.647 0.266 0.537 Homoglyph 0.441 0.573 0.129 0.389 Word Deletion 0.196 0.259 0.560 0.766 Local shuffle 0.000 0.108 0.058 0.291 Synonym sub. 0.108 0.156 0.242 0.280 Repetition 0.007 0.037 0.106 0.201
+
+Observations. Homoglyph substitution is con-sistently the most damaging character-level pertur-bation for DLMs, but not for AR models. We hypothesize this is because LLaDA’s tokenizer (de-rived from LLaMA-3) maps Cyrillic homoglyphs to out-of-vocabulary or rare tokens, producing un-usual embedding vectors that confuse bidirectional attention. Furthermore, word-level perturbations are disproportionately damaging to DLMs across both tasks. 
+
+G Full IPM Ablation Results 
+
+The full ablation reported here was conducted on the LLaDA pair (N =200 samples), as LLaDA’s generation recipe remained constant. The Dream-pair IPM numbers discussed in the main text (Ta-ble 5) stem from a subsequent N =20 run using Dream’s corrected sampler. Figure 17 visualizes the performance of all tested IPM variants against the noisy baseline across multiple conditions. Fur-thermore, Table 10 provides a detailed numeri-cal breakdown of the ablation on GSM8K under keyboard-adjacency noise. Crucially, the qualitative pattern replicates across both models: no IPM variant reliably im-proves over the noisy baseline. Aggressive Thresh-old variants tend to over-mask valid tokens, col-lapsing accuracy to chance (e.g., Dream TriviaQA-transposition Threshold-30 drops from 0.150 to 
+
+0.000 ). Small, single-sample upticks for Hybrid and Edit-Distance variants ( ±1/20 samples) fall well within standard sampling noise and do not al-ter our conclusion that pre-generation patching is ineffective. 
+
+Table 10: Full IPM ablation on GSM8K under keyboard-adjacency noise ( r=0 .15 ) for the LLaDA pair. Clean DLM accuracy is 0.625. No variant reliably im-proves over the noisy baseline; aggressive variants col-lapse accuracy.                                                  
+
+> Method Acc ∆Acc Mean tokens changed
+> Baseline (noisy) 0.495 ——IPM-TopK ( K=1 )0.490 −0.005 0.5 IPM-TopK ( K=2 )0.500 +0 .005 1.0 IPM-TopK ( K=3 )0.500 +0 .005 1.5 IPM-TopK ( K=5 )0.465 −0.030 2.4 IPM-TopK ( K=10 )0.480 −0.015 4.6 IPM-Uniform ( ρ=0 .10 )0.440 −0.055 3.2 IPM-Threshold ( τ=0 .10 )0.395 −0.100 17.5 IPM-Threshold ( τ=0 .20 )0.325 −0.170 19.7 IPM-Threshold ( τ=0 .30 )0.325 −0.170 20.9 IPM-Threshold ( τ=0 .50 )0.285 −0.210 23.0 IPM-Iterative ( ×3)0.300 −0.195 24.0 IPM-EditDistance (external) 0.475 −0.020 8.2 IPM-Hybrid (spell-checker) 0.425 −0.070 9.0
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Transposition 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Keyboard Adj. 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Homoglyph 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Char Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Word Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Local Shuffle 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Synonym Subst. 
+
+Accuracy vs.\ Perturbation Rate TriviaQA (all 4 models) 
+
+LLaDA-8B (DLM) LLaMA-3-8B (AR) Dream-7B (DLM) Qwen2.5-7B (AR) Figure 9: Accuracy vs. perturbation rate on TriviaQA. Top: LLaDA-8B vs. LLaMA-3-8B. Bottom: Dream-7B vs. Qwen2.5-7B. 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Transposition 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Keyboard Adj. 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Homoglyph 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Char Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Word Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Local Shuffle 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Synonym Subst. 
+
+Accuracy vs.\ Perturbation Rate ARC-Challenge (all 4 models) 
+
+LLaDA-8B (DLM) LLaMA-3-8B (AR) Dream-7B (DLM) Qwen2.5-7B (AR) 
+
+Figure 10: Accuracy vs. perturbation rate on ARC-Challenge. Top: LLaDA pair. Bottom: Dream pair. 5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.19 0.43 0.76 0.95 
+
+0.00 0.32 0.49 0.81 
+
+0.24 0.27 0.54 0.59 
+
+0.19 0.35 0.65 0.84 
+
+0.00 0.22 0.35 
+
+0.00 0.00 0.00 
+
+0.03 0.08 0.24 
+
+DLM (LLaDA-8B) 
+
+5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.26 0.49 0.73 0.90 
+
+0.27 0.51 0.71 0.92 
+
+0.28 0.45 0.64 0.77 
+
+0.31 0.44 0.74 0.87 
+
+0.07 0.28 0.41 
+
+0.02 0.16 0.10 
+
+0.04 0.19 0.20 
+
+AR (LLaMA-3-8B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.18 0.30 0.57 0.82 
+
+0.07 0.41 0.59 0.93 
+
+0.20 0.27 0.52 0.75 
+
+0.07 0.36 0.68 0.93 
+
+0.02 0.16 0.55 
+
+0.18 0.16 0.14 
+
+0.07 0.18 0.14 
+
+DLM (Dream-7B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.28 0.41 0.66 0.80 
+
+0.15 0.34 0.55 0.84 
+
+0.05 0.25 0.43 0.66 
+
+0.24 0.40 0.69 0.85 
+
+0.13 0.29 0.40 
+
+0.00 0.08 0.13 
+
+0.06 0.10 0.15 
+
+AR (Qwen2.5-7B) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> RDI (  worse)
+
+RDI Heatmap TriviaQA (both pairs) Figure 11: RDI heatmap on TriviaQA for both pairs. 5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.15 0.26 0.55 0.69 
+
+0.13 0.26 0.42 0.61 
+
+0.12 0.17 0.32 0.51 
+
+0.15 0.22 0.44 0.67 
+
+0.06 0.18 0.42 
+
+0.03 0.08 0.08 
+
+0.06 0.09 0.13 
+
+DLM (LLaDA-8B) 
+
+5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.21 0.38 0.54 0.57 
+
+0.20 0.31 0.52 0.69 
+
+0.16 0.26 0.30 0.40 
+
+0.21 0.30 0.57 0.70 
+
+0.33 0.45 0.58 
+
+0.24 0.25 0.29 
+
+0.19 0.24 0.26 
+
+AR (LLaMA-3-8B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.04 0.18 0.32 0.61 
+
+0.06 0.20 0.40 0.58 
+
+0.06 0.10 0.12 0.18 
+
+0.08 0.20 0.39 0.61 
+
+0.04 0.23 0.46 
+
+0.01 0.05 0.12 
+
+0.07 0.04 0.12 
+
+DLM (Dream-7B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.06 0.13 0.39 0.64 
+
+0.06 0.14 0.42 0.58 
+
+0.01 0.01 0.04 0.12 
+
+0.04 0.13 0.38 0.62 
+
+0.12 0.37 0.54 
+
+0.06 0.08 0.16 
+
+0.04 0.12 0.18 
+
+AR (Qwen2.5-7B) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> RDI (  worse)
+
+RDI Heatmap ARC-Challenge (both pairs) 
+
+Figure 12: RDI heatmap on ARC-Challenge for both pairs. 0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Transposition 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Keyboard Adj. 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Homoglyph 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Char Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Accuracy
+
+Word Deletion 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Local Shuffle 
+
+0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 
+
+Perturbation rate 
+
+Synonym Subst. 
+
+Accuracy vs.\ Perturbation Rate GSM8K (all 4 models) 
+
+LLaDA-8B (DLM) LLaMA-3-8B (AR) Dream-7B (DLM) Qwen2.5-7B (AR) Figure 13: Accuracy vs. perturbation rate on GSM8K (reproduced from Fig. 3 for completeness). 5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.18 0.34 0.59 0.85 
+
+0.03 0.10 0.32 0.53 
+
+0.08 0.09 0.14 0.20 
+
+0.23 0.38 0.64 0.93 
+
+0.39 0.55 0.74 
+
+0.02 0.07 0.07 
+
+0.15 0.26 0.29 
+
+DLM (LLaDA-8B) 
+
+5% 10% 20% 30% 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.30 0.55 0.80 0.91 
+
+0.00 0.26 0.71 0.88 
+
+0.02 0.02 0.54 0.82 
+
+0.32 0.61 0.86 0.96 
+
+0.59 0.79 0.89 
+
+0.23 0.35 0.24 
+
+0.17 0.33 0.29 
+
+AR (LLaMA-3-8B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.42 0.45 0.66 0.87 
+
+0.16 0.11 0.58 0.74 
+
+0.00 0.00 0.24 0.29 
+
+0.37 0.50 0.55 0.95 
+
+0.37 0.55 0.53 
+
+0.18 0.39 0.05 
+
+0.05 0.32 0.42 
+
+DLM (Dream-7B) 
+
+5% 10% 20% 30% 
+
+Perturbation rate 
+
+Transposition 
+
+Keyboard Adj. 
+
+Homoglyph 
+
+Char Deletion 
+
+Word Deletion 
+
+Local Shuffle 
+
+Synonym Subst. 
+
+0.18 0.32 0.62 0.90 
+
+0.01 0.19 0.48 0.63 
+
+0.01 0.02 0.02 0.11 
+
+0.24 0.47 0.74 0.96 
+
+0.44 0.66 0.79 
+
+0.02 0.14 0.18 
+
+0.07 0.15 0.32 
+
+AR (Qwen2.5-7B) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> RDI (  worse)
+
+RDI Heatmap GSM8K (both pairs) 
+
+Figure 14: RDI heatmap on GSM8K. Provides a complementary view to Figure 3, where cell color summarizes the degradation at specific perturbation rates. GSM8K TriviaQA ARC-Challenge         
+
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> Avg RDI advantage (AR  DLM)
+> ( = DLM more robust)
+> +0.164
+> +0.088
+> +0.102
+> RDI Advantage (LLaDA-8B)
+> GSM8K TriviaQA ARC-Challenge
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> % conditions DLM wins RDI
+> 91% 88% 88%
+> DLM Win Rate (LLaDA-8B)
+> GSM8K TriviaQA ARC-Challenge
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Gap (DLM  AR)
+> Calibration Gap
+> AUROC gap (DLM AR)
+> ECE gap (DLM AR)
+> Summary: LLaDA-8B vs LLaMA-3-8B
+
+Figure 15: LLaDA pair summary: RDI advantage, win rate, and calibration gap. GSM8K TriviaQA ARC-Challenge       
+
+> 0.06
+> 0.05
+> 0.04
+> 0.03
+> 0.02
+> 0.01
+> 0.00
+> Avg RDI advantage (AR  DLM)
+> ( = DLM more robust)
+> -0.059
+> -0.012
+> -0.004
+> RDI Advantage (Dream-7B)
+> GSM8K TriviaQA ARC-Challenge
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> % conditions DLM wins RDI
+> 34%
+> 41%
+> 47%
+> DLM Win Rate (Dream-7B)
+> GSM8K TriviaQA ARC-Challenge
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Gap (DLM  AR)
+> Calibration Gap
+> AUROC gap (DLM AR)
+> ECE gap (DLM AR)
+> Summary: Dream-7B vs Qwen2.5-7B
+
+Figure 16: Dream pair summary: RDI advantage (neg-ative or near-zero, contrasting with the LLaDA pair), win rate (below 50% on all three benchmarks), and calibration gap (demonstrating replicated DLM over-confidence). 
+
+H Statistical Significance and Question-Only Ablation 
+
+Paired significance of the RDI advantage. We treat the 32 noise conditions as paired observations of the RDI advantage (AR − DLM) and report 95% bootstrap confidence intervals (10k resam-ples) and Wilcoxon signed-rank tests (Table 11). The LLaDA-pair advantage is significant and pos-itive on all three tasks; the Dream-pair advantage is indistinguishable from zero on TriviaQA and ARC and significantly negative on GSM8K. This places the “robustness does not replicate across pairs” conclusion on firm statistical footing. 
+
+Table 11: Paired bootstrap 95% CI and Wilcoxon signed-rank test for the mean RDI advantage (AR − DLM) over 32 conditions ( n=200 each). 
+
+Pair Task Adv. 95% CI Wilcoxon p
+
+LLaDA TriviaQA +0 .088 [+0 .060 , +0 .118] < 0.001 
+
+GSM8K +0 .164 [+0 .116 , +0 .216] < 0.001 
+
+ARC +0 .102 [+0 .070 , +0 .133] < 0.001 
+
+Dream TriviaQA −0.012 [−0.044 , +0 .020] 0.488 
+
+GSM8K −0.059 [−0.102 , −0.016] 0.013 
+
+ARC −0.004 [−0.025 , +0 .017] 0.665 
+
+Question-only perturbation. Our main sweep perturbs the entire formatted prompt. To con-firm the cross-pair pattern is not an artifact of corrupting instruction/format tokens, we re-ran a reduced sweep perturbing only the raw question span (mean over transposition/homoglyph/word-deletion at r=0 .20 ; n=100 LLaDA pair, n=50 
+
+Dream pair). Table 12 shows the LLaDA-pair DLM advantage persists (mean +0 .119 ) while the Dream-pair effect stays near the noise floor (mean 
+
++0 .063 ), matching the whole-prompt asymmetry. 
+
+Table 12: Question-only perturbation ablation: mean RDI over three conditions at r=0 .20 . Adv. = AR RDI 
+
+− DLM RDI (positive ⇒ DLM more robust). 
+
+Pair Task DLM RDI AR RDI Adv. 
+
+LLaDA TriviaQA 0.275 0.512 +0 .237 
+
+GSM8K 0.488 0.527 +0 .039 
+
+ARC 0.100 0.181 +0 .081 
+
+Dream TriviaQA 0.222 0.333 +0 .111 
+
+GSM8K 0.383 0.460 +0 .077 
+
+ARC 0.052 0.053 +0 .001 
+
+I Calibration Confidence Aggregation 
+
+To calculate DLM sequence-level confidence, we use the geometric mean of per-token probabilities (which equates to the exponential of the mean per-token log-probability). Under a log-calibration view, proper scoring rules for sequences decom-pose additively in log-space; therefore, the geo-metric mean is the only aggregation method that preserves comparability across different sequence lengths. We apply this exact aggregation to both DLM and AR models across all calibration metrics to ensure strict like-for-like comparability. 
+
+Confidence-definition ablation. Table 13 re-ports mean ECE (over TriviaQA/ARC/GSM8K, 
+
+n=200 ) under alternative per-token bases (maxi-mum vs. chosen-token vs. commitment-time prob-ability) and aggregations (geometric mean vs. arithmetic mean vs. minimum). The overconfi-dence ordering (DLM ≫ AR) survives every non-degenerate definition: DLM ECE stays 0.30 –0.43 
+
+versus AR 0.19 –0.21 . For greedy AR decoding, max = chosen = commit (a consistency check). The only exception is min aggregation, which is degenerate—it collapses a sequence to its single least-confident token and drives the AR models 
+
+under -confident (ECE up to 0.567 )—so it does not reflect DLM calibration. Selective-prediction AUROC stays 0.62 –0.77 for the DLMs across all definitions, so the ranking argument is definition-stable. Baseline    
+
+> (noisy)
+> TopK-5
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Accuracy
+> gsm8k_keyboard_adj_15pct
+> 20260514
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Accuracy
+> gsm8k_keyboard_adj_15pct
+> 20260516
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Accuracy
+> gsm8k_keyboard_adj_15pct
+> 20260517
+> Baseline
+> (noisy)
+> TopK-5
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Accuracy
+> gsm8k_transposition_15pct
+> 20260514
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Accuracy
+> gsm8k_transposition_15pct
+> 20260516
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Accuracy
+> gsm8k_transposition_15pct
+> 20260517
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> Accuracy
+> gsm8k_word_deletion_20pct
+> 20260517
+> Baseline
+> (noisy)
+> TopK-5
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> Accuracy
+> triviaqa_keyboard_adj_15pct
+> 20260513
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> Accuracy
+> triviaqa_keyboard_adj_15pct
+> 20260516
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> 0.16
+> Accuracy
+> triviaqa_keyboard_adj_15pct
+> 20260517
+> Baseline
+> (noisy)
+> TopK-5
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> Accuracy
+> triviaqa_transposition_15pct
+> 20260513
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> Accuracy
+> triviaqa_transposition_15pct
+> 20260515
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.14
+> Accuracy
+> triviaqa_transposition_15pct
+> 20260517
+> Baseline
+> (noisy)
+> TopK-5
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> 0.200
+> Accuracy
+> triviaqa_word_deletion_20pct
+> 20260513
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> 0.125
+> 0.150
+> 0.175
+> 0.200
+> Accuracy
+> triviaqa_word_deletion_20pct
+> 20260516
+> Baseline
+> (noisy)
+> TopK-1
+> TopK-2
+> TopK-5
+> EditDist
+> Hybrid
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Accuracy
+> triviaqa_word_deletion_20pct
+> 20260517
+> IPM Ablation (LLaDA pair): All variants fail to consistently improve baseline
+> Baseline (noisy, no IPM) IPM-TopK IPM-EditDist IPM-Hybrid
+
+Figure 17: IPM variant comparison across all evaluated conditions. The dashed line represents the noisy baseline. No variant reliably improves over the baseline, and Hybrid-IPM (orange) consistently degrades accuracy. Table 13: Confidence-definition ablation: mean ECE over TriviaQA/ARC/GSM8K ( n=200 ). Left columns vary the per-token basis (aggregation fixed to geometric mean); right columns vary the aggregation (basis fixed to max probability). “—”: Dream’s sampler exposes no distinct commitment-time probability. 
+
+Per-token basis (geo) Aggreg. (max) Model max chosen commit mean min LLaDA-8B (DLM) 0.433 0.390 0.385 0.434 0.360 LLaMA-3-8B (AR) 0.187 0.187 0.187 0.211 0.567 Dream-7B (DLM) 0.319 0.298 — 0.321 0.335 Qwen2.5-7B (AR) 0.189 0.189 0.189 0.203 0.322 
+
+J Extended Limitations Discussion 
+
+Tokenizer Mismatch. LLaDA uses the LLaMA-3 tokenizer, which was not explicitly designed for masked prediction. It may tokenize certain pertur-bations (e.g., homoglyphs) differently than a purely DLM-native tokenizer would. This could theoreti-cally inflate the measured robustness degradation for homoglyph perturbations. 
+
+Generation Length Sensitivity. DLMs fix their generation length at T steps with L masked posi-tions. We cap max_new_tokens at 128 (or 512 for GSM8K) across our experiments. Tasks requiring substantially longer outputs (e.g., complex code generation) may exhibit different robustness pro-files, as the iterative commitment process has more steps over which to accumulate noise-induced er-rors. 
+
+Inter-Rater Reliability of Answer Matching. 
+
+For TriviaQA, we evaluate using substring match-ing against all provided aliases. While standard, this method can overcount correct answers for short aliases and undercount paraphrased correct an-swers. Future work extending these findings could benefit from model-based evaluation paradigms (e.g., BERTScore (Zhang et al., 2019)). 
+
+K Perturbation Examples 
+
+Table 14 illustrates representative examples of each perturbation type applied at a rate of r=0 .15 .
+
+Table 14: Representative perturbation examples at noise rate r=0 .15 .
+
+Type Example 
+
+Original What is the capital of France? 
+
+Transposition Wha tis hte cpaital of Farce? 
+
+Deletion What is the apital of rance? 
+
+Keyboard Whay is the capiral of France? 
+
+Homoglyph Wh аt is th е cар it аl оf Fr аnce? 
+
+Word deletion What is the of France? 
+
+Local shuffle What is capital the of France? 
+
+L AI Assistance Declaration 
+
+During the preparation of this manuscript, the au-thors utilized an AI assistant to refine sentence structure, improve readability, and polish the aca-demic prose. The AI was not used to generate novel scientific claims, design experiments, or analyze data. The authors carefully reviewed and edited all AI-refined text and take full responsibility for the final content of this paper.
