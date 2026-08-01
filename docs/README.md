@@ -6,27 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-31
-- 运行时间：2026-07-31 21:27:54 UTC
+- 最新运行日期：2026-08-01
+- 运行时间：2026-08-01 19:48:42 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：1
-- 速读区：1
+- 本次总论文数：3
+- 精读区：3
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦扩散语言模型的鲁棒性重评估与少步生成技术的效率突破。
-核心结论挑战了扩散模型双向性的固有认知
-- 详情：[/202607/31/README](/202607/31/README)
+今日深度解析 AI 歌声合成与高性能推理，重点攻克真实场景下的创作与效率难题。
+9.0 分力作 VocalRender 实现了乐谱原生的歌声合成突破，AngelSpec 则显著提升了投机采样推理的实战性能。
+建议音乐创作者关注 AI 辅助作曲的质变，开发者可借鉴高性能推理的落地优化方案。
+- 详情：[/202608/01/README](/202608/01/README)
 
 ### 精读区论文标签
-1. [Beyond the Bidirectional Promise: Re-evaluating the Robustness of Diffusion Language Models](/202607/31/2607.27386v1-beyond-the-bidirectional-promise-re-evaluating-the-robustness-of-diffusion-language-models)  
+1. [VocalRender: Score-Native Singing Voice Synthesis for Real-World Composition](/202608/01/2607.27768v1-vocalrender-score-native-singing-voice-synthesis-for-real-world-composition)  
+   标签：评分：9.0/10、query:ardm
+   evidence：使用自回归扩散模型进行歌唱语音合成
+2. [AngelSpec: Towards Real-World High Performance Inference with Speculative Decoding](/202608/01/2607.25852v1-angelspec-towards-real-world-high-performance-inference-with-speculative-decoding)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型与自回归基准的对比评估
+   evidence：结合了自回归多标记预测与块并行扩散
+3. [AngelSpec: Towards Real-World High Performance Inference with Speculative Decoding](/202608/01/2607.25852v2-angelspec-towards-real-world-high-performance-inference-with-speculative-decoding)  
+   标签：评分：8.0/10、query:ardm
+   evidence：结合了自回归多标记预测与块并行扩散
 
 ### 速读区论文标签
-1. [Latent-Kernel Discrete Flow Maps for Few-Step Generation](/202607/31/2607.27529v1-latent-kernel-discrete-flow-maps-for-few-step-generation)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于序列生成和标记耦合的离散流映射
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">

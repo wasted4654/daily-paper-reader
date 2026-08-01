@@ -1,0 +1,51 @@
+{
+  "label": "2026-08-01",
+  "date": "2026-08-01",
+  "generated_at": "2026-08-01T19:48:51",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/01/2607.27768v1-vocalrender-score-native-singing-voice-synthesis-for-real-world-composition",
+      "section": "deep",
+      "title_en": "VocalRender: Score-Native Singing Voice Synthesis for Real-World Composition",
+      "authors": "Yukun Chen, Tianrui Wang, Zhaoxi Mu, Xinyu Yang, EngSiong Chng",
+      "date": "2026-07-30",
+      "pdf": "https://arxiv.org/pdf/2607.27768v1",
+      "score": "9.0",
+      "evidence": "使用自回归扩散模型进行歌唱语音合成",
+      "tldr": "针对现有歌声合成系统依赖预定义时长或时间对齐引导、不符合实际创作流程的问题，本文提出VocalRender。这是一种原生支持乐谱输入的系统，通过交织的歌词-音符表示和自回归扩散模型，直接从歌词、音高、音符值和节拍合成歌声。该模型在2300小时大规模数据集上训练，无需显式时长预测即可生成高质量音频，在自然度、可懂度和旋律控制方面均显著优于现有基准。",
+      "tags": "query:ardm",
+      "abstract_en": "Existing singing voice synthesis systems often require predefined durations, explicit duration prediction, or time-aligned acoustic guidance, which limits their compatibility with practical composition workflows. We propose VocalRender, a score-native system that directly synthesizes singing from lyrics, pitches, symbolic note values, and tempo. It uses an interleaved lyric--note representation and an autoregressive diffusion model to generate continuous acoustic latents while predicting the output length, eliminating the need for explicit duration prediction. Trained on a 2,300-hour singing dataset, VocalRender achieves strong intelligibility, strong melody control, and high speaker similarity across both in-domain and out-of-domain benchmarks. Notably, it outperforms the strongest baseline by $0.42$ points in naturalness CMOS, demonstrating the effectiveness of our proposed score-native architecture.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/01/2607.25852v1-angelspec-towards-real-world-high-performance-inference-with-speculative-decoding",
+      "section": "deep",
+      "title_en": "AngelSpec: Towards Real-World High Performance Inference with Speculative Decoding",
+      "authors": "Hong Liu, Rui Cen, Junhan Shi, Guangshuo Qin, Jiebin Zhang, Tianyu Liu, Runzhi Fan, Guoliang Zhao, Ruobing Xie, Kai Zhang, Song Liu, Guanghua Yu, Jianchen Zhu",
+      "date": "2026-07-28",
+      "pdf": "https://arxiv.org/pdf/2607.25852v1",
+      "score": "8.0",
+      "evidence": "结合了自回归多标记预测与块并行扩散",
+      "tldr": "AngelSpec是一个统一的投机采样训练框架，旨在解决不同现实任务下投机结构性能不一的问题。它在训练层面实现了结构与数据的协同优化，将MTP用于高熵对话，块并行扩散用于高预测性代码任务；在架构上提出DFly以增强依赖建模；在推理层引入动态验证策略。实验显示，该方法显著提升了接受长度和吞吐量，实现了最高2.4倍的加速。",
+      "tags": "query:ardm",
+      "abstract_en": "Speculative decoding accelerates large language model inference without changing the target distribution, but no single drafting structure performs best across real-world workloads. Autoregressive multi-token prediction (MTP) is a lightweight, stable proposal mechanism, whereas block-parallel diffusion amortizes drafting latency over much longer candidate sequences; the better choice depends strongly on the output distribution. We present AngelSpec, a unified training framework for MTP and block-parallel speculative decoding that addresses this heterogeneity at three levels. At the training level, rather than fitting one universal drafter to a uniform data mixture, we co-specialize structure and data: the MTP drafter is trained on diverse conversational data for high-entropy open-ended chat, and the block-diffusion drafter on code and mathematics data for longer predictable continuations. At the architecture level, we propose DFly, a block-diffusion framework combining a hybrid target-conditioning backbone with a predecessor-conditioned autoregressive head, improving target-feature utilization and intra-block dependency modeling while keeping generation parallel. At the inference level, both acceptance length and verification cost vary with domain, request, online load, and hardware, so DFly treats verification as a shared batch-level resource: it reallocates compute toward high-confidence prefixes across requests and combines expected utility with a profiled cost model to adapt verification depth online. Across the Hy3 series, DFly raises the average accepted length on Hy3-A21B by roughly 30% and attains the highest average throughput at every tested concurrency from 4 to 64, a 1.98-2.40x speedup over autoregressive decoding and 10.5-11.8% higher throughput than DFlash. We release AngelSpec to support training and extending these methods.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/01/2607.25852v2-angelspec-towards-real-world-high-performance-inference-with-speculative-decoding",
+      "section": "deep",
+      "title_en": "AngelSpec: Towards Real-World High Performance Inference with Speculative Decoding",
+      "authors": "Hong Liu, Rui Cen, Junhan Shi, Guangshuo Qin, Jiebin Zhang, Tianyu Liu, Runzhi Fan, Guoliang Zhao, Ruobing Xie, Kai Zhang, Song Liu, Guanghua Yu, Jianchen Zhu",
+      "date": "2026-07-28",
+      "pdf": "https://arxiv.org/pdf/2607.25852v2",
+      "score": "8.0",
+      "evidence": "结合了自回归多标记预测与块并行扩散",
+      "tldr": "AngelSpec是一个统一的投机采样训练框架，旨在解决不同现实负载下推理性能不均的问题。它通过协同优化模型结构与数据分布，为高熵对话采用多Token预测（MTP）架构，为代码和数学任务采用块并行扩散架构（DFly）。DFly引入了混合目标调节骨干和前驱调节自回归头，并结合动态验证策略，在Hy3系列模型上实现了显著的吞吐量提升和加速比。",
+      "tags": "query:ardm",
+      "abstract_en": "Speculative decoding accelerates large language model inference without changing the target distribution, but no single drafting structure performs best across real-world workloads. Autoregressive multi-token prediction (MTP) is a lightweight, stable proposal mechanism, whereas block-parallel diffusion amortizes drafting latency over much longer candidate sequences; the better choice depends strongly on the output distribution. We present AngelSpec, a unified training framework for MTP and block-parallel speculative decoding that addresses this heterogeneity at three levels. At the training level, rather than fitting one universal drafter to a uniform data mixture, we co-specialize structure and data: the MTP drafter is trained on diverse conversational data for high-entropy open-ended chat, and the block-diffusion drafter on code and mathematics data for longer predictable continuations. At the architecture level, we propose DFly, a block-diffusion framework combining a hybrid target-conditioning backbone with a predecessor-conditioned autoregressive head, improving target-feature utilization and intra-block dependency modeling while keeping generation parallel. At the inference level, both acceptance length and verification cost vary with domain, request, online load, and hardware, so DFly treats verification as a shared batch-level resource: it reallocates compute toward high-confidence prefixes across requests and combines expected utility with a profiled cost model to adapt verification depth online. Across the Hy3 series, DFly raises the average accepted length on Hy3-A21B by roughly 30% and attains the highest average throughput at every tested concurrency from 4 to 64, a 1.98-2.40x speedup over autoregressive decoding and 10.5-11.8% higher throughput than DFlash. We release AngelSpec to support training and extending these methods.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
