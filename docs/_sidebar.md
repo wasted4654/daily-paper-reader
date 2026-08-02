@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-02 <!--dpr-date:20260802-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/02/2607.28166v1-where-and-when-to-commit-candidate-aware-decoding-for-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;Where and When to Commit: Candidate-Aware Decoding for Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.28166v1-where-and-when-to-commit-candidate-aware-decoding-for-diffusion-language-models&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散语言模型的解码策略&quot;}">Where and When to Commit: Candidate-Aware Decoding for Diffusion Language Models</a>
   * 2026-08-01 <!--dpr-date:20260801-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/01/2607.27768v1-vocalrender-score-native-singing-voice-synthesis-for-real-world-composition" data-sidebar-item="{&quot;title&quot;: &quot;VocalRender: Score-Native Singing Voice Synthesis for Real-World Composition&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2607.27768v1-vocalrender-score-native-singing-voice-synthesis-for-real-world-composition&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;使用自回归扩散模型进行歌唱语音合成&quot;}">VocalRender: Score-Native Singing Voice Synthesis for Real-World Composition</a>
