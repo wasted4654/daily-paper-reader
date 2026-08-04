@@ -1,0 +1,618 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-04T20:30:02.508036+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 7,
+    "deep_cap": 6,
+    "deep_selected": 6,
+    "quick_candidates": 8,
+    "quick_skim_target": 11,
+    "quick_selected": 8
+  },
+  "deep_dive": [
+    {
+      "id": "2608.01035v1",
+      "title": "WAM-Diff2: Hierarchical AR-to-Diffusion Distillation for Highly Efficient Autonomous Driving VLA",
+      "abstract": "Vision-Language-Action (VLA) models have emerged as a prominent paradigm for end-to-end autonomous driving; however, their efficient deployment is severely constrained by high computational latency and exposure bias arising from sequential autoregressive decoding. Conversely, while specialized diffusion policies enable low-latency, parallel execution, training them from scratch typically yields narrow, single-task architectures that lack holistic visual-linguistic reasoning. Successfully transforming pre-trained autoregressive generalists into parallel diffusion models could combine multi-task cognitive intelligence with execution efficiency, yet this transition presents a formidable architectural challenge due to mismatched attention patterns (causal versus bidirectional) and divergent optimization objectives. To bridge this divide, we introduce WAM-Diff2, a multi-task discrete diffusion VLA framework powered by a three-stage hierarchical distillation strategy. By structuring the architectural shift through progressive block-wise adaptation, block-wise distillation, and model-wise cross-scale distillation, WAM-Diff2 preserves the underlying semantic foundations of the base model while accelerating inference. Extensive evaluations across driving understanding, perception, and planning benchmarks demonstrate that WAM-Diff2 effectively mitigates exposure bias and achieves performance parity with autoregressive baselines. Crucially, the autoregressive-to-diffusion transition yields a 2.8x decoding speedup, which scales to an ultimate 15.1x acceleration when combined with system-level optimizations including FlashInfer and CUDA Graphs.",
+      "authors": [
+        "Zhihao Zhu",
+        "Hanlin Shang",
+        "Mingwang Xu",
+        "Feipeng Cai",
+        "Zhuolin He",
+        "Yaoyi Li",
+        "Jianhua Han",
+        "Hang Xu",
+        "Siyu Zhu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-08-02T06:45:16+00:00",
+      "link": "https://arxiv.org/pdf/2608.01035v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "AR-to-Diffusion distillation for autonomous driving VLA",
+      "llm_evidence_cn": "自动驾驶 VLA 的自回归到扩散蒸馏",
+      "llm_evidence": "自动驾驶 VLA 的自回归到扩散蒸馏",
+      "canonical_evidence": "自动驾驶 VLA 的自回归到扩散蒸馏",
+      "llm_tldr_en": "WAM-Diff2 distills autoregressive VLA models into efficient diffusion policies for autonomous driving.",
+      "llm_tldr_cn": "WAM-Diff2 将自回归 VLA 模型蒸馏为高效的自动驾驶扩散策略。",
+      "llm_tldr": "WAM-Diff2 将自回归 VLA 模型蒸馏为高效的自动驾驶扩散策略。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00146v1",
+      "title": "DiffusionGemma Technical Report",
+      "abstract": "We introduce DiffusionGemma, an experimental open-weight language model that uses discrete diffusion to generate text at exceptionally high speed. Rather than decoding one token at a time, DiffusionGemma iteratively refines blocks of 256 tokens in parallel, avoiding the sequential decoding bottleneck of conventional autoregressive (AR) large language models. Instead of training from scratch, we obtain DiffusionGemma by fine-tuning the mixture-of-experts Gemma 4 model with 3.8B activated and 25.2B total parameters. Our compute-efficient two-stage training pipeline uses fewer than 10% of the starting AR model's total training token budget. The first stage uses supervised fine-tuning to teach bidirectional denoising, while the second stage combines reinforcement learning with sampler distillation to jointly improve generation quality and inference efficiency. DiffusionGemma establishes a new Pareto frontier for the trade-off between generation speed and model capability. Averaged across our full evaluation suite, it generates around 20 tokens per forward pass and achieves roughly 1,500 output tokens per second on a single NVIDIA H100 GPU, which is substantially faster than AR models even with state-of-the-art speculative decoding. DiffusionGemma also retains the starting model's support for thinking mode, multimodal inputs, and long contexts. Despite diffusion fine-tuning, it remains capable of AR generation with only minor performance degradation, suggesting a path toward hybrid diffusion-AR decoding.",
+      "authors": [
+        "DiffusionGemma Team",
+        "Adrien Ali Taïga",
+        "James Assiene",
+        "Daniele Calandriello",
+        "Rahma Chaabouni",
+        "João Gante",
+        "Tamara von Glehn",
+        "Nate Keating",
+        "Chris Knutsen",
+        "Martin Kukla",
+        "Tianlin Liu",
+        "Ivan Lobov",
+        "Ofir Nabati",
+        "João Gabriel Oliveira",
+        "Nicolas Perez-Nieves",
+        "Nastasia Prutianova",
+        "Bobak Shahriari",
+        "Jean Tarbouriech",
+        "Pavel Tyletski",
+        "Çağlar Ünlü",
+        "Cindy Wu",
+        "Glenn Cameron",
+        "Jerome Connor",
+        "Sertan Girgin",
+        "Maarten Grootendorst",
+        "Alon Levkovitch",
+        "Eliya Nachmani",
+        "Omar Sanseviero",
+        "Piotr Stanczyk",
+        "Quentin Berthet",
+        "Andrew Campbell",
+        "Clément Crepy",
+        "Valentin De Bortoli",
+        "Arnaud Doucet",
+        "Romuald Elie",
+        "Alexandre Galashov",
+        "Klaus Greff",
+        "Alexis Jacq",
+        "David Ruhe",
+        "Yu-Han Wu",
+        "Sebastian Flennerhag",
+        "Brendan O'Donoghue",
+        "George Scrivener",
+        "Shantanu Thakoor"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-07-31T16:11:46+00:00",
+      "link": "https://arxiv.org/pdf/2608.00146v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "discrete diffusion to avoid sequential decoding bottleneck of AR models",
+      "llm_evidence_cn": "离散扩散以避免自回归模型的顺序解码瓶颈",
+      "llm_evidence": "离散扩散以避免自回归模型的顺序解码瓶颈",
+      "canonical_evidence": "离散扩散以避免自回归模型的顺序解码瓶颈",
+      "llm_tldr_en": "Introduces DiffusionGemma, using discrete diffusion for parallel text generation to bypass AR bottlenecks.",
+      "llm_tldr_cn": "推出 DiffusionGemma，利用离散扩散进行并行文本生成，绕过自回归瓶颈。",
+      "llm_tldr": "推出 DiffusionGemma，利用离散扩散进行并行文本生成，绕过自回归瓶颈。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00605v1",
+      "title": "Escaping Confidence Trap: Evolutionary Decoding for Mathematical Reasoning in Diffusion LLMs",
+      "abstract": "Diffusion large language models (dLLMs) have emerged as a promising alternative to autoregressive LLMs, offering efficient generation through block-wise progressive unmasking. However, their strong general-purpose performance does not necessarily translate into reliable mathematical reasoning, where correctness depends on preserving coherent numerical-symbolic reasoning trajectories. In this work, we analyze the decoding trajectories of LLaDA 2.0 and identify a recurring diffusion confidence trap: local token confidence can become misaligned with global reasoning correctness during progressive block decoding. Our analysis reveals two representative failure regimes: sampling-sensitive failures, where correct paths exist but are unstable, and sampling-consistent failures, where repeated sampling converges to repetitive high-confidence but incorrect continuations. Motivated by this observation, we propose Evolutionary Decoding, a training-free test-time scaling framework that views diffusion decoding as an evolutionary process over candidate reasoning states. The framework combines step-wise selection, which preserves useful numerical-symbolic signals and suppresses repetitive patterns, with block-wise mutation, which introduces structured alternatives to escape incorrect high-confidence basins. Experiments on multiple benchmarks show that Evolutionary Decoding improves LLaDA 2.0 over confidence-based decoding, leading to more reliable mathematical reasoning.",
+      "authors": [
+        "Zhenhong Sun",
+        "Hanqing Zhao",
+        "Yatao Bian",
+        "Rongcheng Tu",
+        "Liuyue Xie",
+        "Xu Zhang",
+        "Jue Wang",
+        "Davide Modolo",
+        "Daoyi Dong",
+        "Dacheng Tao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-01T11:48:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.00605v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "decoding for mathematical reasoning in diffusion LLMs",
+      "llm_evidence_cn": "扩散大语言模型中数学推理的解码",
+      "llm_evidence": "扩散大语言模型中数学推理的解码",
+      "canonical_evidence": "扩散大语言模型中数学推理的解码",
+      "llm_tldr_en": "Analyzes and improves decoding trajectories in diffusion LLMs to enhance mathematical reasoning performance.",
+      "llm_tldr_cn": "分析并改进扩散大语言模型的解码轨迹，以增强数学推理性能。",
+      "llm_tldr": "分析并改进扩散大语言模型的解码轨迹，以增强数学推理性能。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00675v1",
+      "title": "Round-Trip Consistency: Bidirectional Diffusion Models Can Predict Their Own Rollout Errors",
+      "abstract": "Autoregressive models accumulate error over long rollouts, yet at deployment there is no ground truth to measure it against. We train a single conditional latent diffusion model that steps a dynamical system forward or backward in time via a direction flag, and show that this bidirectionality supplies a measurement-free test-time error signal: rolling forward $i$ steps and then backward $i$ steps must return the model to its start, so the round-trip discrepancy $\\mathcal{C}_i$ is a self-supervised proxy for the unobservable rollout error: no ensembles, no held-out data, no governing equations, for one extra rollout. We validate on compressible magnetohydrodynamics (MHD), an astrophysical turbulent radiative mixing layer, and natural face videos (CelebV-HQ). On held-out MHD trajectories, $\\mathcal{C}_i$ ranks rollout error (Spearman $0.91$-$0.98$ at fixed depth; $0.69 \\pm 0.16$ within trajectories), and a simple calibrator fit on training rollouts predicts its magnitude to within $1.14\\times$ ($68\\%$) and $1.29\\times$ ($95\\%$) with near-nominal coverage - one nat beyond a depth-only predictor, transferring to all six decoded physical fields. The same signal flags the out-of-distribution Orszag-Tang vortex (AUROC $0.98$; $1.0$ by depth $10$) exactly where sampling-dispersion baselines invert, and it cuts incurred error by $15\\%$ at $80\\%$ coverage - three times the depth-only baseline. Bidirectional training comes at negative cost, beating direction specialists in both directions, and the backward direction doubles as a fast inverse solver. On LE-PDE-UQ's turbulent Navier-Stokes benchmark, a single bidirectional model reaches accuracy within $1.3\\times$ of their ten-model ensemble at a tenth of the training cost, with the best training-free pixel-level calibration. Round-trip consistency turns reversibility into a practical trust signal for generative models.",
+      "authors": [
+        "Alexander Scheinker"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.LG",
+        "physics.comp-ph",
+        "physics.plasm-ph"
+      ],
+      "published": "2026-08-01T13:49:46+00:00",
+      "link": "https://arxiv.org/pdf/2608.00675v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "bidirectional diffusion models for autoregressive rollout error",
+      "llm_evidence_cn": "用于自回归展开误差的双向扩散模型",
+      "llm_evidence": "用于自回归展开误差的双向扩散模型",
+      "canonical_evidence": "用于自回归展开误差的双向扩散模型",
+      "llm_tldr_en": "Uses bidirectional diffusion to predict and measure rollout errors in autoregressive dynamical systems.",
+      "llm_tldr_cn": "利用双向扩散模型预测和测量自回归动力系统中的展开误差。",
+      "llm_tldr": "利用双向扩散模型预测和测量自回归动力系统中的展开误差。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01845v1",
+      "title": "WorldDynCache: Risk-Controlled Latent Dynamics Approximation for Diffusion World Model",
+      "abstract": "Diffusion world models generate high-quality futures, but re- peated transformer evaluations make inference prohibitively slow. Existing caches reuse intermediate features, selectively update tokens, or reuse and extrapolate denoising outputs ac- cording to local drift or short native-space histories. These criteria can miss both approximation-induced latent transition defects that accumulate across skipped steps and phase- or condition-dependent changes in the direction of latent evo- lution. We propose WorldDynCache, a risk-controlled latent dynamics approximation framework with two core compo- nents. First, a lightweight latent-transition risk estimator tracks the accumulated future impact of approximation defects and calibrates its predictions against counterfactual defects ob- served at exact anchors. Second, a condition- and phase- aware lifted latent surrogate approximates latent evolution without extra transformer evaluations. On HunyuanVoyager- 13B and Aether-5B, WorldDynCache achieves 4.92 times and 2.15 times speedups, respectively, while attaining the best gen- eration quality among the compared caching methods across WorldScore, PSNR, SSIM, and LPIPS.",
+      "authors": [
+        "Leyang Chen",
+        "Junyi Wu",
+        "Shaoqiu Zhang",
+        "Yulun Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-08-03T07:52:55+00:00",
+      "link": "https://arxiv.org/pdf/2608.01845v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diffusion world model for future generation",
+      "llm_evidence_cn": "用于未来生成的扩散世界模型",
+      "llm_evidence": "用于未来生成的扩散世界模型",
+      "canonical_evidence": "用于未来生成的扩散世界模型",
+      "llm_tldr_en": "Proposes WorldDynCache to accelerate diffusion world models for high-quality future state prediction.",
+      "llm_tldr_cn": "提出WorldDynCache，旨在加速用于高质量未来状态预测的扩散世界模型。",
+      "llm_tldr": "提出WorldDynCache，旨在加速用于高质量未来状态预测的扩散世界模型。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.01784v1",
+      "title": "REFLEX: Rethinking MoE Inference as Refinement-Aware Compute Allocation in Diffusion Language Models",
+      "abstract": "Mixture-of-experts (MoE) models increase parameter capacity by activating only a small subset of experts for each token. This conditional-computation paradigm has enabled autoregressive language models to scale model capacity without a proportional increase in per-token computation. In diffusion language models (DLMs), however, each denoising forward jointly revisits all token positions despite their sharply different refinement demands, while the default fixed token-choice routing assigns them a uniform expert budget, creating a mismatch between expert computation and refinement demand. We argue that MoE inference in DLMs should therefore be viewed as refinement-aware compute allocation across heterogeneous token refinement states. We propose REFLEX (\\textbf{RE}finement-aware \\textbf{FLEX}ible expert allocation), a training-free method that keeps the default router unchanged while reorganizing expert computation around the evolving refinement process. Specifically, REFLEX introduces a coarse-to-fine hierarchy for expert-budget allocation that aligns computation with block-relative refinement roles while using the Frontier-Progress Score to resolve active-block priorities. Across multiple widely used benchmarks on two representative MoE-based DLMs, LLaDA-MoE and LLaDA2.0-mini, REFLEX reduces allocated expert computation by 15\\% on average while preserving or even improving generation quality on most benchmarks relative to default routing. Compared with autoregressive-style variable-expert routing methods, REFLEX also yields a more consistent quality--computation trade-off, further supporting the importance of allocating expert computation according to the heterogeneous refinement demands exposed within each denoising forward.",
+      "authors": [
+        "Xiang Xia",
+        "Cheng Yan",
+        "Yiming Zhang",
+        "Jiazheng Liu",
+        "Hongyu Zhang",
+        "Wuyang Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-08-03T06:59:06+00:00",
+      "link": "https://arxiv.org/pdf/2608.01784v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "MoE inference in diffusion language models vs AR models",
+      "llm_evidence_cn": "扩散语言模型与自回归模型中的 MoE 推理对比",
+      "llm_evidence": "扩散语言模型与自回归模型中的 MoE 推理对比",
+      "canonical_evidence": "扩散语言模型与自回归模型中的 MoE 推理对比",
+      "llm_tldr_en": "Optimizes MoE compute allocation for diffusion language models by rethinking refinement-aware inference.",
+      "llm_tldr_cn": "通过重新思考细化感知推理，优化扩散语言模型中的 MoE 计算分配。",
+      "llm_tldr": "通过重新思考细化感知推理，优化扩散语言模型中的 MoE 计算分配。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.02602v1",
+      "title": "AURORA-LM: Autoencoding Unified Representation for Continuous-Latent Diffusion Language Modeling",
+      "abstract": "Language remains an outlier in generative modeling: while images, video, and audio are increasingly modeled in continuous latent spaces, text generation still relies predominantly on discrete tokens. Existing continuous language models either inherit embedding spaces not designed for joint generation and decoding, or compress autoencoded latents to ease diffusion, sacrificing token-level fidelity. Instead of simplifying the representation to suit the generative model, we preserve a high-capacity, decodable text latent and design the diffusion model to learn its distribution directly.   We introduce AURORA-LM, a continuous-latent diffusion language model that separates the construction of a decodable text representation from the modeling of its distribution. A Query-based Encoder-Decoder organizes text into a high-capacity, prefix-aligned latent sequence, and a Block-causal Diffusion Transformer learns its distribution through flow matching, generating blocks left to right while denoising positions within each block in parallel. Because such a latent is harder for diffusion to model, AURORA-LM restricts only the noisy-input pathway while retaining the full clean-latent prediction target, accommodating full-width latents without reducing decoder-facing capacity. We further calibrate the noise-level distribution to the latent width, and introduce self-trajectory consistency to bridge independently sampled training noise and iterative denoising at inference.   AURORA-LM achieves the strongest performance among evaluated continuous and diffusion-based language models on OpenWebText free generation and XSum summarization. Scaling to 1B parameters with about 1500 EFLOPs of total compute yields further gains, surpassing a larger publicly released latent-diffusion language model under a matched evaluation protocol. All experiments are conducted on Ascend NPUs.",
+      "authors": [
+        "Jiajun Liang",
+        "Yucheng Liao",
+        "Yukang Cao",
+        "Jiazhe Wei",
+        "Ken Li",
+        "Wende Tan",
+        "Jiankun Zhang",
+        "ZY Cui",
+        "Jingkang Yang",
+        "Liucheng Guo",
+        "Shiqi Yang",
+        "B. Yang",
+        "Caifeng Shan",
+        "Ziwei Liu",
+        "Chenyang Si"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-03T17:59:50+00:00",
+      "link": "https://arxiv.org/pdf/2608.02602v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "continuous-latent diffusion language model for sequence generation",
+      "llm_evidence_cn": "用于序列生成的连续潜空间扩散语言模型",
+      "llm_evidence": "用于序列生成的连续潜空间扩散语言模型",
+      "canonical_evidence": "用于序列生成的连续潜空间扩散语言模型",
+      "llm_tldr_en": "Introduces a continuous-latent diffusion model for text generation as an alternative to discrete autoregressive models.",
+      "llm_tldr_cn": "引入了一种连续潜空间扩散语言模型，作为离散自回归文本生成模型的替代方案。",
+      "llm_tldr": "引入了一种连续潜空间扩散语言模型，作为离散自回归文本生成模型的替代方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2608.01240v1",
+      "title": "DeltaFlow: Noise-Adaptive Bidirectional Gated Delta Networks for Embedded Language Flows",
+      "abstract": "Embedded Language Flows (ELF) rely primarily on full non-causal attention for iterative denoising, repeatedly incurring quadratic sequence-mixing cost at each sampling step. Gated Delta Networks (GDNs) provide an efficient recurrent alternative, but their standard causal formulation cannot directly capture the bidirectional context required by ELF. We introduce DeltaFlow, a noise-adaptive bidirectional GDN backbone for continuous language denoising. We study two variants: DeltaFlow-A, which alternates scan directions across layers, and DeltaFlow-P, which performs parallel forward and backward scans within each layer. We further introduce noise-adaptive memory control and scheduled Temporal State Consistency (TSC) to stabilize hidden representations across nearby noise levels. On OpenWebText, using a 32-step stochastic differential equation sampler, DeltaFlow-P reduces generated perplexity from 24.218 for the full-attention ELF baseline to 21.228 while maintaining comparable unigram entropy, with 36B training-token exposure compared with 45B for the baseline. In a denoiser-only benchmark, DeltaFlow-P achieves a 2.72x throughput speedup over the full-attention baseline at a sequence length of 16k. These results show that DeltaFlow is a promising alternative to dense attention for efficient continuous language denoising.",
+      "authors": [
+        "Guangfu Guo",
+        "Xiaoqian Lu",
+        "Linsey Pang",
+        "Weiran Yao",
+        "Haolin Chen",
+        "Kunpeng Liu",
+        "Long Cheng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-02T13:48:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.01240v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "continuous language denoising with bidirectional gated delta networks",
+      "llm_evidence_cn": "使用双向门控Delta网络进行连续语言去噪",
+      "llm_evidence": "使用双向门控Delta网络进行连续语言去噪",
+      "canonical_evidence": "使用双向门控Delta网络进行连续语言去噪",
+      "llm_tldr_en": "Introduces DeltaFlow, an efficient recurrent backbone for language diffusion models to capture bidirectional context.",
+      "llm_tldr_cn": "引入DeltaFlow，一种用于语言扩散模型的高效循环骨干网络，以捕获双向上下文。",
+      "llm_tldr": "引入DeltaFlow，一种用于语言扩散模型的高效循环骨干网络，以捕获双向上下文。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.23844v1",
+      "title": "OmniCache: Multidimensional Hierarchical Feature Caching For Diffusion Models",
+      "abstract": "High-resolution image and video diffusion models, including SD3, FLUX, and recent video diffusion transformers, have substantially improved generative quality but remain expensive at inference time because they repeatedly evaluate attention-heavy denoisers over many sampling steps. We address this inefficiency by exploiting redundancy in intermediate diffusion features rather than changing model weights or retraining. We identify four complementary redundancy sources in image and video generation: intra-frame, inter-frame, motion, and denoising-step redundancy. Based on this analysis, we propose OmniCache, a unified hierarchical caching framework that performs multidimensional feature reuse through Token Cache, Frame Cache, Block Cache, and Layered Cache. Unlike token-merging baselines that average matched features, OmniCache uses similarity matching to select cacheable features, skips redundant computation, and restores positionally consistent cached activations, preserving feature order and spatial-temporal structure. The resulting framework reuses spatial features in temporal layers and temporal features in spatial layers, while Layered Cache captures cross-step redundancy at the model-layer level. Across SD3, SVD-XT, and Latte, OmniCache reduces inference latency by up to 35%, 25%, and 28%, respectively, while maintaining visual fidelity and motion coherence in a training-free setting.",
+      "authors": [
+        "Zhaoyuan He",
+        "Muhammad Muaz",
+        "Lili Qiu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-26T21:14:48+00:00",
+      "link": "https://arxiv.org/pdf/2607.23844v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "feature caching for diffusion models",
+      "llm_evidence_cn": "扩散模型的特征缓存",
+      "llm_evidence": "扩散模型的特征缓存",
+      "canonical_evidence": "扩散模型的特征缓存",
+      "llm_tldr_en": "Proposes OmniCache to accelerate image and video diffusion models by reusing redundant intermediate features.",
+      "llm_tldr_cn": "提出OmniCache，通过重用冗余中间特征来加速图像和视频扩散模型的推理。",
+      "llm_tldr": "提出OmniCache，通过重用冗余中间特征来加速图像和视频扩散模型的推理。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.24731v1",
+      "title": "Rethinking Classifier-Free Guidance in On-Policy Diffusion Distillation",
+      "abstract": "On-policy distillation (OPD) adapts diffusion models by querying a teacher along trajectories generated by the current student, but how it should behave under classifier-free guidance (CFG), a default component of modern diffusion systems, remains poorly understood. Existing OPD methods naturally extend velocity matching to the CFG-composed prediction, directly matching teacher and student guided velocities. We show that this objective is under-identified at the branch level: positive- and negative-branch errors can compensate in the guided prediction. Through two contrasting cases, we find that naive matching remains effective under shared negative conditioning, where both branch errors decrease jointly. When the model's native CFG schema retains privileged information in the teacher's negative branch that is unavailable to the student, however, this joint reduction breaks down and the composed objective induces antagonistic branch-error dynamics, reducing the positive-branch error while increasing the negative-branch error. We term this failure mode Negative Branch Asymmetry (NBA). To address NBA, we introduce Positive--Direction Matching (PDM), a branch-aware OPD objective that separately constrains the positive prediction and the CFG conditional direction. We apply PDM to dense-to-sparse video control, where naive guided matching is highly sensitive to inference guidance scales, while branch-aware supervision enables more robust and effective knowledge transfer.",
+      "authors": [
+        "Bingnan Li",
+        "Haozhe Wang",
+        "Haozhong Xiong",
+        "Fangtai Wu",
+        "Jinpeng Yu",
+        "Yang Shi",
+        "Jiaming Liu",
+        "Ruihua Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-27T17:57:02+00:00",
+      "link": "https://arxiv.org/pdf/2607.24731v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Classifier-free guidance in on-policy diffusion distillation",
+      "llm_evidence_cn": "在线策略扩散蒸馏中的无分类器指导",
+      "llm_evidence": "在线策略扩散蒸馏中的无分类器指导",
+      "canonical_evidence": "在线策略扩散蒸馏中的无分类器指导",
+      "llm_tldr_en": "Investigates the behavior of classifier-free guidance during the distillation of diffusion models.",
+      "llm_tldr_cn": "研究了扩散模型蒸馏过程中无分类器指导的行为表现。",
+      "llm_tldr": "研究了扩散模型蒸馏过程中无分类器指导的行为表现。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.24731v2",
+      "title": "Rethinking Classifier-Free Guidance in On-Policy Diffusion Distillation",
+      "abstract": "On-policy distillation (OPD) adapts diffusion models by querying a teacher along trajectories generated by the current student, but how it should behave under classifier-free guidance (CFG), a default component of modern diffusion systems, remains poorly understood. Existing OPD methods naturally extend velocity matching to the CFG-composed prediction, directly matching teacher and student guided velocities. We show that this objective is under-identified at the branch level: positive- and negative-branch errors can compensate in the guided prediction. Through two contrasting cases, we find that naive matching remains effective under shared negative conditioning, where both branch errors decrease jointly. When the model's native CFG schema retains privileged information in the teacher's negative branch that is unavailable to the student, however, this joint reduction breaks down and the composed objective induces antagonistic branch-error dynamics, reducing the positive-branch error while increasing the negative-branch error. We term this failure mode Negative Branch Asymmetry (NBA). To address NBA, we introduce Positive--Direction Matching (PDM), a branch-aware OPD objective that separately constrains the positive prediction and the CFG conditional direction. We apply PDM to dense-to-sparse video control, where naive guided matching is highly sensitive to inference guidance scales, while branch-aware supervision enables more robust and effective knowledge transfer.",
+      "authors": [
+        "Bingnan Li",
+        "Haozhe Wang",
+        "Haozhong Xiong",
+        "Fangtai Wu",
+        "Jinpeng Yu",
+        "Yang Shi",
+        "Jiaming Liu",
+        "Ruihua Huang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-27T17:57:02+00:00",
+      "link": "https://arxiv.org/pdf/2607.24731v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "On-policy diffusion distillation and classifier-free guidance",
+      "llm_evidence_cn": "在线策略扩散蒸馏与无分类器指导",
+      "llm_evidence": "在线策略扩散蒸馏与无分类器指导",
+      "canonical_evidence": "在线策略扩散蒸馏与无分类器指导",
+      "llm_tldr_en": "Analyzes classifier-free guidance in the context of on-policy diffusion model distillation.",
+      "llm_tldr_cn": "分析了在线策略扩散模型蒸馏背景下的无分类器指导机制。",
+      "llm_tldr": "分析了在线策略扩散模型蒸馏背景下的无分类器指导机制。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.25685v1",
+      "title": "Mimicking diffusion processes with differential equations",
+      "abstract": "The probability-flow ordinary differential equation (PF-ODE) associated with a diffusion process is widely used in score-based generative modeling as a deterministic sampler that reproduces the marginal distributions of the diffusion. While this marginal-matching property is sometimes taken for granted, its validity depends on the well-posedness of an ordinary differential equation whose velocity field is constructed from the score function of the diffusion. We examine the precise mathematical relation between a diffusion process, the Fokker-Planck equation and the associated PF-ODE under weak regularity assumptions on the drift and score.   We first establish existence and uniqueness of the marginal density flow as a solution of the Fokker--Planck equation under minimal assumptions on the diffusion coefficients. We then study the corresponding Lagrangian problem using the DiPerna-Lions-Ambrosio theory of regular Lagrangian flows. We prove existence, uniqueness and stability of the flow, and show that it transports the initial distribution onto the diffusion marginals, under Sobolev or bounded-variation regularity of the score together with one-sided bounds on the divergence of the probability-flow velocity. We identify sufficient conditions for the required regularity in diffusion models relevant for applications.   Our analysis underlines a fundamental distinction between Eulerian and Lagrangian descriptions. We construct a counterexample in which the Fokker--Planck equation has a unique density flow while the associated PF-ODE fails to admit a regular Lagrangian flow from the initial time, demonstrating that uniqueness of the density evolution does not in general imply the existence of a deterministic probability-flow representation. Finally, we derive stability estimates for probability-flow trajectories under learned score approximations.",
+      "authors": [
+        "Rama Cont"
+      ],
+      "primary_category": "math.PR",
+      "categories": [
+        "math.PR",
+        "math.AP",
+        "math.CA"
+      ],
+      "published": "2026-07-28T13:01:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.25685v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "mathematical relation between diffusion and differential equations",
+      "llm_evidence_cn": "扩散与微分方程之间的数学关系",
+      "llm_evidence": "扩散与微分方程之间的数学关系",
+      "canonical_evidence": "扩散与微分方程之间的数学关系",
+      "llm_tldr_en": "Provides a rigorous mathematical analysis of the probability-flow ODEs used in diffusion generative modeling.",
+      "llm_tldr_cn": "对扩散生成模型中使用的概率流常微分方程（ODE）进行了严谨的数学分析。",
+      "llm_tldr": "对扩散生成模型中使用的概率流常微分方程（ODE）进行了严谨的数学分析。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.26647v1",
+      "title": "Anchoring and Steering Diffusion: Enhancing the Faithfulness of Text-to-Image Generation at Inference Time",
+      "abstract": "While text-to-image diffusion models achieve impressive visual quality, they frequently struggle to maintain precise alignment with complex compositional prompts. An effective strategy is to improve the inference process of diffusion models, thereby better leveraging their pretrained priors to address misalignment. Existing training-free methods can be divided into two categories. The first category focuses on improving the randomly sampled initial noise, either performing costly search over noise pools or manipulating sampled noise without ensuring reliable semantic injection. The second category focuses on improving the denoising trajectory, lacking explicit mechanisms to timely diagnose and correct semantic errors. we propose \\textbf{AnchorSteer}, a training-free framework that exerts fine-grained control over \\textbf{both initialization} and \\textbf{the denoising trajectory}. AnchorSteer consists of two synergistic components: \\textbf{Semantic Anchoring} replaces uninformative Gaussian noise with text-aligned initializations via CLIP-based prior extraction and a novel Latent-Prior Score Distillation Sampling (LP-SDS) objective. Specifically, LP-SDS distills CLIP visual priors into the knowledge distribution of diffusion models, mitigating the domain gap between CLIP-based priors and diffusion-based priors. \\textbf{Reflective Steering} transforms passive denoising with an active Think--Erase--Retouch loop that enables mid-generation self-correction. It leverages VLM-based diagnosis to detect semantic deviations and performs targeted latent refinement to suppress erroneous content and recover missing attributes. Extensive experiments on GenEval and T2I-CompBench++ demonstrate that AnchorSteer consistently outperforms existing baselines in text--image alignment while preserving high visual quality.",
+      "authors": [
+        "Xinyi Wang",
+        "Yuyang Huang",
+        "Yalin Su",
+        "Pengcheng Luan",
+        "Tao Zhang",
+        "Feiming Wei",
+        "Wenxian Yu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-29T09:08:57+00:00",
+      "link": "https://arxiv.org/pdf/2607.26647v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "enhancing text-to-image diffusion at inference time",
+      "llm_evidence_cn": "在推理阶段增强文本到图像扩散",
+      "llm_evidence": "在推理阶段增强文本到图像扩散",
+      "canonical_evidence": "在推理阶段增强文本到图像扩散",
+      "llm_tldr_en": "Improves text-to-image alignment by anchoring and steering the denoising trajectory during inference.",
+      "llm_tldr_cn": "通过在推理过程中锚定和引导去噪轨迹，改善文本与图像的对齐。",
+      "llm_tldr": "通过在推理过程中锚定和引导去噪轨迹，改善文本与图像的对齐。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.27842v1",
+      "title": "FeatFix: Reuse What You Verify through Local Exact-Feature Correction for Faster Cached Diffusion Inference",
+      "abstract": "Diffusion models are widely used to generate high-quality images and videos, but their iterative denoising process remains computationally intensive. A growing class of training-free accelerators reduces this cost by reusing cached intermediate features or forecasting future ones. To control draft drift, these methods sometimes compute an exact block feature for verification. Yet the resulting exact feature is typically used only to measure discrepancy or guide a later decision and is then discarded. We find that this previously computed feature can instead be reused for correction. Forwarding it at the verification site resets the local draft residual and reduces downstream feature error. Based on this observation, we introduce FeatFix, a local exact-feature correction method for cached diffusion inference. FeatFix operates at a fixed sparse set of layer--timestep sites. At each selected site, it replaces the complete draft block output with the exact output computed from the same incoming state, avoiding token- or channel-level partial replacement and full-timestep recomputation. Experiments across four image and video backbones show that FeatFix consistently accelerates generation, achieving a speedup of up to $6.70\\times$ over Vanilla while maintaining competitive output quality.",
+      "authors": [
+        "Hanshuai Cui",
+        "Zhiqing Tang",
+        "Zhi Yao",
+        "Qianli Ma",
+        "Fanshuai Meng",
+        "Weijia Jia"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-30T08:23:52+00:00",
+      "link": "https://arxiv.org/pdf/2607.27842v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "faster cached diffusion inference",
+      "llm_evidence_cn": "更快的缓存扩散推理",
+      "llm_evidence": "更快的缓存扩散推理",
+      "canonical_evidence": "更快的缓存扩散推理",
+      "llm_tldr_en": "Introduces FeatFix to accelerate diffusion inference by reusing verified features for local error correction.",
+      "llm_tldr_cn": "引入FeatFix，通过重用经过验证的特征进行局部误差校正，从而加速扩散推理。",
+      "llm_tldr": "引入FeatFix，通过重用经过验证的特征进行局部误差校正，从而加速扩散推理。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
