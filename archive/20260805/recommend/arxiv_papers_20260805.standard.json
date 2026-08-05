@@ -1,0 +1,180 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-05T21:24:56.070659+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2608.03457v1",
+      "title": "LLaDA MoE v2: Scaling Mixture-of-Experts Diffusion Language Models",
+      "abstract": "Diffusion language models (dLLMs) offer an alternative to autoregressive (AR) language modeling, yet the scaling behavior of Mixture-of-Experts (MoE) dLLMs remains poorly understood. We systematically characterize how optimization hyperparameters, compute allocation, and architecture scale for MoE dLLMs, identifying quantitative differences from scaling trends previously reported for AR models. Specifically, for optimization, the optimal nominal batch size grows faster, while the optimal learning rate decays more rapidly with compute. For model--data allocation, IsoFLOP analysis reveals a slight data-side tilt: the optimal token budget grows faster than activated model-side computation. For MoE architecture, larger scales increasingly favor larger expert pools at fixed activated capacity, while moderate expert granularity remains consistently effective and the preferred fraction of activated capacity assigned to shared experts remains stable across scales. Guided by these findings, we train LLaDA MoE v2, a 30B-A3B dLLM, from scratch on 23.5T tokens. With approximately 65\\% as many pretraining tokens as Qwen3, LLaDA MoE v2 approaches Qwen3 on several knowledge, reasoning, and coding benchmarks. After supervised fine-tuning alone, it outperforms SDAR Chat on seven of eight reasoning and coding benchmarks and remains close to Qwen3 on several tasks. These results establish practical scaling laws and design principles for MoE dLLMs.",
+      "authors": [
+        "Fengqi Zhu",
+        "Shaoxuan Xu",
+        "Jingyang Ou",
+        "Zebin You",
+        "Yipeng Xing",
+        "Huabin Liu",
+        "Xiaolu Zhang",
+        "Jun Zhou",
+        "Zhenzhong Lan",
+        "Yankai Lin",
+        "Wayne Xin Zhao",
+        "Jianguo Li",
+        "Chongxuan Li",
+        "Ji-Rong Wen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-04T10:53:02+00:00",
+      "link": "https://arxiv.org/pdf/2608.03457v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "scaling behavior of diffusion language models as an alternative to autoregressive models",
+      "llm_evidence_cn": "扩散语言模型作为自回归模型替代方案的缩放行为研究",
+      "llm_evidence": "扩散语言模型作为自回归模型替代方案的缩放行为研究",
+      "canonical_evidence": "扩散语言模型作为自回归模型替代方案的缩放行为研究",
+      "llm_tldr_en": "Characterizes scaling laws for Mixture-of-Experts diffusion language models, highlighting differences from AR models.",
+      "llm_tldr_cn": "表征了混合专家扩散语言模型的缩放定律，并强调了其与自回归模型的差异。",
+      "llm_tldr": "表征了混合专家扩散语言模型的缩放定律，并强调了其与自回归模型的差异。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.03769v1",
+      "title": "MDLMPE: Distribution Aware Positional Encoding for Masked Diffusion Language Models",
+      "abstract": "Masked diffusion language models (MDLMs) enable parallel generation and bidirectional context modeling, but their positional context differs fundamentally from that of autoregressive (AR) models. Whereas AR decoding exposes a contiguous prefix, MDLM denoising produces dynamic, non-contiguous configurations of revealed and masked tokens. Conventional positional encodings such as RoPE capture sequence order and pairwise displacement but remain insensitive to this evolving token-availability structure. To address this limitation, we propose MDLMPE, a positional encoding designed specifically for masked diffusion. To the best of our knowledge, MDLMPE is the first method to make positional representations explicitly aware of the changing revealed/masked configuration. It represents token availability as a binary sequence, applies distance-aware Gaussian weighting, and projects the resulting pattern through a cosine basis to obtain distribution-aware positional features. These features are added to token embeddings and mapped by a lightweight MLP to angular offsets that modulate the standard RoPE phases. Extensive experiments on LLaDA and DREAM demonstrate that MDLMPE generally outperforms conventional positional encoding methods across supervised fine-tuning, pretraining, zero-shot evaluation, and block-diffusion settings. Further ablations show that the complete combination of availability state, Gaussian locality, spectral basis, and embedding injection yields the strongest result. These results establish the evolving token-availability distribution as a useful positional signal for masked diffusion language models.",
+      "authors": [
+        "Tong Ling",
+        "Hang Lei",
+        "Feng Xiao",
+        "Changhui Sun",
+        "Jiahang Xie",
+        "Hao Liu",
+        "Lu Liu",
+        "Yanlong Du"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-08-04T14:54:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.03769v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "positional encoding for masked diffusion language models compared to autoregressive models",
+      "llm_evidence_cn": "掩码扩散语言模型与自回归模型的对比及位置编码设计",
+      "llm_evidence": "掩码扩散语言模型与自回归模型的对比及位置编码设计",
+      "canonical_evidence": "掩码扩散语言模型与自回归模型的对比及位置编码设计",
+      "llm_tldr_en": "Proposes a distribution-aware positional encoding specifically for the non-contiguous nature of diffusion decoding.",
+      "llm_tldr_cn": "针对扩散解码的非连续特性，提出了一种分布感知的位置编码方法。",
+      "llm_tldr": "针对扩散解码的非连续特性，提出了一种分布感知的位置编码方法。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.00562v1",
+      "title": "Beyond Token-Level Cross-Entropy: Fréchet Distributional Post-Training for Autoregressive Image Generation",
+      "abstract": "Autoregressive image generators are commonly pretrained with token-level cross-entropy under teacher forcing, yet evaluated by the distributional quality of decoded images. This creates an objective mismatch, because categorical errors have unequal image-level consequences, and a context mismatch, because inference conditions on model-generated histories. We introduce FD-loss post-training, which adapts a pretrained discrete generator using representation-space Fréchet distance as the sole objective. A dual-pass scheme first constructs detached rollout contexts through gradient-free generation under the model's native inference configuration, then performs differentiable replay with a probability-level straight-through estimator (STE) that preserves hard argmax decoding in the forward pass while propagating image-level gradients through temperature-scaled probabilities. Only the generator is updated, while the tokenizer and feature extractors remain frozen. Across eight completed configurations from four generator families on class-conditional ImageNet at $256\\times256$, FD-loss post-training reduces FID and $\\mathrm{FD}_{r6}$ by 41.4% and 52.0% on average. The strongest FID result improves from 2.42 to 1.43 without adding parameters or inference steps.",
+      "authors": [
+        "Jinhua Zhang",
+        "Yisong Lin",
+        "Wei Long",
+        "Shuhang Gu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-01T10:00:42+00:00",
+      "link": "https://arxiv.org/pdf/2608.00562v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "post-training for autoregressive image generation using distributional loss",
+      "llm_evidence_cn": "使用分布损失对自回归图像生成进行后训练",
+      "llm_evidence": "使用分布损失对自回归图像生成进行后训练",
+      "canonical_evidence": "使用分布损失对自回归图像生成进行后训练",
+      "llm_tldr_en": "Introduces FD-loss post-training to improve the distributional quality of autoregressive image generators.",
+      "llm_tldr_cn": "引入FD-loss后训练，以提高自回归图像生成器的分布质量。",
+      "llm_tldr": "引入FD-loss后训练，以提高自回归图像生成器的分布质量。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.03929v1",
+      "title": "Latent Reward Registers for Diffusion Preference Alignment",
+      "abstract": "Aligning diffusion models with human preferences usually relies on a sparse terminal reward evaluated on the final generated samples, presenting a severe temporal credit-assignment challenge across the multi-step denoising process. We propose Latent Reward Registers, a mechanism that estimates terminal preference directly from intermediate noisy latents by prepending learnable, position-free register tokens to the input sequence of a frozen Diffusion Transformer (DiT). This independent readout mechanism extracts latent reward evidence without altering the generator's hidden states or velocity field. The resulting dense, differentiable reward signal throughout the full denoising process facilitates two alignment strategies. For training, Reward-Gradient On-Policy Distillation (RG-OPD) distills reward-guided updates along on-policy trajectories, bypassing the computationally expensive rollouts of standard policy gradients. For inference, Reward-Guided Sampling (RGS) steers trajectories via magnitude-matched reward gradients without parameter updates. Empirically, at high noise levels (u = 0.8), the registers reach the highest pairwise accuracy among the evaluated latent reward models. Furthermore, RG-OPD outperforms online reinforcement learning baselines while reducing GPU hours by up to 33x, and RGS establishes a new state-of-the-art among training-free methods, strictly enhancing both alignment and perceptual metrics. Code and weights are available at https://github.com/Guanys-dar/latent-reward-register",
+      "authors": [
+        "Yuanshen Guan",
+        "Zipeng Feng",
+        "Zhiwei Xiong",
+        "Peiqin Sun"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-08-04T17:00:52+00:00",
+      "link": "https://arxiv.org/pdf/2608.03929v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Preference alignment for Diffusion Transformers (DiT) using latent registers",
+      "llm_evidence_cn": "使用潜变量寄存器对扩散Transformer进行偏好对齐",
+      "llm_evidence": "使用潜变量寄存器对扩散Transformer进行偏好对齐",
+      "canonical_evidence": "使用潜变量寄存器对扩散Transformer进行偏好对齐",
+      "llm_tldr_en": "Introduces Latent Reward Registers to provide dense reward signals for aligning diffusion models with preferences.",
+      "llm_tldr_cn": "引入潜变量奖励寄存器，为扩散模型与人类偏好的对齐提供稠密的奖励信号。",
+      "llm_tldr": "引入潜变量奖励寄存器，为扩散模型与人类偏好的对齐提供稠密的奖励信号。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
