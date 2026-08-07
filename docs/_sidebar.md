@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-07 <!--dpr-date:20260807-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/07/2608.01127v2-miniworld-democratizing-the-training-of-video-world-models-from-scratch" data-sidebar-item="{&quot;title&quot;: &quot;MiniWorld: Democratizing the Training of Video World Models from Scratch&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.01127v2-miniworld-democratizing-the-training-of-video-world-models-from-scratch&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;用于具身智能和模拟的自回归视频世界模型&quot;}">MiniWorld: Democratizing the Training of Video World Models from Scratch</a>
   * 2026-08-05 <!--dpr-date:20260805-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/05/2608.03457v1-llada-moe-v2-scaling-mixture-of-experts-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;LLaDA MoE v2: Scaling Mixture-of-Experts Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.03457v1-llada-moe-v2-scaling-mixture-of-experts-diffusion-language-models&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散语言模型作为自回归模型替代方案的缩放行为研究&quot;}">LLaDA MoE v2: Scaling Mixture-of-Experts Diffusion Language Models</a>
