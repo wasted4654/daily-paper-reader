@@ -6,31 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-07
-- 运行时间：2026-08-07 21:02:14 UTC
+- 最新运行日期：2026-08-08
+- 运行时间：2026-08-08 20:14:17 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
+- 本次总论文数：2
+- 精读区：0
 - 速读区：2
 
 ### 今日简报（AI）
-今日聚焦自回归视频扩散的上下文效应研究，同步涵盖表格数据公平性与扩散模型理论统一。
-核心突破在于揭示了视频生成中上下文如何发挥作用，并提出了通过 VQ-VAE 细化实现采样时公平性的新方案。
-推荐深度阅读 9.0 分的视频扩散论文，以掌握提升长视频生成连贯性的前沿机制。
-- 详情：[/202608/07/README](/202608/07/README)
+今日聚焦扩散模型推理加速，深入探索动态缓存与特征预测的前沿方案。
+重点关注 OnlineCache 的纠错缓存机制与 Disagree to Accelerate 的特征预测闭环，两者均显著提升了生成效率。
+建议关注 AIGC 性能优化的读者，从减少特征计算冗余的角度切入这两项最新成果。
+- 详情：[/202608/08/README](/202608/08/README)
 
 ### 精读区论文标签
-1. [In-Context Forcing: Uncovering Context Effects in Autoregressive Video Diffusion](/202608/07/2608.05237v1-in-context-forcing-uncovering-context-effects-in-autoregressive-video-diffusion)  
-   标签：评分：9.0/10、query:ardm
-   evidence：自回归视频扩散模型及渐进式自回归范式
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [FairDiffuseVQVAE: Sampling-Time Fairness in Tabular Diffusion via Conditional Refinement of Vector-Quantized Latents](/202608/07/2607.28945v1-fairdiffusevqvae-sampling-time-fairness-in-tabular-diffusion-via-conditional-refinement-of-vector-quantized-latents)  
+1. [OnlineCache: Learning Dynamic Caching Policies with Error Correction for Efficient Diffusion Inference](/202608/08/2607.29398v1-onlinecache-learning-dynamic-caching-policies-with-error-correction-for-efficient-diffusion-inference)  
    标签：评分：6.0/10、query:ardm
-   evidence：表格扩散模型和矢量量化潜变量
-2. [A Unified Kullback--Leibler Divergence Analysis of Generative Diffusion Models via Entropy Production Rate](/202608/07/2608.02406v1-a-unified-kullback--leibler-divergence-analysis-of-generative-diffusion-models-via-entropy-production-rate)  
+   evidence：高效扩散推理的动态缓存策略
+2. [Disagree to Accelerate: Closing the Loop on Diffusion Feature Forecasts](/202608/08/2608.01740v1-disagree-to-accelerate-closing-the-loop-on-diffusion-feature-forecasts)  
    标签：评分：6.0/10、query:ardm
-   evidence：生成式扩散模型误差分析的统一框架
+   evidence：通过预测跳过的去噪步骤中的特征来加速扩散采样
 
 
 <div class="dpr-home-promo-card">
