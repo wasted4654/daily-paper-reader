@@ -1,0 +1,51 @@
+{
+  "label": "2026-08-09",
+  "date": "2026-08-09",
+  "generated_at": "2026-08-09T20:22:35",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/09/2608.05084v1-learning-when-to-stop-prefix-optimal-dynamic-diffusion-policies-for-continuous-control",
+      "section": "deep",
+      "title_en": "Learning When to Stop: Prefix-Optimal Dynamic Diffusion Policies for Continuous Control",
+      "authors": "Rohit Kumar Salla, Manoj Saravanan, Simon Stepputtis",
+      "date": "2026-08-05",
+      "pdf": "https://arxiv.org/pdf/2608.05084v1",
+      "score": "8.0",
+      "evidence": "用于连续控制的扩散策略和动态停止机制",
+      "tldr": "扩散策略在连续控制中表现优异但计算开销巨大。本文提出前缀最优生成策略（POGP），通过在去噪链的每一步学习前缀价值函数，既作为辅助训练目标提升中间动作质量，又作为推理时的停止准则。在MuJoCo环境下，该方法在保持高性能的同时将去噪迭代次数减少了约2.7倍，且性能优于现有动态扩散基准，实现了效率与效果的双重提升。",
+      "tags": "query:genad",
+      "abstract_en": "Diffusion policies are a powerful policy class for continuous control, but their iterative denoising process creates a substantial computational bottleneck. Reducing this cost requires adapting the number of denoising steps to the difficulty of each action while preserving task performance. We introduce Prefix-Optimal Generative Policies (POGP), a framework that learns a prefix value function at every intermediate denoising step through a Bellman-style recursion over the denoising chain. The prefix value function serves two purposes: it provides an auxiliary training objective that encourages intermediate outputs to become high-quality actions, and it enables a test-time stopping rule that terminates denoising when additional steps are unlikely to produce meaningful improvement. Across four MuJoCo environments and comparisons with 12 baselines, POGP reduces the required number of denoising iterations by approximately 2.7-fold while retaining near-full task performance. Compared with state-of-the-art dynamic diffusion baselines, prefix training also improves final task performance by approximately 3.5%. These results indicate that supervising intermediate denoising steps is useful not only for adaptive early stopping, but also as an auxiliary objective that improves the learned policy.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/09/2608.03117v1-simulation-free-and-finite-time-diffusion-model",
+      "section": "quick",
+      "title_en": "Simulation-free and finite-time diffusion model",
+      "authors": "Kentaro Kaba, Masayuki Ohzeki, Yuki Sughiyama",
+      "date": "2026-08-04",
+      "pdf": "https://arxiv.org/pdf/2608.03117v1",
+      "score": "7.0",
+      "evidence": "扩散模型参考过程设计的框架",
+      "tldr": "本研究针对生成式扩散模型中模拟训练与有限时间生成之间的权衡问题，提出了一种新型参考过程设计框架。该框架通过预设可处理的时变条件分布并构建相应的参考过程，实现了无需模拟的训练与有限时间内的生成。研究揭示了评分匹配并非扩散训练的基础，而是过程逆转的自然产物，并证明了条件流匹配是该框架在小噪声极限下的特例，为扩散模型提供了更统一的理论视角。",
+      "tags": "query:ardm",
+      "abstract_en": "The performance of generative diffusion models is determined by the choice of the reference diffusion process connecting the empirical and prior distributions. Conventional approaches typically trade off simulation-free training against finite-time generation. We propose a framework for designing the reference process that achieves both simultaneously. The key idea is to prescribe tractable time-dependent conditional distributions and then construct the reference process realizing them as its marginals. This framework reveals that score matching is not fundamental to diffusion-model training but instead emerges naturally through reversal of the reference process. We further show that conditional flow matching arises as the small-noise limit of the proposed framework.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/09/2608.04818v1-rethinking-pixel-mean-flows-via-interval-denoiser",
+      "section": "quick",
+      "title_en": "Rethinking Pixel Mean Flows via Interval Denoiser",
+      "authors": "Alexander Zaytsev, Dmitry Baranchuk, Alexander Korotin, Aibek Alanov",
+      "date": "2026-08-05",
+      "pdf": "https://arxiv.org/pdf/2608.04818v1",
+      "score": "6.0",
+      "evidence": "使用流模型进行无潜空间生成",
+      "tldr": "针对扩散和流匹配模型在多步采样和外部自编码器方面的计算瓶颈，本文提出了一种名为 Interval Denoiser 的理论严谨的无潜空间生成框架。该方法直接从流匹配 ODE 出发，建立了中间轨迹状态的精确解析映射，并证明其预测位于低维流形上，使像素级回归更易处理。通过引入残差裁剪和时间采样课程学习，该模型在 ImageNet 256x256 上实现了极高性能的单步和两步生成，显著提升了少步生成的效率与质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Modern diffusion and flow-based models are increasingly moving toward few-step, latent-free generation to bypass the computational overhead of multi-step sampling and the reconstruction bottlenecks of external autoencoders. We propose the Interval Denoiser, a theoretically rigorous framework for latent-free generation. Derived directly from the flow matching ODE, it establishes an exact analytical mapping for intermediate trajectory states. Unlike prior formulations, our prediction is shown to reside on a low-dimensional manifold across any time interval, making the regression tractable for a network operating directly on pixels. Furthermore, by avoiding empirical algebraic substitutions, our formulation correctly isolates the pure time derivative to prevent biased gradient evaluations and ensure exact first-order optimization. By analyzing this objective, we equip our framework with residual clipping and a time-sampling curriculum, enabling effective long-interval training and improving few-step performance. Trained from scratch on ImageNet 256x256, our model achieves an FID of 4.55 in one step (1-NFE) and 3.98 in two steps (2-NFE) without perceptual losses.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
