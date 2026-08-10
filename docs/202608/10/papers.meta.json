@@ -1,0 +1,93 @@
+{
+  "label": "2026-08-10",
+  "date": "2026-08-10",
+  "generated_at": "2026-08-10T20:57:22",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202608/10/2608.01035v2-wam-diff2-hierarchical-ar-to-diffusion-distillation-for-highly-efficient-autonomous-driving-vla",
+      "section": "deep",
+      "title_en": "WAM-Diff2: Hierarchical AR-to-Diffusion Distillation for Highly Efficient Autonomous Driving VLA",
+      "authors": "Zhihao Zhu, Hanlin Shang, Mingwang Xu, Feipeng Cai, Zhuolin He, Yaoyi Li, Jianhua Han, Hang Xu, Siyu Zhu",
+      "date": "2026-08-02",
+      "pdf": "https://arxiv.org/pdf/2608.01035v2",
+      "score": "10.0",
+      "evidence": "将自动驾驶的自回归VLA模型蒸馏为扩散策略",
+      "tldr": "针对自动驾驶VLA模型推理延迟高和曝光偏差问题，本文提出WAM-Diff2框架。该框架通过三阶段分层蒸馏策略（块级适配、块级蒸馏及跨尺度蒸馏），将预训练的自回归模型转化为离散扩散模型。在保持多任务认知能力的同时，显著提升了推理效率，实现了与自回归基准相当的性能，并结合系统优化达到了最高15.1倍的加速。",
+      "tags": "query:genad",
+      "abstract_en": "Vision-Language-Action (VLA) models have emerged as a prominent paradigm for end-to-end autonomous driving; however, their efficient deployment is severely constrained by high computational latency and exposure bias arising from sequential autoregressive decoding. Conversely, while specialized diffusion policies enable low-latency, parallel execution, training them from scratch typically yields narrow, single-task architectures that lack holistic visual-linguistic reasoning. Successfully transforming pre-trained autoregressive generalists into parallel diffusion models could combine multi-task cognitive intelligence with execution efficiency, yet this transition presents a formidable architectural challenge due to mismatched attention patterns (causal versus bidirectional) and divergent optimization objectives. To bridge this divide, we introduce WAM-Diff2, a multi-task discrete diffusion VLA framework powered by a three-stage hierarchical distillation strategy. By structuring the architectural shift through progressive block-wise adaptation, block-wise distillation, and model-wise cross-scale distillation, WAM-Diff2 preserves the underlying semantic foundations of the base model while accelerating inference. Extensive evaluations across driving understanding, perception, and planning benchmarks demonstrate that WAM-Diff2 effectively mitigates exposure bias and achieves performance parity with autoregressive baselines. Crucially, the autoregressive-to-diffusion transition yields a 2.8x decoding speedup, which scales to an ultimate 15.1x acceleration when combined with system-level optimizations including FlashInfer and CUDA Graphs.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/10/2608.06628v1-retrofitting-linear-attention-into-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Retrofitting Linear Attention into Diffusion Language Models",
+      "authors": "Jinha Kim, Younghun Roh, Jaeyeon Kim",
+      "date": "2026-08-06",
+      "pdf": "https://arxiv.org/pdf/2608.06628v1",
+      "score": "9.0",
+      "evidence": "扩散语言模型 (dLLM) 中的半自回归解码",
+      "tldr": "扩散语言模型（dLLM）通过并行解码加速推理，但在处理长前缀时仍面临注意力计算开销大的挑战。本文提出块混合注意力（block-hybrid attention），在当前去噪块内保留精确Softmax注意力，而对历史块应用线性注意力。通过对16B规模的LLaDA模型进行微调，仅需60小时训练即可在保持性能的同时，实现高达1.7倍的推理吞吐量提升，证明了预训练dLLM线性化改造的高效性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (dLLMs) offer a promising alternative to autoregressive models by accelerating inference through parallel decoding. Recent dLLMs commonly use blockwise semi-autoregressive decoding, generating blocks autoregressively while denoising tokens within each active block in parallel. However, despite KV caching, each denoising step still attends to all previous blocks, repeatedly incurring prefix-attention cost. Motivated by this bottleneck, we ask whether dLLM inference can be further accelerated by linearizing attention over previous blocks. We introduce block-hybrid attention, which retains exact softmax attention within the active denoising block while applying linear attention over previous blocks. We show that this hybrid attention can be retrofitted into a pretrained dLLM with minimal post-training: LLaDA-Hybrid replaces 6 of the 20 attention layers in LLaDA~2.1, a 16B open-source dLLM, largely following LoLCAT (Zhang et al, 2024). The conversion takes only approximately 60 hours while preserving benchmark performance: 72.0% vs. 75.6% on HumanEval, 63.0% vs. 57.7% on MBPP+, and 86.7% vs. 88.3% on CMATH. With a Triton implementation, LLaDA-Hybrid achieves up to $1.7\\times$ higher decoding throughput and supports more concurrent requests before exhausting memory, showing that pretrained dLLMs can be efficiently linearized for faster inference. Our code is available at: https://github.com/Diuven/LLaDA-Hybrid.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/10/2608.07430v1-diffusion-llms-as-targets-and-adversaries-mechanistic-safety-exploits",
+      "section": "deep",
+      "title_en": "Diffusion LLMs as Targets and Adversaries: Mechanistic Safety Exploits",
+      "authors": "Elena Dumitrescu, Gert Lek, Lydia Y. Chen, Jérémie Decouchant",
+      "date": "2026-08-07",
+      "pdf": "https://arxiv.org/pdf/2608.07430v1",
+      "score": "8.0",
+      "evidence": "研究扩散语言模型作为自回归模型替代方案的安全性",
+      "tldr": "本研究探讨了扩散大语言模型（DLLM）的安全性，揭示了其对齐机制的稀疏性与可迁移性。作者发现从自回归模型初始化的DLLM继承了原有的安全神经元特征，通过剪枝可显著提升攻击成功率。基于此，提出了一种离线黑盒越狱框架SN-Guided Diffusion，利用安全神经元损失引导扩散过程，在多个开源和闭源模型上实现了高效且低成本的越狱攻击。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Large Language Models (DLLMs) replace autoregressive next-token prediction with iterative parallel denoising, yet their internal safety mechanisms remain poorly understood. In this work, we investigate DLLMs both as targets and as adversaries, exposing mechanistic vulnerabilities in diffusion-based alignment.   We first show that safety alignment in DLLMs remains sparse and transferable across architectures. DLLMs initialized from autoregressive predecessors inherit the same mechanistic safety footprint as their source models, enabling transfer attacks via direct safety neuron mapping and pruning. Self-pruning increases attack success rates (ASR) from 2.6% to 73.8% on LLaDA and from 1.9% to 86.6% on Dream, while transfer pruning from Qwen2.5 increases ASR from 1.9% to 73.2% on Dream and from 7.0% to 86.3% on Fast-dLLM.   Building on these findings, we introduce SN-Guided Diffusion, a fully offline black-box jailbreak framework that steers the diffusion process away from safety-triggering regions using a weighted safety neuron loss, which achieves near-perfect prompt separability (AUROC = 1.0 for benign-vs-jailbreak discrimination). Across multiple open and proprietary targets, our method achieves a transfer ASR of up to 77.1% on Llama-3-8B-Instruct, 86.9% on Qwen2.5-7B-Instruct, and 74.3% against Gemini-2.5-Flash-Lite, while requiring only 20 generation episodes per prompt. Compared to prior jailbreaking frameworks, our method achieves competitive transferability with orders-of-magnitude lower generation cost.   Our codebase is available at https://github.com/ellyoana/sn-guided-diffusion.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/10/2608.07224v1-stochastic-autoregressive-learning",
+      "section": "quick",
+      "title_en": "Stochastic Autoregressive Learning",
+      "authors": "Ilan Doron-Arad, Idan Mehalel, Elchanan Mossel",
+      "date": "2026-08-07",
+      "pdf": "https://arxiv.org/pdf/2608.07224v1",
+      "score": "7.0",
+      "evidence": "随机自回归学习与序列生成",
+      "tldr": "本研究受大语言模型启发，提出了二元随机自回归学习的PAC学习模型，扩展了现有的确定性框架。研究探讨了基础单步采样、思维链（CoT）全轨迹采样和端到端（e2e）最终标记采样三种监督模式。通过分析平方损失下的样本复杂度，揭示了随机学习与确定性理论的本质差异，并为不同监督模式间的复杂度转换建立了紧致的上界，为理解随机生成模型的学习效率提供了理论基础。",
+      "tags": "query:ardm",
+      "abstract_en": "Motivated by LLMs, which generate outputs by iteratively sampling from next-token distributions, we introduce a PAC-learning model for binary stochastic autoregressive learning. This generalizes the deterministic autoregressive learning framework of Joshi et al., COLT 2025. In our model, one fixed generator assigns a Bernoulli next-token distribution to every prompt string. Starting from an input prompt, a token is sampled and appended to the prompt; the same generator is then applied again to this expanded prompt; this procedure is repeated for $M$ steps. Three forms of supervision are considered: base one-step samples, chain-of-thought (CoT) samples that reveal full random trajectories of length $M$, and end-to-end (e2e) samples that reveal only the final token of length $M$ trajectories. For a generator class, we study the minimum number of samples $m_{base}(\\varepsilon),m_{CoT}(\\varepsilon), m_{e2e}(\\varepsilon)$, resp., required to learn the one-step probabilities in the base model, and the final-token probability in the CoT and e2e models, under squared loss error~$\\varepsilon$.   We show that stochastic autoregressive learning fundamentally differs from the deterministic theory. At scale $\\varepsilon$, there is no universal comparison between the three learning tasks: both $m_{CoT}/m_{base}$ and $m_{e2e}/m_{CoT}$ can be made simultaneously arbitrarily larger than $M/\\varepsilon$, the natural analogue for the existing deterministic results. Nevertheless, after altering scales, for every class, CoT learning at scale $\\varepsilon$ is upper-bounded by base learning at scale $\\varepsilon/M^2$, whereas e2e learning at scale $\\varepsilon$ is upper-bounded, up to logarithmic factors, by $(M/\\varepsilon) m_{CoT}(Θ(\\varepsilon))$. These dependencies and scales are essentially tight. We complement these bounds by studying dimension $d$ logistic functions in our model.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/10/2608.01990v1-spare-structural-parameter-free-affinity-regularization-for-flow-matching",
+      "section": "quick",
+      "title_en": "SPARE: Structural Parameter-Free Affinity Regularization for Flow Matching",
+      "authors": "Zong-Wei Hong, Jinglun Li, Shen Zhang, Yuhan Liu, Linze Li, Yao Tang",
+      "date": "2026-08-03",
+      "pdf": "https://arxiv.org/pdf/2608.01990v1",
+      "score": "6.0",
+      "evidence": "去噪扩散Transformer与表示正则化",
+      "tldr": "针对扩散变换器（DiT）训练收敛慢的问题，本文提出了一种名为 SPARE 的结构化无参数亲和力正则化方法。该方法利用干净数据潜变量内部及跨图像的 Token 间相似度（亲和力）作为监督信号，无需外部编码器或投影头。SPARE 在几乎不增加显存和参数的情况下，显著提升了生成质量，在 ImageNet 实验中表现优于现有无参数方法，并能与有监督方法结合进一步优化性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Denoising diffusion transformers achieve strong generation quality but converge slowly during training. Regularizing their internal representations has emerged as an effective accelerator, yet existing methods split into two families with complementary costs. Target-based methods strengthen representations by aligning them to external features, which requires an external encoder and a learnable projection head to bridge feature spaces. Target-free methods hold no reference at all, and can only repel the model's own features across samples or layers, discarding whatever structure the data contains. Prior work suggests that spatial structure, rather than global semantics, drives the gains of alignment. We therefore ask whether such structure can serve as a target directly, and whether it exists not only within an image but across images. Our key insight is that the clean data latent already carries this structure in the relations among its tokens, where a relation is the similarity between two tokens, a single scalar comparable across feature spaces without a projection head. We propose Structural Parameter-free Affinity Regularization (SPARE), a regularizer that matches the pairwise affinities of intermediate tokens to those of the clean latents. To exploit this structure fully, SPARE extends the matching to token pairs across images, precisely the pairs that prior target-free methods repel by default, and calibrates both relation types with a single learning objective. On ImageNet $256 \\times 256$ with SiT backbones under matched 400K-iteration budgets, SPARE adds no encoder, head, or parameters and only 0.08 GB of training memory, yet attains the lowest FID among parameter-free regularizers in every tested setting, recovers 37 to 54\\% of REPA's FID reduction, and improves over REPA when combined with it, reaching FID 1.90 under classifier-free guidance at 1M iterations.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/10/2608.03929v2-latent-reward-registers-for-diffusion-preference-alignment",
+      "section": "quick",
+      "title_en": "Latent Reward Registers for Diffusion Preference Alignment",
+      "authors": "Yuanshen Guan, Zipeng Feng, Chengru Song, Zhiwei Xiong, Peiqin Sun",
+      "date": "2026-08-04",
+      "pdf": "https://arxiv.org/pdf/2608.03929v2",
+      "score": "6.0",
+      "evidence": "扩散Transformer (DiT) 序列对齐与潜空间奖励寄存器",
+      "tldr": "针对扩散模型对齐中终端奖励稀疏导致的信用分配难题，本文提出潜空间奖励寄存器（Latent Reward Registers）。该方法通过在冻结的DiT中添加可学习寄存器令牌，从中间噪声潜变量中提取奖励信号，实现非侵入式的密集奖励估计。基于此，作者提出了训练阶段的RG-OPD蒸馏策略和推理阶段的RGS引导采样方法。实验证明，该方法在显著降低计算成本（训练提速达33倍）的同时，大幅提升了模型与人类偏好的对齐效果，达到了SOTA水平。",
+      "tags": "query:ardm",
+      "abstract_en": "Aligning diffusion models with human preferences usually relies on a sparse terminal reward evaluated on the final generated samples, presenting a severe temporal credit-assignment challenge across the multi-step denoising process. We propose Latent Reward Registers, a mechanism that estimates terminal preference directly from intermediate noisy latents by prepending learnable, position-free register tokens to the input sequence of a frozen Diffusion Transformer (DiT). This independent readout mechanism extracts latent reward evidence without altering the generator's hidden states or velocity field. The resulting dense, differentiable reward signal throughout the full denoising process facilitates two alignment strategies. For training, Reward-Gradient On-Policy Distillation (RG-OPD) distills reward-guided updates along on-policy trajectories, bypassing the computationally expensive rollouts of standard policy gradients. For inference, Reward-Guided Sampling (RGS) steers trajectories via magnitude-matched reward gradients without parameter updates. Empirically, at high noise levels (u = 0.8), the registers reach the highest pairwise accuracy among the evaluated latent reward models. Furthermore, RG-OPD outperforms online reinforcement learning baselines while reducing GPU hours by up to 33x, and RGS establishes a new state-of-the-art among training-free methods, strictly enhancing both alignment and perceptual metrics. Code and weights are available at https://github.com/Guanys-dar/latent-reward-register",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

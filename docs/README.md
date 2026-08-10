@@ -6,31 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-09
-- 运行时间：2026-08-09 20:22:24 UTC
+- 最新运行日期：2026-08-10
+- 运行时间：2026-08-10 20:57:11 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
-- 速读区：2
+- 本次总论文数：6
+- 精读区：3
+- 速读区：3
 
 ### 今日简报（AI）
-今日聚焦扩散模型在连续控制与流模型中的前沿突破，深度解析 3 篇核心论文。
-重点推荐“前缀最优”动态扩散策略，其为连续控制任务提供了精准的停止机制与效率优化。
-建议优先研读高分论文以掌握动态决策逻辑，并关注无模拟扩散模型带来的采样效率提升。
-- 详情：[/202608/09/README](/202608/09/README)
+今日深度解析自动驾驶VLA与扩散语言模型新突破，高效完成6篇前沿论文研读。
+满分论文WAM-Diff2通过分层蒸馏大幅提升驾驶效率，线性注意力则成功为扩散语言模型减负。
+推荐优先攻读WAM-Diff2，深入理解端到端自动驾驶从自回归到扩散模型的演进逻辑。
+- 详情：[/202608/10/README](/202608/10/README)
 
 ### 精读区论文标签
-1. [Learning When to Stop: Prefix-Optimal Dynamic Diffusion Policies for Continuous Control](/202608/09/2608.05084v1-learning-when-to-stop-prefix-optimal-dynamic-diffusion-policies-for-continuous-control)  
-   标签：评分：8.0/10、query:genad
-   evidence：用于连续控制的扩散策略和动态停止机制
+1. [WAM-Diff2: Hierarchical AR-to-Diffusion Distillation for Highly Efficient Autonomous Driving VLA](/202608/10/2608.01035v2-wam-diff2-hierarchical-ar-to-diffusion-distillation-for-highly-efficient-autonomous-driving-vla)  
+   标签：评分：10.0/10、query:genad
+   evidence：将自动驾驶的自回归VLA模型蒸馏为扩散策略
+2. [Retrofitting Linear Attention into Diffusion Language Models](/202608/10/2608.06628v1-retrofitting-linear-attention-into-diffusion-language-models)  
+   标签：评分：9.0/10、query:ardm
+   evidence：扩散语言模型 (dLLM) 中的半自回归解码
+3. [Diffusion LLMs as Targets and Adversaries: Mechanistic Safety Exploits](/202608/10/2608.07430v1-diffusion-llms-as-targets-and-adversaries-mechanistic-safety-exploits)  
+   标签：评分：8.0/10、query:ardm
+   evidence：研究扩散语言模型作为自回归模型替代方案的安全性
 
 ### 速读区论文标签
-1. [Simulation-free and finite-time diffusion model](/202608/09/2608.03117v1-simulation-free-and-finite-time-diffusion-model)  
+1. [Stochastic Autoregressive Learning](/202608/10/2608.07224v1-stochastic-autoregressive-learning)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散模型参考过程设计的框架
-2. [Rethinking Pixel Mean Flows via Interval Denoiser](/202608/09/2608.04818v1-rethinking-pixel-mean-flows-via-interval-denoiser)  
+   evidence：随机自回归学习与序列生成
+2. [SPARE: Structural Parameter-Free Affinity Regularization for Flow Matching](/202608/10/2608.01990v1-spare-structural-parameter-free-affinity-regularization-for-flow-matching)  
    标签：评分：6.0/10、query:ardm
-   evidence：使用流模型进行无潜空间生成
+   evidence：去噪扩散Transformer与表示正则化
+3. [Latent Reward Registers for Diffusion Preference Alignment](/202608/10/2608.03929v2-latent-reward-registers-for-diffusion-preference-alignment)  
+   标签：评分：6.0/10、query:ardm
+   evidence：扩散Transformer (DiT) 序列对齐与潜空间奖励寄存器
 
 
 <div class="dpr-home-promo-card">
