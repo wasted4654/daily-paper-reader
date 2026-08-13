@@ -6,30 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-12
-- 运行时间：2026-08-12 21:14:26 UTC
+- 最新运行日期：2026-08-13
+- 运行时间：2026-08-13 21:09:37 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：4
 - 精读区：1
-- 速读区：2
+- 速读区：3
 
 ### 今日简报（AI）
-今日深度探索扩散模型新范式，涵盖高品质音乐生成、推理回滚优化及工具增强推理三大前沿。
-重点推荐 9.0 分力作，其提出的 Full-Context DiT 架构让音乐生成从简单的信号
-- 详情：[/202608/12/README](/202608/12/README)
+今日前沿聚焦实时长视频人体动画生成与扩散模型的高效并行解码技术。
+重点关注 LiveAnimate 带来的稳定实时流式动画突破，以及 XYZFlow 等模型在生成效率上的多维优化。
+建议普通读者关注 AI 实时音视频生成技术的成熟，这预示着
+- 详情：[/202608/13/README](/202608/13/README)
 
 ### 精读区论文标签
-1. [Beyond Reconstruction: Full-Context Generative DiT for Music Generation](/202608/12/2608.08787v2-beyond-reconstruction-full-context-generative-dit-for-music-generation)  
-   标签：评分：9.0/10、query:ardm
-   evidence：结合自回归语言模型与扩散渲染器
+1. [LiveAnimate: Stable Long-Form Streaming Human Animation in Real-Time](/202608/13/2608.11745v1-liveanimate-stable-long-form-streaming-human-animation-in-real-time)  
+   标签：评分：8.0/10、query:ardm
+   evidence：将双向DiT适配为块因果自回归生成器
 
 ### 速读区论文标签
-1. [Archer: Adaptive Reuse of Cached Hidden States for Efficient Rollback in Diffusion Language Models](/202608/12/2608.08086v2-archer-adaptive-reuse-of-cached-hidden-states-for-efficient-rollback-in-diffusion-language-models)  
+1. [Ripple-Pivot Search: Active Parallel Decoding for Diffusion Large Language Models](/202608/13/2608.11742v1-ripple-pivot-search-active-parallel-decoding-for-diffusion-large-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型与自回归生成的效率对比
-2. [Continuous Interaction Diffusion: A Diffusion-Native Runtime for Asynchronous Tool-Augmented Reasoning](/202608/12/2608.10438v1-continuous-interaction-diffusion-a-diffusion-native-runtime-for-asynchronous-tool-augmented-reasoning)  
+   evidence：扩散语言模型的并行解码作为自回归的替代方案
+2. [Rethinking Language Model-Based Generative Speech Enhancement in the Latent Space of a Neural Audio Codec](/202608/13/2608.12082v1-rethinking-language-model-based-generative-speech-enhancement-in-the-latent-space-of-a-neural-audio-codec)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型与自回归工具调用的对比
+   evidence：比较语音增强中的自回归与扩散建模范式
+3. [XYZFlow:Scaling Multi dimensional Shortcut Flows for Efficient Generative Modeling](/202608/13/2608.12276v1-xyzflowscaling-multi-dimensional-shortcut-flows-for-efficient-generative-modeling)  
+   标签：评分：7.0/10、query:ardm
+   evidence：将自回归建模视为扩散模型的隐式流直线化
 
 
 <div class="dpr-home-promo-card">
