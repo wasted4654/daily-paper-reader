@@ -1,0 +1,170 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-14T20:05:43.356500+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2608.13524v1",
+      "title": "DARTree: Speculative Diffusion Decoding with Autoregressive Draft Trees",
+      "abstract": "Speculative decoding losslessly accelerates autoregressive language models by verifying multiple draft tokens in parallel. Diffusion-based drafters further reduce proposal latency by predicting an entire token block in parallel, but their position-wise distributions are marginal rather than conditioned on tokens selected along each draft path. Existing recurrent correction incorporates causal information along a single draft chain, whereas diffusion-based tree construction broadens candidate coverage without carrying this correction along individual branches. We introduce DARTree, a training-free speculative decoding method that extends a pretrained AR correction head from chains to trees. DARTree first constructs a fixed-width candidate tree by expanding and scoring all nodes at each depth in a single batch, and then only applies best-first pruning to select the verification tree, decoupling AR-head inference from sequential heap operations. Across seven math, code, and chat benchmarks, DARTree achieves the highest average acceptance length and speedup in all four model--temperature configurations, accepting up to 12.97 tokens per verification round, 98.6\\% more than DFlash and 27.9\\% more than Domino in the same setting, and reaching up to 9.73$\\times$ lossless speedup over locally measured autoregressive decoding.",
+      "authors": [
+        "Tianyi Li",
+        "Yaxin Luo",
+        "Xinyi Shang",
+        "Zhiqiang Shen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-13T17:43:44+00:00",
+      "link": "https://arxiv.org/pdf/2608.13524v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "speculative diffusion decoding with autoregressive draft trees",
+      "llm_evidence_cn": "结合自回归草稿树的投机扩散解码",
+      "llm_evidence": "结合自回归草稿树的投机扩散解码",
+      "canonical_evidence": "结合自回归草稿树的投机扩散解码",
+      "llm_tldr_en": "Introduces a training-free method using AR correction heads to improve diffusion-based speculative decoding.",
+      "llm_tldr_cn": "引入一种无需训练的方法，利用自回归校正头来改进基于扩散模型的投机解码。",
+      "llm_tldr": "引入一种无需训练的方法，利用自回归校正头来改进基于扩散模型的投机解码。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.12276v2",
+      "title": "XYZFlow:Scaling Multi dimensional Shortcut Flows for Efficient Generative Modeling",
+      "abstract": "High-fidelity image generation faces a trade-off between speed and quality. Diffusion models produce strong visuals but require costly iterative sampling. Existing efficient methods mainly distill pretrained models into few-step samplers, a challenging process that depends heavily on teacher-model quality. In this paper, we introduce XYZFlow, a framework that rethinks efficient generation through multidimensional scaling of flow matching. Unlike single-step mappings, XYZFlow enhances expressivity by making probability paths more identifiable and learnable through structured multidimensional conditioning. We view autoregressive modeling as implicit flow straightening, where richer context reduces trajectory ambiguity. XYZFlow realizes this idea through two orthogonal dimensions: temporal scaling, which uses non-Markovian conditioning on the full denoising history; and spatial scaling, enabled by Next Shortcut Prediction, which sequentially generates patches using preceding patches' denoising trajectories as priors. Experiments show that XYZFlow achieves state-of-the-art performance, with 7.2-8.5X teacher speedups and competitive FID, while Next Shortcut Prediction delivers superior quality-latency trade-offs over model scaling or step reduction.",
+      "authors": [
+        "Jinxiu Liu",
+        "Xuanming Liu",
+        "Kangfu Mei",
+        "Yandong Wen",
+        "Weiyang Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-12T17:15:42+00:00",
+      "link": "https://arxiv.org/pdf/2608.12276v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "viewing autoregressive modeling as implicit flow straightening in diffusion",
+      "llm_evidence_cn": "将自回归建模视为扩散模型中的隐式流直化",
+      "llm_evidence": "将自回归建模视为扩散模型中的隐式流直化",
+      "canonical_evidence": "将自回归建模视为扩散模型中的隐式流直化",
+      "llm_tldr_en": "Proposes XYZFlow which links autoregressive context with flow-based generative modeling for efficiency.",
+      "llm_tldr_cn": "提出 XYZFlow 框架，将自回归上下文与流匹配生成建模结合以提升效率。",
+      "llm_tldr": "提出 XYZFlow 框架，将自回归上下文与流匹配生成建模结合以提升效率。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.10615v1",
+      "title": "Simplex Relaxation for Discrete Diffusion",
+      "abstract": "Discrete diffusion models for categorical generation are defined by a corruption kernel, which determines the intermediate state space and the associated reverse prediction problem. We study uniform discrete diffusion and ask whether its training objective and reverse transitions can be enriched without changing the underlying categorical corruption process. We introduce Simplax, an exact Dirichlet--categorical augmentation that couples each corrupted categorical state with an auxiliary simplex-valued variable while preserving the original uniform diffusion process as its categorical marginal. This augmentation yields a tractable Rao--Blackwellized reverse-bridge objective and a corresponding stochastic reverse sampler, while retaining the corrupted categorical state as the denoiser input. Empirically, Simplax improves the generative perplexity--entropy tradeoff on unconditional OpenWebText generation. On Sudoku, a model trained exclusively on $30$-clue puzzles achieves the highest accuracy among the compared methods across all evaluated clue densities, including the minimum uniquely solvable $17$-clue regime, and also achieves the highest validity in unconditional generation.",
+      "authors": [
+        "Jinya Sakurai",
+        "Patrick Pynadath",
+        "Satoshi Hayakawa",
+        "Jaehong Yoon",
+        "Xulei Yang",
+        "Nancy F. Chen",
+        "Xun Xu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-11T07:58:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.10615v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Discrete diffusion models for categorical generation",
+      "llm_evidence_cn": "用于类别生成的离散扩散模型",
+      "llm_evidence": "用于类别生成的离散扩散模型",
+      "canonical_evidence": "用于类别生成的离散扩散模型",
+      "llm_tldr_en": "Introduces Simplax to enrich discrete diffusion training objectives and reverse transitions via simplex relaxation.",
+      "llm_tldr_cn": "引入 Simplax，通过单纯形松弛丰富离散扩散训练目标和反向转换。",
+      "llm_tldr": "引入 Simplax，通过单纯形松弛丰富离散扩散训练目标和反向转换。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.13520v1",
+      "title": "The data geometry of masking diffusion: Certified-optimal schedules via unmasking growth complexity",
+      "abstract": "We study masking diffusion for discrete sampling and introduce a path-resolved measure of data geometry called the \\emph{unmasking growth complexity} ({\\textsf{UGC}\\xspace}). Its local increments directly control Kullback--Leibler (KL) discretization error, yielding a unified analysis of Bernoulli-subset and fixed-cardinality unmasking schemes. In log-reveal-odds coordinates, this structure yields optimized single-block and multi-block schedules, and quantifies the gains from adapting computational effort to data geometry. Crucially, we show how {\\textsf{UGC}\\xspace} increments can be estimated from samples via KL increments along coupled reveal trajectories. This leads to \\emph{certified-optimal} samplers that achieve a prescribed KL error with high probability and iteration complexity within a constant factor of the corresponding oracle procedure. Collapsing the \\ugc path yields the aggregate {\\textsf{UGC}\\xspace} mass, which connects to classical multivariate dependence measures and complexity measures from previous analyses of discrete diffusion. In the fine-partition limit, the squared integral of the square-root {\\textsf{UGC}\\xspace} density determines the sharp leading-order optimal Euler discretization error. Examples exhibit substantial dimension-dependent gains over coarse schedules, including $\\widetildeΩ(\\sqrt{d})$ improvements achievable with a constant number of adaptively placed blocks.",
+      "authors": [
+        "Martin J. Wainwright"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.IT",
+        "math.ST",
+        "stat.ML"
+      ],
+      "published": "2026-08-13T17:40:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.13520v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Masking diffusion for discrete sampling and sequence generation",
+      "llm_evidence_cn": "用于离散采样和序列生成的掩码扩散模型",
+      "llm_evidence": "用于离散采样和序列生成的掩码扩散模型",
+      "canonical_evidence": "用于离散采样和序列生成的掩码扩散模型",
+      "llm_tldr_en": "Analyzes masking diffusion geometry to create certified-optimal schedules for discrete sampling.",
+      "llm_tldr_cn": "分析掩码扩散几何结构，为离散采样创建经过认证的最佳调度方案。",
+      "llm_tldr": "分析掩码扩散几何结构，为离散采样创建经过认证的最佳调度方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
