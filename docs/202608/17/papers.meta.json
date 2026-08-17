@@ -1,0 +1,65 @@
+{
+  "label": "2026-08-17",
+  "date": "2026-08-17",
+  "generated_at": "2026-08-17T19:45:25",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202608/17/2608.13932v1-post-training-quantization-for-hybrid-iterative-generative-models",
+      "section": "deep",
+      "title_en": "Post-training Quantization for Hybrid Iterative Generative Models",
+      "authors": "Jing Gao, Junyi Wu, Wei Wang, Yan Yan, Yao Zhao",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.13932v1",
+      "score": "9.0",
+      "evidence": "结合自回归和扩散范式的混合迭代生成模型",
+      "tldr": "混合迭代生成模型（IGM）结合了自回归和扩散模型的优势，但推理开销巨大。直接应用训练后量化（PTQ）会导致模型崩溃。本文提出HyGenQ框架，通过分层聚类解耦（HCD）处理激活值中的极端离群值，并利用缩放重校准（SR）抑制异常放大。实验证明HyGenQ能将混合IGM成功量化至W8A8精度，显著提升了生成效率和质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Iterative Generative Models (IGMs) span autoregressive and diffusion paradigms, and hybrid variants that couple them can achieve remarkable image-generation fidelity. However, their iterative inference incurs substantial computational overhead, making Post-training Quantization (PTQ) appealing for acceleration, while directly applying vanilla PTQ to hybrid IGMs can trigger model collapse. By analyzing these failures, we identify two critical challenges: Excessive Outliers (EOs) in the activations create an irreconcilable trade-off between preserving normal precision and covering EOs, resulting in severe degradation in generation quality; Amplified Anomalies (AAs) arising unpredictably from minor quantization errors, create a mismatch between calibration and inference, thus iteratively triggering model collapse. To address these challenges, we introduce HyGenQ, a PTQ framework for hybrid IGMs. HyGenQ comprises Hierarchical Cluster Decoupling (HCD) and Scaling Recalibration (SR). HCD identifies and decouples outlier channels via a multi-stage clustering process, effectively isolating EOs while maintaining normal value precision, thereby alleviating performance degradation. SR scales AAs beyond Gaussian Bound, thereby avoiding model collapse caused by aggressive truncation. Extensive experiments demonstrate that HyGenQ successfully quantizes representative hybrid IGMs to 8-bit precision (W8A8), significantly outperforming existing baselines and validating its robustness across different model families.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/17/2608.14043v1-beyond-text-conditioning-a-systematic-study-of-mllm-dit-fusion-for-video-generation",
+      "section": "quick",
+      "title_en": "Beyond Text Conditioning: A Systematic Study of MLLM-DiT Fusion for Video Generation",
+      "authors": "Yanbo Ding, Yijia Fan, Caihua Shan, Yifan Yang, Yifei Shen, Weijie Wang, Xirui Hu, Dongsheng Li, Lili Qiu, Yuqing Yang, Yali Wang",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14043v1",
+      "score": "7.0",
+      "evidence": "集成多模态大模型与扩散骨干的混合架构",
+      "tldr": "针对视频生成中DiT模型语义规划能力不足的问题，本文系统研究了多模态大模型（MLLM）与DiT的融合方式。提出了BiVidGen框架，通过MLLM自回归生成离散语义视觉Token作为中间表示，并利用DiT结合文本和视觉Token进行视频渲染。实验证明，该方法在语义对齐和时序一致性上显著优于传统仅依赖文本引导的模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Transformers (DiTs) have become the dominant paradigm for high-fidelity video generation, yet their ability to perform high-level semantic planning remains limited. While hybrid architectures integrating MLLMs with diffusion backbones have shown strong advantages in image synthesis, such designs remain underexplored in video generation, where existing approaches often treat MLLMs primarily as frozen feature encoders rather than semantic generators. To fill this gap, we systematically study how an MLLM should be integrated with a DiT for video generation by answering three questions: what intermediate representation should bridge the MLLM and DiT, how the MLLM should generate it, and how the DiT should incorporate it during diffusion rendering. Our analysis reveals three key findings: (1) discrete semantic visual tokens produced by an EMA-based tokenizer provide a stable and expressive interface, (2) autoregressive causal modeling is effective for generating these tokens, and (3) explicit visual-token conditioning is more effective than prompt refinement or latent bridging. Based on these findings, we propose BiVidGen, a hybrid framework where an MLLM first generates semantic visual tokens and a DiT renders videos conditioned on both text and these tokens via multi-layer cross-attention. Extensive experiments show that BiVidGen improves semantic alignment and temporal coherence over a fine-tuned DiT baseline, achieving stronger performance on VBench-Long. These results demonstrate that explicit MLLM-based visual planning provides an effective intermediate interface for text-to-video generation beyond text-only conditioning.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/17/2608.14067v1-when-denoising-hurts-rethinking-the-terminal-step-of-diffusion-time-series-forecasters----extended-version",
+      "section": "quick",
+      "title_en": "When Denoising Hurts: Rethinking the Terminal Step of Diffusion Time Series Forecasters -- Extended Version",
+      "authors": "Dat Nguyen-Cong, Luong Tran, Tung Kieu",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14067v1",
+      "score": "6.0",
+      "evidence": "用于时间序列预测和轨迹优化的扩散模型",
+      "tldr": "本研究挑战了扩散模型在时间序列预测中迭代采样始终有益的传统观点。研究发现，时间结构通常在高噪声水平下即可恢复，而过度的低噪声细化反而会引入统计漂移，损害预测质量。为此，作者提出了一种无标签的全局停止准则以检测最佳终止点，并设计了伯努利时间步采样器来优化训练。该方法在八个数据集上实现了更快的推理速度和更高的预测精度，为扩散模型在时序领域的应用提供了新视角。",
+      "tags": "query:genad",
+      "abstract_en": "Diffusion models offer a natural way to model uncertainty in time series forecasting, yet their iterative sampling process is often treated as a uniformly beneficial refinement procedure. Our study challenges this view by examining how forecast quality evolves throughout reverse diffusion. We find that general temporal structure is often recovered at relatively high noise levels, whereas continued low-noise refinement can introduce statistical drift and degrade the final forecast. Our analysis further suggests that this behavior explains why prior methods often favor relatively narrow diffusion architecture and schedule design. Building on this observation, we propose a label-free global stopping criterion that detects the optimal termination point, eventually speeding up inference and improving predictive accuracy. Additionally, since early stopping terminates inference in high-noise regions, we propose a Bernoulli timestep sampler that concentrates training on this region while preserving coverage of the full diffusion process. Extensive experiments conducted across eight real-world datasets demonstrate the superior performance of our method compared to existing approaches.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/17/2608.14430v1-designing-reinforcement-learning-for-diffusion-models-a-unified-path-space-view",
+      "section": "quick",
+      "title_en": "Designing Reinforcement Learning for Diffusion Models: A Unified Path-Space View",
+      "authors": "Yixian Xu, Yuanrui Zhang, Shengjie Luo, Liwei Wang, Di He",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14430v1",
+      "score": "6.0",
+      "evidence": "扩散模型的强化学习以及轨迹空间的策略梯度估计器",
+      "tldr": "本研究针对扩散模型强化学习（RL）算法碎片化的问题，提出了统一的路径空间视角。通过在采样SDE之间使用重要性采样，推导出显式的策略梯度估计器，证明了现有的逆向轨迹法和前向匹配法在本质上是一致的，其差异主要源于方差缩减。基于此，研究者提出了一种多样本KDE价值梯度估计器和尺度受限的权重函数，在SD3.5-M和Qwen-Image模型上验证了该方法的有效性，显著提升了模型与人类偏好的对齐效果。",
+      "tags": "query:genad",
+      "abstract_en": "Reinforcement learning (RL) post-training provides a direct way to align diffusion models with human preferences and task-specific rewards. However, current RL algorithms for diffusion models remain fragmented: reverse-trajectory methods rely on discretized likelihood ratios, whereas forward-matching methods train on reward-labeled noising versions of the rollout samples. This paper shows that these seemingly different losses arise from a single path-space principle. Starting from the regularized diffusion-RL objective, we use importance sampling between sampling SDEs to obtain an explicit policy-gradient estimator on trajectory space. The estimator contains the stochastic Itô integral underlying Flow-GRPO-type updates; we derive an equivalent variance-reduced value-gradient form that recovers the forward-matching structure of AWM and DiffusionNFT. This identifies the empirical gap between these method families as a variance-reduction effect rather than a difference in RL principle. The derivation yields a unified design space organized by value-gradient estimation, weight functions, and sampling choices. Within this space, we propose a multi-sample KDE value-gradient estimator that reuses rollout groups, together with scale-bounded weight families that retain stable existing recipes while excluding singular ones. Experiments on SD3.5-M and Qwen-Image models validate the variance-reduction explanation and show that the resulting recipe improves over prior diffusion-RL baselines.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
