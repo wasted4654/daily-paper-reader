@@ -6,33 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-17
-- 运行时间：2026-08-17 19:44:36 UTC
+- 最新运行日期：2026-08-19
+- 运行时间：2026-08-19 20:30:39 UTC
 - 运行状态：成功
-- 本次总论文数：4
+- 本次总论文数：1
 - 精读区：1
-- 速读区：3
+- 速读区：0
 
 ### 今日简报（AI）
-今日聚焦生成模型效能优化，深度拆解混合迭代模型的训练后量化（PTQ）前沿方案。
-核心结论指出量化技术可显著提升生成效率，同时 MLLM 与 DiT 的融合正重塑视频生成范式。
-- 详情：[/202608/17/README](/202608/17/README)
+今日深度解读 9.0 分前沿论文，揭秘无需噪声调节的自适应视频生成新技术。
+该研究提出的 Equilibrium Forcing 机制打破了传统视频生成对噪声条件的依赖，显著提升了生成的灵活性与质量。
+建议关注 AIGC 视频领域的读者重点研读其去噪声化思路，掌握下一代视频生成模型的核心演进。
+- 详情：[/202608/19/README](/202608/19/README)
 
 ### 精读区论文标签
-1. [Post-training Quantization for Hybrid Iterative Generative Models](/202608/17/2608.13932v1-post-training-quantization-for-hybrid-iterative-generative-models)  
+1. [Equilibrium Forcing: Adaptive Video Generation Without Noise Conditioning](/202608/19/2608.14706v1-equilibrium-forcing-adaptive-video-generation-without-noise-conditioning)  
    标签：评分：9.0/10、query:ardm
-   evidence：结合自回归和扩散范式的混合迭代生成模型
+   evidence：利用扩散去噪模型改进自回归视频生成
 
 ### 速读区论文标签
-1. [Beyond Text Conditioning: A Systematic Study of MLLM-DiT Fusion for Video Generation](/202608/17/2608.14043v1-beyond-text-conditioning-a-systematic-study-of-mllm-dit-fusion-for-video-generation)  
-   标签：评分：7.0/10、query:ardm
-   evidence：集成多模态大模型与扩散骨干的混合架构
-2. [When Denoising Hurts: Rethinking the Terminal Step of Diffusion Time Series Forecasters -- Extended Version](/202608/17/2608.14067v1-when-denoising-hurts-rethinking-the-terminal-step-of-diffusion-time-series-forecasters----extended-version)  
-   标签：评分：6.0/10、query:genad
-   evidence：用于时间序列预测和轨迹优化的扩散模型
-3. [Designing Reinforcement Learning for Diffusion Models: A Unified Path-Space View](/202608/17/2608.14430v1-designing-reinforcement-learning-for-diffusion-models-a-unified-path-space-view)  
-   标签：评分：6.0/10、query:genad
-   evidence：扩散模型的强化学习以及轨迹空间的策略梯度估计器
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
