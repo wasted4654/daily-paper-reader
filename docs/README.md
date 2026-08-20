@@ -6,26 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-19
-- 运行时间：2026-08-19 20:30:39 UTC
+- 最新运行日期：2026-08-20
+- 运行时间：2026-08-20 20:27:36 UTC
 - 运行状态：成功
 - 本次总论文数：1
-- 精读区：1
-- 速读区：0
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日深度解读 9.0 分前沿论文，揭秘无需噪声调节的自适应视频生成新技术。
-该研究提出的 Equilibrium Forcing 机制打破了传统视频生成对噪声条件的依赖，显著提升了生成的灵活性与质量。
-建议关注 AIGC 视频领域的读者重点研读其去噪声化思路，掌握下一代视频生成模型的核心演进。
-- 详情：[/202608/19/README](/202608/19/README)
+今日聚焦时间序列补全，探索将连续数据离散化并结合掩码扩散训练（MDT）的新路径。
+该研究证明了离散化表征能有效辅助扩散模型捕捉复杂的时序动态，从而提升缺失值修复的精度。
+建议关注扩散模型在非图像领域（如时序数据处理）的跨界应用，尝试将其引入数据清洗工作流。
+- 详情：[/202608/20/README](/202608/20/README)
 
 ### 精读区论文标签
-1. [Equilibrium Forcing: Adaptive Video Generation Without Noise Conditioning](/202608/19/2608.14706v1-equilibrium-forcing-adaptive-video-generation-without-noise-conditioning)  
-   标签：评分：9.0/10、query:ardm
-   evidence：利用扩散去噪模型改进自回归视频生成
+- 本次无精读推荐。
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [Discretizing Continuous Time Series for Imputation with Masked Diffusion Training](/202608/20/2608.19119v1-discretizing-continuous-time-series-for-imputation-with-masked-diffusion-training)  
+   标签：评分：6.0/10、query:ardm
+   evidence：用于时间序列序列生成的掩码扩散训练
 
 
 <div class="dpr-home-promo-card">

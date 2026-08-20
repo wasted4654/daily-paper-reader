@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-20 <!--dpr-date:20260820-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/20/2608.19119v1-discretizing-continuous-time-series-for-imputation-with-masked-diffusion-training" data-sidebar-item="{&quot;title&quot;: &quot;Discretizing Continuous Time Series for Imputation with Masked Diffusion Training&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.19119v1-discretizing-continuous-time-series-for-imputation-with-masked-diffusion-training&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;用于时间序列序列生成的掩码扩散训练&quot;}">Discretizing Continuous Time Series for Imputation with Masked Diffusion Training</a>
   * 2026-08-19 <!--dpr-date:20260819-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/19/2608.14706v1-equilibrium-forcing-adaptive-video-generation-without-noise-conditioning" data-sidebar-item="{&quot;title&quot;: &quot;Equilibrium Forcing: Adaptive Video Generation Without Noise Conditioning&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.14706v1-equilibrium-forcing-adaptive-video-generation-without-noise-conditioning&quot;, &quot;score&quot;: &quot;9.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;利用扩散去噪模型改进自回归视频生成&quot;}">Equilibrium Forcing: Adaptive Video Generation Without Noise Conditioning</a>
