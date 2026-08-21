@@ -1,0 +1,257 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-21T20:16:58.059309+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 3,
+    "deep_cap": 6,
+    "deep_selected": 3,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2608.19556v1",
+      "title": "Stream4D: 4D-Consistency for Streaming Autoregressive Diffusion Video Models",
+      "abstract": "Streaming autoregressive diffusion models enable real-time, long-horizon video generation, but their training objectives optimize local frame prediction rather than the geometry and dynamics of a coherent world: long rollouts accumulate geometric drift and degrade into static or unnatural motion. Recent bidirectional approaches address this problem using rewards signals built upon 3D Gaussian-Splatting reconstruction. However, a single rigid 3d reconstruction cannot model a dynamic scene, so this critic penalizes genuine object motion as reconstruction error and is maximized by freezing the video. This shortcut is especially detrimental in the AR setting, where each chunk can propagate an already-static configuration. In this work, we propose Stream4D, which replaces the static critic with a feed-forward 4D reconstruction reward that explicitly models scene dynamics, allowing coherent motion to receive high consistency rewards. To further guide motion magnitude and quality, we add a motion prior that rewards natural scene-flow magnitude while penalizing jitter and non-rigid artifacts. Our final recipe combines these two terms with a lightweight perceptual anchor. Across various autoregressive video backbones and various generation horizons, Stream4D improves 4D reconstruction quality, preserves motion more effectively, and achieves higher human-aligned preference. Project page: https://banyuanhao.github.io/Stream4D/",
+      "authors": [
+        "Yuanhao Ban",
+        "Jiaqi Feng",
+        "Hengguang Zhou",
+        "Xiaohuan Pei",
+        "Justin Cui",
+        "Cho-Jui Hsieh"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-20T01:54:26+00:00",
+      "link": "https://arxiv.org/pdf/2608.19556v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "streaming autoregressive diffusion models for long-horizon video generation",
+      "llm_evidence_cn": "用于长视频生成的流式自回归扩散模型",
+      "llm_evidence": "用于长视频生成的流式自回归扩散模型",
+      "canonical_evidence": "用于长视频生成的流式自回归扩散模型",
+      "llm_tldr_en": "Proposes a 4D-consistency method to improve the stability of streaming autoregressive diffusion video models.",
+      "llm_tldr_cn": "提出一种 4D 一致性方法，以提高流式自回归扩散视频模型的稳定性。",
+      "llm_tldr": "提出一种 4D 一致性方法，以提高流式自回归扩散视频模型的稳定性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.19567v1",
+      "title": "Block3D: Efficient Text-to-3D Generation via Block-Wise Diffusion",
+      "abstract": "While text-to-3D generation has advanced rapidly, achieving high geometric fidelity at low inference cost remains challenging. Existing text-to-3D methods either decode discrete shape tokens autoregressively or iteratively refine global 3D representations with diffusion or flow models. However, autoregressive decoding is sequential and cannot revise errors, whereas diffusion and flow-matching models repeatedly process the full representation, making high-quality generation increasingly expensive. In this paper, we propose Block3D, a block-wise diffusion framework that partitions the discrete shape-token sequence into contiguous blocks, generates the blocks autoregressively, and jointly denoises all tokens within the current block. To alleviate error accumulation, we introduce confidence-guided intra-block correction, which revises low-confidence tokens before each block is finalized. On a held-out set from TRELLIS-500K, Block3D reduces mean end-to-end generation time from 25.71 seconds to 4.99 seconds, achieving a $5.15\\times$ speedup over the fine-tuned autoregressive baseline without sacrificing geometric fidelity.",
+      "authors": [
+        "Bowen Cui",
+        "Weijie Wang",
+        "Zeyu Zhang",
+        "Yefei He",
+        "Mingda Lin",
+        "Haoyu Zhao",
+        "Yuanyu He",
+        "Donny Y. Chen",
+        "Feng Chen",
+        "Bohan Zhuang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-20T02:12:30+00:00",
+      "link": "https://arxiv.org/pdf/2608.19567v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "generates blocks autoregressively and jointly denoises tokens within blocks",
+      "llm_evidence_cn": "自回归生成块并联合对块内Token进行去噪",
+      "llm_evidence": "自回归生成块并联合对块内Token进行去噪",
+      "canonical_evidence": "自回归生成块并联合对块内Token进行去噪",
+      "llm_tldr_en": "Block3D combines autoregressive block generation with diffusion denoising for efficient text-to-3D.",
+      "llm_tldr_cn": "Block3D结合了自回归块生成与扩散去噪，实现了高效且高保真度的文本到3D生成。",
+      "llm_tldr": "Block3D结合了自回归块生成与扩散去噪，实现了高效且高保真度的文本到3D生成。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.14787v1",
+      "title": "From Positionwise Confidence to Prefix Scheduling: Verifier Skipping in Speculative Decoding",
+      "abstract": "Speculative decoding is a leading technique to reduce the cost of autoregressive generation by using a small drafter to propose several tokens, which are then verified in parallel by a larger target model. Speculative diffusion decoding (SDD) further removes sequential drafting by generating every position in a draft block in parallel with a discrete diffusion model. However, SDD still invokes the target on every block, leaving verification as a potential bottleneck. This paper recognizes that this creates a new control handle: whether to invoke the verifier at all. Thus, we study verifier skipping, a lossy policy that commits a selected draft prefix directly, and ask which confidence signal should schedule it. Interestingly, our study finds that better token predictors need not yield better schedulers: skips require contiguous high-confidence prefixes, while short skips can induce additional drafting rounds. To study this mismatch, we compare raw confidence with learned marginal and conditional survival scores under the same policy, using Strict SDD, lenience, and top-$k$ acceptance as baselines. On HumanEval with DiffuCoder-7B-Instruct and Qwen3-32B, all three confidence signals save $9.6\\%$ to $13.5\\%$ of verifier calls at the same observed pass@1 as Strict SDD. Surprisingly, raw confidence saves the most; marginal survival has higher positionwise AUROC than raw confidence at most positions, yet neither learned signal dominates online. Our analysis shows that verifier skipping is a useful new lossy axis and, surprisingly, its key challenge is prefix scheduling rather than token prediction alone.",
+      "authors": [
+        "Haoxuan Luo",
+        "Jameson Sandler",
+        "Ferdinando Fioretto"
+      ],
+      "primary_category": "cs.CR",
+      "categories": [
+        "cs.CR",
+        "cs.CL"
+      ],
+      "published": "2026-08-14T18:00:08+00:00",
+      "link": "https://arxiv.org/pdf/2608.14787v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "speculative diffusion decoding for autoregressive generation",
+      "llm_evidence_cn": "用于自回归生成的投机扩散解码",
+      "llm_evidence": "用于自回归生成的投机扩散解码",
+      "canonical_evidence": "用于自回归生成的投机扩散解码",
+      "llm_tldr_en": "This paper explores verifier skipping in speculative diffusion decoding to speed up autoregressive generation.",
+      "llm_tldr_cn": "本文研究了投机扩散解码中的验证器跳过策略，以进一步提升自回归生成的效率。",
+      "llm_tldr": "本文研究了投机扩散解码中的验证器跳过策略，以进一步提升自回归生成的效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.14783v1",
+      "title": "MegaParts: Scaling Part-Aware 3D Object Generation to 300 Parts via Token-Efficient Autoregressive Modeling",
+      "abstract": "Part-aware 3D object generation is essential for graphics applications such as controllable modeling, editing, and articulation, where objects are represented as coherent assemblies of semantic parts. However, existing part-aware generation methods, do not scale well to highly complex objects. As the number of parts increases, generating detailed geometry becomes prohibitively expensive in token length and memory. We introduce MegaParts, a scalable autoregressive 3D generation framework to address this challenge by combining structured sequence modeling with a token-efficient vector-quantized shape tokenizer. Our tokenizer learns discrete latent representations for part-level geometry by minimizing token usage subject to high-fidelity reconstruction, enabling adaptive-length tokenization based on geometric complexity. On top of this compact representation, we train a large language model to generate object bounding boxes, part bounding boxes, and part shape tokens within a unified structured sequence. Combined with efficient long-context training strategy, our token-efficient formulation scales to objects with up to 300 parts and sequence lengths up to 256k tokens. This substantially extends the scale of part-aware 3D generation while preserving compositional structure and enabling fine-grained part-level control. Our method achieves higher mesh quality than baseline autoregressive and diffusion models, showing that compressed discrete part tokens improve not only scalability but also the achievable fidelity of generated geometry. These results suggest that LLM native token-efficient autoregressive modeling is a compelling alternative to diffusion for large-scale part-aware 3D generation. The project page is available at https://expmaster.github.io/megaparts_webpage.",
+      "authors": [
+        "Manwen Liao",
+        "Xinyu Lian",
+        "Jian Mao",
+        "Kaixu Chen",
+        "Li Luo",
+        "Jinghao Yan",
+        "Wanshui Gan",
+        "Qiao Yu",
+        "Weitian Zhang",
+        "Chunhua Shen",
+        "Guang Chen",
+        "Bo Dai",
+        "Xudong Xu",
+        "Zhaoyang Lyu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.GR"
+      ],
+      "published": "2026-08-14T18:00:02+00:00",
+      "link": "https://arxiv.org/pdf/2608.14783v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "combining structured sequence modeling with autoregressive 3D generation",
+      "llm_evidence_cn": "结合结构化序列建模与自回归3D生成",
+      "llm_evidence": "结合结构化序列建模与自回归3D生成",
+      "canonical_evidence": "结合结构化序列建模与自回归3D生成",
+      "llm_tldr_en": "MegaParts scales 3D generation to 300 parts using a token-efficient autoregressive framework.",
+      "llm_tldr_cn": "MegaParts通过高效Token自回归建模，实现了支持300个部件的大规模3D物体生成。",
+      "llm_tldr": "MegaParts通过高效Token自回归建模，实现了支持300个部件的大规模3D物体生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.20123v1",
+      "title": "Discrete Diffusion Inference-Time Control with Nested Sequential Monte Carlo",
+      "abstract": "We study inference-time control for text generation in discrete diffusion language models, where the goal is to steer sampling toward sequence-level rewards without retraining. Prior work in this domain has focused on particle-based methods such as best-of-$n$ sampling and bootstrap sequential Monte Carlo, which may suffer from overoptimism and weight degeneracy, respectively. We address these limitations using \\emph{nested} sequential Monte Carlo methods. We formulate nested SMC (NSMC) and fully-adapted nested SMC (FA-NSMC) for Feynman--Kac steering, identifying and correcting errors in prior formulations that lead to biased final estimates. We evaluate these methods on toxicity and fluency steering tasks, showing that NSMC and FA-NSMC consistently outperform best-of-$n$ and bootstrap SMC.",
+      "authors": [
+        "Lohithsai Yadala Chanchu",
+        "Hany Abdulsamad",
+        "Christian A. Naesseth"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "published": "2026-08-20T14:52:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.20123v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "inference-time control for text generation in discrete diffusion language models",
+      "llm_evidence_cn": "离散扩散语言模型文本生成的推理时控制",
+      "llm_evidence": "离散扩散语言模型文本生成的推理时控制",
+      "canonical_evidence": "离散扩散语言模型文本生成的推理时控制",
+      "llm_tldr_en": "Uses nested Sequential Monte Carlo to improve steering and sampling in discrete diffusion for text generation.",
+      "llm_tldr_cn": "使用嵌套顺序蒙特卡洛方法改进离散扩散文本生成的引导和采样。",
+      "llm_tldr": "使用嵌套顺序蒙特卡洛方法改进离散扩散文本生成的引导和采样。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.20208v1",
+      "title": "RoMAN-Flow: Taming Autoregressive Normalizing Flows for Offline Reinforcement Learning in Robotic Manipulation",
+      "abstract": "Offline reinforcement learning improves robotic policies using previously collected data without further environment interaction. Yet prevalent diffusion- and flow-matching robot policies lack tractable likelihoods, limiting their use in likelihood-based offline RL post-training. AR-NFs offer both expressive action modeling and exact likelihood evaluation, but their sequential sampling incurs substantial sampling overhead during policy optimization and deployment. We present RoMAN-Flow (Robotic Manipulation with Autoregressive Normalizing Flows), an offline reinforcement learning framework that makes AR-NF policies practical for robotic manipulation by addressing this sampling bottleneck in both stages. During policy optimization, RoMAN-Flow employs a sampling-free, advantage-weighted likelihood objective that assigns higher likelihood to high-advantage actions from the offline dataset without sampling from the autoregressive policy. For efficient deployment, it distills the optimized autoregressive policy into a one-step action generator, enabling low-latency action prediction. Experiments across multiple simulated manipulation benchmarks and real-world robotic platforms demonstrate that RoMAN-Flow achieves competitive policy performance while substantially reducing inference latency. Code is available at https://github.com/konnyaku28/RoMAN-Flow.",
+      "authors": [
+        "Shaoxuan Wang",
+        "Guangting Zheng",
+        "Rui Huang",
+        "Zhipeng Tang",
+        "Sha Zhang",
+        "Jiajun Deng",
+        "Yanyong Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-20T16:07:56+00:00",
+      "link": "https://arxiv.org/pdf/2608.20208v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "autoregressive normalizing flows for robotic manipulation and policy optimization",
+      "llm_evidence_cn": "用于机器人操作和策略优化的自回归正规化流",
+      "llm_evidence": "用于机器人操作和策略优化的自回归正规化流",
+      "canonical_evidence": "用于机器人操作和策略优化的自回归正规化流",
+      "llm_tldr_en": "RoMAN-Flow makes autoregressive generative models practical for robotic manipulation and offline RL.",
+      "llm_tldr_cn": "RoMAN-Flow 使自回归生成模型在机器人操作和离线强化学习中更具实用性。",
+      "llm_tldr": "RoMAN-Flow 使自回归生成模型在机器人操作和离线强化学习中更具实用性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

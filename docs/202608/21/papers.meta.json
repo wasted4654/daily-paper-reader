@@ -1,0 +1,93 @@
+{
+  "label": "2026-08-21",
+  "date": "2026-08-21",
+  "generated_at": "2026-08-21T20:19:50",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202608/21/2608.19556v1-stream4d-4d-consistency-for-streaming-autoregressive-diffusion-video-models",
+      "section": "deep",
+      "title_en": "Stream4D: 4D-Consistency for Streaming Autoregressive Diffusion Video Models",
+      "authors": "Yuanhao Ban, Jiaqi Feng, Hengguang Zhou, Xiaohuan Pei, Justin Cui, Cho-Jui Hsieh",
+      "date": "2026-08-20",
+      "pdf": "https://arxiv.org/pdf/2608.19556v1",
+      "score": "10.0",
+      "evidence": "用于长视频生成的流式自回归扩散模型",
+      "tldr": "针对流式自回归视频生成模型在长程生成中易出现的几何漂移和运动退化问题，本文提出了 Stream4D。该方法通过引入前馈 4D 重建奖励来显式建模场景动态，并结合运动先验以平衡运动幅度和质量。相比于传统的静态 3D 约束，Stream4D 在保持长视频 4D 一致性的同时，有效保留了自然的物体运动，显著提升了生成视频的质量和人类偏好。",
+      "tags": "query:ardm",
+      "abstract_en": "Streaming autoregressive diffusion models enable real-time, long-horizon video generation, but their training objectives optimize local frame prediction rather than the geometry and dynamics of a coherent world: long rollouts accumulate geometric drift and degrade into static or unnatural motion. Recent bidirectional approaches address this problem using rewards signals built upon 3D Gaussian-Splatting reconstruction. However, a single rigid 3d reconstruction cannot model a dynamic scene, so this critic penalizes genuine object motion as reconstruction error and is maximized by freezing the video. This shortcut is especially detrimental in the AR setting, where each chunk can propagate an already-static configuration. In this work, we propose Stream4D, which replaces the static critic with a feed-forward 4D reconstruction reward that explicitly models scene dynamics, allowing coherent motion to receive high consistency rewards. To further guide motion magnitude and quality, we add a motion prior that rewards natural scene-flow magnitude while penalizing jitter and non-rigid artifacts. Our final recipe combines these two terms with a lightweight perceptual anchor. Across various autoregressive video backbones and various generation horizons, Stream4D improves 4D reconstruction quality, preserves motion more effectively, and achieves higher human-aligned preference. Project page: https://banyuanhao.github.io/Stream4D/",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/21/2608.19567v1-block3d-efficient-text-to-3d-generation-via-block-wise-diffusion",
+      "section": "deep",
+      "title_en": "Block3D: Efficient Text-to-3D Generation via Block-Wise Diffusion",
+      "authors": "Bowen Cui, Weijie Wang, Zeyu Zhang, Yefei He, Mingda Lin, Haoyu Zhao, Yuanyu He, Donny Y. Chen, Feng Chen, Bohan Zhuang",
+      "date": "2026-08-20",
+      "pdf": "https://arxiv.org/pdf/2608.19567v1",
+      "score": "9.0",
+      "evidence": "自回归生成块并联合对块内Token进行去噪",
+      "tldr": "Block3D 针对文本到 3D 生成中推理成本高和几何保真度不足的问题，提出了一种分块扩散框架。该方法将离散形状标记序列划分为连续块，采用自回归方式生成块，并对块内标记进行联合去噪。通过引入置信度引导的块内修正机制，有效缓解了误差累积。实验表明，Block3D 在保持几何质量的同时，将生成速度提升了 5.15 倍，显著优化了 3D 生成效率。",
+      "tags": "query:ardm",
+      "abstract_en": "While text-to-3D generation has advanced rapidly, achieving high geometric fidelity at low inference cost remains challenging. Existing text-to-3D methods either decode discrete shape tokens autoregressively or iteratively refine global 3D representations with diffusion or flow models. However, autoregressive decoding is sequential and cannot revise errors, whereas diffusion and flow-matching models repeatedly process the full representation, making high-quality generation increasingly expensive. In this paper, we propose Block3D, a block-wise diffusion framework that partitions the discrete shape-token sequence into contiguous blocks, generates the blocks autoregressively, and jointly denoises all tokens within the current block. To alleviate error accumulation, we introduce confidence-guided intra-block correction, which revises low-confidence tokens before each block is finalized. On a held-out set from TRELLIS-500K, Block3D reduces mean end-to-end generation time from 25.71 seconds to 4.99 seconds, achieving a $5.15\\times$ speedup over the fine-tuned autoregressive baseline without sacrificing geometric fidelity.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/21/2608.14787v1-from-positionwise-confidence-to-prefix-scheduling-verifier-skipping-in-speculative-decoding",
+      "section": "deep",
+      "title_en": "From Positionwise Confidence to Prefix Scheduling: Verifier Skipping in Speculative Decoding",
+      "authors": "Haoxuan Luo, Jameson Sandler, Ferdinando Fioretto",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14787v1",
+      "score": "8.0",
+      "evidence": "用于自回归生成的投机扩散解码",
+      "tldr": "本研究针对投机扩散解码（SDD）中验证器调用频繁导致的性能瓶颈，提出了“验证器跳过”这一有损优化策略。该方法通过评估草稿前缀的置信度信号，决定是否直接提交草稿而无需验证器介入。研究对比了原始置信度、边际生存分数和条件生存分数等多种调度信号。实验表明，在HumanEval任务上，该策略能在不损失性能的前提下减少约10%-13%的验证器调用，并揭示了前缀调度是该领域比标记预测更关键的挑战。",
+      "tags": "query:ardm",
+      "abstract_en": "Speculative decoding is a leading technique to reduce the cost of autoregressive generation by using a small drafter to propose several tokens, which are then verified in parallel by a larger target model. Speculative diffusion decoding (SDD) further removes sequential drafting by generating every position in a draft block in parallel with a discrete diffusion model. However, SDD still invokes the target on every block, leaving verification as a potential bottleneck. This paper recognizes that this creates a new control handle: whether to invoke the verifier at all. Thus, we study verifier skipping, a lossy policy that commits a selected draft prefix directly, and ask which confidence signal should schedule it. Interestingly, our study finds that better token predictors need not yield better schedulers: skips require contiguous high-confidence prefixes, while short skips can induce additional drafting rounds. To study this mismatch, we compare raw confidence with learned marginal and conditional survival scores under the same policy, using Strict SDD, lenience, and top-$k$ acceptance as baselines. On HumanEval with DiffuCoder-7B-Instruct and Qwen3-32B, all three confidence signals save $9.6\\%$ to $13.5\\%$ of verifier calls at the same observed pass@1 as Strict SDD. Surprisingly, raw confidence saves the most; marginal survival has higher positionwise AUROC than raw confidence at most positions, yet neither learned signal dominates online. Our analysis shows that verifier skipping is a useful new lossy axis and, surprisingly, its key challenge is prefix scheduling rather than token prediction alone.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/21/2608.14783v1-megaparts-scaling-part-aware-3d-object-generation-to-300-parts-via-token-efficient-autoregressive-modeling",
+      "section": "quick",
+      "title_en": "MegaParts: Scaling Part-Aware 3D Object Generation to 300 Parts via Token-Efficient Autoregressive Modeling",
+      "authors": "Manwen Liao, Xinyu Lian, Jian Mao, Kaixu Chen, Li Luo, Jinghao Yan, Wanshui Gan, Qiao Yu, Weitian Zhang, Chunhua Shen, Guang Chen, Bo Dai, Xudong Xu, Zhaoyang Lyu",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14783v1",
+      "score": "7.0",
+      "evidence": "结合结构化序列建模与自回归3D生成",
+      "tldr": "MegaParts 是一种可扩展的自回归 3D 生成框架，旨在解决复杂 3D 物体（多达 300 个部件）的生成难题。它通过结合结构化序列建模和高效的矢量量化（VQ）形状分词器，实现了自适应长度的几何表示。该方法利用大语言模型统一生成物体及部件的边界框与形状 token，在保持组合结构的同时实现了细粒度的部件控制，显著提升了生成质量和可扩展性。",
+      "tags": "query:ardm",
+      "abstract_en": "Part-aware 3D object generation is essential for graphics applications such as controllable modeling, editing, and articulation, where objects are represented as coherent assemblies of semantic parts. However, existing part-aware generation methods, do not scale well to highly complex objects. As the number of parts increases, generating detailed geometry becomes prohibitively expensive in token length and memory. We introduce MegaParts, a scalable autoregressive 3D generation framework to address this challenge by combining structured sequence modeling with a token-efficient vector-quantized shape tokenizer. Our tokenizer learns discrete latent representations for part-level geometry by minimizing token usage subject to high-fidelity reconstruction, enabling adaptive-length tokenization based on geometric complexity. On top of this compact representation, we train a large language model to generate object bounding boxes, part bounding boxes, and part shape tokens within a unified structured sequence. Combined with efficient long-context training strategy, our token-efficient formulation scales to objects with up to 300 parts and sequence lengths up to 256k tokens. This substantially extends the scale of part-aware 3D generation while preserving compositional structure and enabling fine-grained part-level control. Our method achieves higher mesh quality than baseline autoregressive and diffusion models, showing that compressed discrete part tokens improve not only scalability but also the achievable fidelity of generated geometry. These results suggest that LLM native token-efficient autoregressive modeling is a compelling alternative to diffusion for large-scale part-aware 3D generation. The project page is available at https://expmaster.github.io/megaparts_webpage.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/21/2608.20123v1-discrete-diffusion-inference-time-control-with-nested-sequential-monte-carlo",
+      "section": "quick",
+      "title_en": "Discrete Diffusion Inference-Time Control with Nested Sequential Monte Carlo",
+      "authors": "Lohithsai Yadala Chanchu, Hany Abdulsamad, Christian A. Naesseth",
+      "date": "2026-08-20",
+      "pdf": "https://arxiv.org/pdf/2608.20123v1",
+      "score": "7.0",
+      "evidence": "离散扩散语言模型文本生成的推理时控制",
+      "tldr": "针对离散扩散语言模型在推理阶段的文本生成控制问题，本文提出了一种基于嵌套序列蒙特卡罗（NSMC）的方法。传统方法如best-of-n和自助SMC存在过度乐观和权重退化问题，而NSMC通过改进Feynman-Kac引导公式，纠正了先前公式中的偏差。实验表明，该方法在毒性和流畅度控制任务上显著优于现有基准，实现了更精准的序列级奖励引导。",
+      "tags": "query:ardm",
+      "abstract_en": "We study inference-time control for text generation in discrete diffusion language models, where the goal is to steer sampling toward sequence-level rewards without retraining. Prior work in this domain has focused on particle-based methods such as best-of-$n$ sampling and bootstrap sequential Monte Carlo, which may suffer from overoptimism and weight degeneracy, respectively. We address these limitations using \\emph{nested} sequential Monte Carlo methods. We formulate nested SMC (NSMC) and fully-adapted nested SMC (FA-NSMC) for Feynman--Kac steering, identifying and correcting errors in prior formulations that lead to biased final estimates. We evaluate these methods on toxicity and fluency steering tasks, showing that NSMC and FA-NSMC consistently outperform best-of-$n$ and bootstrap SMC.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/21/2608.20208v1-roman-flow-taming-autoregressive-normalizing-flows-for-offline-reinforcement-learning-in-robotic-manipulation",
+      "section": "quick",
+      "title_en": "RoMAN-Flow: Taming Autoregressive Normalizing Flows for Offline Reinforcement Learning in Robotic Manipulation",
+      "authors": "Shaoxuan Wang, Guangting Zheng, Rui Huang, Zhipeng Tang, Sha Zhang, Jiajun Deng, Yanyong Zhang",
+      "date": "2026-08-20",
+      "pdf": "https://arxiv.org/pdf/2608.20208v1",
+      "score": "7.0",
+      "evidence": "用于机器人操作和策略优化的自回归正规化流",
+      "tldr": "针对离线强化学习中扩散模型等策略缺乏精确似然评估且采样效率低的问题，本文提出 RoMAN-Flow 框架。该框架利用自回归归一化流（AR-NF）实现精确似然建模，通过无采样优势加权似然目标优化策略，并将其蒸馏为单步生成器以提升推理速度。实验证明其在保持高性能的同时显著降低了机器人操作任务的延迟。",
+      "tags": "query:ardm",
+      "abstract_en": "Offline reinforcement learning improves robotic policies using previously collected data without further environment interaction. Yet prevalent diffusion- and flow-matching robot policies lack tractable likelihoods, limiting their use in likelihood-based offline RL post-training. AR-NFs offer both expressive action modeling and exact likelihood evaluation, but their sequential sampling incurs substantial sampling overhead during policy optimization and deployment. We present RoMAN-Flow (Robotic Manipulation with Autoregressive Normalizing Flows), an offline reinforcement learning framework that makes AR-NF policies practical for robotic manipulation by addressing this sampling bottleneck in both stages. During policy optimization, RoMAN-Flow employs a sampling-free, advantage-weighted likelihood objective that assigns higher likelihood to high-advantage actions from the offline dataset without sampling from the autoregressive policy. For efficient deployment, it distills the optimized autoregressive policy into a one-step action generator, enabling low-latency action prediction. Experiments across multiple simulated manipulation benchmarks and real-world robotic platforms demonstrate that RoMAN-Flow achieves competitive policy performance while substantially reducing inference latency. Code is available at https://github.com/konnyaku28/RoMAN-Flow.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
