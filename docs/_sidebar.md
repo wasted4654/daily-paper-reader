@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-22 <!--dpr-date:20260822-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/22/2608.14401v1-offline-deep-q-estimation-with-diffusion-models" data-sidebar-item="{&quot;title&quot;: &quot;Offline Deep Q* Estimation with Diffusion Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.14401v1-offline-deep-q-estimation-with-diffusion-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;使用扩散模型估计离线强化学习中的状态转移核&quot;}">Offline Deep Q* Estimation with Diffusion Models</a>
   * 2026-08-21 <!--dpr-date:20260821-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/21/2608.19556v1-stream4d-4d-consistency-for-streaming-autoregressive-diffusion-video-models" data-sidebar-item="{&quot;title&quot;: &quot;Stream4D: 4D-Consistency for Streaming Autoregressive Diffusion Video Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.19556v1-stream4d-4d-consistency-for-streaming-autoregressive-diffusion-video-models&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;用于长视频生成的流式自回归扩散模型&quot;}">Stream4D: 4D-Consistency for Streaming Autoregressive Diffusion Video Models</a>

@@ -1,0 +1,23 @@
+{
+  "label": "2026-08-22",
+  "date": "2026-08-22",
+  "generated_at": "2026-08-22T19:33:58",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202608/22/2608.14401v1-offline-deep-q-estimation-with-diffusion-models",
+      "section": "quick",
+      "title_en": "Offline Deep Q* Estimation with Diffusion Models",
+      "authors": "Xiaohong Chen, Yuling Jiao, Lican Kang, Jerry Zhijian Yang, Chen Zhong",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14401v1",
+      "score": "6.0",
+      "evidence": "使用扩散模型估计离线强化学习中的状态转移核",
+      "tldr": "本研究针对离线强化学习中 $Q^*$ 估计的难题，提出一种将算子估计与价值函数学习解耦的新框架。该方法利用条件扩散模型估计奖励和状态转移，进而构建数据驱动的贝尔曼算子，并通过最小化经验贝尔曼残差获得深度 $Q^*$ 估计器。理论上证明了其收敛率且无需完备性假设，实验验证了其优越性能。",
+      "tags": "query:genad",
+      "abstract_en": "In offline RL, estimating the optimal action-value function $Q^*$ can be formulated as solving the optimal Bellman equation based solely on offline observations. A fundamental challenge is that the reward function and transition kernel are unknown, so the optimal Bellman operator is not directly observable from data. To address this issue, we propose a novel framework that decouples operator estimation from value function learning. In this approach, we first formulate conditional diffusion models to estimate the reward law and transition kernel, which induces a data-driven approximation of the optimal Bellman operator. We then plug these estimators into the Bellman equation and obtain a deep estimator of $Q^*$ by minimizing the empirical Bellman residual over a neural network function class. Theoretically, we first establish sharp nonasymptotic convergence rates for learning the optimal Bellman operator through an end-to-end analysis of conditional diffusion estimation in total variation distance. We then establish the oracle value-stage rate $\\widetilde{\\mathcal O}\\bigl(n^{-\\frac{2β}{d_x+d_a+2β}}\\bigr)$ for the excess Bellman residual risk. Finally, under a concentrability condition, we translate this residual bound into an $L^2$ convergence rate of $\\widetilde{\\mathcal O}\\bigl(n^{-\\fracβ{d_x+d_a+2β}}\\bigr)$ for the resulting deep estimator of $Q^*$, where $d_x$ and $d_a$ denote the dimensions of the state and action spaces, respectively, and $β$ denotes the Hölder smoothness index of $Q^*$. Importantly, our theoretical analysis does not rely on completeness assumptions commonly used in deep RL theory. Extensive numerical experiments demonstrate the effectiveness of the proposed method and its strong empirical performance.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
