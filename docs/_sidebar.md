@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-23 <!--dpr-date:20260823-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/23/2608.19504v1-a-plug-in-interpretation-of-conditioning-in-score-based-diffusion-models" data-sidebar-item="{&quot;title&quot;: &quot;A Plug-in Interpretation of Conditioning in Score-Based Diffusion Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.19504v1-a-plug-in-interpretation-of-conditioning-in-score-based-diffusion-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散模型中引导生成的条件机制&quot;}">A Plug-in Interpretation of Conditioning in Score-Based Diffusion Models</a>
   * 2026-08-22 <!--dpr-date:20260822-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/22/2608.14401v1-offline-deep-q-estimation-with-diffusion-models" data-sidebar-item="{&quot;title&quot;: &quot;Offline Deep Q* Estimation with Diffusion Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.14401v1-offline-deep-q-estimation-with-diffusion-models&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;使用扩散模型估计离线强化学习中的状态转移核&quot;}">Offline Deep Q* Estimation with Diffusion Models</a>
