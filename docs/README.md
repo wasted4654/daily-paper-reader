@@ -6,26 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-23
-- 运行时间：2026-08-23 20:06:51 UTC
+- 最新运行日期：2026-08-24
+- 运行时间：2026-08-24 20:10:58 UTC
 - 运行状态：成功
-- 本次总论文数：1
-- 精读区：0
-- 速读区：1
+- 本次总论文数：4
+- 精读区：2
+- 速读区：2
 
 ### 今日简报（AI）
-今日聚焦扩散模型条件生成的原理解析，深入探讨 Score-Based 模型的“插件式”解释。
-该研究通过新视角揭示了条件约束在生成过程中的运作机制，为提升扩散模型的可控性提供了理论支撑。
-建议关注生成模型底层逻辑的读者通过此文理清条件化生成的数学本质。
-- 详情：[/202608/23/README](/202608/23/README)
+今日深度复盘多模态投机解码的实战效能，并探索自动驾驶中“世界-动作”建模的新范式。
+重点关注扩散模型并行草拟的实证诊断，以及 WA-JEPA 如何通过视频表征重塑自动驾驶的理解深度。
+建议优先研读高分综述以掌握多模态加速前沿，同时留意扩散语言模型在版权保护上的最新进展。
+- 详情：[/202608/24/README](/202608/24/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Is Multimodal Speculative Decoding Ready for Diffusion-Based Parallel Drafting? A Survey and Empirical Diagnosis](/202608/24/2608.20743v1-is-multimodal-speculative-decoding-ready-for-diffusion-based-parallel-drafting-a-survey-and-empirical-diagnosis)  
+   标签：评分：9.0/10、query:ardm
+   evidence：用于自回归生成的扩散并行草拟技术
+2. [WA-JEPA: Rethinking the Video JEPA Paradigm for World-Action Modeling in Autonomous Driving](/202608/24/2608.20974v1-wa-jepa-rethinking-the-video-jepa-paradigm-for-world-action-modeling-in-autonomous-driving)  
+   标签：评分：8.0/10、query:genad
+   evidence：自动驾驶规划中的世界动作建模
 
 ### 速读区论文标签
-1. [A Plug-in Interpretation of Conditioning in Score-Based Diffusion Models](/202608/23/2608.19504v1-a-plug-in-interpretation-of-conditioning-in-score-based-diffusion-models)  
+1. [SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields](/202608/24/2608.20839v1-sac-copula-quality-preserving-watermarking-for-diffusion-language-models-via-smooth-correlated-gumbel-fields)  
+   标签：评分：7.0/10、query:ardm
+   evidence：扩散语言模型与自回归解码的对比
+2. [Minimax Optimality of Score-Entropy Discrete Diffusion](/202608/24/2608.20635v1-minimax-optimality-of-score-entropy-discrete-diffusion)  
    标签：评分：6.0/10、query:ardm
-   evidence：扩散模型中引导生成的条件机制
+   evidence：用于自然语言数据的离散扩散模型
 
 
 <div class="dpr-home-promo-card">
