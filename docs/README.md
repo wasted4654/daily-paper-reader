@@ -6,34 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-24
-- 运行时间：2026-08-24 20:10:58 UTC
+- 最新运行日期：2026-08-25
+- 运行时间：2026-08-25 20:24:58 UTC
 - 运行状态：成功
 - 本次总论文数：4
 - 精读区：2
 - 速读区：2
 
 ### 今日简报（AI）
-今日深度复盘多模态投机解码的实战效能，并探索自动驾驶中“世界-动作”建模的新范式。
-重点关注扩散模型并行草拟的实证诊断，以及 WA-JEPA 如何通过视频表征重塑自动驾驶的理解深度。
-建议优先研读高分综述以掌握多模态加速前沿，同时留意扩散语言模型在版权保护上的最新进展。
-- 详情：[/202608/24/README](/202608/24/README)
+今日聚焦扩散语言模型（DLM）的推理优化，深度解析了收敛感知推理与自蒸馏等前沿提效技术。
+重点关注 CAI-DLLM 与 SelFusion，它们通过创新的推理策略与蒸馏算法，显著突破了 DLM 的生成性能瓶颈。
+建议关注扩散模型在文本生成领域的架构演进，了解其如何平衡生成质量与推理速度。
+- 详情：[/202608/25/README](/202608/25/README)
 
 ### 精读区论文标签
-1. [Is Multimodal Speculative Decoding Ready for Diffusion-Based Parallel Drafting? A Survey and Empirical Diagnosis](/202608/24/2608.20743v1-is-multimodal-speculative-decoding-ready-for-diffusion-based-parallel-drafting-a-survey-and-empirical-diagnosis)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于自回归生成的扩散并行草拟技术
-2. [WA-JEPA: Rethinking the Video JEPA Paradigm for World-Action Modeling in Autonomous Driving](/202608/24/2608.20974v1-wa-jepa-rethinking-the-video-jepa-paradigm-for-world-action-modeling-in-autonomous-driving)  
-   标签：评分：8.0/10、query:genad
-   evidence：自动驾驶规划中的世界动作建模
+1. [CAI-DLLM: Convergence Aware Inference for Diffusion Language Models](/202608/25/2608.22646v1-cai-dllm-convergence-aware-inference-for-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案
+2. [SelFusion: Self-distillation for Diffusion Language Models](/202608/25/2608.22898v1-selfusion-self-distillation-for-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型缓解自回归延迟瓶颈
 
 ### 速读区论文标签
-1. [SAC-Copula: Quality-Preserving Watermarking for Diffusion Language Models via Smooth Correlated Gumbel Fields](/202608/24/2608.20839v1-sac-copula-quality-preserving-watermarking-for-diffusion-language-models-via-smooth-correlated-gumbel-fields)  
+1. [VISTA: Test-Time Compositional Alignment for Visual Autoregressive Generation](/202608/25/2608.22521v1-vista-test-time-compositional-alignment-for-visual-autoregressive-generation)  
    标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型与自回归解码的对比
-2. [Minimax Optimality of Score-Entropy Discrete Diffusion](/202608/24/2608.20635v1-minimax-optimality-of-score-entropy-discrete-diffusion)  
+   evidence：视觉自回归(VAR)模型的对齐研究，作为扩散模型的替代方案
+2. [Provably adaptive sampling with uniform and remasking discrete diffusion models](/202608/25/2608.23554v1-provably-adaptive-sampling-with-uniform-and-remasking-discrete-diffusion-models)  
    标签：评分：6.0/10、query:ardm
-   evidence：用于自然语言数据的离散扩散模型
+   evidence：离散扩散模型作为自回归生成的替代方案
 
 
 <div class="dpr-home-promo-card">

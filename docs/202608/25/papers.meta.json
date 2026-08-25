@@ -1,0 +1,65 @@
+{
+  "label": "2026-08-25",
+  "date": "2026-08-25",
+  "generated_at": "2026-08-25T20:25:07",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202608/25/2608.22646v1-cai-dllm-convergence-aware-inference-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "CAI-DLLM: Convergence Aware Inference for Diffusion Language Models",
+      "authors": "Farhana Amin, Sabiha Afroz, Dimitrios S. Nikolopoulos",
+      "date": "2026-08-23",
+      "pdf": "https://arxiv.org/pdf/2608.22646v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案",
+      "tldr": "针对扩散语言模型（DLM）推理中重复去噪导致的计算冗余问题，本文提出CAI-DLLM。这是一种无需训练的推理方法，利用首步置信度信号识别并提前锁定简单标记，将更多去噪步骤分配给困难标记。实验表明，该方法在保持或提升准确率的同时，实现了最高44.8倍的推理加速和95.3%的能耗降低，显著提升了DLM的实用性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models can generate many tokens in parallel, but they still require repeated denoising steps during inference. This makes generation costly, especially when the model continues to recompute tokens that are already stable. To address these limitations, we propose CAI-DLLM, a training-free inference method that uses first-step confidence to guide denoising and reduce inference time. Specifically, CAI-DLLM commits easy tokens earlier, allocates more denoising steps to harder tokens, and adjusts decoding schedules across output blocks. As it relies only on first-step confidence signals, it does not require retraining, extra predictors, or weight updates. We evaluate CAI-DLLM on LLaDA-8B-Instruct and Dream-7B-Instruct across math, code, reasoning, commonsense, and long-context tasks. CAI-DLLM achieves up to 18.2x wall clock inference speedup on LLaDA GSM8K while improving accuracy from 76.27% to 77.41%, and up to 13.1x speedup on Dream HumanEval while achieving higher pass@1 than no-cache inference, 48.17% compared with 46.95%. On harder reasoning tasks, speedups reach 44.8x, with a largest accuracy drop of 4.4 points, while energy consumption is reduced by up to 95.3%.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/25/2608.22898v1-selfusion-self-distillation-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "SelFusion: Self-distillation for Diffusion Language Models",
+      "authors": "Hyeongsoo Lim, Jinyoung Kim, Eunseo Seo, Minho Jang, Jiwon Yoon",
+      "date": "2026-08-24",
+      "pdf": "https://arxiv.org/pdf/2608.22898v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型缓解自回归延迟瓶颈",
+      "tldr": "扩散语言模型（DLM）虽能缓解自回归模型的延迟问题，但生成质量较低。本文提出SelFusion自蒸馏框架，通过设置不同掩码比例的“困难”和“简单”模式，并引入基于Token正确性的双向知识蒸馏机制，在无需外部教师模型的情况下显著提升了DLM的性能，甚至在某些任务上超越了大型语言模型教师。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) alleviate the inherent latency bottleneck of autoregressive (AR) large language models (LLMs), but their degraded generation quality limits practical applicability. Although knowledge distillation (KD) can be a promising direction for improving performance, we empirically find that naively applying conventional KD yields only marginal gains, or even degrades generation quality. Based on these observations, we propose a novel self-distillation framework for DLMs, namely SelFusion. To enable effective KD without an external teacher model, SelFusion performs two forward passes with different masking levels, defining the hard mode with a larger masking probability and the easy mode with a smaller masking probability. However, the easy mode is not always more accurate than the hard mode and can be overconfident on incorrect tokens. Thus, we introduce bidirectional KD between the two modes, which can dynamically determine the distillation direction based on token-level correctness. Experimental results on instruction-following tasks show that the proposed self-distillation substantially outperforms other KD methods with external LLM and DLM teachers. In many configurations, the student trained with SelFusion even surpasses the performance of the LLM teacher, providing a practical path toward improving DLM generation quality. Source code can be found at https://github.com/scai-research/SelFusion_official",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/25/2608.22521v1-vista-test-time-compositional-alignment-for-visual-autoregressive-generation",
+      "section": "quick",
+      "title_en": "VISTA: Test-Time Compositional Alignment for Visual Autoregressive Generation",
+      "authors": "Hossein Shahabadi, Niki Sepasian, Mahdieh Soleymani Baghshah",
+      "date": "2026-08-23",
+      "pdf": "https://arxiv.org/pdf/2608.22521v1",
+      "score": "7.0",
+      "evidence": "视觉自回归(VAR)模型的对齐研究，作为扩散模型的替代方案",
+      "tldr": "VISTA是首个针对视觉自回归（VAR）模型的梯度测试时对齐框架，旨在解决其在属性绑定和空间关系上的组合性失效问题。该方法通过在推理阶段优化冻结Transformer的中间表示，引导模型满足复杂的语义约束。实验表明，VISTA在不改变参数的情况下显著提升了图像的组合准确性，甚至使2B模型在性能上超越了8B模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Visual autoregressive (VAR) models have emerged as a fast, high-quality alternative to diffusion for text-to-image generation, but like diffusion models they exhibit persistent compositional failures, producing images that violate the attribute bindings and spatial relations specified in the prompt. While a rich line of test-time alignment methods has developed for diffusion, no comparable approach exists for next-scale VAR generation, whose stateful, discrete, multi-resolution sampling process makes existing techniques inapplicable. We close this gap with \\textbf{VISTA} (\\textbf{Vi}sual Autoregressive \\textbf{S}emantic \\textbf{T}est-time \\textbf{A}lignment), the first gradient-based test-time alignment framework for next-scale autoregressive image generation. Built on Infinity, VISTA intervenes directly in the generation process, optimizing intermediate representations through the frozen transformer to steer visual predictions toward compositional constraints, without modifying model parameters or requiring additional training. VISTA introduces the mechanisms needed to make such optimization stable across scales, together with an extensible objective space that any differentiable constraint on cross-attention can plug into. Across two benchmarks and two model scales, VISTA improves every targeted compositional category, raising the mean targeted score by nearly 20\\% on a 2B backbone and almost 6\\% on an 8B backbone, with the largest gains on spatial relations. Image quality is preserved: an independent preference model VISTA never optimizes scores its outputs nearly 20\\% higher. Notably, the 2B model with VISTA surpasses a backbone four times its size, indicating that a substantial part of the compositional gap between model scales is recoverable at test time.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/25/2608.23554v1-provably-adaptive-sampling-with-uniform-and-remasking-discrete-diffusion-models",
+      "section": "quick",
+      "title_en": "Provably adaptive sampling with uniform and remasking discrete diffusion models",
+      "authors": "Daniil Dmitriev, Zhihan Huang, Yuting Wei",
+      "date": "2026-08-24",
+      "pdf": "https://arxiv.org/pdf/2608.23554v1",
+      "score": "6.0",
+      "evidence": "离散扩散模型作为自回归生成的替代方案",
+      "tldr": "本研究针对离散扩散模型采样效率受限于环境维度的问题，提出了一种基于留一法去噪器的一阶采样器，适用于均匀和重掩码前向过程。该采样器支持并行更新并具备错误纠正能力。理论证明显示，其采样复杂度由目标分布的对偶总相关（DTC）决定，而非直接取决于维度，实现了维度的自适应性。通过信息论分析，研究揭示了离散扩散模型在处理具有内在结构的数据时的高效性。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion models offer a promising alternative to autoregressive generation by enabling parallel updates, but their sampling efficiency can depend strongly on the choice of the forward process and the sampler. For the uniform forward process, existing lower bounds for the standard $τ$-leaping sampler scale linearly with the ambient dimension $d$, raising the question of whether this dependence is intrinsic to the forward process. We answer this question in the negative. We consider a first-order sampler based on the leave-one-out denoiser for uniform and remasking processes whose coordinate updates can be performed in parallel. In both cases, the sampler can correct denoising mistakes during the sampling process, which becomes necessary when many coordinates are updated together. Our main result establishes an adaptive sampling guarantee: up to logarithmic factors, $N = O(\\mathrm{DTC}(X_0) / \\varepsilon)$ discretization steps suffice to achieve sampling error $O(\\varepsilon_{\\mathrm{score}}+\\varepsilon)$, where $\\varepsilon_{\\mathrm{score}}$ is the error in score estimation. Thus, the sampling complexity is governed by the intrinsic dependence structure of the target distribution, as measured by its dual total correlation $\\mathrm{DTC}(X_0)$, rather than directly by the ambient dimension $d$. Our analysis proceeds through a Bayes-optimal auxiliary sampler that separates discretization error from score-estimation error. We also derive an exact information-theoretic representation of the discretization error in terms of the mutual information between different coordinates of the forward process at different times. This representation applies to general forward processes and, in the uniform and remasking cases, can be controlled by $\\mathrm{DTC}(X_0)$. Numerical experiments on structured synthetic distributions illustrate the predicted dimension-adaptive behavior.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

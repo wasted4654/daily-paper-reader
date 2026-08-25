@@ -1,0 +1,165 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-25T20:22:05.653432+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2608.22646v1",
+      "title": "CAI-DLLM: Convergence Aware Inference for Diffusion Language Models",
+      "abstract": "Diffusion language models can generate many tokens in parallel, but they still require repeated denoising steps during inference. This makes generation costly, especially when the model continues to recompute tokens that are already stable. To address these limitations, we propose CAI-DLLM, a training-free inference method that uses first-step confidence to guide denoising and reduce inference time. Specifically, CAI-DLLM commits easy tokens earlier, allocates more denoising steps to harder tokens, and adjusts decoding schedules across output blocks. As it relies only on first-step confidence signals, it does not require retraining, extra predictors, or weight updates. We evaluate CAI-DLLM on LLaDA-8B-Instruct and Dream-7B-Instruct across math, code, reasoning, commonsense, and long-context tasks. CAI-DLLM achieves up to 18.2x wall clock inference speedup on LLaDA GSM8K while improving accuracy from 76.27% to 77.41%, and up to 13.1x speedup on Dream HumanEval while achieving higher pass@1 than no-cache inference, 48.17% compared with 46.95%. On harder reasoning tasks, speedups reach 44.8x, with a largest accuracy drop of 4.4 points, while energy consumption is reduced by up to 95.3%.",
+      "authors": [
+        "Farhana Amin",
+        "Sabiha Afroz",
+        "Dimitrios S. Nikolopoulos"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-23T23:03:59+00:00",
+      "link": "https://arxiv.org/pdf/2608.22646v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Inference method for Diffusion Language Models (LLaDA) as parallel generation alternative",
+      "llm_evidence_cn": "扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案",
+      "llm_evidence": "扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案",
+      "canonical_evidence": "扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案",
+      "llm_tldr_en": "CAI-DLLM optimizes inference for diffusion language models by using confidence-guided denoising schedules.",
+      "llm_tldr_cn": "CAI-DLLM 通过置信度引导的去噪调度优化了扩散语言模型的推理过程。",
+      "llm_tldr": "CAI-DLLM 通过置信度引导的去噪调度优化了扩散语言模型的推理过程。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.22898v1",
+      "title": "SelFusion: Self-distillation for Diffusion Language Models",
+      "abstract": "Diffusion language models (DLMs) alleviate the inherent latency bottleneck of autoregressive (AR) large language models (LLMs), but their degraded generation quality limits practical applicability. Although knowledge distillation (KD) can be a promising direction for improving performance, we empirically find that naively applying conventional KD yields only marginal gains, or even degrades generation quality. Based on these observations, we propose a novel self-distillation framework for DLMs, namely SelFusion. To enable effective KD without an external teacher model, SelFusion performs two forward passes with different masking levels, defining the hard mode with a larger masking probability and the easy mode with a smaller masking probability. However, the easy mode is not always more accurate than the hard mode and can be overconfident on incorrect tokens. Thus, we introduce bidirectional KD between the two modes, which can dynamically determine the distillation direction based on token-level correctness. Experimental results on instruction-following tasks show that the proposed self-distillation substantially outperforms other KD methods with external LLM and DLM teachers. In many configurations, the student trained with SelFusion even surpasses the performance of the LLM teacher, providing a practical path toward improving DLM generation quality. Source code can be found at https://github.com/scai-research/SelFusion_official",
+      "authors": [
+        "Hyeongsoo Lim",
+        "Jinyoung Kim",
+        "Eunseo Seo",
+        "Minho Jang",
+        "Jiwon Yoon"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-24T07:26:35+00:00",
+      "link": "https://arxiv.org/pdf/2608.22898v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diffusion language models to alleviate autoregressive latency bottleneck",
+      "llm_evidence_cn": "扩散语言模型缓解自回归延迟瓶颈",
+      "llm_evidence": "扩散语言模型缓解自回归延迟瓶颈",
+      "canonical_evidence": "扩散语言模型缓解自回归延迟瓶颈",
+      "llm_tldr_en": "Introduces a self-distillation framework to improve the quality of diffusion language models for sequence generation.",
+      "llm_tldr_cn": "引入自蒸馏框架以提高用于序列生成的扩散语言模型的生成质量。",
+      "llm_tldr": "引入自蒸馏框架以提高用于序列生成的扩散语言模型的生成质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.22521v1",
+      "title": "VISTA: Test-Time Compositional Alignment for Visual Autoregressive Generation",
+      "abstract": "Visual autoregressive (VAR) models have emerged as a fast, high-quality alternative to diffusion for text-to-image generation, but like diffusion models they exhibit persistent compositional failures, producing images that violate the attribute bindings and spatial relations specified in the prompt. While a rich line of test-time alignment methods has developed for diffusion, no comparable approach exists for next-scale VAR generation, whose stateful, discrete, multi-resolution sampling process makes existing techniques inapplicable. We close this gap with \\textbf{VISTA} (\\textbf{Vi}sual Autoregressive \\textbf{S}emantic \\textbf{T}est-time \\textbf{A}lignment), the first gradient-based test-time alignment framework for next-scale autoregressive image generation. Built on Infinity, VISTA intervenes directly in the generation process, optimizing intermediate representations through the frozen transformer to steer visual predictions toward compositional constraints, without modifying model parameters or requiring additional training. VISTA introduces the mechanisms needed to make such optimization stable across scales, together with an extensible objective space that any differentiable constraint on cross-attention can plug into. Across two benchmarks and two model scales, VISTA improves every targeted compositional category, raising the mean targeted score by nearly 20\\% on a 2B backbone and almost 6\\% on an 8B backbone, with the largest gains on spatial relations. Image quality is preserved: an independent preference model VISTA never optimizes scores its outputs nearly 20\\% higher. Notably, the 2B model with VISTA surpasses a backbone four times its size, indicating that a substantial part of the compositional gap between model scales is recoverable at test time.",
+      "authors": [
+        "Hossein Shahabadi",
+        "Niki Sepasian",
+        "Mahdieh Soleymani Baghshah"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-23T17:46:02+00:00",
+      "link": "https://arxiv.org/pdf/2608.22521v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Alignment for Visual Autoregressive (VAR) models as an alternative to diffusion",
+      "llm_evidence_cn": "视觉自回归(VAR)模型的对齐研究，作为扩散模型的替代方案",
+      "llm_evidence": "视觉自回归(VAR)模型的对齐研究，作为扩散模型的替代方案",
+      "canonical_evidence": "视觉自回归(VAR)模型的对齐研究，作为扩散模型的替代方案",
+      "llm_tldr_en": "VISTA introduces a test-time alignment framework for Visual Autoregressive models to improve compositional quality.",
+      "llm_tldr_cn": "VISTA 为视觉自回归模型引入了测试时对齐框架，以提高组合生成质量。",
+      "llm_tldr": "VISTA 为视觉自回归模型引入了测试时对齐框架，以提高组合生成质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.23554v1",
+      "title": "Provably adaptive sampling with uniform and remasking discrete diffusion models",
+      "abstract": "Discrete diffusion models offer a promising alternative to autoregressive generation by enabling parallel updates, but their sampling efficiency can depend strongly on the choice of the forward process and the sampler. For the uniform forward process, existing lower bounds for the standard $τ$-leaping sampler scale linearly with the ambient dimension $d$, raising the question of whether this dependence is intrinsic to the forward process. We answer this question in the negative. We consider a first-order sampler based on the leave-one-out denoiser for uniform and remasking processes whose coordinate updates can be performed in parallel. In both cases, the sampler can correct denoising mistakes during the sampling process, which becomes necessary when many coordinates are updated together. Our main result establishes an adaptive sampling guarantee: up to logarithmic factors, $N = O(\\mathrm{DTC}(X_0) / \\varepsilon)$ discretization steps suffice to achieve sampling error $O(\\varepsilon_{\\mathrm{score}}+\\varepsilon)$, where $\\varepsilon_{\\mathrm{score}}$ is the error in score estimation. Thus, the sampling complexity is governed by the intrinsic dependence structure of the target distribution, as measured by its dual total correlation $\\mathrm{DTC}(X_0)$, rather than directly by the ambient dimension $d$. Our analysis proceeds through a Bayes-optimal auxiliary sampler that separates discretization error from score-estimation error. We also derive an exact information-theoretic representation of the discretization error in terms of the mutual information between different coordinates of the forward process at different times. This representation applies to general forward processes and, in the uniform and remasking cases, can be controlled by $\\mathrm{DTC}(X_0)$. Numerical experiments on structured synthetic distributions illustrate the predicted dimension-adaptive behavior.",
+      "authors": [
+        "Daniil Dmitriev",
+        "Zhihan Huang",
+        "Yuting Wei"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.IT",
+        "math.ST",
+        "stat.ML"
+      ],
+      "published": "2026-08-24T17:54:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.23554v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Discrete diffusion models as an alternative to autoregressive generation",
+      "llm_evidence_cn": "离散扩散模型作为自回归生成的替代方案",
+      "llm_evidence": "离散扩散模型作为自回归生成的替代方案",
+      "canonical_evidence": "离散扩散模型作为自回归生成的替代方案",
+      "llm_tldr_en": "This paper proposes an adaptive sampler for discrete diffusion models to improve parallel generation efficiency.",
+      "llm_tldr_cn": "本文为离散扩散模型提出了一种自适应采样器，以提高并行生成效率。",
+      "llm_tldr": "本文为离散扩散模型提出了一种自适应采样器，以提高并行生成效率。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
