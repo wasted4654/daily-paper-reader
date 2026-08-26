@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-08-26 <!--dpr-date:20260826-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/26/2608.23664v1-scaling-reinforcement-learning-for-diffusion-models-via-velocity-matching" data-sidebar-item="{&quot;title&quot;: &quot;Scaling Reinforcement Learning for Diffusion Models via Velocity Matching&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.23664v1-scaling-reinforcement-learning-for-diffusion-models-via-velocity-matching&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;在强化学习微调中对比扩散模型与自回归模型&quot;}">Scaling Reinforcement Learning for Diffusion Models via Velocity Matching</a>
   * 2026-08-25 <!--dpr-date:20260825-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202608/25/2608.22646v1-cai-dllm-convergence-aware-inference-for-diffusion-language-models" data-sidebar-item="{&quot;title&quot;: &quot;CAI-DLLM: Convergence Aware Inference for Diffusion Language Models&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.22646v1-cai-dllm-convergence-aware-inference-for-diffusion-language-models&quot;, &quot;score&quot;: &quot;8.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散语言模型(LLaDA)的推理方法，作为并行生成的替代方案&quot;}">CAI-DLLM: Convergence Aware Inference for Diffusion Language Models</a>
