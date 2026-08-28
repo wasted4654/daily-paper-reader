@@ -1,0 +1,79 @@
+{
+  "label": "2026-08-28",
+  "date": "2026-08-28",
+  "generated_at": "2026-08-28T02:49:07",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202608/28/2608.26794v1-ring-forcing-towards-precise-long-term-memory-for-autoregressive-video-diffusion",
+      "section": "deep",
+      "title_en": "Ring Forcing: Towards Precise Long-Term Memory for Autoregressive Video Diffusion",
+      "authors": "Bowen Xue, Brandon Y. Feng, Chenguo Lin, Yuchen Lin, Yujia Zeng, Lvmin Zhang, Maneesh Agrawala, Honglei Yan, Panwang Pan",
+      "date": "2026-08-27",
+      "pdf": "https://arxiv.org/pdf/2608.26794v1",
+      "score": "9.0",
+      "evidence": "用于长期记忆的自回归视频扩散框架",
+      "tldr": "针对自回归视频生成中长期记忆不足（物体恒常性与记忆容量受限）的问题，本文提出 Ring Forcing 框架。该框架通过环形训练策略强化远距离历史检索，结合压缩与时间步组合策略扩展记忆容量，并引入稀疏 RoPE 机制，实现了分钟级视频生成中卓越的连贯性与物体恒常性。",
+      "tags": "query:ardm",
+      "abstract_en": "Scaling video generation to long durations reveals a critical bottleneck: current models lack robust long-term memory. This deficiency can be studied along two critical aspects: object permanence, the ability to precisely reproduce the appearance of objects upon re-entry; and memory capacity, the ability to process ultra-long context and use information from distant history. Robust long-term memory requires both: object permanence without sufficient context handling limits the temporal scope, while long context length without permanence fails to maintain identity. To address this, we present Ring Forcing, an autoregressive video diffusion framework designed to robustly construct and precisely utilize long-term memory. Our ring-structured training strategy enforces retrieval from distant history, effectively reconciling the trade-off between strict historical adherence and generative diversity. To expand memory capacity, we introduce a compression and timestep composition strategy. Under fixed sequence length constraints, this method extends the effective historical span to minutes-long durations and achieves a comprehensive receptive field over the entire history. Furthermore, we present a sparse RoPE mechanism to enable flexible, scalable memory adaptation while fully exploiting pre-trained priors. Extensive experiments demonstrate that Ring Forcing achieves superior minutes-long coherence and object permanence, significantly outperforming state-of-the-art methods.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/28/2608.26374v1-survival-guided-length-control-for-efficient-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Survival-Guided Length Control for Efficient Diffusion Language Models",
+      "authors": "Ivan Kobyzev, Abbas Ghaddar, Yufei Cui",
+      "date": "2026-08-26",
+      "pdf": "https://arxiv.org/pdf/2608.26374v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型的长度控制",
+      "tldr": "扩散语言模型（DLM）在生成文本时通常面临序列长度固定或停止规则不灵活导致的效率低下问题。本文提出一种无需训练的插件式长度预测方法，将长度选择建模为离散时间生存问题。该方法在推理和代码生成任务中将推理速度提升了高达7倍，且不损失准确率，揭示了动态长度控制对DLM性能的重要性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) generate text by iteratively denoising masked sequences, but standard decoding either fixes the sequence length or relies on ad hoc stopping rules, often leading to unnecessary denoising steps. We recast length selection as a discrete-time survival problem over the end-of-sequence token and propose a plug-in, training-free length predictor that can be added to any existing DLM. Across reasoning and code-generation benchmarks, survival-guided length decoding speeds up inference by up to 7 times while preserving task accuracy. We further find that predicted lengths vary widely even within the same dataset, making model performance sensitive to the chosen length.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/28/2608.26574v1-dependency-aware-revocable-decoding-for-efficient-diffusion-large-language-model-inference",
+      "section": "deep",
+      "title_en": "Dependency-Aware Revocable Decoding for Efficient Diffusion Large Language Model Inference",
+      "authors": "Wooje Park, Insu Lee, Minyoung Noh, Jaeyun Jang, Sungmin Lee, Kyuhong Shim, Byonghyo Shim",
+      "date": "2026-08-27",
+      "pdf": "https://arxiv.org/pdf/2608.26574v1",
+      "score": "8.0",
+      "evidence": "扩散大语言模型作为自回归生成的替代方案",
+      "tldr": "扩散大语言模型（dLLM）通过并行解码提升效率，但高并行度常导致质量下降。本文提出DARD，一种无需训练的依赖感知可撤销解码框架。它通过将标记划分为掩码、候选和非掩码状态，并利用选择性上下文验证候选标记，解决了不可靠标记污染验证环境的问题。实验显示，DARD在多个基准上显著优化了速度与质量的平衡，实现了更高效的推理。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion large language models (dLLMs) offer a promising alternative to autoregressive generation by decoding multiple tokens in parallel through iterative denoising. However, increasing decoding parallelism often degrades generation quality, as early errors can contaminate later contexts. Revocable decoding mitigates this issue by re-evaluating decoded tokens and remasking unreliable ones, but existing methods overlook that unreliable tokens may also corrupt the verification context itself. We identify this failure mode and propose Dependency-Aware Revocable Decoding (DARD), a training-free framework that separates tokens into masked, candidate, and unmasked states. DARD verifies candidate tokens using a selective context that excludes less reliable tokens and adaptively regulates their influence on subsequent decoding. Experiments across 12 textual and multimodal benchmarks on 3 open-source dLLMs show that DARD consistently improves the speed-quality Pareto frontier over recent revocable decoding methods, achieving a 2.71$\\times$ speedup and a 4.35-point CIDEr score gain over Saber on Flickr30K.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/28/2608.25311v1-prefix-denoising-consistency-test-time-verification-for-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Prefix-Denoising Consistency: Test-Time Verification for Diffusion Language Models",
+      "authors": "Yuki Ichihara, Naoto Iwase, Mohammad Atif Quamar, Junpei Komiyama",
+      "date": "2026-08-26",
+      "pdf": "https://arxiv.org/pdf/2608.25311v1",
+      "score": "7.0",
+      "evidence": "扩散语言模型与自回归模型竞争",
+      "tldr": "扩散语言模型（DLM）在非自回归生成领域表现出色，但仍需有效的测试时验证手段。本文提出 PDC（前缀去噪一致性）方法，利用 DLM 在前缀约束下重新生成的特性进行自验证。该方法通过拆分初始样本并基于固定前缀重新生成剩余部分，捕捉正确轨迹比错误轨迹更稳定的信号。实验证明，PDC 在数学和常识推理任务中显著优于初始生成和独立采样，为 DLM 提供了一种高效的验证原语。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Language Models (DLMs) have recently become increasingly competitive with autoregressive (AR) models, and even outperform them on certain tasks. Unlike AR models, DLMs produce output through iterative denoising without a left-to-right order. To further improve the performance of DLMs, we introduce PDC (\\emph{Prefix-Denoising Consistency}), a test-time self-verification method for DLMs. PDC exploits a distinctive test-time signal in DLMs under prefix conditioned regeneration, correct trajectories are more stable and reproducible than incorrect ones. Concretely, given an initially generated sample, PDC splits the sentence at an intermediate position and regenerates the remaining tokens conditioned on the fixed prefix. Across mathematical reasoning and commonsense reasoning benchmarks, PDC consistently improves upon the initial sample, outperforms independent generations under a computational constrained comparison, and is robust to different unmasking strategies and parameter settings. These results highlight prefix-conditioned regeneration as an effective DLM-specific primitive for test-time verification.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/28/2608.26585v1-gras-guided-reduced-variance-proposals-and-adaptive-selection-for-training-free-reward-alignment-in-discrete-diffusion",
+      "section": "quick",
+      "title_en": "GRAS: Guided Reduced-Variance Proposals and Adaptive Selection for Training-Free Reward Alignment in Discrete Diffusion",
+      "authors": "Kwanyoung Kim",
+      "date": "2026-08-27",
+      "pdf": "https://arxiv.org/pdf/2608.26585v1",
+      "score": "7.0",
+      "evidence": "用于序列数据生成的离散扩散模型",
+      "tldr": "本研究针对离散扩散模型在推理阶段进行免训练奖励对齐的挑战，指出了现有结合梯度引导与搜索方法中梯度估计方差大及重采样温度固定的缺陷。为此提出了GRAS方法，通过Rao-Blackwellized揭示和留一法基准降低提议方差，并引入自适应重采样温度。实验证明，GRAS在DNA和蛋白质设计任务中表现优异，不仅超越了现有的免训练方法，甚至达到了与奖励微调模型相当或更优的效果，且适用于非微分奖励。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion models have become a strong, widely adopted class of generators for sequence data, and steering them toward a downstream reward at inference time, without any retraining, is increasingly important. Such training-free steering is done by gradient guidance, by search, or by combining the two. We study the combined regime and identify two weaknesses in how it is usually run: the guided proposal estimates its gradient from a single noisy sample, and the search then resamples particles at a fixed temperature that ignores how rewards spread across each denoising step. We address both with a small set of changes that add no denoiser cost. For the proposal, we lower the estimator variance with a Rao-Blackwellized reveal for differentiable rewards and a leave-one-out baseline for non-differentiable ones; for the search, we standardize the per-step values into a group-relative advantage and prove it collapses to a single active ingredient, an adaptive resampling temperature. We call the resulting method Guided Reduced-variance proposals and Adaptive Selection (GRAS). GRAS is simple yet effective: across regulatory DNA and protein design it attains the best training-free reward, outperforming prior training-free methods and matching or surpassing a reward-fine-tuned model, and it remains effective even for non-differentiable rewards.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
