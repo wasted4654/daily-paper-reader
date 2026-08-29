@@ -6,37 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-28
-- 运行时间：2026-08-28 02:48:58 UTC
+- 最新运行日期：2026-08-29
+- 运行时间：2026-08-29 02:57:33 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：3
+- 本次总论文数：3
+- 精读区：1
 - 速读区：2
 
 ### 今日简报（AI）
-今日聚焦扩散模型在长视频记忆与语言生成效率上的双重突破，深度研读 5 篇前沿成果。
-重点关注 Ring Forcing 实现的精准长效视频生成，以及通过生存引导显著提升扩散语言模型的推理效率。
-建议关注扩散技术向文本领域的跨界演进，这预示着生成式 AI 正在迈向更高效、更长程的创作阶段。
-- 详情：[/202608/28/README](/202608/28/README)
+今日聚焦实时高保真视频虚拟试衣技术，并同步探索时序知识图谱的去噪与外推预测。
+LiveVVT 实现了兼顾画质与速度的视频换装突破，谱扩散模型则为复杂知识图谱的未来演化提供了新方案。
+建议关注实时视频合成的商业化潜力，以及扩散模型在时序结构化数据处理中的前沿应用。
+- 详情：[/202608/29/README](/202608/29/README)
 
 ### 精读区论文标签
-1. [Ring Forcing: Towards Precise Long-Term Memory for Autoregressive Video Diffusion](/202608/28/2608.26794v1-ring-forcing-towards-precise-long-term-memory-for-autoregressive-video-diffusion)  
-   标签：评分：9.0/10、query:ardm
-   evidence：用于长期记忆的自回归视频扩散框架
-2. [Survival-Guided Length Control for Efficient Diffusion Language Models](/202608/28/2608.26374v1-survival-guided-length-control-for-efficient-diffusion-language-models)  
+1. [LiveVVT: High-Fidelity Video Virtual Try-On in Real Time](/202608/29/2608.26714v1-livevvt-high-fidelity-video-virtual-try-on-in-real-time)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型的长度控制
-3. [Dependency-Aware Revocable Decoding for Efficient Diffusion Large Language Model Inference](/202608/28/2608.26574v1-dependency-aware-revocable-decoding-for-efficient-diffusion-large-language-model-inference)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散大语言模型作为自回归生成的替代方案
+   evidence：流式扩散框架中的因果循环生成
 
 ### 速读区论文标签
-1. [Prefix-Denoising Consistency: Test-Time Verification for Diffusion Language Models](/202608/28/2608.25311v1-prefix-denoising-consistency-test-time-verification-for-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型与自回归模型竞争
-2. [GRAS: Guided Reduced-Variance Proposals and Adaptive Selection for Training-Free Reward Alignment in Discrete Diffusion](/202608/28/2608.26585v1-gras-guided-reduced-variance-proposals-and-adaptive-selection-for-training-free-reward-alignment-in-discrete-diffusion)  
-   标签：评分：7.0/10、query:ardm
-   evidence：用于序列数据生成的离散扩散模型
+1. [Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation](/202608/29/2608.20804v1-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation)  
+   标签：评分：6.0/10、query:ardm
+   evidence：基于扩散模型的历史关系未来对象预测
+2. [Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation](/202608/29/2608.20804v2-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation)  
+   标签：评分：6.0/10、query:ardm
+   evidence：基于扩散模型的历史关系未来对象预测
 
 
 <div class="dpr-home-promo-card">

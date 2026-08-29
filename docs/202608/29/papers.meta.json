@@ -1,0 +1,51 @@
+{
+  "label": "2026-08-29",
+  "date": "2026-08-29",
+  "generated_at": "2026-08-29T02:58:11",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/29/2608.26714v1-livevvt-high-fidelity-video-virtual-try-on-in-real-time",
+      "section": "deep",
+      "title_en": "LiveVVT: High-Fidelity Video Virtual Try-On in Real Time",
+      "authors": "Yushe Cao, Shikun Feng, Ruxiang Duan, Liyong Wang, Dianxi Shi, Chun Yu, Junliang Xing",
+      "date": "2026-08-27",
+      "pdf": "https://arxiv.org/pdf/2608.26714v1",
+      "score": "8.0",
+      "evidence": "流式扩散框架中的因果循环生成",
+      "tldr": "LiveVVT 针对扩散模型在视频虚拟试穿中因全片段依赖导致的延迟高、计算开销大等问题，提出了一种滚动流式扩散框架。该框架通过在因果循环生成中保留有界双向建模，结合时序记忆和全局外观记忆，实现了长视频的一致性。配合渐进式蒸馏策略，LiveVVT 在保持高保真度的同时，显著降低了延迟并提升了吞吐量，支持实时流式试穿。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion-based Video Virtual Try-On (VVT) achieves high visual fidelity through bidirectional spatio-temporal modeling, but complete-clip dependence incurs prohibitive latency and computational overhead in practical continuous deployment. Naively enforcing causality disrupts pretrained bidirectional priors and substantially degrades synthesis quality. We introduce LiveVVT, a rolling streaming diffusion framework that preserves bounded bidirectional modeling within causal recurrent generation. Within a fixed-size window, LiveVVT jointly denoises multiple video chunks under bounded look-ahead, preserving local bidirectional interactions while emitting one clean chunk per iteration. Beyond the window, two complementary memories sustain long-term consistency: a bounded temporal memory propagates recent dynamics and occlusion context, whereas a persistent global appearance memory, constructed once from the target garment and a frontal try-on keyframe, anchors garment details and dressed appearance throughout the stream. We further introduce a progressive distillation framework integrating bidirectional VVT learning, teacher-trajectory regression for causal few-step adaptation, and Collaborative Matching Distillation, which couples teacher-distribution matching with rolling flow matching on real videos to align optimization with recurrent inference. Experiments on paired and unpaired long-sequence benchmarks demonstrate superior generation quality over similarly sized models, with $26\\times$ lower latency and $11\\times$ higher throughput, enabling high-fidelity real-time streaming VVT.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/29/2608.20804v1-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation",
+      "section": "quick",
+      "title_en": "Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation",
+      "authors": "Yanglei Gan, Peng He, Run Lin, Peiyuan Jiang, Yifan Wang, Qiao Liu",
+      "date": "2026-08-21",
+      "pdf": "https://arxiv.org/pdf/2608.20804v1",
+      "score": "6.0",
+      "evidence": "基于扩散模型的历史关系未来对象预测",
+      "tldr": "针对时序知识图谱（TKG）外推中历史信息噪声干扰预测信号的问题，本文提出FreqDiff框架。该框架将未来实体预测建模为查询槽去噪过程，并设计了双流去噪器，结合时间依赖建模与上下文感知的频谱校准。通过频谱分支自适应过滤历史噪声并利用频域正则化对齐目标，FreqDiff在四个主流基准数据集上达到了最优性能，有效提升了时序推理的准确性。",
+      "tags": "query:ardm",
+      "abstract_en": "Temporal Knowledge Graph (TKG) extrapolation seeks to infer future facts from time-varying relational histories. Recent diffusion-based approaches improve uncertainty modeling through generative denoising, but their aggregated conditioning on subject histories may insufficiently distinguish query-specific evidence from non-salient historical facts, thereby diluting target-discriminative signals. To bridge this gap, we propose FreqDiff, a Frequency-aware Diffusion framework for TKG extrapolation. Specifically, FreqDiff formulates future object prediction as query-slot denoising and develops a dual-stream denoiser that integrates temporal dependency modeling with context-aware spectral calibration. The spectral branch synthesizes history-conditioned filters from learnable bases to adaptively re-calibrate denoising representations, while a frequency-domain regularizer is proposed to align the denoised target with the gold object in spectral space. Experiments on four public TKG benchmarks demonstrate that FreqDiff achieves state-of-the-art performance.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/29/2608.20804v2-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation",
+      "section": "quick",
+      "title_en": "Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation",
+      "authors": "Yanglei Gan, Peng He, Run Lin, Peiyuan Jiang, Yifan Wang, Qiao Liu",
+      "date": "2026-08-21",
+      "pdf": "https://arxiv.org/pdf/2608.20804v2",
+      "score": "6.0",
+      "evidence": "基于扩散模型的历史关系未来对象预测",
+      "tldr": "针对时序知识图谱（TKG）外推中历史信息噪声干扰预测信号的问题，本文提出FreqDiff框架。该框架将未来实体预测建模为查询槽去噪过程，并设计了双流去噪器，结合时间依赖建模与上下文感知的频谱校准。通过频谱分支自适应过滤历史噪声并利用频域正则化对齐目标，FreqDiff在四个主流基准数据集上达到了最优性能，有效提升了时序推理的准确性。",
+      "tags": "query:ardm",
+      "abstract_en": "Temporal Knowledge Graph (TKG) extrapolation seeks to infer future facts from time-varying relational histories. Recent diffusion-based approaches improve uncertainty modeling through generative denoising, but their aggregated conditioning on subject histories may insufficiently distinguish query-specific evidence from non-salient historical facts, thereby diluting target-discriminative signals. To bridge this gap, we propose FreqDiff, a Frequency-aware Diffusion framework for TKG extrapolation. Specifically, FreqDiff formulates future object prediction as query-slot denoising and develops a dual-stream denoiser that integrates temporal dependency modeling with context-aware spectral calibration. The spectral branch synthesizes history-conditioned filters from learnable bases to adaptively re-calibrate denoising representations, while a frequency-domain regularizer is proposed to align the denoised target with the gold object in spectral space. Experiments on four public TKG benchmarks demonstrate that FreqDiff achieves state-of-the-art performance.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
