@@ -1,59 +1,56 @@
 {
   "mode": "standard",
-  "generated_at": "2026-08-29T02:55:01.600881+00:00",
+  "generated_at": "2026-08-29T21:45:28.782383+00:00",
   "stats": {
     "mode": "standard",
     "tag_count": 1,
-    "deep_divecandidates": 1,
+    "deep_divecandidates": 0,
     "deep_cap": 6,
-    "deep_selected": 1,
-    "quick_candidates": 2,
+    "deep_selected": 0,
+    "quick_candidates": 3,
     "quick_skim_target": 11,
-    "quick_selected": 2
+    "quick_selected": 3
   },
-  "deep_dive": [
+  "deep_dive": [],
+  "quick_skim": [
     {
-      "id": "2608.26714v1",
-      "title": "LiveVVT: High-Fidelity Video Virtual Try-On in Real Time",
-      "abstract": "Diffusion-based Video Virtual Try-On (VVT) achieves high visual fidelity through bidirectional spatio-temporal modeling, but complete-clip dependence incurs prohibitive latency and computational overhead in practical continuous deployment. Naively enforcing causality disrupts pretrained bidirectional priors and substantially degrades synthesis quality. We introduce LiveVVT, a rolling streaming diffusion framework that preserves bounded bidirectional modeling within causal recurrent generation. Within a fixed-size window, LiveVVT jointly denoises multiple video chunks under bounded look-ahead, preserving local bidirectional interactions while emitting one clean chunk per iteration. Beyond the window, two complementary memories sustain long-term consistency: a bounded temporal memory propagates recent dynamics and occlusion context, whereas a persistent global appearance memory, constructed once from the target garment and a frontal try-on keyframe, anchors garment details and dressed appearance throughout the stream. We further introduce a progressive distillation framework integrating bidirectional VVT learning, teacher-trajectory regression for causal few-step adaptation, and Collaborative Matching Distillation, which couples teacher-distribution matching with rolling flow matching on real videos to align optimization with recurrent inference. Experiments on paired and unpaired long-sequence benchmarks demonstrate superior generation quality over similarly sized models, with $26\\times$ lower latency and $11\\times$ higher throughput, enabling high-fidelity real-time streaming VVT.",
+      "id": "2608.25380v1",
+      "title": "APT: Accelerating Diffusion Transformers via Attention Probability-Guided Pruning and Quantization",
+      "abstract": "Recent advances in generative AI have significantly increased the demand for high-resolution image and video generation, positioning diffusion models as a core technology. Among them, Diffusion Transformers (DiTs) have emerged as the state-of-the-art (SOTA) models due to their scalability and output quality. However, self-attention in DiTs incurs significant computational overhead, leading to excessively long latency as the complexity grows with the fourth power of the output resolution. While prior works have attempted to mitigate this cost using sparsity and quantization techniques, they fall short of effectively reducing the computational cost in high-resolution DiTs.   In this paper, we present APT, a software-hardware co-designed accelerator for high-resolution DiTs. APT leverages attention probabilities as a unified importance metric to jointly optimize computation through fine-grained pruning and adaptive precision scaling. At the algorithm level, we propose Attention Probability-guided Adaptive Dual Thresholding (APDT), which dynamically performs element selection and precision assignment using dual thresholds. To ensure compatibility with memory-efficient FlashAttention, we introduce Timestep-Aware FlashAttention (TAFA), which predicts attention probabilities across timesteps by exploiting temporal similarity. At the architecture level, we co-design a specialized accelerator that efficiently supports irregular sparsity and dual-precision execution, featuring dynamic mask management, address translation, dual-precision compute units, and a tile-based dataflow. Finally, we evaluate APT on SOTA DiT models, including PixArt-$α$, Stable Diffusion 3, and FLUX. APT achieves up to 8.16$\\times$ speedup and 14.98$\\times$ higher energy efficiency over NVIDIA A100, and up to 3.01$\\times$ speedup and 2.04$\\times$ higher energy efficiency over EXION, a SOTA diffusion model accelerator.",
       "authors": [
-        "Yushe Cao",
-        "Shikun Feng",
-        "Ruxiang Duan",
-        "Liyong Wang",
-        "Dianxi Shi",
-        "Chun Yu",
-        "Junliang Xing"
+        "Sungyeob Yoo",
+        "Seeyeon Kim",
+        "Joonyong Park",
+        "Seunghee Han",
+        "Joo-Young Kim"
       ],
-      "primary_category": "cs.CV",
+      "primary_category": "cs.AR",
       "categories": [
-        "cs.CV",
-        "cs.AI"
+        "cs.AR"
       ],
-      "published": "2026-08-27T07:06:51+00:00",
-      "link": "https://arxiv.org/pdf/2608.26714v1",
+      "published": "2026-08-26T05:08:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.25380v1",
       "tags": [
         "keyword:ARDM",
         "query:ARDM"
       ],
-      "llm_score": 8.0,
-      "llm_evidence_en": "causal recurrent generation within a streaming diffusion framework",
-      "llm_evidence_cn": "流式扩散框架中的因果循环生成",
-      "llm_evidence": "流式扩散框架中的因果循环生成",
-      "canonical_evidence": "流式扩散框架中的因果循环生成",
-      "llm_tldr_en": "Develops a streaming diffusion framework for video that uses causal, autoregressive-like recurrent generation.",
-      "llm_tldr_cn": "开发了一种用于视频的流式扩散框架，采用类似自回归的因果循环生成方式。",
-      "llm_tldr": "开发了一种用于视频的流式扩散框架，采用类似自回归的因果循环生成方式。",
+      "llm_score": 7.0,
+      "llm_evidence_en": "State-of-the-art Diffusion Transformer (DiT) architecture optimization",
+      "llm_evidence_cn": "SOTA 扩散 Transformer (DiT) 架构优化",
+      "llm_evidence": "SOTA 扩散 Transformer (DiT) 架构优化",
+      "canonical_evidence": "SOTA 扩散 Transformer (DiT) 架构优化",
+      "llm_tldr_en": "APT accelerates Diffusion Transformers through attention pruning and quantization for high-resolution generation.",
+      "llm_tldr_cn": "APT 通过注意力剪枝和量化加速扩散 Transformer，提升高分辨率生成效率。",
+      "llm_tldr": "APT 通过注意力剪枝和量化加速扩散 Transformer，提升高分辨率生成效率。",
       "llm_tags": [
         "query:ardm"
       ],
       "matched_query_tag": "query:ardm",
-      "matched_query_text": "combining autoregressive models and diffusion models",
-      "matched_requirement_id": "req-4",
-      "selection_source": "fresh_fetch"
-    }
-  ],
-  "quick_skim": [
+      "matched_query_text": "state of the art autoregressive diffusion architectures",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
     {
       "id": "2608.20804v1",
       "title": "Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation",
@@ -78,13 +75,13 @@
         "query:ARDM"
       ],
       "llm_score": 6.0,
-      "llm_evidence_en": "diffusion-based future object prediction from relational histories",
-      "llm_evidence_cn": "基于扩散模型的历史关系未来对象预测",
-      "llm_evidence": "基于扩散模型的历史关系未来对象预测",
-      "canonical_evidence": "基于扩散模型的历史关系未来对象预测",
-      "llm_tldr_en": "Uses diffusion for temporal knowledge graph extrapolation, predicting future sequences of facts.",
-      "llm_tldr_cn": "利用扩散模型进行时序知识图谱外推，预测未来的事实序列。",
-      "llm_tldr": "利用扩散模型进行时序知识图谱外推，预测未来的事实序列。",
+      "llm_evidence_en": "Diffusion-based temporal sequence extrapolation and future prediction",
+      "llm_evidence_cn": "基于扩散模型的时序序列外推与未来预测",
+      "llm_evidence": "基于扩散模型的时序序列外推与未来预测",
+      "canonical_evidence": "基于扩散模型的时序序列外推与未来预测",
+      "llm_tldr_en": "FreqDiff uses a frequency-aware diffusion framework for temporal knowledge graph extrapolation and future prediction.",
+      "llm_tldr_cn": "FreqDiff 采用频率感知扩散框架进行时序知识图谱外推和未来预测。",
+      "llm_tldr": "FreqDiff 采用频率感知扩散框架进行时序知识图谱外推和未来预测。",
       "llm_tags": [
         "query:ardm"
       ],
@@ -118,13 +115,13 @@
         "query:ARDM"
       ],
       "llm_score": 6.0,
-      "llm_evidence_en": "diffusion-based future object prediction from relational histories",
-      "llm_evidence_cn": "基于扩散模型的历史关系未来对象预测",
-      "llm_evidence": "基于扩散模型的历史关系未来对象预测",
-      "canonical_evidence": "基于扩散模型的历史关系未来对象预测",
-      "llm_tldr_en": "Uses diffusion for temporal knowledge graph extrapolation, predicting future sequences of facts.",
-      "llm_tldr_cn": "利用扩散模型进行时序知识图谱外推，预测未来的事实序列。",
-      "llm_tldr": "利用扩散模型进行时序知识图谱外推，预测未来的事实序列。",
+      "llm_evidence_en": "Diffusion-based future fact inference from relational histories",
+      "llm_evidence_cn": "基于扩散模型的历史关系未来事实推理",
+      "llm_evidence": "基于扩散模型的历史关系未来事实推理",
+      "canonical_evidence": "基于扩散模型的历史关系未来事实推理",
+      "llm_tldr_en": "Introduces a frequency-aware diffusion framework for temporal knowledge graph extrapolation and future prediction.",
+      "llm_tldr_cn": "引入一种频率感知扩散框架，用于时序知识图谱外推和未来预测。",
+      "llm_tldr": "引入一种频率感知扩散框架，用于时序知识图谱外推和未来预测。",
       "llm_tags": [
         "query:ardm"
       ],

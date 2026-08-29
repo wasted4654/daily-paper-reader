@@ -1,21 +1,21 @@
 {
   "label": "2026-08-29",
   "date": "2026-08-29",
-  "generated_at": "2026-08-29T02:58:11",
+  "generated_at": "2026-08-29T21:46:06",
   "count": 3,
   "papers": [
     {
-      "paper_id": "202608/29/2608.26714v1-livevvt-high-fidelity-video-virtual-try-on-in-real-time",
-      "section": "deep",
-      "title_en": "LiveVVT: High-Fidelity Video Virtual Try-On in Real Time",
-      "authors": "Yushe Cao, Shikun Feng, Ruxiang Duan, Liyong Wang, Dianxi Shi, Chun Yu, Junliang Xing",
-      "date": "2026-08-27",
-      "pdf": "https://arxiv.org/pdf/2608.26714v1",
-      "score": "8.0",
-      "evidence": "流式扩散框架中的因果循环生成",
-      "tldr": "LiveVVT 针对扩散模型在视频虚拟试穿中因全片段依赖导致的延迟高、计算开销大等问题，提出了一种滚动流式扩散框架。该框架通过在因果循环生成中保留有界双向建模，结合时序记忆和全局外观记忆，实现了长视频的一致性。配合渐进式蒸馏策略，LiveVVT 在保持高保真度的同时，显著降低了延迟并提升了吞吐量，支持实时流式试穿。",
+      "paper_id": "202608/29/2608.25380v1-apt-accelerating-diffusion-transformers-via-attention-probability-guided-pruning-and-quantization",
+      "section": "quick",
+      "title_en": "APT: Accelerating Diffusion Transformers via Attention Probability-Guided Pruning and Quantization",
+      "authors": "Sungyeob Yoo, Seeyeon Kim, Joonyong Park, Seunghee Han, Joo-Young Kim",
+      "date": "2026-08-26",
+      "pdf": "https://arxiv.org/pdf/2608.25380v1",
+      "score": "7.0",
+      "evidence": "SOTA 扩散 Transformer (DiT) 架构优化",
+      "tldr": "针对Diffusion Transformers (DiTs) 在高分辨率生成中计算开销巨大的问题，本文提出APT软硬件协同设计加速器。APT利用注意力概率作为统一重要性指标，通过APDT算法实现细粒度剪枝与自适应精度缩放，并结合TAFA技术预测跨时间步的注意力分布。硬件层面支持不规则稀疏与双精度执行，在PixArt-α等模型上显著提升了推理速度和能效。",
       "tags": "query:ardm",
-      "abstract_en": "Diffusion-based Video Virtual Try-On (VVT) achieves high visual fidelity through bidirectional spatio-temporal modeling, but complete-clip dependence incurs prohibitive latency and computational overhead in practical continuous deployment. Naively enforcing causality disrupts pretrained bidirectional priors and substantially degrades synthesis quality. We introduce LiveVVT, a rolling streaming diffusion framework that preserves bounded bidirectional modeling within causal recurrent generation. Within a fixed-size window, LiveVVT jointly denoises multiple video chunks under bounded look-ahead, preserving local bidirectional interactions while emitting one clean chunk per iteration. Beyond the window, two complementary memories sustain long-term consistency: a bounded temporal memory propagates recent dynamics and occlusion context, whereas a persistent global appearance memory, constructed once from the target garment and a frontal try-on keyframe, anchors garment details and dressed appearance throughout the stream. We further introduce a progressive distillation framework integrating bidirectional VVT learning, teacher-trajectory regression for causal few-step adaptation, and Collaborative Matching Distillation, which couples teacher-distribution matching with rolling flow matching on real videos to align optimization with recurrent inference. Experiments on paired and unpaired long-sequence benchmarks demonstrate superior generation quality over similarly sized models, with $26\\times$ lower latency and $11\\times$ higher throughput, enabling high-fidelity real-time streaming VVT.",
+      "abstract_en": "Recent advances in generative AI have significantly increased the demand for high-resolution image and video generation, positioning diffusion models as a core technology. Among them, Diffusion Transformers (DiTs) have emerged as the state-of-the-art (SOTA) models due to their scalability and output quality. However, self-attention in DiTs incurs significant computational overhead, leading to excessively long latency as the complexity grows with the fourth power of the output resolution. While prior works have attempted to mitigate this cost using sparsity and quantization techniques, they fall short of effectively reducing the computational cost in high-resolution DiTs.   In this paper, we present APT, a software-hardware co-designed accelerator for high-resolution DiTs. APT leverages attention probabilities as a unified importance metric to jointly optimize computation through fine-grained pruning and adaptive precision scaling. At the algorithm level, we propose Attention Probability-guided Adaptive Dual Thresholding (APDT), which dynamically performs element selection and precision assignment using dual thresholds. To ensure compatibility with memory-efficient FlashAttention, we introduce Timestep-Aware FlashAttention (TAFA), which predicts attention probabilities across timesteps by exploiting temporal similarity. At the architecture level, we co-design a specialized accelerator that efficiently supports irregular sparsity and dual-precision execution, featuring dynamic mask management, address translation, dual-precision compute units, and a tile-based dataflow. Finally, we evaluate APT on SOTA DiT models, including PixArt-$α$, Stable Diffusion 3, and FLUX. APT achieves up to 8.16$\\times$ speedup and 14.98$\\times$ higher energy efficiency over NVIDIA A100, and up to 3.01$\\times$ speedup and 2.04$\\times$ higher energy efficiency over EXION, a SOTA diffusion model accelerator.",
       "selection_source": "fresh_fetch"
     },
     {
