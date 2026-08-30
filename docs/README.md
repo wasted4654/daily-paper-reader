@@ -6,32 +6,28 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-29
-- 运行时间：2026-08-29 21:45:58 UTC
+- 最新运行日期：2026-08-30
+- 运行时间：2026-08-30 22:37:34 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：0
-- 速读区：3
+- 本次总论文数：2
+- 精读区：1
+- 速读区：1
 
 ### 今日简报（AI）
-今日聚焦扩散模型（Diffusion）的性能飞跃，涵盖架构加速与时序推理两大前沿。
-APT 方案通过注意力引导的剪枝量化显著提升 DiT 运行效率，而谱扩散模型则为时序知识图谱的外推预测提供了新思路。
-推荐关注模型轻量化部署及扩散技术在复杂时序逻辑建模中的跨界应用。
-- 详情：[/202608/29/README](/202608/29/README)
+今日聚焦扩散模型提速与生成架构融合，深入探讨语言模型与图像生成的性能优化。
+重点推荐通过结构化后缀建模加速扩散语言模型推理，并关注 WGAN-GP 与扩散 U-Net 耦合的特征增强方案。
+建议优先研读扩散模型在文本生成中的推理加速技术，把握生成式 AI 的效率前沿。
+- 详情：[/202608/30/README](/202608/30/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Accelerating Diffusion Language Models via Structured Suffix Modeling](/202608/30/2608.23167v1-accelerating-diffusion-language-models-via-structured-suffix-modeling)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型作为自回归生成的替代方案
 
 ### 速读区论文标签
-1. [APT: Accelerating Diffusion Transformers via Attention Probability-Guided Pruning and Quantization](/202608/29/2608.25380v1-apt-accelerating-diffusion-transformers-via-attention-probability-guided-pruning-and-quantization)  
-   标签：评分：7.0/10、query:ardm
-   evidence：SOTA 扩散 Transformer (DiT) 架构优化
-2. [Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation](/202608/29/2608.20804v1-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation)  
+1. [GAN-Diff : Coupling Pretrained WGAN-GP Features with Conditional Diffusion U-Nets](/202608/30/2608.22272v1-gan-diff--coupling-pretrained-wgan-gp-features-with-conditional-diffusion-u-nets)  
    标签：评分：6.0/10、query:ardm
-   evidence：基于扩散模型的时序序列外推与未来预测
-3. [Denoising the Future: Context-Aware Spectral Diffusion for Temporal Knowledge Graph Extrapolation](/202608/29/2608.20804v2-denoising-the-future-context-aware-spectral-diffusion-for-temporal-knowledge-graph-extrapolation)  
-   标签：评分：6.0/10、query:ardm
-   evidence：基于扩散模型的历史关系未来事实推理
+   evidence：混合 GAN 引导的扩散框架
 
 
 <div class="dpr-home-promo-card">

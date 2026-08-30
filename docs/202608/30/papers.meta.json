@@ -1,0 +1,37 @@
+{
+  "label": "2026-08-30",
+  "date": "2026-08-30",
+  "generated_at": "2026-08-30T22:37:42",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/30/2608.23167v1-accelerating-diffusion-language-models-via-structured-suffix-modeling",
+      "section": "deep",
+      "title_en": "Accelerating Diffusion Language Models via Structured Suffix Modeling",
+      "authors": "Zifeng Cheng, Keda Li, Zhiwei Jiang, Cong Wang, Fei Shen, Qing Gu",
+      "date": "2026-08-24",
+      "pdf": "https://arxiv.org/pdf/2608.23167v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为自回归生成的替代方案",
+      "tldr": "扩散语言模型（DLM）虽具备并行解码能力，但全后缀交互导致计算开销巨大。本文提出结构化后缀建模（SSM），通过将后缀划分为局部、中部和尾部区域并分配不同数量的令牌，同时引入跨步信息传递，在无需训练的情况下显著提升了推理速度和性能，长序列推理加速可达72.81倍。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Language Models (DLMs) exhibit strong parallel decoding capabilities by denoising multiple tokens in a single generation step. However, this parallelism comes with substantial computational overhead, as each step requires interactions with all suffix tokens. Existing methods typically reduce this cost by retaining only a local suffix window as a substitute for the full suffix. Despite their effectiveness, these methods overlook the structural heterogeneity across suffix regions and re-initialize suffix tokens with identical representations at each timestep. To this end, we propose a structured suffix modeling method for efficient DLM inference. Specifically, we divide the suffix into three regions, i.e., the local, middle, and tail regions, and retain different numbers of suffix tokens in each region according to their structural roles. Moreover, we incorporate the decoding results from the previous step into the suffix token representations at the current step, allowing them to carry evolving denoising information across generation steps. Notably, our method is training-free and orthogonal to several existing acceleration techniques, such as parallel decoding strategies and KV cache. Empirical results across multiple benchmarks on three DLMs demonstrate that our method can further accelerate DLM inference and improve performance in most cases. In particular, in long-sequence inference, our method achieves up to a \\(72.81\\times\\) speedup when combined with other acceleration techniques. Our code is available at https://github.com/zifengcheng/SSM.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/30/2608.22272v1-gan-diff--coupling-pretrained-wgan-gp-features-with-conditional-diffusion-u-nets",
+      "section": "quick",
+      "title_en": "GAN-Diff : Coupling Pretrained WGAN-GP Features with Conditional Diffusion U-Nets",
+      "authors": "Saif Ahmed, Ashadulla Hil Galib, S. M. Riaz Rahman Antu, Ahmed Faizul Haque Dhrubo, Souvik Pramanik, Mohammad Abdul Qayum, Mohsin Sajjad, Mohammad Ashrafuzzaman Khan",
+      "date": "2026-08-23",
+      "pdf": "https://arxiv.org/pdf/2608.22272v1",
+      "score": "6.0",
+      "evidence": "混合 GAN 引导的扩散框架",
+      "tldr": "本研究提出GAN-Diff框架，旨在结合GAN的高效生成能力与扩散模型的高质量修复优势。通过将预训练且冻结的WGAN-GP生成器特征作为先验，利用交叉注意力机制引导扩散模型U-Net进行图像修复。在CelebA数据集上的去噪和超分辨率任务中，该方法有效解决了训练不稳定性，显著提升了图像质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Generative adversarial networks (GANs) can provide efficient image generation, while diffusion models offer high-quality image restoration but require iterative sampling. This paper presents a hybrid GAN-guided diffusion framework that uses a pretrained Wasserstein GAN with gradient penalty (WGAN-GP) as a feature prior for conditional diffusion-based image restoration. Intermediate features from the frozen WGAN-GP generator are incorporated into a diffusion U-Net through cross-attention and remain fixed during the DDIM sampling process. The framework is evaluated on two restoration tasks, Gaussian denoising and 2Xsuper-resolution, using CelebA face images. During development, several sources of instability were identified and addressed, including adversarial learning-rate imbalance, inappropriate diffusion initialization, excessive corruption, and insufficient parameter averaging. The resulting framework consistently improves the quality of both degraded and low-resolution images. In particular, it improves denoising performance by 4.40 dB in PSNR and super-resolution performance by 3.70 dB over their respective input baselines. These results demonstrate the potential of a frozen GAN feature prior to guide diffusion models toward stable and effective image restoration.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
