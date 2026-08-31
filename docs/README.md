@@ -6,28 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-30
-- 运行时间：2026-08-30 22:37:34 UTC
+- 最新运行日期：2026-08-31
+- 运行时间：2026-08-31 23:31:46 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：1
+- 本次总论文数：3
+- 精读区：2
 - 速读区：1
 
 ### 今日简报（AI）
-今日聚焦扩散模型提速与生成架构融合，深入探讨语言模型与图像生成的性能优化。
-重点推荐通过结构化后缀建模加速扩散语言模型推理，并关注 WGAN-GP 与扩散 U-Net 耦合的特征增强方案。
-建议优先研读扩散模型在文本生成中的推理加速技术，把握生成式 AI 的效率前沿。
-- 详情：[/202608/30/README](/202608/30/README)
+今日聚焦长视频生成，深度解析了 KV 缓存压缩与长程一致性维护的两项 9 分重磅研究。
+DensityKV 与 LayerRecall 分别通过密度引导和记忆路由，攻克了长视频生成的显存瓶颈与画面断层难题。
+建议关注视频生成中的状态管理与显存优化，这是实现超长高保真视频创作的关键。
+- 详情：[/202608/31/README](/202608/31/README)
 
 ### 精读区论文标签
-1. [Accelerating Diffusion Language Models via Structured Suffix Modeling](/202608/30/2608.23167v1-accelerating-diffusion-language-models-via-structured-suffix-modeling)  
-   标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型作为自回归生成的替代方案
+1. [DensityKV: Density-Guided KV Cache Compression for Long Video Generation](/202608/31/2608.27922v1-densitykv-density-guided-kv-cache-compression-for-long-video-generation)  
+   标签：评分：9.0/10、query:ardm
+   evidence：专注于自回归视频扩散模型以及用于长时一致性的KV缓存管理。
+2. [LayerRecall: A State-Conditioned Memory Router for Long-Horizon Consistency in Video Generation](/202608/31/2608.28460v1-layerrecall-a-state-conditioned-memory-router-for-long-horizon-consistency-in-video-generation)  
+   标签：评分：9.0/10、query:ardm
+   evidence：用于长视频生成的自回归视频扩散模型
 
 ### 速读区论文标签
-1. [GAN-Diff : Coupling Pretrained WGAN-GP Features with Conditional Diffusion U-Nets](/202608/30/2608.22272v1-gan-diff--coupling-pretrained-wgan-gp-features-with-conditional-diffusion-u-nets)  
-   标签：评分：6.0/10、query:ardm
-   evidence：混合 GAN 引导的扩散框架
+1. [Diffusion Distillation for Efficient Weather Ensembles](/202608/31/2608.27728v1-diffusion-distillation-for-efficient-weather-ensembles)  
+   标签：评分：7.0/10、query:ardm
+   evidence：气象预报中每个自回归步骤仅需一次神经函数评估
 
 
 <div class="dpr-home-promo-card">

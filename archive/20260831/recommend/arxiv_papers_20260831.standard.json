@@ -1,0 +1,134 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-31T23:30:47.802730+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2608.27922v1",
+      "title": "DensityKV: Density-Guided KV Cache Compression for Long Video Generation",
+      "abstract": "Autoregressive video diffusion models enable streaming generation through sliding-window attention, but each generated block is conditioned on previously generated content, causing appearance and motion errors to propagate recursively over time. Historical key-value (KV) memory preserves earlier subject and scene states and helps maintain long-horizon consistency. However, retaining every generated state creates a historical archive that grows continuously with the rollout, while recurrent states repeatedly add redundant coverage. To address this problem, we propose DensityKV, a training-free historical KV bank management strategy. DensityKV maintains a separate token-level KV bank for each attention head and measures local redundancy among the post-RoPE keys that directly parameterize attention routing using Soft-Riesz density. By constraining neighborhood-density growth after states enter the bank, DensityKV limits repeated historical accumulation while preserving coherent states from each completed generation block. Experiments across three autoregressive video generation backbones and multiple generation lengths show that, at the same upper bound on historical KV capacity, DensityKV improves long-horizon consistency and generation stability while keeping persistent historical storage bounded independently of rollout length.",
+      "authors": [
+        "Wenqu Zhao",
+        "Xuemin Chi",
+        "Xin Zhang",
+        "Guoqing Ma",
+        "Baorun Li",
+        "Jianjie Fang",
+        "Peizhi Tang",
+        "Chen Gao",
+        "Wei Wu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-28T04:57:57+00:00",
+      "link": "https://arxiv.org/pdf/2608.27922v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Focuses on autoregressive video diffusion models and KV cache management for long-horizon consistency.",
+      "llm_evidence_cn": "专注于自回归视频扩散模型以及用于长时一致性的KV缓存管理。",
+      "llm_evidence": "专注于自回归视频扩散模型以及用于长时一致性的KV缓存管理。",
+      "canonical_evidence": "专注于自回归视频扩散模型以及用于长时一致性的KV缓存管理。",
+      "llm_tldr_en": "Proposes DensityKV to manage KV cache in autoregressive video diffusion models for efficient long video generation.",
+      "llm_tldr_cn": "提出DensityKV管理自回归视频扩散模型中的KV缓存，以实现高效的长视频生成。",
+      "llm_tldr": "提出DensityKV管理自回归视频扩散模型中的KV缓存，以实现高效的长视频生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.28460v1",
+      "title": "LayerRecall: A State-Conditioned Memory Router for Long-Horizon Consistency in Video Generation",
+      "abstract": "Autoregressive video diffusion enables scalable long-video generation by producing chunks from a bounded recent context. While recency-based caching preserves local continuity, it evicts historical cues needed when subjects, objects, scenes, or attributes reappear. Existing memory mechanisms expose models to nonlocal history, but access alone does not ensure effective use. Our analysis reveals that video DiT layers exhibit distinct preferences for current, recent, and distant context, suggesting that long-range memory requires deciding both what to retrieve and where to use it. We introduce LayerRecall, a current-conditioned, layer-selective memory router that retrieves relevant historical K/V states and injects them only into backbone-specific memory-sensitive layers while preserving local attention elsewhere. To reduce reliance on scarce high-quality long-horizon videos and explicit memory-allocation labels, we further propose Cross-Horizon Prediction Matching (CHPM), which uses a privileged long-context reference to supervise the bounded-memory router in prediction space. Across 100 multi-shot evaluation prompts, LayerRecall achieves the best overall results on MemoBench and MovieBench while matching its backbone on VBench-Long, demonstrating stronger long-range recovery without sacrificing local continuity. Qualitative analyses further reveal memory-guided self-correction, whereby initially mismatched local attributes return to their historical appearance without resetting ongoing motion or scene structure. Additional analyses show cross-backbone portability and negligible inference overhead.",
+      "authors": [
+        "Yixuan Ding",
+        "Jiahao Kong",
+        "Wei Huang",
+        "Ruijie Quan",
+        "Yi Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-28T15:49:13+00:00",
+      "link": "https://arxiv.org/pdf/2608.28460v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Autoregressive video diffusion for long-video generation",
+      "llm_evidence_cn": "用于长视频生成的自回归视频扩散模型",
+      "llm_evidence": "用于长视频生成的自回归视频扩散模型",
+      "canonical_evidence": "用于长视频生成的自回归视频扩散模型",
+      "llm_tldr_en": "Proposes LayerRecall to improve long-horizon consistency in autoregressive video diffusion models.",
+      "llm_tldr_cn": "提出 LayerRecall 以提高自回归视频扩散模型中的长程一致性。",
+      "llm_tldr": "提出 LayerRecall 以提高自回归视频扩散模型中的长程一致性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.27728v1",
+      "title": "Diffusion Distillation for Efficient Weather Ensembles",
+      "abstract": "Diffusion models generate skillful weather ensembles but require costly iterative sampling. We introduce a supervised energy-distance distillation method that compresses a multi-step diffusion teacher into a single-step student by aligning student forecasts with teacher samples and ground-truth observations. Experiments on global forecasting and typhoon-track prediction show that our student outperforms existing distillation methods and preserves skill for extreme events. It matches or surpasses the teacher across key metrics using only one neural function evaluation per autoregressive step.",
+      "authors": [
+        "Yiming Yang",
+        "Valentin Brekke",
+        "James Briant",
+        "Serge Guillas"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.AP"
+      ],
+      "published": "2026-08-27T21:39:50+00:00",
+      "link": "https://arxiv.org/pdf/2608.27728v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "one neural function evaluation per autoregressive step in weather forecasting",
+      "llm_evidence_cn": "气象预报中每个自回归步骤仅需一次神经函数评估",
+      "llm_evidence": "气象预报中每个自回归步骤仅需一次神经函数评估",
+      "canonical_evidence": "气象预报中每个自回归步骤仅需一次神经函数评估",
+      "llm_tldr_en": "Introduces a distillation method for efficient weather forecasting using autoregressive diffusion steps.",
+      "llm_tldr_cn": "引入一种蒸馏方法，通过自回归扩散步骤实现高效的天气预报。",
+      "llm_tldr": "引入一种蒸馏方法，通过自回归扩散步骤实现高效的天气预报。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
