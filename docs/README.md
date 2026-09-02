@@ -6,34 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-01
-- 运行时间：2026-09-01 21:42:23 UTC
+- 最新运行日期：2026-09-02
+- 运行时间：2026-09-02 22:31:54 UTC
 - 运行状态：成功
 - 本次总论文数：4
-- 精读区：1
-- 速读区：3
+- 精读区：2
+- 速读区：2
 
 ### 今日简报（AI）
-今日深度解析扩散模型在变长文本生成与 PDE 求解中的跨界应用，并探索投机解码的效率极限。
-核心看点在于 CARVE 带来的扩散语言模型验证扩展技术，以及 ReTrace 通过拒绝轨迹优化解码的新方案。
-建议关注扩散机制如何赋能结构化生成与物理仿真，这是提升模型可控性与专业性的关键。
-- 详情：[/202609/01/README](/202609/01/README)
+今日深挖扩散模型与 PDE 求解前沿，重点攻克复杂几何建模与离散扩散的长上下文持久化难题。
+几何感知潜自回归模型显著提升了复杂域 PDE 模拟精度，而“持久上下文”机制则有效解决了离散扩散中的信息截断。
+推荐关注 AI for Science 或生成式模型可靠性优化的读者重点研读这两项高分成果。
+- 详情：[/202609/02/README](/202609/02/README)
 
 ### 精读区论文标签
-1. [CARVE: Verified Expansion for Variable-Length Generation in Diffusion Language Models](/202609/01/2608.30922v1-carve-verified-expansion-for-variable-length-generation-in-diffusion-language-models)  
+1. [Geometry-aware Latent Autoregressive Generative Model for PDEs in Complex Domains](/202609/02/2609.00297v1-geometry-aware-latent-autoregressive-generative-model-for-pdes-in-complex-domains)  
    标签：评分：8.0/10、query:ardm
-   evidence：用于可变长度生成的掩码扩散语言模型
+   evidence：结合流匹配与因果自注意力的潜空间自回归生成模型
+2. [From Truncation to Commitment: Persistent Context in Uniform Discrete Diffusion](/202609/02/2609.01043v1-from-truncation-to-commitment-persistent-context-in-uniform-discrete-diffusion)  
+   标签：评分：8.0/10、query:ardm
+   evidence：具有持久上下文的离散扩散模型序列生成
 
 ### 速读区论文标签
-1. [ReTrace: Rejected-Trajectory Conditioning for Speculative Decoding](/202609/01/2608.29748v1-retrace-rejected-trajectory-conditioning-for-speculative-decoding)  
+1. [Reliability Challenges in Diffusion Vision-Language Models](/202609/02/2609.01318v1-reliability-challenges-in-diffusion-vision-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：受条件扩散启发以改进自回归语言模型推理
-2. [DiffPDE: Masked Diffusion Language Models as PDE Solver](/202609/01/2608.30532v1-diffpde-masked-diffusion-language-models-as-pde-solver)  
-   标签：评分：7.0/10、query:ardm
-   evidence：离散扩散语言模型作为自回归模型的替代方案
-3. [Flow-JEPA: Flow Matching for Robust Latent Dynamics in JEPA World Models](/202609/01/2608.29029v1-flow-jepa-flow-matching-for-robust-latent-dynamics-in-jepa-world-models)  
-   标签：评分：6.0/10、query:ardm
-   evidence：用条件流匹配动力学替换确定性自回归预测器
+   evidence：将基于扩散的视觉语言模型与自回归基准进行对比评估
+2. [Denoising as Projection: Constrained Optimization with Gradient-Guided Diffusion](/202609/02/2608.29507v1-denoising-as-projection-constrained-optimization-with-gradient-guided-diffusion)  
+   标签：评分：6.0/10、query:diffpl
+   evidence：用于约束优化和规划的梯度引导扩散模型
 
 
 <div class="dpr-home-promo-card">

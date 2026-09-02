@@ -1,0 +1,1192 @@
+Title: Reliability Challenges in Diffusion Vision-Language Models
+
+URL Source: https://arxiv.org/pdf/2609.01318v1
+
+Published Time: Wed, 02 Sep 2026 01:30:06 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+## Reliability Challenges in Diffusion Vision–Language Models 
+
+Md. Atabuzzaman Chris Thomas 
+
+Department of Computer Science Virginia Tech 
+
+{atabuzzaman, christhomas}@vt.edu 
+
+Abstract 
+
+Diffusion-based Large Vision-Language Mod-els (dLVLMs) have recently emerged as a compelling alternative to autoregressive (AR) LVLMs, offering advantages in parallel decod-ing, bidirectional context, and controllable gen-eration. Despite rapid progress, their reliability properties remain largely uncharacterized. We present the first systematic reliability evaluation of hallucination and bias in dLVLMs, bench-marking six diffusion models against competi-tive AR baselines across four dimensions. Our key findings are: (1) dLVLMs reverse the yes-bias of AR models in binary visual queries; (2) they achieve competitive hallucination rates yet exhibit degraded linguistic quality; (3) they collapse to near-zero accuracy on underrepre-sented racial groups with opposite-polarity gen-der bias; and (4) they exhibit accuracy collapse in multiple-choice settings when the correct op-tion is shorter than its distractors, associated with a length prior that emerges at the first de-noising step. Tokens committed at late denois-ing steps with low confidence further correlate with hallucinated content, pointing to a mech-anistic signal unique to diffusion generation. These patterns vary across model families, sug-gesting reliability is shaped by the generative paradigm together with training data. 1
+
+1 Introduction 
+
+Large Vision-Language Models (LVLMs) have re-cently achieved strong performance across diverse vision-language tasks, from visual question answer-ing and mathematical reasoning to document un-derstanding and image captioning (Liu et al., 2023; Bai et al., 2025; Chen et al., 2025). These models predominantly rely on autoregressive (AR) genera-tion, producing responses token by token in a left-to-right sequence. While effective, this paradigm has fundamental limitations: sequential decoding is    
+
+> 1Code and Dataset: https://github.com/ Atabuzzaman/Reliability_dLVLM
+
+hard to parallelize, bidirectional context is unavail-able during generation, and AR models are prone to hallucination and systematic output biases (Bang et al., 2023; Pezeshkpour and Hruschka, 2024). Discrete diffusion language models have emerged as an alternative to AR generation (Nie et al., 2026; Ye et al., 2025b). Rather than pro-ducing tokens sequentially from left to right, these models treat generation as an iterative denoising process over discrete tokens, starting from a fully masked sequence and progressively unmasking to-kens using bidirectional context. This offers struc-tural advantages over AR models: parallel decod-ing enables flexible speed-quality trade-offs, bidi-rectional attention allows conditioning on the full response context, and iterative refinement supports constrained generation. Recent work has extended discrete diffusion to the multimodal setting (Li et al., 2026; You et al., 2026; Yu et al., 2025; Ye et al., 2025a; Yang et al., 2025), demonstrating that dLVLMs achieve competitive or superior perfor-mance on standard benchmarks. Despite this rapid progress, a critical question remains overlooked: do the structural properties of diffusion-based generation alter the reliability of LVLMs, specifically their bias and hallucina-tion patterns? AR models inherit well-documented failure modes: they are prone to object halluci-nation (Li et al., 2023), exhibit strong yes-bias in binary visual queries (Li et al., 2023), show systematic preferences for longer or positionally favored answer options in multiple-choice ques-tion answering (MCQA) settings (Atabuzzaman et al., 2025; Zhao et al., 2025), and exhibit de-mographic disparities across gender and racial groups (Karkkainen and Joo, 2021; Wang et al., 2021). Whether dLVLMs share, amplify, or alter these failure modes remains largely unexplored. In this paper, we conduct the first system-atic reliability evaluation of dLVLMs, benchmark-ing six models against competitive AR baselines 1arXiv:2609.01318v1 [cs.CV] 1 Sep 2026 across four dimensions: (1) object hallucina-tion , evaluated via the POPE benchmark (Li et al., 2023) across random, popular, and adversarial sampling strategies; (2) open-ended hallucina-tion , evaluated via the CHAIR metric (Rohrbach et al., 2018) on free-form image captioning; (3) demographic bias , evaluated via the FairFace dataset (Karkkainen and Joo, 2021) for gender and racial group recognition under two image padding conditions; and (4) selection bias , evaluated via length-controlled multiple-choice visual questions derived from Atabuzzaman et al. (2025), probing sensitivity to option length as a confounding cue. Our experiments reveal qualitatively distinct, and in several cases more severe, reliability pro-files in dLVLMs than AR counterparts, with pat-terns varying systematically across model families. These findings establish a new empirical founda-tion for reliability-aware evaluation of dLVLMs as this model class scales toward deployment. Our main contributions are as follows: • Benchmarking dLVLMs against competitive AR baselines across hallucination, demographic bias, and selection bias, providing the first systematic reliability evaluation of this model family. • dLVLMs exhibit systematically different reliabil-ity profiles from AR models, associated with the diffusion paradigm, with linguistic quality and hallucination as separable failure modes. • dLVLMs exhibit far more severe length bias in MCQA than AR models, linked to a length pref-erence that appears at the first denoising step. • We identify opposite-polarity gender bias across diffusion model families, near-zero accuracy on underrepresented racial groups, and a denoising confidence trajectory signal correlated with hal-lucinated content. 
+
+2 Related Work 
+
+Diffusion Language Models. Diffusion-based LLMs (Li et al., 2022; Nie et al., 2026) operate over discrete tokens, treating generation as iterative denoising from a fully masked sequence. Nie et al. (2026) proposed LLaDA, a discrete diffusion LLM trained from scratch that demonstrates competitive performance with strong AR LLMs on in-context learning, instruction following, and reasoning tasks, while alleviating limitations such as the reversal curse (Berglund et al., 2024). Subsequent work has extended LLaDA along several axes, including long-context extrapolation (Liu et al., 2026), sparse Mixture-of-Experts scaling (Zhu et al., 2025), and AR-based initialization with context-adaptive noise scheduling in Dream-7B (Ye et al., 2025b). 
+
+Diffusion-based LVLMs. The extension of dis-crete diffusion models to multimodal settings has recently gained momentum. LaViDa (Li et al., 2026) equips discrete diffusion backbones with a vision encoder and jointly fine-tunes for mul-timodal instruction following, yielding two vari-ants based on the LLaDA and Dream backbones. LLaDA-V (You et al., 2026) is a purely diffusion-based LVLM built on LLaDA-8B, demonstrat-ing superior data scalability over an AR baseline. MMaDA (Yang et al., 2025) is a unified multimodal diffusion model combining mixed chain-of-thought fine-tuning with a diffusion-specific RL algorithm for text generation, multimodal reasoning, and text-to-image synthesis. Dimple (Yu et al., 2025) ad-dresses training instability via an autoregressive-then-diffusion paradigm and confident decoding. Dream-VL (Ye et al., 2025a) is built on Dream-7B that demonstrates strong performance. 
+
+Hallucination and Bias in LVLMs. Bias and hal-lucination in AR LVLMs have been extensively studied. Object hallucination has been bench-marked through POPE (Li et al., 2023), which probes yes/no object queries across random, pop-ular, and adversarial sampling strategies. Re-sponse bias in MCQA settings is well-documented, with models exhibiting systematic preferences for specific answer positions (Pezeshkpour and Hr-uschka, 2024), verbose options (Zhao et al., 2025), and particular formatting patterns (Zheng et al., 2023); Atabuzzaman et al. (2025) further demon-strated strong selection bias in fine-grained vi-sual MCQA. Demographic bias has been explored through datasets such as FairFace (Karkkainen and Joo, 2021), revealing race- and gender-dependent disparities in visual recognition (Wang et al., 2021). TraceDet (Chang et al., 2026) leverages interme-diate denoising trajectories in diffusion LLMs to identify hallucination-relevant steps, achieving im-proved detection accuracy over output-only base-lines; however, it targets text-only diffusion LLMs and hallucination detection alone. Despite growing interest in dLVLMs, their bias and hallucination properties remain largely unexplored. Prior work has focused primarily on AR models, leaving open whether diffusion-based generation changes these failure modes. To our knowledge, this is the first systematic study to address this gap, providing an empirical characterization of dLVLM reliability 2The image captures a cozy living room scene. The room is dominated by a 
+
+vibrant orange sofa, which is adorned with a red throw pillow. A red lantern 
+
+hangs above the sofa, adding a touch of warmth to the room. The room is 
+
+further decorated with a collection of books and paintings, suggesting a love for 
+
+reading and art. A red clock and a red vase are also present in the room, 
+
+contributing to the eclectic feel of the space. Various posters and photographs 
+
+are displayed on the walls, adding a personal touch to the room. The overall 
+
+color scheme is dominated by shades of orange and red, creating a warm and 
+
+inviting atmosphere.. Describe the image.  Diffusion 
+
+LVLM The 
+
+> (2)
+> image
+> (1)
+> captures
+> (9)
+> a
+> (3)
+> cozy
+> (8)
+> living
+> (7)
+> room
+> (6)
+> scene
+> (10)
+> .
+> (11)
+> The
+> (12)
+> room
+> (13)
+> is
+> (14)
+> dominated
+> (16)
+> by
+> (15)
+> a
+> (17)
+> vibrant
+> (20)
+> orange
+> (18)
+> sofa
+> (19)
+> ,
+> (21)
+> which
+> (22)
+> is
+> (23)
+> adorned
+> (25)
+> with
+> (26)
+> a
+> (24)
+> red
+> (30)
+> throw
+> (27)
+> pillow
+> (28)
+> .
+> (29)
+> A
+> (31)
+> red
+> (39)
+> lantern
+> (40)
+> hangs
+> (41)
+> above
+> (47)
+> the
+> (42)
+> sofa
+> (46)
+> ,
+> (43)
+> adding
+> (45)
+> a
+> (44)
+> touch
+> (48)
+> of
+> (49)
+> warmth
+> (54)
+> to
+> (51)
+> the
+> (50)
+> room
+> (53)
+> .
+> (52)
+> The
+> (55)
+> room
+> (56)
+> is
+> (57)
+> further
+> (60)
+> decorated
+> (58)
+> with
+> (59)
+> a
+> (61)
+> collection
+> (63)
+> of
+> (62)
+> books
+> (65)
+> and
+> (64)
+> paintings
+> (76)
+> ,
+> (66)
+> suggesting
+> (70)
+> a
+> (67)
+> love
+> (68)
+> for
+> (69)
+> reading
+> (71)
+> and
+> (72)
+> art
+> (75)
+> .
+> (73)
+> A
+> (74)
+> red
+> (124)
+> clock
+> (127)
+> and
+> (119)
+> a
+> (118)
+> red
+> (125)
+> vase
+> (126)
+> are
+> (117)
+> also
+> (115)
+> present
+> (116)
+> in
+> (114)
+> the
+> (113)
+> room
+> (112)
+> ,
+> (109)
+> contributing
+> (111)
+> to
+> (110)
+> the
+> (108)
+> eclectic
+> (120)
+> feel
+> (121)
+> of
+> (107)
+> the
+> (105)
+> space
+> (106)
+> .
+> (103)
+> Various
+> (104)
+> posters
+> (128)
+> and
+> (102)
+> photographs
+> (123)
+> are
+> (101)
+> displayed
+> (122)
+> on
+> (100)
+> the
+> (98)
+> walls
+> (99)
+> ,
+> (94)
+> adding
+> (95)
+> a
+> (93)
+> personal
+> (97)
+> touch
+> (96)
+> to
+> (92)
+> the
+> (90)
+> room
+> (91)
+> .
+> (88)
+> The
+> (87)
+> overall
+> (86)
+> color
+> (85)
+> scheme
+> (89)
+> is
+> (84)
+> dominated
+> (83)
+> by
+> (82)
+> shades
+> (81)
+> of
+> (78)
+> orange
+> (79)
+> and
+> (77)
+> red
+> (80)
+> ,
+> (38)
+> creating
+> (37)
+> a
+> (33)
+> warm
+> (34)
+> and
+> (32)
+> inviting
+> (35)
+> atmosphere
+> (36)
+> .
+> (4)
+> ·
+> (5)
+
+Token Confidence (colour) and Commit Step (parentheses) 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Confidence
+
+Figure 1: Qualitative hallucination analysis on a LaViDa-LLaDA caption (MSCOCO). Top: The model generates a fluent description of the living room image, but hallucinates objects not present in the scene ( clock , vase ,
+
+posters ). Bottom: Per-token confidence (colour) and commit step (parentheses) from the diffusion denoising process. Hallucinated tokens — clock (step 127) and vase (step 126) — and the imprecise posters (step 128) are all committed at late denoising steps with low confidence (red), whereas the non-hallucinated lantern (step 40), despite low confidence, is committed substantially earlier. This suggests that late commit step combined with low confidence may jointly indicate hallucination risk. 
+
+relative to AR counterparts and establishing a foun-dation for reliability-aware evaluation. 
+
+3 Preliminary 
+
+Diffusion-Based Large Vision-Language Models. 
+
+Diffusion-based LVLMs (dLVLMs) treat response generation as an iterative denoising process over discrete tokens. The forward process gradually corrupts a clean response x0 into a fully masked se-quence x1 by independently replacing tokens with a special [MASK] token. At inference, the model starts from a fully masked response and iteratively unmasks tokens over K denoising steps. At each step k, the model predicts all masked positions simultaneously: 
+
+pθ(x0 | v, p, xk) = Y
+
+i:xik =[M] 
+
+pθ(xi
+
+0 | v, p, xk),
+
+(1) where the denoiser pθ uses a full bidirectional at-tention mask, allowing every position to attend to all others. In this work, we evaluate six dLVLMs, each built on a discrete masked diffusion backbone but differing in base language model, vision en-coder integration, and post-training strategy. At each denoising step, the model assigns a per-token confidence score (the maximum softmax probabil-ity over the vocabulary) and selects positions to unmask based on these scores. The commit step of a token is the step at which it is first assigned its final non-mask value. These two signals form the basis of our mechanistic hallucination analysis in Section 4.1. 
+
+4 Experiments 
+
+We evaluate six dLVLMs (LLaDA-V (You et al., 2026), LaViDa-LLaDA (LaViDa-L) (Li et al., 2026), LaViDa-Dream (LaViDa-D) (Li et al., 2026), MMaDA-MixCoT (MMaDA-M) (Yang et al., 2025), Dream-VL (Ye et al., 2025a), and Dimple (Yu et al., 2025)) against competitive AR baselines across four reliability dimensions. We note that MMaDA-MixCoT corresponds to the publicly released MMaDA-8B-MixCoT checkpoint (Stage 2); the full MMaDA model with UniGRPO RL (Stage 3) was not publicly available at the time of this work (Yang et al., 2025). 
+
+4.1 Hallucination Evaluation 
+
+We evaluate object hallucination using the POPE benchmark (Li et al., 2023), which probes yes/no object queries on MSCOCO (Lin et al., 2014) im-ages across three settings: Random (uniform object sampling), Popular (frequently appearing objects), and Adversarial (co-occurring objects designed to 3Ca. Model Type Acc. ↑ Pre. ↑ Rec. ↑ F1 ↑ Yes%                                                                                                                                                                                                                                           
+
+> Ra.
+> mPLUG-Owl AR 53.30 51.71 99.53 68.06 96.23 LLaVA AR 54.43 52.32 99.80 68.65 95.37 LLaVA-Next AR 88.00 98.97 76.80 86.49 38.80 MiniGPT-4 AR 77.83 75.38 82.67 78.86 54.83 InstructBLIP AR 88.73 85.08 93.93 89.29 55.20 Qwen2.5-VL AR 83.00 100.0 66.00 79.52 33.00 InternVL2.5 AR 92.60 99.53 85.60 92.04 43.00 LLaDA-V Diff. 84.58 99.43 69.88 82.08 35.50 LaViDa-D Diff. 86.60 97.41 75.20 84.88 38.60 LaViDa-L Diff. 84.80 98.33 70.80 82.33 36.00 MMaDA-M Diff. 83.00 83.40 82.40 82.90 49.40
+> Dream-VL Diff. 85.80 100.0 71.60 83.45 35.80 Dimple Diff. 88.00 98.97 76.80 86.49 38.80
+> Po.
+> mPLUG-Owl AR 50.63 50.32 99.27 66.79 98.63 LLaVA AR 52.43 51.25 99.80 67.72 97.37 LLaVA-Next AR 89.80 97.62 81.67 88.94 42.00 MiniGPT-4 AR 68.30 64.27 82.40 72.21 64.10 InstructBLIP AR 81.37 75.07 93.93 83.45 62.57 Qwen2.5-VL AR 86.40 97.41 74.90 84.68 38.60 InternVL2.5 AR 92.40 94.19 90.44 92.28 48.20
+> LLaDA-V Diff. 87.75 96.10 78.80 86.59 41.16 LaViDa-D Diff. 88.40 93.67 82.47 87.71 44.20 LaViDa-L Diff. 87.60 93.55 80.88 86.75 43.40 MMaDA-M Diff. 79.60 75.96 86.85 81.04 57.40 Dream-VL Diff. 87.00 95.15 78.09 85.78 41.20 Dimple Diff. 87.80 93.18 81.67 87.05 44.00
+> Ad.
+> mPLUG-Owl AR 50.67 50.34 99.33 66.82 98.67 LLaVA AR 50.77 50.39 99.87 66.98 99.10 LLaVA-Next AR 86.00 93.20 77.42 84.58 41.20 MiniGPT-4 AR 66.60 62.45 83.27 71.37 66.67 InstructBLIP AR 74.37 67.67 93.33 78.45 68.97 Qwen2.5-VL AR 82.60 96.00 67.74 79.43 35.00 InternVL2.5 AR 85.20 83.72 87.10 85.38 51.60
+> LLaDA-V Diff. 82.77 92.63 70.97 80.37 38.08 LaViDa-D Diff. 82.60 86.76 76.61 81.37 43.80 LaViDa-L Diff. 80.00 83.33 74.60 78.72 44.40 MMaDA-M Diff. 72.80 68.54 83.47 75.27 60.40 Dream-VL Diff. 84.20 92.89 73.79 82.25 39.40 Dimple Diff. 84.00 88.18 78.23 82.91 44.00
+
+Table 1: POPE benchmark evaluation (MSCOCO). Best overall results per category are in bold ; best results among diffusion models are highlighted . For Yes%, values closest to 50 indicate least response bias. AR = autoregressive; Diff. = diffusion-based; Ca. = category; Acc. = accuracy; Pre. = precision; Rec. = recall; Ra. = random; Po. = popular; Ad. = adversarial. 
+
+elicit hallucination). We report Accuracy, Preci-sion, Recall, F1, and Yes%, where Yes% captures the proportion of affirmative responses and serves as a proxy for response bias. We compare against seven AR LVLMs: LLaVA-1.5-7B (LLaVA) (Liu et al., 2023), LLaVA-1.6-7B (LLaVA-Next) (Liu et al., 2024), Qwen2.5-VL-7B-Instruct (Qwen2.5-VL) (Bai et al., 2025), InternVL2.5-8B (In-ternVL2.5) (Chen et al., 2025), mPLUG-Owl (mPLUG) (Ye et al., 2023), MiniGPT-4 (Zhu et al., 2024), and InstructBLIP (Dai et al., 2023). Results are presented in Table 1. 
+
+dLVLMs Achieve Competitive Hallucination Resistance. Across all three settings, dLVLMs achieve competitive accuracy relative to AR base-lines, with InternVL2.5 retaining the top overall score in each category. Among dLVLMs, Dim-ple achieves the highest accuracy on Random (88.00%), LaViDa-Dream on Popular (88.40%), and Dream-VL on Adversarial (84.20%). No-tably, LaViDa-Dream surpasses InstructBLIP (the strongest among the older AR baselines) by 7.03 and 8.23 percentage points on Popular and Ad-versarial respectively, demonstrating that dLVLMs have narrowed the gap with competitive AR models on object hallucination. 
+
+AR Models Are Yes-Biased; dLVLMs Trend Toward No-Bias. Older AR models exhibit a pronounced yes-bias, with Yes% ranging from 54.83% (MiniGPT-4) to nearly 100% (mPLUG-Owl, LLaVA), while modern AR models are more calibrated: InternVL2.5 reaches 43.00% on Ran-dom. In contrast, most dLVLMs display the op-posite pattern, with Yes% consistently between 35–45% across all three settings, yielding high pre-cision (up to 100% for Dream-VL on Random) but at the cost of reduced recall. The exception is MMaDA-MixCoT, whose Yes% increases to 60.40% on Adversarial, suggesting its MixCoT training objective reinforces yes-leaning tenden-cies. These findings underscore that response bias in dLVLMs is associated with both the generative architecture and the training objective. 
+
+Type Model CHAIR I ↓ CHAIR S ↓ Avg Len 
+
+AR LLaVA-1.5 26.62 57.52 87.3 LLaVA-Next 14.50 30.14 98.8 Qwen2.5-VL 13.99 30.35 97.9 InternVL2.5 12.63 27.96 84.1 Diff. LLaDA-V 15.57 30.71 108.2 LaViDa-L 18.43 30.91 109.1 LaViDa-D 15.13 29.67 92.8 Dream-VL 11.69 23.21 76.4 MMaDA-M 19.75 39.35 63.5 Dimple 19.59 34.49 99.2 With step size reduced to half (128 → 64) LaViDa-L 18.87 32.57 108.0 Dream-VL 10.06 18.14 55.5 
+
+Table 2: CHAIR hallucination evaluation on MSCOCO. Lower is better for CHAIR I and CHAIR S. Avg Len denotes average generated caption length in words. Best results are in bold. 
+
+Open-Ended Hallucination Evaluation. To com-plement the binary POPE evaluation, we assess hallucination in free-form generation using the CHAIR metric (Rohrbach et al., 2018), which measures how often models mention MSCOCO objects not present in the image. We evaluate all models on 500 MSCOCO val2014 images using the prompt “Describe the image.” with 
+
+max_new_tokens=128 and confidence-based de-coding; dLVLMs use 128 denoising steps. Re-sults report object-level (CHAIR I) and caption-4level (CHAIR S) hallucination rates alongside aver-age caption length, and are presented in Table 2. 
+
+Some dLVLMs Are Competitive on Open-Ended Hallucination. Several dLVLMs fall within the competitive range of strong AR base-lines: LaViDa-Dream (CHAIR I: 15.13%) and LLaDA-V (15.57%) are comparable to Qwen2.5-VL-7B (13.99%), while Dream-VL achieves the lowest hallucination rate across all evaluated mod-els (CHAIR I: 11.69%, CHAIR S: 23.21%), sur-passing all AR baselines. Notably, caption length does not explain these results: MMaDA-MixCoT produces the shortest captions (63.5 words) yet the highest CHAIR S among dLVLMs (39.35%), while LLaDA-V and LaViDa-LLaDA generate the longest captions yet maintain moderate hallucina-tion rates, indicating that caption length alone does not determine hallucination risk. 
+
+Diffusion Training Introduces Hallucination-Specific Challenges. Dimple shares the same train-ing data (Yu et al., 2025) as LLaVA-Next yet sub-stantially underperforms it on open-ended halluci-nation (CHAIR I: 19.59% vs. 14.50%; CHAIR S:34.49% vs. 30.14%), despite comparable binary hallucination resistance on POPE (88.00% vs. 88.00% on Random), suggesting diffusion train-ing contributes hallucination-specific challenges beyond what is explained by data alone.                                                                                                           
+
+> Model Type Gram. Rep. Incoher. Trunc. Unnat. OA OA −T
+> LLaVA-1.5 AR 0.2 0.4 0.0 19.4 0.2 20.0 0.8 LLaVA-Next AR 2.2 0.0 0.0 69.2 0.4 69.2 2.6 Qwen2.5-VL AR 0.2 0.2 0.0 26.0 0.2 26.4 0.6
+> InternVL2.5 AR 0.2 0.4 0.0 27.0 0.6 27.6 1.0 Dimple Diff. 3.0 5.2 0.2 0.2 10.2 13.8 13.8 LLaDA-V Diff. 0.8 4.0 0.2 0.0 5.6 8.2 8.2 LaViDa-L Diff. 1.0 2.4 0.0 0.4 1.4 3.0 3.0 LaViDa-D Diff. 6.4 0.8 0.0 6.0 12.0 13.0 13.0 MMaDA-M Diff. 0.2 1.4 0.0 3.0 0.4 4.6 1.6 Dream-VL Diff. 0.2 0.4 0.0 0.4 0.6 1.6 1.2
+> With step size reduced to half (128 →64) LaViDa-L Diff. 60.0 64.6 11.2 14.8 82.0 88.2 87.6 Dream-VL Diff. 21.2 21.6 0.6 7.0 29.4 46.4 43.8
+
+Table 3: Linguistic quality evaluation on MSCOCO cap-tions using GPT-4o-mini as judge. All values are per-centages of captions with that error present. Overall −T
+
+denotes overall error rate excluding truncation, enabling fair cross-paradigm comparison of intrinsic linguistic quality. Gram. = grammatical error; Rep. = repetition; Incoher. = incoherence; Trunc. = truncation; Unnat. = unnatural phrasing; OA = Overall. 
+
+Linguistic Quality Evaluation. To assess whether CHAIR results are confounded by surface-level generation quality, we evaluate all generated cap-tions using GPT-4o-mini as a judge across five error types: grammatical error, repetition, inco-herence, truncation, and unnatural phrasing, using deterministic decoding. The prompt is provided in Appendix A.7. Results are presented in Table 3. Unnatural phrasing is the primary dLVLM-specific linguistic failure, though not universal: MMaDA-M (0.4%), LaViDa-LLaDA (1.4%), and Dream-VL (0.6%) are competitive with AR base-lines (0.2–0.6%), while LaViDa-Dream (6.4% grammatical error, 12.0% unnatural phrasing) and Dimple (3.0%, 10.2%) show elevated rates. In-coherence is negligible across all models (0.0– 0.2%). Truncation reveals a complementary limitation of AR decoding under fixed budgets: LLaVA-Next truncates 69.2% of captions and InternVL2.5 27.0% under max_new_tokens=128 ,while dLVLMs rarely truncate (0.0–6.0%). We report Overall −T for cross-paradigm comparison: AR models achieve 0.6–2.6% and dLVLMs range from 1.2% (Dream-VL) to 13.8% (Dimple). 
+
+Effect of Denoising Steps on Generation Quality. 
+
+To examine how denoising steps affect hallucina-tion and linguistic quality, we evaluate LaViDa-LLaDA and Dream-VL with step size reduced to half (128 vs. 64). Results are shown in Ta-bles 2 and 3. Reducing steps causes dramatic linguistic degradation : LaViDa-LLaDA’s over-all error rate rises from 3.0% to 87.6% (grammat-ical: 1.0% →60.0%; repetition: 2.4% →64.6%), while Dream-VL also degrades substantially (1.2% to 43.8%). Hallucination rates are less sensitive: LaViDa-LLaDA increases marginally (CHAIR I:18.43% →18.87%), and Dream-VL’s apparent im-provement (11.69% →10.06%) is accompanied by a substantial caption length reduction (76.4 →55.5 words), suggesting shorter outputs rather than im-proved grounding. These results confirm that re-ducing denoising steps primarily degrades linguis-tic quality, while hallucination reflects grounding properties established during training.                        
+
+> Model Decoding CHAIR I↓CHAIR S↓Ling. Error ↓
+> Dimple Diffusion 19.59 34.49 13.8% Dimple AR-style 16.23 31.60 2.0 %LaViDa-L Diffusion 18.43 30.91 3.0% LaViDa-L AR-style 17.50 30.23 1.2 %
+
+Table 4: CHAIR hallucination and overall linguistic error rate (excluding truncation) under default diffusion vs. AR-style decoding, using the same model weights with no retraining. Ling. Error = overall linguistic error rate excluding truncation. 
+
+AR-Style Decoding Ablation. To investigate whether the diffusion commitment order indepen-dently drives hallucination and linguistic quality, we apply AR-style decoding (left-to-right, one to-5ken per step) to Dimple and LaViDa-LLaDA using the same model weights with no retraining, iso-lating the decoding paradigm while holding archi-tecture, training data, and vision encoder constant. Results are presented in Table 4. 
+
+AR-style decoding substantially improves lin-guistic quality. Dimple’s error rate drops from 13.8% to 2.0%, within the AR baseline range (0.6– 2.6%); LaViDa-LLaDA similarly improves from 3.0% to 1.2%, matching the best AR baselines. However, hallucination persists: CHAIR I improves only modestly from 19.59% to 16.23% for Dimple and from 18.43% to 17.50% for LaViDa-LLaDA, both remaining substantially above InternVL2.5-8B (12.63%) and Dream-VL (11.69%). The pat-tern is consistent across both models: decoding order governs surface fluency, while hallucination rates are largely invariant to it. This dissociation suggests hallucination reflects grounding-related challenges rather than generation artifacts, consis-tent with Dream-VL’s low hallucination reflecting better visual grounding despite its diffusion back-bone. 
+
+Qualitative Analysis. Figure 1 shows an illustra-tive example of per-token confidence and commit step for a LaViDa-LLaDA caption. Hallucinated tokens clock (step 127) and vase (step 126) are committed at late denoising steps with low confi-dence, as is posters (step 128), the latest and least confident token in the sequence. In contrast, the grounded lantern (step 40), despite similarly low confidence, is committed substantially earlier. This suggests that late commit step combined with low confidence may jointly indicate hallucination risk in dLVLMs. Appendix A.1 provides additional examples across distinct image types. 
+
+Quantitative Validation of the Commit-Step Sig-nal. To move beyond the qualitative pattern in Figures 1, 2 and 3, we quantitatively validate the commit-step hallucination signal using the CHAIR annotations from Section 4.1. For each generated caption we treat CHAIR-flagged hallucinated ob-ject tokens as positives and grounded object tokens as negatives, and evaluate commit step and per-token confidence, individually and jointly via a 5-fold cross-validated logistic regression, as hal-lucination predictors, reporting ROC-AUC and PR-AUC over the 500-image MSCOCO caption set across two backbones (LaViDa-LLaDA and LaViDa-Dream). Commit step and confidence separate halluci-nated from grounded object tokens consistently across both backbones (Table 5). Hallucinated ob-jects commit substantially later, a 22 to 26 step gap on a 128-step budget, and with lower confi-dence, yielding above-chance ROC-AUC on both models, with commit step the stronger single fea-ture (0.699 and 0.667). PR-AUC for commit step reaches 0.374 and 0.261 respectively, roughly dou-ble the corresponding base rate (0.190 and 0.152), confirming the separation survives class imbalance. The two features are correlated, since late commits tend to be low-confidence, which explains why the joint model offers little gain over commit step alone. We treat this as evidence of a hallucination-risk pat-tern specific to diffusion generation, clearly distin-guishable from standard autoregressive decoding, since AR generation has no analogous commit-step trajectory at any stage. 
+
+Attention-Based Analysis. To further investigate the grounding failure hypothesis, we extracted at-tention weights from answer token positions to image patch tokens in LaViDa-LLaDA across three representative layers (8, 16, 24), examining mean attention, peak attention, and entropy for hallu-cinated versus grounded tokens at their specific commit steps. We found no statistically distin-guishable difference between the two categories across any layer or aggregation strategy: mean attention values were nearly identical (0.0005 vs. 0.0005) and entropy showed no consistent pattern (4.41 vs. 4.40). This null result does not rule out grounding failures as a contributing factor; atten-tion weights aggregated over all image patches may be too coarse to capture the spatially localized or cross-layer grounding signals that distinguish hal-lucinated from grounded tokens. The commit-step and confidence trajectory remain the more discrim-inative signals in this setting. Details are provided in Appendix A.2. 
+
+4.2 Demographic Bias Evaluation 
+
+We evaluate all models on gender classifica-tion and racial recognition using the FairFace dataset (Karkkainen and Joo, 2021), which pro-vides balanced coverage across seven racial groups (Black, East Asian, Indian, Latino Hispanic, Mid-dle Eastern, Southeast Asian, and White) and two genders. We construct a balanced subset of 2,000 images from the FairFace validation split (142 im-ages per race × gender group) under two face-crop padding settings: padding 0.25 (tight crop, isolat-ing facial features) and padding 1.25 (loose crop, re-taining background context). The evaluation proto-6Model Obj. Base Step (H/G) Conf. (H/G) AUC step AUC conf AUC joint PR-AUC step                 
+
+> LaViDa-L 968 0.190 63.8 / 37.6 0.533 / 0.615 0.699 0.610 0.688 0.374
+> LaViDa-D 999 0.152 64.3 / 42.2 0.579 / 0.685 0.667 0.626 0.673 0.261
+> Table 5: Commit step and confidence as hallucination predictors on CHAIR object tokens. H/G denotes mean commit step and mean confidence for hallucinated vs. grounded tokens. Higher commit step and lower confidence indicate hallucination; scores are oriented accordingly. Best results are in bold.
+
+col is provided in Appendix A.3. Full results includ-ing gender and per-race accuracy, the female–male accuracy gap, per-model accuracy change across padding settings ( ∆), and systematic misclassifica-tion patterns are provided in Appendices A.4–A.5. 
+
+Output Validity. To rule out evaluation artifacts, we verify that near-zero subgroup accuracies reflect genuine misclassification rather than parsing fail-ure. Across all diffusion models, every prediction at both padding settings parses to a valid FairFace label (0 of 1,988 non-matching outputs per run, for every model), so no accuracy is lost to unparseable output. Table 8 confirms these are confident mis-classifications into other valid categories rather than malformed responses: MMaDA-MixCoT’s 0.00% on Latino Hispanic and Southeast Asian at padding 0.25 consists entirely of predictions dis-tributed across other valid race labels (Latino His-panic to Indian 35%, White 26%; Southeast Asian to White 33%, Indian 30%). 
+
+Overall Race Recognition Performance. AR models consistently outperform dLVLMs on race recognition. InternVL2.5-8B achieves the high-est overall accuracy at padding 1.25 (69.32%), followed by Qwen2.5-VL-7B (68.41%). Most dLVLMs lag significantly behind, with LaViDa-LLaDA reaching 50.65% at best and MMaDA-MixCoT barely exceeding 23%. The exception is Dream-VL (68.11%), approaching AR-level per-formance, suggesting its stronger backbone yields richer racial feature representations. 
+
+Systematic Failure on Underrepresented Racial Groups. All models struggle with Latino Hispanic and Southeast Asian categories. MMaDA-MixCoT achieves 0% on both groups at padding 0.25, while LaViDa-LLaDA reaches only 0.35% and 1.06% respectively. Table 8 reveals systematic misclas-sification into more frequent groups: Latino His-panic faces are misclassified as White or Indian, while Southeast Asian faces are predominantly pre-dicted as East Asian (73–84% in LLaVA-1.5-7B and LaViDa-Dream), suggesting a shared bias pat-tern across both AR and diffusion models. 
+
+Context Sensitivity and Divergent Backbone Pat-terns. Loose cropping consistently improves per-formance, with dLVLMs exhibiting larger sensi-tivity than AR models: LaViDa-LLaDA improves by +10.41% and MMaDA-MixCoT by +13.73% overall, with MMaDA-MixCoT gaining +24.30% on East Asian from context alone, suggesting sub-stantial reliance on background cues for this group. The two LaViDa variants further reveal backbone-specific prototype hierarchies despite sharing the same training pipeline: LaViDa-Dream displays a strong East Asian dominance bias (63% of Latino Hispanic, 84% of Southeast Asian), while LaViDa-LLaDA defaults to Indian and White, achiev-ing higher Indian accuracy (64.08% vs. 25.35%). These divergent misclassification targets, arising from models that share the training pipeline and vi-sion encoder but differ in backbone (Dream-7B vs. LLaDA-8B), are consistent with the diffusion back-bone influencing which racial prototypes dominate predictions. 
+
+Gender Bias: Opposite Polarity Across Model Families. Gender classification reveals a diver-gence in bias polarity at tight crop. AR mod-els exhibit small, stable gaps (LLaVA-1.5-7B: 
+
+−2.71; InternVL2.5-8B: −1.00; Qwen2.5-VL-7B: +3.22), while dLVLMs exhibit much larger and more variable gaps. LaViDa-Dream and LaViDa-LLaDA strongly favor females (Gap = +13.48 and +10.26), while MMaDA-MixCoT misclassifies fe-males more often (Gap = −23.34), with female accuracy at 68.51% versus 91.85% for males. This asymmetry nearly vanishes at loose crop (Gap = +0.10), and LaViDa-Dream’s gap narrows from +13.48 to +5.84 and LaViDa-LLaDA’s from +10.26 to +3.73, suggesting dLVLMs encode insufficient discriminative signal for female facial features without contextual cues. AR models show neg-ligible padding sensitivity ( ∆ < 4% ), indicating more robust gender representations. 
+
+Label Ambiguity and Its Limits. FairFace labels reflect annotator-perceived race, which is inher-ently ambiguous for several categories, notably Latino Hispanic and Southeast Asian, both of which overlap visually with neighboring groups. Accuracy figures in this evaluation should ac-cordingly be read as agreement with FairFace’s 7perceived-race annotations rather than as ground-truth identity. This ambiguity, however, does not account for the scale of the failures observed: the systematic, backbone-dependent absorption pat-terns in Table 8 (e.g., LaViDa-Dream routing 63– 84% of Latino Hispanic and Southeast Asian faces into East Asian, versus LaViDa-LLaDA routing the same groups into Indian and White) are model-specific and directionally inconsistent with a shared annotation artifact, indicating the failures reflect genuine model bias beyond label ambiguity.                                                                                                                                                                                                 
+
+> Model Option Order Equal Long Equal Short Shorter Correct Longer Correct CUB With Class Name
+> LLaDA-V ABCD 60.70 60.10 37.40 92.50 LaViDa-L ABCD 47.40 48.60 11.50 96.60
+> DCBA 45.70 48.80 13.40 94.80 LaViDa-D ABCD 45.10 46.50 9.00 92.60 MMaDA-M ABCD 37.40 40.80 11.40 91.70 Dream-VL ABCD 68.20 68.40 42.10 93.00 Dimple ABCD 54.30 54.70 26.80 87.10
+> CUB Without Class Name
+> LLaDA-V ABCD 63.60 51.30 47.00 82.30 LaViDa-L ABCD 51.90 48.10 6.40 97.70
+> DCBA 52.30 45.50 9.40 97.20 LaViDa-D ABCD 38.60 48.90 2.80 96.50 MMaDA-M ABCD 39.00 42.10 12.80 89.70 Dream-VL ABCD 63.00 57.90 30.70 84.40 Dimple ABCD 50.00 49.90 19.70 80.90
+> Dog With Class Name
+> LLaDA-V ABCD 57.83 55.33 45.50 82.67 DCBA 55.67 54.00 44.83 82.67 LaViDa-L ABCD 48.50 44.33 21.67 92.67 LaViDa-D ABCD 59.00 52.50 21.50 91.67 DCBA 59.00 54.67 22.50 92.83
+> MMaDA-M ABCD 37.33 37.33 24.50 72.17 DCBA 41.17 37.83 29.33 67.67 Dream-VL ABCD 72.33 66.50 56.00 87.33 DCBA 71.33 66.33 55.00 85.50
+> Dog Without Class Name
+> LLaDA-V ABCD 54.17 51.17 33.00 86.67 DCBA 50.17 51.67 28.67 84.17 LaViDa-L ABCD 45.67 45.83 5.33 98.83 LaViDa-D ABCD 48.17 54.83 4.00 98.17 DCBA 45.50 52.17 3.17 99.00
+> MMaDA-M ABCD 38.50 39.67 20.83 81.00 DCBA 33.67 38.17 11.83 81.00 Dream-VL ABCD 62.17 59.67 34.17 88.17 DCBA 56.33 59.67 26.33 89.67
+> Dog (Easy) With Class Name
+> LLaDA-V ABCD 100.00 100.00 100.00 100.00
+> DCBA 99.83 100.00 100.00 100.00
+> LaViDa-L ABCD 100.00 100.00 100.00 100.00
+> DCBA 100.00 100.00 100.00 100.00
+> LaViDa-D ABCD 99.17 99.17 97.50 100.00
+> DCBA 99.17 100.00 98.33 100.00
+> MMaDA-M ABCD 88.33 89.83 79.33 96.83 DCBA 87.17 89.00 76.67 96.17 Dimple ABCD 100.00 100.00 99.50 100.00
+
+Table 6: Performance of diffusion LVLMs in Accuracy (%) across option-length conditions and option-order formats. Best results are in bold. 
+
+4.3 Selection Bias Evaluation 
+
+To evaluate selection bias in dLVLMs, we use hard-difficulty MCQs from the fine-grained visual MCQA benchmark of Atabuzzaman et al. (2025), covering two domains: CUB-200-2011 (200 bird species) (Wah et al., 2011) and Stanford Dogs (120 dog breeds) (Khosla et al., 2011). Using GPT-4o (OpenAI, 2024), we generate four length-controlled variants per question while preserving semantic content: Equal Long , Equal Short ,
+
+Shorter Correct (correct answer short, distractors long), and Longer Correct (correct answer long, distractors short). The latter two conditions directly probe length bias by placing the correct answer at a systematic length disadvantage or advantage, while Equal Long and Equal Short serve as an in-ternal validity check: accuracy differs by roughly 1 to 5 points in most cases, with some larger ex-ceptions (e.g., LLaDA-V and LaViDa-Dream on CUB without class names), indicating that GPT-4o’s rewrites largely preserve the semantic content needed to answer and that length, not precision loss, is the primary driver of the length-bias gap. We evaluate all models with and without explicit class names in the answer options, as class names partially mitigate length bias by providing seman-tic anchors (Atabuzzaman et al., 2025), and under both standard (ABCD) and reversed (DCBA) op-tion orders to control for positional bias. A full comparison with AR baselines is provided in Ta-ble 9 (Appendix A.6). 
+
+Diffusion LVLMs Exhibit Extreme Length Bias. 
+
+Table 6 reveals that most dLVLMs suffer from se-vere length bias across datasets. In the Shorter Correct condition, accuracy collapses dramati-cally: LaViDa-Dream drops to 2.80% on CUB without class names, LaViDa-LLaDA to 6.40%, and MMaDA to 12.80%. Conversely, all models achieve 68–99% in the Longer Correct condition, indicating that dLVLMs overwhelmingly select longer options when visual discrimination is hard. The resulting bias gap exceeds 85 percentage points for LaViDa-LLaDA and LaViDa-Dream without class names. LLaDA-V is a notable exception (37.40% on CUB Shorter Correct with class names, 47.00% without), suggesting its backbone confers greater robustness to length cues. Dimple also shows reduced but non-negligible bias (26.80% Shorter Correct on CUB with class names), indicat-ing its AR-then-diffusion training provides partial mitigation. 8AR LVLMs Are Substantially More Robust. AR models maintain meaningfully higher accuracy un-der the Shorter Correct condition, typically achiev-ing 19–51% on CUB and 16–59% on Dogs with class names. Qwen2.5-VL-7B achieves 50.70% on CUB Shorter Correct with class names, more than four times higher than most dLVLMs, though the gap narrows for weaker AR backbones. This sug-gests AR models integrate visual evidence more reliably against misleading length cues, while most dLVLMs default to length as a dominant heuristic. 
+
+Class Names Reduce But Do Not Eliminate Bias. 
+
+Class names provide modest improvement on Dogs (e.g., LaViDa-LLaDA Shorter Correct improves from 5.33% to 21.67%) but negligible benefit on CUB, where LaViDa-Dream’s Shorter Correct ac-curacy remains at 9.00% with class names ver-sus 2.80% without. AR models benefit more con-sistently, suggesting dLVLMs lack the semantic grounding needed to leverage class information against competing length signals. 
+
+Length Bias Emerges Under Visual Uncertainty. 
+
+Comparing ABCD and DCBA orderings reveals differences in Shorter Correct and Longer Cor-rect accuracy that are small in most cases (typi-cally within 0–3 percentage points), though a few conditions show larger gaps (up to 9 points, e.g., MMaDA-MixCoT and Dream-VL on Dogs with-out class names), indicating that option length, rather than position, is the primary driver of the bias. The Dog (Easy) results further support this: most dLVLMs achieve high accuracy when distrac-tors come from dissimilar categories (87–100%, with MMaDA-MixCoT lower at 76–97%), but per-formance collapses under fine-grained conditions (Hard). This suggests dLVLMs fall back on length heuristics when visual evidence is insufficient, a pattern that mirrors AR model findings (Atabuzza-man et al., 2025) but is far more pronounced. 
+
+Mechanistic Analysis of Length Bias. To investi-gate why dLVLMs exhibit such extreme length bias, we analyze the denoising trajectory of LaViDa-LLaDA on the Shorter Correct and Longer Correct conditions of CUB (1,000 examples each). MCQA responses are short (a single letter A–D), so we use 8 denoising steps over a response buffer of 8 to-kens; padding positions are the non-answer slots in this buffer, which the model fills before committing the answer letter. In the Longer Correct condition, the model achieves 97.70% accuracy with mean confidence 0.96 at step 0, and the step-0 prediction matches the final answer in 99.80% of cases. In the Shorter Correct condition, accuracy collapses to 6.40%, while the step-0 prediction still matches the final answer in 97.30% of cases, indicating that denoising rarely revises the model’s initial choice. Since final accuracy is only 6.40%, at least 90.9% of examples (909 of 1,000) have a step-0 predic-tion that already selects the longer distractor and is never revised by any subsequent denoising step. The mean commit step for the answer position is nonetheless the final step in both conditions, de-spite the prediction being effectively determined at step 0. These findings reveal that length bias is a one-shot prior: in the vast majority of cases, the step-0 prediction already favors the longer option, and denoising does not revise it. 
+
+5 Conclusion 
+
+We presented the first systematic reliability evalua-tion of dLVLMs, benchmarking six diffusion mod-els against competitive AR baselines across four reliability dimensions. Our results reveal qualita-tively distinct and, in several cases, more severe re-liability challenges than AR counterparts: dLVLMs trend toward a no-bias pattern on binary visual queries; they achieve competitive open-ended hal-lucination yet exhibit degraded linguistic quality in several backbones; they collapse to near-zero accuracy on some underrepresented racial groups with opposite-polarity gender bias; and they exhibit dramatically larger length-bias gaps in MCQA, as-sociated with a one-shot length prior established at the first denoising step. Late-committed, low-confidence tokens show a consistent pattern with hallucinated content, a signal unique to diffusion generation, which we quantitatively validate across two backbones (ROC-AUC up to 0.699 on CHAIR object tokens). These patterns vary across dif-fusion backbones, associated with the generative paradigm as a contributing factor alongside train-ing data and scale. We hope these findings motivate reliability-aware evaluation and training strategies for diffusion-based multimodal generation. 
+
+Limitations 
+
+Our study provides the first systematic reliabil-ity evaluation of dLVLMs, and we acknowledge several limitations. First, while we conduct con-trolled comparisons (Dimple vs. LLaVA-Next shar-ing identical training data, AR-style decoding ab-lations on Dimple and LaViDa-LLaDA, and back-bone comparisons within the LaViDa pipeline), full 9isolation of the generative mechanism from con-founds such as vision encoders and model scale requires more extensive ablations. Second, our lin-guistic quality evaluation relies on GPT-4o-mini as judge and has not been validated against human annotations. Third, our evaluation covers four reli-ability dimensions and does not extend to other im-portant failure modes such as toxicity, sycophancy, or temporal reasoning. We hope this framework serves as a foundation for developing reliability-aware training objectives and decoding strategies for diffusion-based multimodal generation. 
+
+Acknowledgments 
+
+We acknowledge Advanced Research Computing (ARC) at Virginia Tech for providing the compu-tational resources and technical support that con-tributed to the results reported in this paper. We thank the reviewers for their constructive feedback, which helped improve this paper. 
+
+References 
+
+Md Atabuzzaman, Ali Asgarov, and Chris Thomas. 2025. Benchmarking and mitigating mcqa selection bias of large vision-language models. In Proceed-ings of the 2025 Conference on Empirical Methods in Natural Language Processing , pages 33536–33550. Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wen-bin Ge, Sibo Song, Kai Dang, Peng Wang, Shi-jie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, and 8 oth-ers. 2025. Qwen2.5-vl technical report. Preprint ,arXiv:2502.13923. Yejin Bang, Samuel Cahyawijaya, Nayeon Lee, Wen-liang Dai, Dan Su, Bryan Wilie, Holy Lovenia, Ziwei Ji, Tiezheng Yu, Willy Chung, and 1 others. 2023. A multitask, multilingual, multimodal evaluation of chatgpt on reasoning, hallucination, and interactivity. In Proceedings of the 13th international joint con-ference on natural language processing and the 3rd conference of the asia-pacific chapter of the associa-tion for computational linguistics (volume 1: Long papers) , pages 675–718. Lukas Berglund, Meg Tong, Maximilian Kaufmann, Mikita Balesni, Asa Stickland, Tomek Korbak, and Owain Evans. 2024. The reversal curse: LLMs trained on “A is B” fail to learn “B is A”. In In-ternational Conference on Learning Representations ,volume 2024, pages 18623–18642. Shenxu Chang, Junchi Yu, Weixing Wang, Yongqiang Chen, Jialin Yu, Philip Torr, and Jindong Gu. 2026. Tracedet: Hallucination detection from the decoding trace of diffusion large language models. In Inter-national Conference on Learning Representations ,volume 2026, pages 9472–9491. Zhe Chen, Weiyun Wang, Yue Cao, Yangzhou Liu, Zhangwei Gao, Erfei Cui, Jinguo Zhu, Shenglong Ye, Hao Tian, Zhaoyang Liu, Lixin Gu, Xuehui Wang, Qingyun Li, Yiming Ren, Zixuan Chen, Jiapeng Luo, Jiahao Wang, Tan Jiang, Bo Wang, and 23 others. 2025. Expanding performance boundaries of open-source multimodal models with model, data, and test-time scaling. Preprint , arXiv:2412.05271. Wenliang Dai, Junnan Li, Dongxu Li, Anthony Meng Huat Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale Fung, and Steven Hoi. 2023. In-structblip: Towards general-purpose vision-language models with instruction tuning. Advances in Neural Information Processing Systems , 37. Kimmo Karkkainen and Jungseock Joo. 2021. Fair-face: Face attribute dataset for balanced race, gender, and age for bias measurement and mitigation. In 
+
+Proceedings of the IEEE/CVF winter conference on applications of computer vision , pages 1548–1558. Aditya Khosla, Nityananda Jayadevaprakash, Bangpeng Yao, and Fei-Fei Li. 2011. Novel dataset for fine-grained image categorization: Stanford dogs. In Proc. CVPR workshop on fine-grained visual categoriza-tion (FGVC) , volume 2. Shufan Li, Konstantinos Kallidromitis, Hritik Bansal, Akash Gokul, Yusuke Kato, Kazuki Kozuka, Jason Kuen, Zhe Lin, Kai-Wei Chang, and Aditya Grover. 2026. Lavida: A large diffusion language model for multimodal understanding. Advances in Neural Information Processing Systems , 38:105101–105134. Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy Liang, and Tatsunori B. Hashimoto. 2022. Diffusion-lm improves controllable text generation. Advances in Neural Information Processing Systems , 35:4328– 4343. Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. 2023. Eval-uating object hallucination in large vision-language models. In Proceedings of the 2023 conference on empirical methods in natural language processing ,pages 292–305. Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. 2014. Microsoft coco: Common objects in context. In European confer-ence on computer vision , pages 740–755. Springer. Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. 2024. Improved baselines with visual instruc-tion tuning. In Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition ,pages 26296–26306. Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual instruction tuning. Advances in Neural Information Processing Systems , 36. 
+
+10 Xiaoran Liu, Yuerong Song, Zhigeng Liu, Zengfeng Huang, Qipeng Guo, Ziwei He, and Xipeng Qiu. 2026. Longllada: Unlocking long context capabil-ities in diffusion llms. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 40, pages 32186–32194. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. 2026. Large language dif-fusion models. Advances in Neural Information Pro-cessing Systems , 38:50608–50646. OpenAI. 2024. Gpt-4o system card. arXiv preprint arXiv:2410.21276 .Pouya Pezeshkpour and Estevam Hruschka. 2024. Large language models sensitivity to the order of op-tions in multiple-choice questions. In Findings of the Association for Computational Linguistics: NAACL 2024 , pages 2006–2017. Anna Rohrbach, Lisa Anne Hendricks, Kaylee Burns, Trevor Darrell, and Kate Saenko. 2018. Object hallu-cination in image captioning. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing , pages 4035–4045. C. Wah, S. Branson, P. Welinder, P. Perona, and S. Be-longie. 2011. The caltech-ucsd birds-200-2011 dataset. Technical Report CNS-TR-2011-001, Cali-fornia Institute of Technology. Jialu Wang, Yang Liu, and Xin Wang. 2021. Are gender-neutral queries really gender-neutral? mitigating gen-der bias in image search. In Proceedings of the 2021 Conference on Empirical Methods in Natural Lan-guage Processing , pages 1995–2008. Ling Yang, Ye Tian, Bowen Li, Xinchen Zhang, Ke Shen, Yunhai Tong, and Mengdi Wang. 2025. Mmada: Multimodal large diffusion language mod-els. In Advances in Neural Information Process-ing Systems , volume 38, Main Conference, pages 138867–138907. Curran Associates, Inc. Jiacheng Ye, Shansan Gong, Jiahui Gao, Junming Fan, Shuang Wu, Wei Bi, Haoli Bai, Lifeng Shang, and Lingpeng Kong. 2025a. Dream-VL & Dream-VLA: Open vision-language and vision-language-action models with diffusion language model backbone. 
+
+arXiv preprint arXiv:2512.22615 .Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. 2025b. Dream 7b: Diffusion large language models. 
+
+Preprint , arXiv:2508.15487. Qinghao Ye, Haiyang Xu, Guohai Xu, Jiabo Ye, Ming Yan, Yiyang Zhou, Junyang Wang, Anwen Hu, Pengcheng Shi, Yaya Shi, Chenliang Li, Yuan-hong Xu, Hehong Chen, Junfeng Tian, Qi Qian, Ji Zhang, Fei Huang, and Jingren Zhou. 2023. mPLUG-Owl: Modularization empowers large lan-guage models with multimodality. arXiv preprint arXiv:2304.14178 .Zebin You, Shen Nie, Xiaolu Zhang, JUN ZHOU, Zhiwu Lu, Ji-Rong Wen, and Chongxuan Li. 2026. Llada-v: Large language diffusion models with visual instruction tuning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition , pages 10093–10105. Runpeng Yu, Xinyin Ma, and Xinchao Wang. 2025. Dimple: Discrete diffusion multimodal large lan-guage model with parallel decoding. Preprint ,arXiv:2505.16990. Guangxiang Zhao, Saier Hu, Xiaoqi Jian, Wu Jinzhu, Yuhan Wu, Lin Sun, and Xiangzheng Zhang. 2025. Large language models badly generalize across op-tion length, problem types, and irrelevant noun re-placements. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Process-ing , pages 26825–26834. Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, and 1 others. 2023. Judging llm-as-a-judge with mt-bench and chatbot arena. Advances in Neural Information Pro-cessing Systems , 36:46595–46623. Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. 2024. Minigpt-4: Enhanc-ing vision-language understanding with advanced large language models. In International Conference on Learning Representations (ICLR) , volume 2024, pages 18378–18394. Fengqi Zhu, Zebin You, Yipeng Xing, Zenan Huang, Lin Liu, Yihong Zhuang, Guoshan Lu, Kangyu Wang, Xudong Wang, Lanning Wei, Hongrui Guo, Jiaqi Hu, Wentao Ye, Tieyuan Chen, Chenchen Li, Chengfu Tang, Haibo Feng, Jun Hu, Jun Zhou, and 7 others. 2025. LLaDA-MoE: A sparse moe diffusion lan-guage model. Preprint , arXiv:2509.24389. 
+
+A Appendix 
+
+This section contains the following topics in detail. • Additional Qualitative Hallucination Analysis (Appendix A.1) • Attention-Based Analysis (Appendix A.2) • Demographic Bias Evaluation Protocol (Ap-pendix A.3) • Demographic Bias Evaluation Results (Ap-pendix A.4) • Demographic Bias Confusion Summary (Ap-pendix A.5) • Selection Bias Comparison (Appendix A.6) • Linguistic Quality Evaluation Prompt (Ap-pendix A.7) 11 In the image, a person is standing in a kitchen, stirring a large pot on the stove. The pot is filled with noodles, and the person is using a wooden spoon to stir the contents. The kitchen appears to be well-equipped for cooking, with various pots and pans visible on the stove. The person is wearing a green shirt, and the 
+
+kitchen is filled with other items such as a bowl, a cup, and a vase. The image 
+
+is taken from a low angle, providing a close-up view of the person's actions 
+
+while stirring the pot. The overall scene suggests a busy and active cooking 
+
+environment in the kitchen. 
+
+Describe the image.  Diffusion 
+
+LVLM In 
+
+> (5)
+> the
+> (8)
+> image
+> (6)
+> ,
+> (7)
+> a
+> (9)
+> person
+> (10)
+> is
+> (11)
+> standing
+> (14)
+> in
+> (13)
+> a
+> (15)
+> kitchen
+> (12)
+> ,
+> (16)
+> stirring
+> (17)
+> a
+> (18)
+> large
+> (20)
+> pot
+> (19)
+> on
+> (21)
+> the
+> (25)
+> stove
+> (22)
+> .
+> (23)
+> The
+> (24)
+> pot
+> (26)
+> is
+> (27)
+> filled
+> (28)
+> with
+> (29)
+> noodles
+> (31)
+> ,
+> (30)
+> and
+> (32)
+> the
+> (33)
+> person
+> (35)
+> is
+> (34)
+> using
+> (37)
+> a
+> (36)
+> wooden
+> (45)
+> spoon
+> (44)
+> to
+> (38)
+> stir
+> (39)
+> the
+> (42)
+> contents
+> (40)
+> .
+> (41)
+> The
+> (43)
+> kitchen
+> (46)
+> appears
+> (47)
+> to
+> (48)
+> be
+> (49)
+> well
+> (50)
+> -equipped
+> (51)
+> for
+> (53)
+> cooking
+> (52)
+> ,
+> (54)
+> with
+> (55)
+> various
+> (56)
+> pots
+> (58)
+> and
+> (57)
+> pans
+> (59)
+> visible
+> (63)
+> on
+> (61)
+> the
+> (60)
+> stove
+> (62)
+> .
+> (64)
+> The
+> (65)
+> person
+> (66)
+> is
+> (67)
+> wearing
+> (68)
+> a
+> (69)
+> green
+> (70)
+> shirt
+> (71)
+> ,
+> (72)
+> and
+> (73)
+> the
+> (74)
+> kitchen
+> (75)
+> is
+> (76)
+> filled
+> (78)
+> with
+> (77)
+> other
+> (105)
+> items
+> (94)
+> such
+> (96)
+> as
+> (95)
+> a
+> (98)
+> bowl
+> (127)
+> ,
+> (97)
+> a
+> (100)
+> cup
+> (128)
+> ,
+> (99)
+> and
+> (101)
+> a
+> (103)
+> vase
+> (128)
+> .
+> (102)
+> The
+> (104)
+> image
+> (106)
+> is
+> (107)
+> taken
+> (109)
+> from
+> (110)
+> a
+> (111)
+> low
+> (114)
+> angle
+> (112)
+> ,
+> (113)
+> providing
+> (125)
+> a
+> (123)
+> close
+> (124)
+> -up
+> (122)
+> view
+> (119)
+> of
+> (120)
+> the
+> (116)
+> person
+> (117)
+> 's
+> (118)
+> actions
+> (126)
+> while
+> (121)
+> stirring
+> (115)
+> the
+> (90)
+> pot
+> (108)
+> .
+> (86)
+> The
+> (87)
+> overall
+> (88)
+> scene
+> (85)
+> suggests
+> (89)
+> a
+> (84)
+> busy
+> (93)
+> and
+> (83)
+> active
+> (92)
+> cooking
+> (82)
+> environment
+> (91)
+> in
+> (80)
+> the
+> (79)
+> kitchen
+> (81)
+> .
+> (3)
+> <|im_end|>
+> (2)
+> \n
+> (4)
+
+Token Confidence (colour) and Commit Step (parentheses) 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Confidence
+
+Figure 2: Qualitative hallucination analysis on a LaViDa-Dream caption (MSCOCO). Top: The model generates a fluent description of a kitchen cooking scene, but hallucinates objects absent from the image ( bowl , cup , vase ). 
+
+Bottom: Per-token confidence (colour) and commit step (parentheses). All three hallucinated tokens are committed at the latest denoising steps with the lowest confidence in the sequence: bowl (step 127), cup (step 128), and vase 
+
+(step 128), all shown in red. In contrast, accurately grounded tokens such as person (step 10), kitchen (step 12), 
+
+stirring (step 17), and noodles (step 31) are committed early with high confidence (dark green). The clustering of all three hallucinated objects at steps 127–128 with near-zero confidence, while visually accurate content words are committed in the first 35 steps, provides strong evidence that late commit step combined with low confidence jointly indicate hallucination risk in diffusion-based generation. The image captures a moment of a black and white cat seemingly engrossed in 
+
+the use of a laptop. The cat, with its front paws resting on the keyboard, 
+
+appears to be typing or interacting with the screen. The laptop, placed on a 
+
+desk, is accompanied by a monitor and a mouse, suggesting a typical 
+
+workspace setup. The background features a whiteboard and a clock, adding to 
+
+the office ambiance. The cat's position on the keyboard, along with the use of 
+
+the laptop, creates a humorous and unexpected scene. The image evokes a 
+
+sense of curiosity and amusement, as the cat seems to be mimicking human 
+
+behavior. Describe the image.  Diffusion 
+
+LVLM The 
+
+> (2)
+> image
+> (1)
+> captures
+> (6)
+> a
+> (3)
+> moment
+> (8)
+> of
+> (7)
+> a
+> (9)
+> black
+> (10)
+> and
+> (13)
+> white
+> (12)
+> cat
+> (11)
+> seemingly
+> (14)
+> eng
+> (17)
+> ross
+> (16)
+> ed
+> (15)
+> in
+> (18)
+> the
+> (19)
+> use
+> (39)
+> of
+> (20)
+> a
+> (21)
+> laptop
+> (22)
+> .
+> (24)
+> The
+> (23)
+> cat
+> (25)
+> ,
+> (26)
+> with
+> (27)
+> its
+> (28)
+> front
+> (30)
+> paws
+> (29)
+> resting
+> (33)
+> on
+> (31)
+> the
+> (32)
+> keyboard
+> (35)
+> ,
+> (34)
+> appears
+> (36)
+> to
+> (37)
+> be
+> (38)
+> typing
+> (40)
+> or
+> (41)
+> interacting
+> (43)
+> with
+> (44)
+> the
+> (42)
+> screen
+> (47)
+> .
+> (45)
+> The
+> (46)
+> laptop
+> (48)
+> ,
+> (49)
+> placed
+> (55)
+> on
+> (51)
+> a
+> (52)
+> desk
+> (50)
+> ,
+> (53)
+> is
+> (54)
+> accompanied
+> (57)
+> by
+> (56)
+> a
+> (58)
+> monitor
+> (70)
+> and
+> (59)
+> a
+> (60)
+> mouse
+> (69)
+> ,
+> (61)
+> suggesting
+> (68)
+> a
+> (62)
+> typical
+> (64)
+> workspace
+> (63)
+> setup
+> (66)
+> .
+> (65)
+> The
+> (67)
+> background
+> (71)
+> features
+> (73)
+> a
+> (72)
+> white
+> (75)
+> board
+> (74)
+> and
+> (76)
+> a
+> (77)
+> clock
+> (96)
+> ,
+> (78)
+> adding
+> (79)
+> to
+> (81)
+> the
+> (80)
+> office
+> (84)
+> ambiance
+> (85)
+> .
+> (82)
+> The
+> (83)
+> cat
+> (87)
+> 's
+> (86)
+> position
+> (89)
+> on
+> (90)
+> the
+> (88)
+> keyboard
+> (91)
+> ,
+> (92)
+> along
+> (94)
+> with
+> (93)
+> the
+> (95)
+> use
+> (109)
+> of
+> (101)
+> the
+> (97)
+> laptop
+> (108)
+> ,
+> (98)
+> creates
+> (100)
+> a
+> (99)
+> humorous
+> (102)
+> and
+> (103)
+> unexpected
+> (128)
+> scene
+> (105)
+> .
+> (104)
+> The
+> (106)
+> image
+> (107)
+> evokes
+> (112)
+> a
+> (110)
+> sense
+> (113)
+> of
+> (111)
+> curiosity
+> (122)
+> and
+> (114)
+> amusement
+> (123)
+> ,
+> (115)
+> as
+> (116)
+> the
+> (117)
+> cat
+> (118)
+> seems
+> (120)
+> to
+> (119)
+> be
+> (121)
+> mim
+> (125)
+> icking
+> (126)
+> human
+> (124)
+> behavior
+> (127)
+> .
+> (4)
+> ·
+> (5)
+
+Token Confidence (colour) and Commit Step (parentheses) 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Confidence
+
+Figure 3: Qualitative hallucination analysis on a LaViDa-LLaDA caption (MSCOCO). Top: The model generates a fluent description of a cat-and-laptop scene, but hallucinates objects absent from the image ( clock , whiteboard ). 
+
+Bottom: Per-token confidence (colour) and commit step (parentheses). Hallucinated tokens clock (step 96, low confidence) and unexpected (step 128, lowest confidence in the sequence) are committed at late denoising steps, whereas accurately grounded tokens such as cat (step 25), laptop (step 22), and keyboard (step 35) are committed early with high confidence. This pattern is consistent with the hypothesis that late commit step combined with low confidence jointly indicate hallucination risk in dLVLMs. 
+
+12 A.1 Additional Qualitative Hallucination Analysis 
+
+Figure 2 presents a second qualitative example us-ing LaViDa-Dream on a kitchen cooking scene, fur-ther examining the commit-step hallucination hy-pothesis introduced in Section 4.1. The model cor-rectly grounds early-committed tokens such as per-son (step 10), kitchen (step 12), stirring (step 17), and noodles (step 31) with high confidence, all consistent with the visual content. In contrast, all three hallucinated objects — bowl (step 127), cup 
+
+(step 128), and vase (step 128) — are committed at the final denoising steps with near-zero confi-dence (red), despite none of these objects being present in the image. The clustering of all three hallucinations at steps 127–128 is particularly strik-ing, suggesting that the model defaults to generic kitchen objects under maximum uncertainty at the end of the denoising process. Figure 3 presents a third example on a distinct scene type (an indoor desk with a cat), where clock 
+
+(step 96, low confidence) is hallucinated while ac-curately grounded tokens such as cat (step 25), lap-top (step 22), and keyboard (step 35) are committed early with high confidence. Together, these three examples across distinct image types, scene cate-gories, and diffusion backbones (LaViDa-LLaDA and LaViDa-Dream) provide convergent evidence that late commit step combined with low confi-dence may generalize as a proxy signal for halluci-nation risk in diffusion-based generation. 
+
+A.2 Attention-Based Analysis 
+
+To further investigate the grounding failure hypoth-esis, we examined whether hallucinated tokens at-tend differently to image patch tokens compared to grounded tokens in LaViDa-LLaDA. We regis-tered forward hooks on query and key projections across three representative layers (8, 16, 24) and extracted attention weights from answer token po-sitions to the 718 image patch positions, running inference without prefix caching to ensure answer tokens attend over the full sequence at every de-noising step. We examined attention both averaged across all denoising steps and targeted specifically at each token’s commit step, computing mean at-tention, peak attention, and entropy over the image region for hallucinated versus grounded tokens. In both settings, we found no meaningful difference between hallucinated and grounded tokens across all three layers: mean attention values were nearly identical (0.0005 vs. 0.0005), entropy showed no consistent pattern (4.41 vs. 4.40), and peak atten-tion was similarly uninformative. Notably, how-ever, the commit steps themselves remain highly discriminative in this setting as well: grounded tokens such as sofa are committed at step 19 (Fig-ure 1), while hallucinated tokens such as clock and 
+
+vase are committed at steps 127 and 126 respec-tively, consistent with the commit-step hypothesis introduced above. This suggests that the commit step and confidence trajectory remain the primary mechanistic signals for hallucination in dLVLMs, while attention patterns over image tokens do not provide additional discriminative power at the indi-vidual token level. A more comprehensive analysis incorporating spatial attention map visualization, head-level examination, and evaluation across mul-tiple models remains an important direction for future work. 
+
+A.3 Demographic Bias Evaluation Protocol 
+
+Gender classification used the completion-style prompt: “Look at the person in this image. Then tell what is the gender of the person. Respond with a single word only, either ‘male’ or ‘female’. Do not write any other words, punctuation, or expla-nation. Answer:” Race recognition was framed as a multiple-choice question presenting all seven FairFace labels (East Asian, Indian, Black, White, Middle Eastern, Latino Hispanic, Southeast Asian) as lettered options (A–G), with the instruction to respond with only the letter of the best answer. For gender, outputs were exact-matched against 
+
+male /female after lowercasing; for race, the se-lected letter was mapped back to the correspond-ing FairFace label. Non-matching outputs were counted as incorrect, making the evaluation conser-vative. Both mappings are deterministic with no ambiguity. 
+
+A.4 Demographic Bias Evaluation Results 
+
+Table 7 presents the full gender and race recog-nition results on FairFace under two face-crop padding settings. Results are reported for all eval-uated models across seven racial groups and two genders, with the female–male accuracy gap and per-model accuracy change across padding settings (∆). Bold entries indicate the best result per col-umn; underlined entries indicate the second best; highlighted entries indicate the best among diffu-sion models. ∆ rows are shaded in gray to dis-tinguish them from primary results. A detailed 13 analysis of these results is provided in Section 4.2. 
+
+A.5 Demographic Bias Confusion Summary 
+
+Table 8 reveals systematic misclassification pat-terns that are consistent with training data bias rather than random error. Across all models, Latino Hispanic and Southeast Asian faces are the most severely misclassified: LaViDa-Dream absorbs 63% of Latino Hispanic faces into East Asian and 84% of Southeast Asian faces into East Asian, while LLaVA-1.5-7B redirects 73% of Southeast Asian faces to East Asian. These absorption pat-terns indicate that models conflate visually prox-imate racial groups into dominant prototypes, a failure mode shared across both AR and diffusion backbones. MMaDA-MixCoT exhibits a distinct pattern, defaulting heavily to White and Indian across nearly all misclassified groups, consistent with its near-zero accuracy on East Asian (7.39%) and Latino Hispanic (0.00%) at tight crop. Backbone-specific confusion patterns further implicate the generative mechanism in shaping racial representations. LaViDa-Dream and LaViDa-LLaDA share the same training pipeline yet show qualitatively different top-2 confusion tar-gets: LaViDa-Dream defaults to East Asian as its dominant misclassification category across In-dian (40%), Latino Hispanic (63%), Middle East-ern (44%), and Southeast Asian (84%) groups, whereas LaViDa-LLaDA instead defaults to Indian and White, achieving substantially higher Indian ac-curacy (64.08% vs. 25.35%) but lower East Asian accuracy (76.76% vs. 97.54%). This divergence, arising purely from the choice of diffusion back-bone (Dream-7B vs. LLaDA-8B), suggests that the generative backbone encodes distinct racial proto-type hierarchies independent of the shared vision encoder and fine-tuning data. 
+
+A.6 Selection Bias Comparison 
+
+Table 9 places dLVLMs and AR baselines side by side under identical length-controlled conditions, enabling a direct assessment of the performance gap. On CUB with class names, Qwen2.5-VL-7B achieves 50.70% accuracy under the Shorter Cor-rect condition—more than four times the accuracy of LaViDa-LLaDA (11.50%) and LaViDa-Dream (9.00%) under the same condition. InternVL2.5-8B (39.20%) and LLaDA-V (37.40%) perform comparably, with LLaDA-V notably outperform-ing the weaker AR baselines LLaVA-v1.5-7B (23.40%) and LLaVA-v1.5-13B (19.10%), suggest-ing that backbone strength – rather than generative paradigm alone – partially determines robustness to length cues. On Dogs with class names, a similar ordering holds: Qwen2.5-VL-7B achieves 58.83% on Shorter Correct versus 21.50–24.50% for most dLVLMs, with Dream-VL (56.00%) as the sole diffusion model approaching AR-level robustness. Without class names, the gap widens further for most dLVLMs: LaViDa-Dream drops to 2.80% on CUB and 4.00% on Dogs, while InternVL2.5-8B retains 37.80% and 38.17% respectively, confirm-ing that the absence of semantic anchors dispropor-tionately harms diffusion models. The Longer Correct condition reveals a com-plementary asymmetry: most dLVLMs exceed 82% accuracy, and several exceed 90%, although MMaDA-MixCoT performs notably worse on Dogs (72.17% with class names and 81.00% with-out). These high accuracies show that dLVLMs are not globally incapable of solving the task; rather, their performance improves substantially when the correct answer is longer than the distractors, con-sistent with a systematic preference for longer op-tions. Notably, LLaDA-V exhibits a less extreme asymmetry, achieving 82.30% on Longer Correct 
+
+and 47.00% on Shorter Correct for CUB without class names. Taken together, these results show that the length bias documented in the main text is not an artifact of evaluating dLVLMs in isola-tion. Strong AR models, particularly Qwen2.5-VL-7B and InternVL2.5-8B, generally retain higher 
+
+Shorter Correct accuracy than most dLVLMs, al-though the gap narrows or reverses in some settings (e.g., LLaDA-V exceeds both AR models on CUB without class names), and most dLVLMs still de-grade more severely overall when the correct an-swer is systematically shorter than its distractors. 
+
+A.7 Linguistic Quality Evaluation Prompt 
+
+To evaluate the linguistic quality of generated cap-tions, we use GPT-4o-mini as a judge with a struc-tured prompt that defines five error types explicitly. We use deterministic decoding (temperature = 0) to ensure consistent and reproducible labeling across all 500 captions per model. The prompt instructs the model to evaluate each caption based solely on its text, without assuming access to the image, and to output exactly five binary values in a fixed order. The full prompt is shown in Figure 4. 14 Type Model Pad. Gender Accuracy (%) Per-Race Accuracy (%) Female Male Overall Gap Black E.Asian Indian Latino M.East SE.Asian White Overall 
+
+AR LLaVA 0.25 94.77 97.48 96.13 −2.71 88.73 98.94 73.24 24.30 22.18 8.45 79.58 56.49 1.25 94.47 97.28 95.88 −2.81 83.80 96.13 74.65 51.76 33.10 19.72 61.97 59.61 
+
+∆ −0.30 −0.20 −0.25 – −4.93 −2.81 +1.41 +27.46 +10.92 +11.27 −17.61 +3.12 
+
+Qwen2.5-VL 0.25 94.67 91.45 93.06 +3.22 88.03 88.73 71.48 21.13 48.94 35.56 86.62 62.93 1.25 98.39 95.37 96.88 +3.02 86.97 87.32 76.06 39.08 54.23 51.06 84.15 68.41 
+
+∆ +3.72 +3.92 +3.82 – −1.06 −1.41 +4.58 +17.95 +5.29 +15.50 −2.47 +5.48 
+
+InternVL2.5 0.25 93.06 94.06 93.56 −1.00 92.61 90.85 52.46 50.00 45.07 19.37 82.04 61.77 1.25 95.88 97.59 96.73 −1.71 90.14 91.90 70.42 53.52 57.75 41.55 79.93 69.32 
+
+∆ +2.82 +3.53 +3.17 – −2.47 +1.05 +17.96 +3.52 +12.68 +22.18 −2.11 +7.55 
+
+Diff. LLaDA-V 0.25 73.14 93.96 83.55 − 20.82 61.97 44.72 24.30 5.28 16.90 39.79 61.97 36.42 1.25 96.98 94.47 95.72 +2.51 54.23 80.99 35.56 23.24 28.87 52.46 57.04 47.48 
+
+∆ +23.84 +0.51 +12.17 – −7.74 +36.27 +11.26 +17.96 +11.97 +12.67 −4.93 +11.06 
+
+LaViDa-D 0.25 96.68 83.20 89.94 +13.48 85.56 97.54 25.35 1.06 16.90 4.58 55.63 40.95 1.25 97.99 92.15 95.07 +5.84 95.07 96.13 49.30 11.62 23.94 5.28 61.97 49.04 
+
+∆ +1.31 +8.95 +5.13 – +9.51 −1.41 +23.95 +10.56 +7.04 +0.70 +6.34 +8.09 
+
+LaViDa-L 0.25 90.44 80.18 85.31 +10.26 68.31 76.76 64.08 0.35 8.80 1.06 64.44 40.54 1.25 97.59 93.86 95.72 +3.73 73.24 80.99 72.89 5.99 20.07 23.24 78.17 50.65 
+
+∆ +7.15 +13.68 +10.41 – +4.93 +4.23 +8.81 +5.64 +11.27 +22.18 +13.73 +10.11 
+
+MMaDA-M 0.25 68.51 91.85 80.18 −23.34 46.48 7.39 34.51 0.00 24.65 0.00 48.59 23.09 1.25 93.96 93.86 93.91 +0.10 52.11 31.69 24.30 2.46 21.13 0.00 35.21 23.84 
+
+∆ +25.45 +2.01 +13.73 – +5.63 +24.30 −10.21 +2.46 −3.52 0.00 −13.38 +0.75 
+
+Dream-VL 0.25 92.76 95.37 94.06 −2.61 89.44 90.49 67.61 42.96 44.72 31.69 79.23 63.73 1.25 97.28 97.08 97.18 +0.20 91.90 93.66 76.06 52.46 47.89 35.92 78.87 68.11 
+
+∆ +4.52 +1.71 +3.12 – +2.46 +3.17 +8.45 +9.50 +3.17 +4.23 −0.36 +4.38 
+
+Dimple 0.25 95.67 88.73 92.20 +6.94 88.73 90.14 36.97 3.17 16.90 11.27 86.27 47.64 1.25 98.49 95.17 96.83 +3.32 92.25 92.61 55.63 25.00 38.38 33.80 79.23 59.56 
+
+∆ +2.82 +6.44 +4.63 – +3.52 +2.47 +18.66 +21.83 +21.48 +22.53 −7.04 +11.92 
+
+Table 7: Gender and race recognition accuracy (%) on FairFace under two face-crop padding settings (0.25 = tight crop; 1.25 = loose crop with background context). Bold = best per column; underline = second best; highlighted = best among diffusion models. Gap = Female − Male accuracy (positive = female-favoring; negative = male-favoring). ∆ = accuracy change from padding 0.25 → 1.25 ; ∆ rows are shaded in gray. E.Asian = East Asian; M.East = Middle Eastern; SE.Asian = Southeast Asian; Latino = Latino Hispanic. 
+
+LLaVA-1.5-7B LaViDa-Dream LaViDa-LLaDA MMaDA-MixCoT True Race #1 #2 #1 #2 #1 #2 #1 #2 
+
+Black Blk(89%) Wht(3%) Blk(86%) EAs(11%) Blk(68%) Ind(27%) Blk(46%) Ind(31%) East Asian EAs(99%) Ind(0%) EAs(98%) Blk(2%) EAs(77%) Wht(9%) Wht(32%) Ind(25%) Indian Ind(73%) EAs(9%) EAs(40%) Ind(25%) Ind(64%) Blk(18%) Ind(35%) Blk(24%) Latino Wht(37%) Lat(24%) EAs(63%) Blk(19%) Ind(37%) Wht(24%) Ind(35%) Wht(26%) Middle Eastern Wht(45%) MEa(22%) EAs(44%) Wht(26%) Wht(35%) Ind(25%) Wht(38%) MEa(25%) 
+
+SE Asian EAs(73%) MEa(14%) EAs(84%) MEa(6%) EAs(42%) Ind(32%) Wht(33%) Ind(30%) White Wht(80%) EAs(13%) Wht(56%) EAs(34%) Wht(64%) EAs(18%) Wht(49%) Ind(18%) 
+
+Table 8: Prediction distribution (top-2 predicted races) for each true racial group on FairFace (padding = 0.25). Cor-rect predictions are bolded . Numbers in parentheses are the fraction of predictions in that category. Abbreviations: 
+
+Blk = Black; EAs = East Asian; Ind = Indian; Lat = Latino Hispanic; MEa = Middle Eastern; SEA = Southeast Asian; Wht = White. All results use padding 0.25 (tight face crop). 
+
+15 Model Type Model Equal Long Equal Short Shorter Correct Longer Correct CUB With Class Name 
+
+AR LLaVA-v1.5-7B 27.50 28.70 23.40 63.50 LLaVA-v1.5-13B 28.30 33.70 19.10 76.40 Qwen2.5-VL-7B 76.10 74.30 50.70 93.90 InternVL-2.5-8B 61.40 60.00 39.20 88.30 Diff. LLaDA-V 60.70 60.10 37.40 92.50 LaViDa-LLaDA 47.40 48.60 11.50 96.60 
+
+LaViDa-Dream 45.10 46.50 9.00 92.60 MMaDA-MixCoT 37.40 40.80 11.40 91.70 Dream-VL 68.20 68.40 42.10 93.00 Dimple 54.30 54.70 26.80 87.10 
+
+CUB Without Class Name 
+
+AR LLaVA-v1.5-7B 26.70 31.20 8.90 96.80 LLaVA-v1.5-13B 39.30 42.60 15.20 93.30 Qwen2.5-VL-7B 64.90 61.00 26.60 93.40 InternVL-2.5-8B 62.50 57.10 37.80 88.30 Diff. LLaDA-V 63.60 51.30 47.00 82.30 LaViDa-LLaDA 51.90 48.10 6.40 97.70 
+
+LaViDa-Dream 38.60 48.90 2.80 96.50 MMaDA-MixCoT 39.00 42.10 12.80 89.70 Dream-VL 63.00 57.90 30.70 84.40 Dimple 50.00 49.90 19.70 80.90 
+
+Dog With Class Name 
+
+AR LLaVA-v1.5-7B 26.67 31.83 16.00 76.67 LLaVA-v1.5-13B 30.83 37.67 20.00 76.83 Qwen2.5-VL-7B 76.33 78.00 58.83 93.33 
+
+InternVL-2.5-8B 59.33 57.67 43.67 79.33 Diff. LLaDA-V 57.83 55.33 45.50 82.67 LaViDa-LLaDA 48.50 44.33 21.67 92.67 LaViDa-Dream 59.00 52.50 21.50 91.67 MMaDA-MixCoT 37.33 37.33 24.50 72.17 Dream-VL 72.33 66.50 56.00 87.33 
+
+Dog Without Class Name 
+
+AR LLaVA-v1.5-7B 30.00 33.67 5.67 99.17 
+
+LLaVA-v1.5-13B 36.67 42.33 14.00 95.67 Qwen2.5-VL-7B 62.83 58.50 33.17 90.83 InternVL-2.5-8B 57.50 58.00 38.17 79.67 Diff. LLaDA-V 54.17 51.17 33.00 86.67 LaViDa-LLaDA 45.67 45.83 5.33 98.83 LaViDa-Dream 48.17 54.83 4.00 98.17 MMaDA-MixCoT 38.50 39.67 20.83 81.00 Dream-VL 62.17 59.67 34.17 88.17 
+
+Table 9: Comparison of diffusion and autoregressive (AR) vision–language models on the CUB and Dog datasets under controlled option-length settings. Results are grouped by whether class names are included in the answer options. Accuracy (%) is reported. 
+
+Linguistic Quality Evaluation Prompt (GPT-4o-mini) 
+
+You are a linguistic quality evaluator for image captions. Your task is to evaluate the caption based ONLY on the text itself (do not assume access to the image). For each error type below, output 1 if the error is clearly present, or 0 if it is absent. Be conservative: only mark 1 if the issue is obvious. Output exactly five numbers separated by commas, in this order, with no extra text. 1. Grammatical error: Subject-verb disagreement, in-correct tense, missing articles, or malformed sen-tence structure. 2. Repetition: Repeated words, phrases, or sentences, or redundant restatement of the same idea. 3. Incoherence: Sentences do not logically connect, or the caption contradicts itself. 4. Truncation: Caption ends abruptly or appears in-complete mid-sentence. 5. Unnatural phrasing: The caption is grammatically correct but sounds awkward, robotic, or not like nat-ural human language. 
+
+Caption: {caption} 
+
+Answer: 
+
+Figure 4: Prompt used for linguistic quality evaluation of generated captions using GPT-4o-mini as judge. The model evaluates each caption across five error types and outputs exactly five binary values (0 or 1) separated by commas. 
+
+16

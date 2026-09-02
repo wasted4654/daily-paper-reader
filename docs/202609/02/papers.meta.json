@@ -1,0 +1,65 @@
+{
+  "label": "2026-09-02",
+  "date": "2026-09-02",
+  "generated_at": "2026-09-02T22:32:20",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/02/2609.00297v1-geometry-aware-latent-autoregressive-generative-model-for-pdes-in-complex-domains",
+      "section": "deep",
+      "title_en": "Geometry-aware Latent Autoregressive Generative Model for PDEs in Complex Domains",
+      "authors": "Zi Wang, Minghui Xu, Tapan Mukerji",
+      "date": "2026-08-31",
+      "pdf": "https://arxiv.org/pdf/2609.00297v1",
+      "score": "8.0",
+      "evidence": "结合流匹配与因果自注意力的潜空间自回归生成模型",
+      "tldr": "针对能源和化学工程中复杂的微米级扭曲几何结构，本文提出了GeoLAMP模型。该模型采用双编码器架构捕捉全局拓扑与局部几何特征，将物理场映射至潜空间，并结合流匹配与因果自注意力Transformer进行块状自回归预测。GeoLAMP在处理复杂几何中的多物理场PDE时表现出极高的稳定性和精度，为科学计算提供了新的几何感知学习范式。",
+      "tags": "query:ardm",
+      "abstract_en": "Solving multiphysics partial differential equations (PDEs) remains a major challenge in scientific computing, especially for highly complex $μ$m-scale tortuous geometries critical to energy and chemical engineering. We address this challenge by proposing a Geometry-aware Latent Autoregressive generative Model for PDEs (GeoLAMP) for solving physics within highly irregular and tortuous structures. GeoLAMP introduces a dual-encoder architecture on graph representations to jointly capture global topology and fine-scale geometric features, enabling an effective transition from real-space fields to compact latent representations. In the latent space, we propose a causal self-attention transformer with flow matching to model temporal dynamics, allowing stable and scalable block-wise autoregressive prediction. A flexible decoder reconstructs high-resolution physical fields on arbitrary points. We establish three multiphysics benchmark datasets in complex geometries, covering reactive flow, heat convection, and elasticity. GeoLAMP consistently achieves the most stable autoregression performance on these datasets, maintaining low errors throughout the entire rollout horizon. Our results provide a systematic study of geometry-aware learning for PDEs in $μ$m-scale complex geometries and offer new insights into block-wise time marching of latent autoregressive PDE modeling via a flow matching framework.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/02/2609.01043v1-from-truncation-to-commitment-persistent-context-in-uniform-discrete-diffusion",
+      "section": "deep",
+      "title_en": "From Truncation to Commitment: Persistent Context in Uniform Discrete Diffusion",
+      "authors": "Satoshi Hayakawa",
+      "date": "2026-09-01",
+      "pdf": "https://arxiv.org/pdf/2609.01043v1",
+      "score": "8.0",
+      "evidence": "具有持久上下文的离散扩散模型序列生成",
+      "tldr": "本研究针对离散扩散模型中所有位置在采样过程中始终可修改的特性，提出了“承诺揭示采样”（CRS）。CRS 是一种无需训练的采样器，它将选定的高置信度标记作为持久上下文锁定，并输入到后续预测中。实验表明，相比传统的 top-p 截断，CRS 能有效降低生成困惑度，并在生成质量与多样性之间取得更好的平衡。",
+      "tags": "query:ardm",
+      "abstract_en": "Uniform-state discrete diffusion models update all tokens in parallel while keeping every position revisable. Even when the commonly used top-$p$ rule leaves only one candidate at a position, that choice affects only the current reverse step and can be revised at the next sampling step. We ask what changes when selected hypotheses instead become persistent context for later predictions. We therefore propose committed reveal sampling (CRS), a training-free sampler that stores selected argmax tokens and inserts them into subsequent model inputs. Our analysis gives a rationale for selecting later and for keeping selected tokens visible. Under the exact forward process, the Bayes error of selecting a clean token cannot increase as noise decreases, while in a simple latent-mode model, keeping the selected token visible helps later parallel predictions agree on the same sequence-level choice. Empirically, paired experiments on Duo-distilled then separate this persistent effect from single-step top-$p$ restriction and scalar temperature scaling. Under the same finalization rule, CRS without top-$p$ truncation reaches lower generative perplexity (GenPPL) than fixed $p=0.95$ and $p=0.9$ baselines across budgets of 8--64 function evaluations (NFE). At 64 NFE, the comparison at matched unigram entropy also gives lower GenPPL for CRS, yielding a more favorable GenPPL--entropy tradeoff. Base Duo shows the same direction in a descriptive comparison, while other diversity and continuation metrics can rank these operating points differently. These results identify support restriction and persistent context as distinct controls of that tradeoff.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/02/2609.01318v1-reliability-challenges-in-diffusion-vision-language-models",
+      "section": "quick",
+      "title_en": "Reliability Challenges in Diffusion Vision-Language Models",
+      "authors": "Md. Atabuzzaman, Chris Thomas",
+      "date": "2026-09-01",
+      "pdf": "https://arxiv.org/pdf/2609.01318v1",
+      "score": "7.0",
+      "evidence": "将基于扩散的视觉语言模型与自回归基准进行对比评估",
+      "tldr": "本研究首次对扩散视觉语言模型（dLVLM）的可靠性进行了系统评估，涵盖幻觉和偏见四个维度。通过对比6个扩散模型与自回归基线，发现dLVLM在二元查询中表现出与自回归模型相反的偏见，且在少数族裔群体上存在严重的准确率塌缩。此外，研究揭示了扩散模型特有的长度偏见及幻觉产生机制，为理解不同生成范式下的模型可靠性提供了重要见解。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion-based Large Vision-Language Models (dLVLMs) have recently emerged as a compelling alternative to autoregressive (AR) LVLMs, offering advantages in parallel decoding, bidirectional context, and controllable generation. Despite rapid progress, their reliability properties remain largely uncharacterized. We present the first systematic reliability evaluation of hallucination and bias in dLVLMs, benchmarking six diffusion models against competitive AR baselines across four dimensions. Our key findings are: (1) dLVLMs reverse the yes-bias of AR models in binary visual queries; (2) they achieve competitive hallucination rates yet exhibit degraded linguistic quality; (3) they collapse to near-zero accuracy on underrepresented racial groups with opposite-polarity gender bias; and (4) they exhibit accuracy collapse in multiple-choice settings when the correct option is shorter than its distractors, associated with a length prior that emerges at the first denoising step. Tokens committed at late denoising steps with low confidence further correlate with hallucinated content, pointing to a mechanistic signal unique to diffusion generation. These patterns vary across model families, suggesting reliability is shaped by the generative paradigm together with training data.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/02/2608.29507v1-denoising-as-projection-constrained-optimization-with-gradient-guided-diffusion",
+      "section": "quick",
+      "title_en": "Denoising as Projection: Constrained Optimization with Gradient-Guided Diffusion",
+      "authors": "Runyu Zhang, Jiawei Zhang, Gioele Zardini, Saurabh Amin, Asuman Ozdaglar",
+      "date": "2026-08-30",
+      "pdf": "https://arxiv.org/pdf/2608.29507v1",
+      "score": "6.0",
+      "evidence": "用于约束优化和规划的梯度引导扩散模型",
+      "tldr": "本研究针对扩散模型在梯度引导优化时易偏离数据几何结构的问题，提出了一种基于投影梯度的扩散更新方法。该方法利用Stein去噪算子作为向数据几何结构的近似投影，将目标函数梯度整合进采样过程，实现了仅需预训练去噪器即可在约束流形上进行优化。理论证明了其在多种几何约束下的收敛性，实验验证了其在保持数据分布特征的同时有效优化目标的能力。",
+      "tags": "query:diffpl",
+      "abstract_en": "Diffusion models are increasingly used not only for sampling from learned data distributions, but also for generating samples that optimize task-specific objectives. A common approach is to guide the reverse diffusion process using gradients of an external objective. However, when the data distribution is supported on a structured feasible set, such as a manifold or a constraint set, gradient guidance can move samples away from the learned data geometry. In this paper, we study a simple projected-gradient-guided diffusion update based on the observation that the Stein denoising operator can act as an approximate projection onto the data geometry. The proposed update incorporates the objective gradient inside the denoising step, yielding an inference-time method that uses only a pretrained denoiser and gradient evaluations. We analyze this update as an inexact projected-gradient method for constrained optimization over learned feasible geometries. Our theory covers three settings: linear manifolds, compact convex feasible sets, and compact Riemannian submanifolds. In all these settings, we prove descent and finite-time convergence guarantees. Numerical experiments support the theoretical interpretation and illustrate how the proposed update balances objective descent with preservation of the learned geometry.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
