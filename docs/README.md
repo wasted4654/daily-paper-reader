@@ -6,34 +6,45 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-02
-- 运行时间：2026-09-02 22:31:54 UTC
+- 最新运行日期：2026-09-03
+- 运行时间：2026-09-03 21:42:13 UTC
 - 运行状态：成功
-- 本次总论文数：4
-- 精读区：2
-- 速读区：2
+- 本次总论文数：8
+- 精读区：3
+- 速读区：5
 
 ### 今日简报（AI）
-今日深挖扩散模型与 PDE 求解前沿，重点攻克复杂几何建模与离散扩散的长上下文持久化难题。
-几何感知潜自回归模型显著提升了复杂域 PDE 模拟精度，而“持久上下文”机制则有效解决了离散扩散中的信息截断。
-推荐关注 AI for Science 或生成式模型可靠性优化的读者重点研读这两项高分成果。
-- 详情：[/202609/02/README](/202609/02/README)
+论文，结合实际需求速读文本填充与信息抽取相关内容。
+        *   *Check:* Practical recommendation based
+- 详情：[/202609/03/README](/202609/03/README)
 
 ### 精读区论文标签
-1. [Geometry-aware Latent Autoregressive Generative Model for PDEs in Complex Domains](/202609/02/2609.00297v1-geometry-aware-latent-autoregressive-generative-model-for-pdes-in-complex-domains)  
+1. [Generation of High-Level Concepts in 3D Scene Graphs via Autoregressive Diffusion](/202609/03/2608.28733v1-generation-of-high-level-concepts-in-3d-scene-graphs-via-autoregressive-diffusion)  
+   标签：评分：10.0/10、query:ardm
+   evidence：统一的基于自回归扩散的图生成模型
+2. [A Study of Conditional Diffusion Models for Open-Loop Control under Dry Friction and Stiction](/202609/03/2609.01756v1-a-study-of-conditional-diffusion-models-for-open-loop-control-under-dry-friction-and-stiction)  
+   标签：评分：8.0/10、query:diffpl
+   evidence：用于动作序列规划与控制的扩散模型
+3. [Kilometer-Scale AI Downscaling of Atlantic Hurricanes with Generative Ensembles](/202609/03/2609.02034v1-kilometer-scale-ai-downscaling-of-atlantic-hurricanes-with-generative-ensembles)  
    标签：评分：8.0/10、query:ardm
-   evidence：结合流匹配与因果自注意力的潜空间自回归生成模型
-2. [From Truncation to Commitment: Persistent Context in Uniform Discrete Diffusion](/202609/02/2609.01043v1-from-truncation-to-commitment-persistent-context-in-uniform-discrete-diffusion)  
-   标签：评分：8.0/10、query:ardm
-   evidence：具有持久上下文的离散扩散模型序列生成
+   evidence：将自回归降尺度与扩散模型结合
 
 ### 速读区论文标签
-1. [Reliability Challenges in Diffusion Vision-Language Models](/202609/02/2609.01318v1-reliability-challenges-in-diffusion-vision-language-models)  
+1. [Predict, Don't Iterate: Efficient Adaptive-Length Infilling for Diffusion Language Models](/202609/03/2609.02108v1-predict-dont-iterate-efficient-adaptive-length-infilling-for-diffusion-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：将基于扩散的视觉语言模型与自回归基准进行对比评估
-2. [Denoising as Projection: Constrained Optimization with Gradient-Guided Diffusion](/202609/02/2608.29507v1-denoising-as-projection-constrained-optimization-with-gradient-guided-diffusion)  
-   标签：评分：6.0/10、query:diffpl
-   evidence：用于约束优化和规划的梯度引导扩散模型
+   evidence：扩散语言模型作为自回归范式的替代方案
+2. [DiffIE: Diffusion-based Open Information Extraction](/202609/03/2609.02315v1-diffie-diffusion-based-open-information-extraction)  
+   标签：评分：7.0/10、query:ardm
+   evidence：基于扩散的提取作为自回归生成的替代方案
+3. [Discrete Diffusion Bridges for Spatiotemporally Aligned Image Translation and Generation](/202609/03/2608.29997v1-discrete-diffusion-bridges-for-spatiotemporally-aligned-image-translation-and-generation)  
+   标签：评分：6.0/10、query:ardm
+   evidence：用于时空对齐生成的离散扩散桥接
+4. [Denoising Diffusion Generative Models Secretly Calculate Attentions](/202609/03/2609.00885v1-denoising-diffusion-generative-models-secretly-calculate-attentions)  
+   标签：评分：6.0/10、query:ardm
+   evidence：扩散模型使用与自回归建模中Transformer类似的注意力机制
+5. [Diffusion as a Training Curriculum for Timestep-Free Iterative Reasoning](/202609/03/2609.01449v1-diffusion-as-a-training-curriculum-for-timestep-free-iterative-reasoning)  
+   标签：评分：6.0/10、query:ardm
+   evidence：扩散模型与迭代推理架构
 
 
 <div class="dpr-home-promo-card">
