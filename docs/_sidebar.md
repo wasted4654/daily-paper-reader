@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-04 <!--dpr-date:20260904-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/04/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes" data-sidebar-item="{&quot;title&quot;: &quot;Multi-Person Human Motion Forecasting in Complex Scenes&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;用于人体运动预测的条件扩散模型&quot;}">Multi-Person Human Motion Forecasting in Complex Scenes</a>
   * 2026-09-03 <!--dpr-date:20260903-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/03/2608.28733v1-generation-of-high-level-concepts-in-3d-scene-graphs-via-autoregressive-diffusion" data-sidebar-item="{&quot;title&quot;: &quot;Generation of High-Level Concepts in 3D Scene Graphs via Autoregressive Diffusion&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.28733v1-generation-of-high-level-concepts-in-3d-scene-graphs-via-autoregressive-diffusion&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;统一的基于自回归扩散的图生成模型&quot;}">Generation of High-Level Concepts in 3D Scene Graphs via Autoregressive Diffusion</a>

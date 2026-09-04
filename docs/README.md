@@ -6,45 +6,25 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-03
-- 运行时间：2026-09-03 21:42:13 UTC
+- 最新运行日期：2026-09-04
+- 运行时间：2026-09-04 22:17:21 UTC
 - 运行状态：成功
-- 本次总论文数：8
-- 精读区：3
-- 速读区：5
+- 本次总论文数：1
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-论文，结合实际需求速读文本填充与信息抽取相关内容。
-        *   *Check:* Practical recommendation based
-- 详情：[/202609/03/README](/202609/03/README)
+今日完成 1 篇论文速读，聚焦复杂场景下的多人运动预测。
+重点关注复杂环境中的多人
+- 详情：[/202609/04/README](/202609/04/README)
 
 ### 精读区论文标签
-1. [Generation of High-Level Concepts in 3D Scene Graphs via Autoregressive Diffusion](/202609/03/2608.28733v1-generation-of-high-level-concepts-in-3d-scene-graphs-via-autoregressive-diffusion)  
-   标签：评分：10.0/10、query:ardm
-   evidence：统一的基于自回归扩散的图生成模型
-2. [A Study of Conditional Diffusion Models for Open-Loop Control under Dry Friction and Stiction](/202609/03/2609.01756v1-a-study-of-conditional-diffusion-models-for-open-loop-control-under-dry-friction-and-stiction)  
-   标签：评分：8.0/10、query:diffpl
-   evidence：用于动作序列规划与控制的扩散模型
-3. [Kilometer-Scale AI Downscaling of Atlantic Hurricanes with Generative Ensembles](/202609/03/2609.02034v1-kilometer-scale-ai-downscaling-of-atlantic-hurricanes-with-generative-ensembles)  
-   标签：评分：8.0/10、query:ardm
-   evidence：将自回归降尺度与扩散模型结合
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Predict, Don't Iterate: Efficient Adaptive-Length Infilling for Diffusion Language Models](/202609/03/2609.02108v1-predict-dont-iterate-efficient-adaptive-length-infilling-for-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型作为自回归范式的替代方案
-2. [DiffIE: Diffusion-based Open Information Extraction](/202609/03/2609.02315v1-diffie-diffusion-based-open-information-extraction)  
-   标签：评分：7.0/10、query:ardm
-   evidence：基于扩散的提取作为自回归生成的替代方案
-3. [Discrete Diffusion Bridges for Spatiotemporally Aligned Image Translation and Generation](/202609/03/2608.29997v1-discrete-diffusion-bridges-for-spatiotemporally-aligned-image-translation-and-generation)  
-   标签：评分：6.0/10、query:ardm
-   evidence：用于时空对齐生成的离散扩散桥接
-4. [Denoising Diffusion Generative Models Secretly Calculate Attentions](/202609/03/2609.00885v1-denoising-diffusion-generative-models-secretly-calculate-attentions)  
-   标签：评分：6.0/10、query:ardm
-   evidence：扩散模型使用与自回归建模中Transformer类似的注意力机制
-5. [Diffusion as a Training Curriculum for Timestep-Free Iterative Reasoning](/202609/03/2609.01449v1-diffusion-as-a-training-curriculum-for-timestep-free-iterative-reasoning)  
-   标签：评分：6.0/10、query:ardm
-   evidence：扩散模型与迭代推理架构
+1. [Multi-Person Human Motion Forecasting in Complex Scenes](/202609/04/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes)  
+   标签：评分：6.0/10、query:genad
+   evidence：用于人体运动预测的条件扩散模型
 
 
 <div class="dpr-home-promo-card">
