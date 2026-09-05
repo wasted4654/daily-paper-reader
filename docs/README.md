@@ -6,25 +6,24 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-04
-- 运行时间：2026-09-04 22:17:21 UTC
+- 最新运行日期：2026-09-05
+- 运行时间：2026-09-05 21:11:27 UTC
 - 运行状态：成功
 - 本次总论文数：1
 - 精读区：0
 - 速读区：1
 
 ### 今日简报（AI）
-今日完成 1 篇论文速读，聚焦复杂场景下的多人运动预测。
-重点关注复杂环境中的多人
-- 详情：[/202609/04/README](/202609/04/README)
+今日速读 1 篇时序预测前沿成果，聚焦扩散模型在概率时间序列预测中的
+- 详情：[/202609/05/README](/202609/05/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Multi-Person Human Motion Forecasting in Complex Scenes](/202609/04/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes)  
+1. [DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting](/202609/05/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting)  
    标签：评分：6.0/10、query:genad
-   evidence：用于人体运动预测的条件扩散模型
+   evidence：基于扩散的动态引导概率时间序列预测
 
 
 <div class="dpr-home-promo-card">

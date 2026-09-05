@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-05 <!--dpr-date:20260905-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/05/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting" data-sidebar-item="{&quot;title&quot;: &quot;DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;基于扩散的动态引导概率时间序列预测&quot;}">DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting</a>
   * 2026-09-04 <!--dpr-date:20260904-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/04/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes" data-sidebar-item="{&quot;title&quot;: &quot;Multi-Person Human Motion Forecasting in Complex Scenes&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2608.27039v1-multi-person-human-motion-forecasting-in-complex-scenes&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;用于人体运动预测的条件扩散模型&quot;}">Multi-Person Human Motion Forecasting in Complex Scenes</a>
