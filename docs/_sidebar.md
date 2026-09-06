@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-06 <!--dpr-date:20260906-->
+    * 精读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/06/2609.04010v1-unlocking-lossless-speedups-in-llms-via-discrete-diffusion" data-sidebar-item="{&quot;title&quot;: &quot;Unlocking Lossless Speedups in LLMs via Discrete Diffusion&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.04010v1-unlocking-lossless-speedups-in-llms-via-discrete-diffusion&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;结合自回归权重和扩散权重的扩散增强大语言模型&quot;}">Unlocking Lossless Speedups in LLMs via Discrete Diffusion</a>
   * 2026-09-05 <!--dpr-date:20260905-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/05/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting" data-sidebar-item="{&quot;title&quot;: &quot;DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;genad&quot;}], &quot;evidence&quot;: &quot;基于扩散的动态引导概率时间序列预测&quot;}">DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting</a>

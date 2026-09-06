@@ -1,0 +1,23 @@
+{
+  "label": "2026-09-06",
+  "date": "2026-09-06",
+  "generated_at": "2026-09-06T21:59:50",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/06/2609.04010v1-unlocking-lossless-speedups-in-llms-via-discrete-diffusion",
+      "section": "deep",
+      "title_en": "Unlocking Lossless Speedups in LLMs via Discrete Diffusion",
+      "authors": "Subham Sekhar Sahoo, Lingjie Chen, Khiem Pham, Jonathan Geuter, Chaitanya Dwivedi, Varad Pimpalkhute, Yash Akhauri, Alexander Moreno, Mikhail Yurochkin, Zhenting Wang, Mostafa Elhoushi, Nolan Dey, Shane Bergsma, Joel Hestness, John Thickstun, Eric Xing, Zhengzhong Liu",
+      "date": "2026-09-03",
+      "pdf": "https://arxiv.org/pdf/2609.04010v1",
+      "score": "10.0",
+      "evidence": "结合自回归权重和扩散权重的扩散增强大语言模型",
+      "tldr": "针对自回归LLM生成速度慢的瓶颈，本文提出扩散增强大语言模型Uno。该方法解耦自回归与轻量级扩散权重，结合Ψ-Spec无损采样器，无需独立草稿模型即可并行生成多个token。Uno在完全保持基座模型质量的前提下实现高达3倍的推理加速，且性能超越主流投机采样与离散扩散模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Large Language Models (LLMs) owe much of their success to next-token prediction (NTP), but their autoregressive (AR) structure requires slow, sequential token generation. To overcome this bottleneck, we introduce diffusion-augmented LLMs, a new class of models that defines an AR model distribution while using diffusion to draw multiple tokens in parallel from that distribution. We decouple the parameters of these models into two sets: AR weights, trained using the standard NTP objective, and lightweight diffusion weights, trained to generate multiple tokens simultaneously. The diffusion weights are learned through a simple Diffusion Distillation phase that adds negligible overhead to existing LLM training pipelines. We also introduce $Ψ$-Spec, a family of samplers that enables lossless acceleration and inference-time scaling at a fixed context length. Unlike speculative decoding, our method requires no separate draft model. Unlike diffusion LLMs (d-LLMs), it accelerates generation without sacrificing the quality of the underlying AR model. The resulting models, called Uno, can be trained from scratch or built by augmenting existing open-weight AR LLMs. Uno achieves higher throughput than leading speculative-decoding methods at every evaluated batch size and delivers up to $3\\times$ speedups over the base AR model, including at the largest batch size supported by the device. Notably, our 8B Uno model outperforms the leading open d-LLM, the 26B DiffusionGemma, and the proprietary Mercury 2 across all evaluated benchmarks in agentic tool use, coding, and long-context reasoning. We release code and checkpoints at: https://s-sahoo.github.io/uno/",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

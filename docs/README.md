@@ -6,24 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-05
-- 运行时间：2026-09-05 21:11:27 UTC
+- 最新运行日期：2026-09-06
+- 运行时间：2026-09-06 21:59:26 UTC
 - 运行状态：成功
 - 本次总论文数：1
-- 精读区：0
-- 速读区：1
+- 精读区：1
+- 速读区：0
 
 ### 今日简报（AI）
-今日速读 1 篇时序预测前沿成果，聚焦扩散模型在概率时间序列预测中的
-- 详情：[/202609/05/README](/202609/05/README)
+今日精选 1 篇 10 分满分论文，重磅解读如何借助离散扩散解锁大语言模型的推理加速。
+核心突破在于巧妙运用离散扩散技术，在保证模型输出质量无损的前提下实现了显著的推理提速。
+推荐关注大模型高效推理的读者深度研读本文，掌握下一代 LLM 加速的前沿思路。
+- 详情：[/202609/06/README](/202609/06/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Unlocking Lossless Speedups in LLMs via Discrete Diffusion](/202609/06/2609.04010v1-unlocking-lossless-speedups-in-llms-via-discrete-diffusion)  
+   标签：评分：10.0/10、query:ardm
+   evidence：结合自回归权重和扩散权重的扩散增强大语言模型
 
 ### 速读区论文标签
-1. [DynG-Diff: A State-Aware Dynamic Guidance Diffusion Framework for Probabilistic Time Series Forecasting](/202609/05/2609.02068v1-dyng-diff-a-state-aware-dynamic-guidance-diffusion-framework-for-probabilistic-time-series-forecasting)  
-   标签：评分：6.0/10、query:genad
-   evidence：基于扩散的动态引导概率时间序列预测
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
