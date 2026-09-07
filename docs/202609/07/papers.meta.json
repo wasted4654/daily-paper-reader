@@ -1,0 +1,51 @@
+{
+  "label": "2026-09-07",
+  "date": "2026-09-07",
+  "generated_at": "2026-09-07T21:57:13",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/07/2609.04531v1-distilled-continuous-diffusion-language-models-can-write-code-in-few-steps---or-one",
+      "section": "deep",
+      "title_en": "Distilled Continuous Diffusion Language Models Can Write Code in Few Steps---or One",
+      "authors": "Fred Zhangzhi Peng, Kaiwen Zheng, Anru R. Zhang",
+      "date": "2026-09-03",
+      "pdf": "https://arxiv.org/pdf/2609.04531v1",
+      "score": "10.0",
+      "evidence": "将预训练自回归模型重新利用为双向去噪器",
+      "tldr": "本文提出了PlaidQ，一个0.7B参数的连续扩散代码生成模型。研究通过将预训练自回归模型改造成连续词嵌入空间上的双向去噪器，并结合分布匹配与配对轨迹蒸馏技术，实现了仅需几步甚至单步去噪的高效代码生成，性能超越了512步采样的教师模型。",
+      "tags": "query:ardm",
+      "abstract_en": "Language generation is almost universally treated as a sequential process: autoregressive models emit one token at a time, while diffusion language models replace token-level seriality with a long trajectory of iterative refinement. In this work, we introduce PlaidQ, a 0.7B continuous diffusion language model for code generation, and show that its trajectory can be aggressively distilled into only a few denoising steps---or even one, enabling efficient code generation. PlaidQ repurposes a pretrained autoregressive model as a bidirectional denoiser over continuous token embeddings. We distill PlaidQ with distribution matching for few-step generation and paired-trajectory supervision for one-step generation. At matched model scale, PlaidQ is competitive with discrete diffusion language models on code generation. Distillation then shifts the quality--compute frontier: a 16-step student reaches 31.78 and 40.49 pass@10 on HumanEval and MBPP+, surpassing the same PlaidQ teacher sampled for 512 steps. At the extreme, paired-trajectory distillation achieves 7.07 pass@1 on HumanEval with a single denoising step, producing functionally correct programs. Together, these results establish continuous diffusion as a viable path to few-step and one-step code generation. Broadly, continuous diffusion is not merely another representation for language: it provides an interface through which language models can inherit the acceleration and distillation machinery of continuous diffusion modeling. Training and inference code and model checkpoints are available at https://github.com/pengzhangzhi/plaidq.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/07/2609.04778v1-diffusion-language-models-for-mobile-edge-agentic-ai-foundations-applications-and-challenges",
+      "section": "deep",
+      "title_en": "Diffusion Language Models for Mobile Edge Agentic AI: Foundations, Applications, and Challenges",
+      "authors": "Chenqi Li, Minghui Min, Dusit Niyato, Wei Ni",
+      "date": "2026-09-04",
+      "pdf": "https://arxiv.org/pdf/2609.04778v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型作为大语言模型自回归解码的替代方案",
+      "tldr": "本文是一篇关于移动边缘智能代理中扩散语言模型（DLM）的综述论文。针对传统自回归模型在边缘端高延迟和资源受限的问题，文章探讨了DLM的双向上下文与并行去噪特性，总结了其在边缘环境中的高效架构、加速压缩及边云部署策略，并梳理了未来面临的挑战与研究方向。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) offer a non-autoregressive alternative for mobile edge agentic artificial intelligence (AI) by refining tokens through iterative denoising rather than left-to-right decoding. Compared with autoregressive Transformer-based large language models (LLMs), DLMs can update multiple uncertain tokens in parallel and exploit bidirectional context throughout the generation process, enabling more flexible quality-latency trade-offs beyond fixed sequential decoding. These properties are particularly attractive for edge agents, where partial refinement, early exit, and constraint-guided correction can reduce response delay and communication overhead while improving robustness under noisy, incomplete, or dynamic contexts. This survey reviews DLM foundations and analyzes their suitability for edge settings under latency, memory, energy, bandwidth, privacy, and reliability constraints. We cover resource-efficient architectures, training and inference acceleration, compression, edge/cloud deployment, communication-aware serving, Internet of Things (IoT)/wireless applications, and evaluation of DLM-based agents. We further discuss open issues in long-context state management, split inference, trustworthy execution, multimodal grounding, and reproducible benchmarking. The goal is to connect DLM modeling properties, including bidirectionality, parallel refinement, controllability, and quality-latency elasticity, with system-level requirements of future mobile edge intelligence.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/07/2609.04516v1-pitch-class-steering-for-diffusion-based-music-generation-via-latent-space-probes",
+      "section": "quick",
+      "title_en": "Pitch-class Steering for Diffusion-based Music Generation via Latent-space Probes",
+      "authors": "Yushi Ye, Wilson Zheng, Yongyi Zang",
+      "date": "2026-09-03",
+      "pdf": "https://arxiv.org/pdf/2609.04516v1",
+      "score": "6.0",
+      "evidence": "将基于扩散的音乐生成与自回归模型进行对比",
+      "tldr": "针对基于扩散模型的音乐生成缺乏音高控制的问题，本文提出了一种基于潜在空间探针的轻量化控制方法。该方法训练一个仅约12.5万参数的探针解码VAE潜在空间的音高特征，并在推理阶段通过探针梯度引导模型生成指定旋律。实验显示，在无需重训基座模型的情况下，该方法将旋律连贯性提升了2.4倍。",
+      "tags": "query:ardm",
+      "abstract_en": "Recent work on controllable music generation has focused on autoregressive models, leaving diffusion-based systems comparatively underexplored. We present a lightweight method for steering the pitch content of audio produced by Stable Audio Open, a latent diffusion model for music synthesis. A small convolutional probe containing approximately 125k parameters is trained to decode frame-level pitch-class activations from the model's variational autoencoder latent space, using paired audio and MIDI data. At inference time, the frozen probe serves as a differentiable loss function: its gradient with respect to the denoising latent is used to nudge generation toward a user-specified pitch-class sequence, requiring no retraining or architectural modification of the base model. Across 27 evaluation trials spanning 9 text prompts and 3 target melodies, probe-guided generation increases melodic coherence by 2.4x over the unguided baseline (p < 1e-5, Wilcoxon signed-rank test), demonstrating that musically meaningful structure is both recoverable and steerable in diffusion-based music latent spaces.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
