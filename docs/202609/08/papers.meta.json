@@ -1,0 +1,23 @@
+{
+  "label": "2026-09-08",
+  "date": "2026-09-08",
+  "generated_at": "2026-09-08T22:31:51",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/08/2609.04646v1-importance-aware-low-rank-distillation-of-diffusion-transformers",
+      "section": "quick",
+      "title_en": "Importance-Aware Low-Rank Distillation of Diffusion Transformers",
+      "authors": "Denis Zavadski, Sebastian Heid, Damjan Kalšan, Stefan Roth, Carsten Rother",
+      "date": "2026-09-04",
+      "pdf": "https://arxiv.org/pdf/2609.04646v1",
+      "score": "6.0",
+      "evidence": "扩散Transformer架构的压缩与蒸馏",
+      "tldr": "针对扩散Transformer（DiTs）模型规模庞大导致的部署难题，本文提出SVDtrunc压缩方案。研究发现DiTs中冗余分布广泛，通过SVDtrunc进行两阶段压缩：首先基于重要性分配秩并进行截断，随后结合模块化知识蒸馏与修正流目标进行微调。该方法在FLUX.dev模型上实现了40%-90%的参数压缩，在保持高性能的同时显著提升了推理效率，优于现有同类方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Transformers (DiTs) have emerged as a dominant architecture for high-quality text-to-image generation, yet their scale poses challenges for efficient deployment. While truncated singular value decomposition (SVD) is a principled tool for parameter reduction, evidence from large language models (LLMs) suggests that naive low-rank approximation can cause catastrophic failure. In contrast, we find that truncated SVD in DiTs produces smooth degradation even under substantial global compression, with redundancy distributed across projection matrices throughout the whole network rather than concentrated in a few transformer blocks. Building on these insights, we introduce SVDtrunc, a two-step block-level compression scheme, first allocating ranks across blocks and compressing the least important ones via truncated SVD under a global parameter budget, and then fine-tuning all blocks with modular knowledge distillation and a rectified-flow objective. We apply SVDtrunc to FLUX.dev across compression levels ranging from 40-90% of the original parameter count. Across three benchmarks, GenEval, HPSv2, and DPG, we outperform all competing approaches. Notably, and in contrast to prior work, we retain near-full performance at 68% and remain competitive even at 57% of the original parameter budget. Furthermore, we show that SVDtrunc complements step distillation and achieves strong results even without fine-tuning, positioning it as a practical continuation of efficiency improvements beyond diffusion step reduction for large-scale generative models.   Project page: https://vislearn.github.io/SVDtrunc/",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

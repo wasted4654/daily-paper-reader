@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-09-08 <!--dpr-date:20260908-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/08/2609.04646v1-importance-aware-low-rank-distillation-of-diffusion-transformers" data-sidebar-item="{&quot;title&quot;: &quot;Importance-Aware Low-Rank Distillation of Diffusion Transformers&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.04646v1-importance-aware-low-rank-distillation-of-diffusion-transformers&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;扩散Transformer架构的压缩与蒸馏&quot;}">Importance-Aware Low-Rank Distillation of Diffusion Transformers</a>
   * 2026-09-07 <!--dpr-date:20260907-->
     * 精读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/07/2609.04531v1-distilled-continuous-diffusion-language-models-can-write-code-in-few-steps---or-one" data-sidebar-item="{&quot;title&quot;: &quot;Distilled Continuous Diffusion Language Models Can Write Code in Few Steps---or One&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.04531v1-distilled-continuous-diffusion-language-models-can-write-code-in-few-steps---or-one&quot;, &quot;score&quot;: &quot;10.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;将预训练自回归模型重新利用为双向去噪器&quot;}">Distilled Continuous Diffusion Language Models Can Write Code in Few Steps---or One</a>
