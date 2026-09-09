@@ -1,0 +1,79 @@
+{
+  "label": "2026-09-09",
+  "date": "2026-09-09",
+  "generated_at": "2026-09-09T21:20:40",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202609/09/2609.09123v1-mask-forcing-improving-autoregressive-video-diffusion-distillation-via-dual-noise-masking-rollout",
+      "section": "deep",
+      "title_en": "Mask Forcing: Improving Autoregressive Video Diffusion Distillation via Dual-Noise Masking Rollout",
+      "authors": "Zhuoran Zhao, Shengju Qian, Tongtong Liang, Xianghao Kong, Songchun Zhang, Junchao Huang, Guian Fang, Xin Wang, Pan Hui, Anyi Rao",
+      "date": "2026-09-08",
+      "pdf": "https://arxiv.org/pdf/2609.09123v1",
+      "score": "10.0",
+      "evidence": "改进自回归视频扩散蒸馏",
+      "tldr": "本文针对自回归视频扩散模型蒸馏中存在的过饱和与过平滑问题，提出了一种名为Mask Forcing的策略。该方法通过在自回归滚动过程中引入空间和时间维度的双重噪声掩码，有效缓解了分布匹配蒸馏（DMD）中的模式坍缩现象，在无需额外真实数据或后处理的情况下，显著提升了视频生成的视觉质量与真实感。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) video diffusion models have shown great potential in real-time video generation. Recent methods distill pretrained bidirectional video diffusion models into causal AR students through Distribution Matching Distillation (DMD), but the generated videos often suffer from over-saturation and over-smoothing issues, resulting in limited visual quality and realism. The key contributing factor is the mode-seeking behavior of the reverse KL objective in DMD, which can cause the student distribution to collapse onto only a few modes of the teacher distribution. To address this, we propose Mask Forcing, a Dual-Noise Masking Rollout strategy that perturbs the AR student self-rollout to mitigate mode collapse induced by reverse-KL mode seeking. The core idea is to inject cleaner signals into noisy rollout inputs via random masks along spatial and temporal axes during the self-rollout process of AR diffusion distillation. Such perturbations encourage the student rollouts to explore more regions of the teacher distribution, allowing DMD to provide learning signals beyond the modes already covered by the student. Moreover, the cleaner tokens act as denoising guidance for other noisier tokens, improving the intermediate rollout predictions and reducing error accumulation. Extensive experiments demonstrate that our method improves multiple AR video diffusion distillation methods with higher visual quality efficiently, without incorporating real video data or additional post-training stages.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/09/2609.06324v1-a-ticket-from-marginals-to-joints-coupled-noise-distillation-for-one-step-block-generation-in-diffusion-language-models",
+      "section": "deep",
+      "title_en": "A Ticket from Marginals to Joints: Coupled-Noise Distillation for One-Step Block Generation in Diffusion Language Models",
+      "authors": "Lin Yao",
+      "date": "2026-09-06",
+      "pdf": "https://arxiv.org/pdf/2609.06324v1",
+      "score": "9.0",
+      "evidence": "比较了自回归语言模型与扩散语言模型在块生成方面的差异",
+      "tldr": "本文针对扩散语言模型在单步生成文本块时的连贯性难题，提出了CONDOR框架。通过引入耦合噪声蒸馏技术，让学生模型学习教师模型在多步去噪过程中的联合分布，从而在单次前向传播中实现高质量、多样化的文本块生成，显著提升了单步生成的合法性与连贯性。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive language models commit one token per forward pass; diffusion language models commit a block of tokens over several steps. We ask whether a block can be committed in a single forward pass. We study this with a noise-conditioned masked denoiser: a data-independent Gaussian noise field is added to the mask embeddings so that, in principle, each sampled field selects one joint mode of the block. The established way of training such a model is to sample several fields per example and let them compete for the data, by winner-take-all or importance weighting. This gives the noise only coarse control: in our experiments, the information it carries grows roughly with the logarithm of the number of competing fields, and one-step outputs remain rarely coherent across the model sizes tested. We propose CONDOR (Coupled-Noise Distillation for One-Step Readout). A noise-conditioned teacher is trained with a random number of masked positions and winner-take-all. A student proposes a one-step block, retains selected tokens, and learns from the block obtained when the teacher refills the other positions in several steps under the same noise field; a noise-free masked-LM term on the ground truth anchors the student. Human evaluation on TinyStories shows a large gain in one-step legality while different noise fields still yield different blocks, at one forward pass per block.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/09/2609.05981v1-accelerating-diffusion-transformers-with-gaussian-process-rectified-feature-cache",
+      "section": "quick",
+      "title_en": "Accelerating Diffusion Transformers with Gaussian Process Rectified Feature Cache",
+      "authors": "Zhirong Shen, Rui Huang, Chang Zou, Shikang Zheng, Jiacheng Liu, Peiliang Cai, Zhengyi Shi, Yaosong Du, Liang Feng, Xiaobing Tu, Jinkui Ren, Xiantao Zhang, Linfeng Zhang",
+      "date": "2026-09-05",
+      "pdf": "https://arxiv.org/pdf/2609.05981v1",
+      "score": "7.0",
+      "evidence": "通过特征缓存加速扩散Transformer",
+      "tldr": "针对扩散Transformer推理计算成本高的问题，本文提出了一种基于高斯过程回归的GP-Refiner加速框架。该方法利用缓存特征与全计算轨迹间的残差服从零均值高斯分布的特性，通过在线回归动态修正预测偏差，并引入不确定性自适应策略触发校准，在显著降低计算量的同时提升了生成质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Transformers have become the dominant paradigm in generative AI, but their high computational costs severely hinder real-time applications. Prediction-based feature caching is widely used to accelerate diffusion transformers; however, as the number of steps increases, the deviation between its predictions and the reference full-compute trajectory gradually grows. An intuitive idea is to use an online regression model to dynamically correct this deviation, but it faces the issue of label data being unavailable during the acceleration process. This paper presents a statistical observation that the residuals between the features of full computation steps using caching methods and reference full-compute trajectory locally exhibit a zero-mean Gaussian distribution. By treating the features of full computation steps as noisy observations of reference features, the data acquisition problem is resolved. Based on this observation, a plug-and-play GP-Refiner correction framework is proposed. This method utilizes Gaussian Process Regression for correction and, leveraging the properties of GPR, introduces an uncertainty-adaptive computation strategy that triggers necessary full-computation calibration by monitoring the posterior variance in real time. Experiments demonstrate significant improvements across different models when combined with various state-of-the-art methods. Integrating the proposed framework with TaylorSeer reduces the computational load by 19.3% while improving PSNR by 0.9 dB and reducing LPIPS from 0.46 to 0.29. Code is available in https://github.com/Aredstone/GP-Refiner.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/09/2609.08981v1-transformers-as-in-context-samplers-from-closed-form-diffusion-to-estimation-free-sampling",
+      "section": "quick",
+      "title_en": "Transformers as In-Context Samplers: From Closed-Form Diffusion to Estimation-Free Sampling",
+      "authors": "Arman Adibi, Alireza Jafari, Mohammad Ghavamzadeh, Hadi Daneshmand",
+      "date": "2026-09-08",
+      "pdf": "https://arxiv.org/pdf/2609.08981v1",
+      "score": "7.0",
+      "evidence": "Transformer通过上下文样本模拟扩散等迭代生成采样器",
+      "tldr": "本文研究了Transformer在上下文学习中的生成能力，证明了冻结参数的Transformer能够模拟迭代式生成采样器。研究揭示了Softmax注意力机制在计算权重和加权平均中的作用，以及前馈层在实现Euler更新中的功能。通过对语义主题采样任务的实证分析，作者发现Transformer隐藏层呈现出独特的U型能量演化模式，并从理论上证明了Transformer能够近似能量基采样器，为理解大模型的上下文生成机制提供了新视角。",
+      "tags": "query:ardm",
+      "abstract_en": "A growing body of work establishes that large language models are not mere statistical memorizers, but are capable of in-context learning: performing inference at test time using only examples provided in the prompt, without any parameter updates. Prior theoretical work has shown that this capability extends to supervised learning tasks such as linear regression. We prove that in-context learning extends further to \\emph{data generation}: frozen transformers can simulate iterative generative samplers from in-context samples. We first show that transformers can realize closed-form and smoothed closed-form diffusion samplers. The construction identifies a concrete generative role for softmax attention: it computes responsibility weights and weighted empirical averages, while feedforward layers implement Euler updates.   To empirically relate these constructions to pretrained language models, we study \\emph{semantic-topic sampling}: prompts consisting of words drawn from a common semantic category, such as animals, foods, or cities. Across transformer layers, the normalized hidden states exhibit a two-stage geometry: they move toward a uniform spherical reference in intermediate layers and then return to structured, topic-dependent representations near the output. We further measure an interacting-particle energy on these hidden-state clouds and observe the same U-shape pattern. We then prove that transformers can approximate an energy-based sampler, constructing the same U-shape energy across the layers.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/09/2609.05525v1-diva-exploiting-cross-step-conditional-propagation-for-visual-jailbreaks-in-discrete-diffusion-vision-language-models",
+      "section": "quick",
+      "title_en": "DIVA: Exploiting Cross-Step Conditional Propagation for Visual Jailbreaks in Discrete Diffusion Vision-Language Models",
+      "authors": "Guorui Song, Runqing Tang, Jingye Zhang, Luyuan Zhang, Feice Huang, Cong Ray, Guocun Wang, Dake Zhong, Choo Sin Wai, Bingquan Dai, Chuming Wang, Tongxu Lin, Wanyu Guo, Haoqian Wang",
+      "date": "2026-09-01",
+      "pdf": "https://arxiv.org/pdf/2609.05525v1",
+      "score": "6.0",
+      "evidence": "比较自回归和离散扩散架构",
+      "tldr": "本文针对离散扩散视觉语言模型（dVLMs）的安全性展开研究，揭示了其特有的“跨步条件传播”漏洞，即视觉嵌入在去噪过程中被反复放大。为此，作者提出了DIVA攻击框架，通过跨模态意图混淆和扩散感知优化，在多个模型上实现了显著的越狱成功率，填补了扩散模型视觉越狱研究的空白。",
+      "tags": "query:ardm",
+      "abstract_en": "Large vision-language models (VLMs) are increasingly deployed in safety-critical settings, yet existing visual jailbreak research has focused almost exclusively on autoregressive architectures, leaving an important emerging family unstudied: multimodal discrete diffusion vision-language models (dVLMs). We identify a vulnerability specific to diffusion generation: because the visual embedding conditions every reverse denoising step rather than acting as a one-time prefix, adversarial visual semantics are repeatedly propagated and amplified across the generation trajectory, a phenomenon we term cross-step conditional propagation. We provide empirical evidence through stage-sensitivity analysis, prompt-level switch rates, and pairwise denoising-bin disagreement metrics, confirmed by bootstrap resampling. We propose DIVA (Discrete-diffusion Vision-language model Attack), a white-box visual jailbreak framework using cross-modal intent obfuscation and diffusion-aware multi-timestep adversarial optimization. Across three dVLMs, DIVA reaches 58.8%, 67.7%, and 69.1% HADES ASR under the Beaver reward-model metric, outperforming visual jailbreak baselines designed for autoregressive models. Code: https://github.com/loststars2002/DIVA",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

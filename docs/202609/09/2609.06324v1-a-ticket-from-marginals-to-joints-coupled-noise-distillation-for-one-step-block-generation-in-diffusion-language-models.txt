@@ -1,0 +1,858 @@
+Title: A Ticket from Marginals to Joints: Coupled-Noise Distillation for One-Step Block Generation in Diffusion Language Models
+
+URL Source: https://arxiv.org/pdf/2609.06324v1
+
+Published Time: Wed, 09 Sep 2026 01:01:22 GMT
+
+Number of Pages: 27
+
+Markdown Content:
+# A Ticket from Marginals to Joints: Coupled-Noise Distillation for One-Step Block Generation in Diffusion Language Models 
+
+Lin Yao 1,21School of Computer Science, Shanghai Jiao Tong University, Shanghai, 200240, China 
+
+> 2
+
+Zhongguancun Academy, Beijing, 100097, China 
+
+lin.yao@sjtu.edu.cn 
+
+Abstract 
+
+Autoregressive language models commit one token per forward pass; diffusion language models commit a block of tokens over several steps. We ask whether a block can be committed in a single forward pass. We study this with a noise-conditioned masked denoiser: a data-independent Gaussian noise field is added to the mask embeddings so that, in principle, each sampled field selects one joint mode of the block. The established way of training such a model is to sample several fields per example and let them compete for the data, by winner-take-all or importance weighting. This gives the noise only coarse control: in our experiments, the information it carries grows roughly with the logarithm of the number of competing fields, and one-step outputs remain rarely coherent across the model sizes tested. We propose C ONDOR (Coupled-Noise Distillation for One-Step Readout). A noise-conditioned teacher is trained with a random number of masked positions and winner-take-all. A student proposes a one-step block, retains selected tokens, and learns from the block obtained when the teacher refills the other positions in several steps under the same noise field; a noise-free masked-LM term on the ground truth anchors the student. Human evaluation on TinyStories shows a large gain in one-step legality while different noise fields still yield different blocks, at one forward pass per block. 
+
+# 1 Introduction 
+
+Autoregressive (AR) language models generate text one token per forward pass (44, 54). Each token conditions on all previous ones, which makes the output coherent, but the number of sequential passes equals the number of tokens, and the cost of a long response is dominated by this sequential depth. Diffusion language models generate a block of tokens at a time and spend several steps on it (Figure 1). Continuous-latent models such as Diffusion-LM, ELF, and Cola (16, 21, 32) start a block from Gaussian noise and transport it to a latent representation through n denoising steps, decoding the latent to text at the end. Masked diffusion language models (dLLMs) such as LLaDA and LLaDA 2.1 (3, 40) start a block from mask tokens; at each step the model reads, for every masked position, a distribution over the vocabulary given the visible tokens, and commits several positions in parallel. Because these positions are predicted independently from the same context, the committed tokens can be mutually inconsistent (15, 25), and later steps edit or remask them (3, 22, 55, 60); n steps of commitment and correction take the block from fully masked to filled. In all of these models a block still takes several passes. Since large models have ample parameters, one may ask whether a whole block can be produced in a single forward pass. For a masked model the obstacle is the following. The mask token is the same at every masked position, so the cross-entropy-optimal prediction at each position is its marginal distribution given the visible tokens (41), and committing all positions at once samples from a product of marginals. Nothing in the input indicates which joint mode of the block is being 1arXiv:2609.06324v1 [cs.CL] 6 Sep 2026 generated. AR models carry this information in the prefix, latent-variable models in a per-sample latent z (28), and continuous diffusion models in the initial noise. A masked model has no counterpart within a step. We therefore give the model such a variable. A data-independent Gaussian noise field ε is added to the mask embeddings, and the model is asked to emit the whole block in one pass as a function of the prompt and ε: one sampled field ε (one ticket ) should yield one coherent block, and different fields different blocks (Figure 1d). The difficulty is to make the noise represent a mode. One approach constructs the coupling between the noise and the text from the text itself: a VAE-style encoder infers the latent from the target (VADD (57)), a continuous-latent diffusion model makes the noisy state a corrupted copy of the text (ELF, Cola), and PTP derives the auxiliary variable from an autoregressive sampler (9). Without such an encoder the coupling has to be learned from the data alone, and two objectives have been used for this. An importance-weighted multi-sample bound (IWAE (5)) samples k noise fields for the same training example and weights each by how well its output fits the data; the bound is dominated by the best-fitting field, so it is nearly satisfied as soon as one of the k fields explains the data, and the remaining fields are free to cover other modes. Winner-take-all (WTA) competition (18, 30) is the hard version of this: it also samples k fields but trains only the one whose output is closest to the data. Social GAN used it to give a noise-conditioned trajectory generator several modes (17), and LoRA-MCL applied it to language models (35). Both make the output depend on the noise, and we use WTA for this purpose. Competition among k sampled fields is coarse, however. Each update conveys at most log k nats about which mode a field should take, so the information the noise carries grows only with log k while the cost of a training step grows with k (Section 5.2.1). We therefore combine competition with distillation. Instead of constructing the coupling from the target, we distill it from the model’s own multi-step decoding under a fixed noise field. CONDOR (Co upled-Noise Distillation for One-Step Readout) has two stages. Stage 1 trains a noise-conditioned masked LM with random mask ratios and the WTA objective; this model, the teacher, can fill partially masked blocks and its fills depend on the noise. Stage 2 trains a student, initialized from the teacher, to reproduce in one forward pass the block that the teacher decodes in several steps under the same noise field; a noise-free masked-LM term on the ground truth anchors the student’s conditionals. The teacher never receives gradients; it is either the frozen Stage-1 model or an exponential moving average (EMA) of the student. At inference only the student runs, once per block. Our contributions are as follows. • We show, on a controlled TinyStories testbed with human evaluation, that competition among k sampled noise fields (WTA, and its soft form IWAE) gives the one-step output only a coarse assignment of noise to modes. The information the noise carries about the block grows with log k and stays far below the block’s entropy; one-step legality improves only slowly with k while the cost of a training step grows with k; and deeper models, larger batches, and longer training do not change this. A per-position information analysis and an information-theoretic argument account for the bound, and a sweep over k confirms it (Section 5.2.1). • We propose C ONDOR , which obtains the coupling between noise and text by distilling the network’s own multi-step decoding under a shared noise field into its one-step readout, together with keep-and-fill target construction, a noise-free ground-truth anchor, and two ways of running the teacher (frozen or EMA-updated) (Section 4). • C ONDOR raises human-evaluated one-step legality from below 10 % to 65 –73 % at one forward pass per block while different noise fields still yield different blocks; ablations identify the necessary components and characterize the failure modes of an EMA-updated teacher (Section 5.2). All experiments are conducted at small scale; our claims concern the mechanism rather than large-scale performance. 
+
+# 2 Related Work 
+
+Autoregressive decoding. AR decoding requires one forward pass per token. Speculative decoding and multi-head drafting reduce latency by verifying several drafted tokens in one pass, but generation itself remains sequential (6, 31). Jacobi decoding and Consistency LLMs (29, 49) train an AR model to reach the greedy 2(a) Autoregressive  NFE for B tokens: B 
+
+step 1  There was a little  girl 
+
+commit 1 token 
+
+step 2  There was a little  girl  named 
+
+commit 1 token 
+
+step 3  There was a little  girl  named  Lucy 
+
+⋮
+
+step 8  There was a little  girl  named  Lucy  . She  was  three  years 
+
+the next tokens are committed the same way 
+
+step 9  pre fi x + tokens 1–8  old 
+
+⋮ until end-of-sequence 
+
+One forward pass per token; every token conditions on all 
+
+previously committed tokens; there is no block structure. 
+
+Sample identity lives in the growing pre fi x. 
+
+(b) Continuous-latent dLM  NFE / block: n ( fi xed) 
+
+z_T  There was a little 
+
+z_t  There was a little 
+
+z_0 
+
+≈ Enc(x) 
+
+There was a little 
+
+denoise (n steps in total) 
+
+denoise 
+
+decode / discretize once 
+
+tokens  There was a little  girl  named  Lucy  . She  was  three  years 
+
+block 1 becomes context; fresh noise z_T for block 2 
+
+z_T  pre fi x + block 1 
+
+> block 1 block 2
+
+⋮ n steps + decode again, until end-of-sequence 
+
+E.g. ELF, Cola. Within a block, noise is transported to a latent 
+
+in n steps (trained toward a known embedding Enc(x)), decoded once; 
+
+each further block repeats this with the text so far as context. 
+
+Sample identity lives in the initial noise of each block. 
+
+(c) Masked dLLM (LLaDA 2.1)  NFE / block: n (varies) 
+
+step 1  There was a little  M M M M M M M M
+
+one forward pass: each masked position gets its marginal; 
+
+the con fi dent ones are committed in parallel (M2T) 
+
+step 2  There was a little  girl  named  M M was  was  M M
+
+> fi ne on its own, wrong next to ‘was’
+
+one forward pass: commit more positions (M2T) 
+
+and edit the committed token that no longer  fi ts (T2T) 
+
+step 3  There was a little  girl  named  Lucy  M was  three  M years   
+
+> was →three
+
+⋮
+
+step n  There was a little  girl  named  Lucy  . She  was  three  years 
+
+block 1 becomes context; block 2 starts fully masked 
+
+step 1  pre fi x + block 1  M M M M M M M M
+
+> block 1 block 2
+
+⋮ steps again, until no mask is left and no edit  fi res 
+
+Every step is one forward pass that commits masked positions from 
+
+their marginals (M2T) and edits committed tokens that turned out 
+
+inconsistent (T2T); n is not  fi xed. The next block repeats this. 
+
+No variable selects the joint mode within a step. 
+
+(d) Ours: one-step commitment  NFE / block: 1 
+
+[M] + σ·ε₁ (one noise  fi eld ε₁ = one ticket) 
+
+input  There was a little 
+
+one forward pass: the whole block 
+
+output  There was a little  girl  named  Lucy  . She  was  three  years 
+
+block 1 becomes context; block 2 draws a new ticket ε₂ = [M] + σ·ε₂ 
+
+input  pre fi x + block 1 
+
+one forward pass 
+
+output  pre fi x + block 1  old  . She  loved  to  play  with  her 
+
+> block 1 block 2
+
+⋮ one pass per block, until end-of-sequence 
+
+same pre fi x, other tickets for block 1: 
+
+ε₁′  boy  named  Tom  . He  liked  to  play 
+
+ε₁″  girl  . The  girl  was  very  old  and 
+
+Each block is a deterministic function of (context, its ticket); the 
+
+ticket can be redrawn per block (shown) or kept  fi xed across blocks. 
+
+Sample identity lives in the noise  fi eld ε. Figure 1: Committing a block of B=8 tokens in four generative families; each panel also shows how the next block starts. (a) Autoregressive decoding: one token per forward pass, no block structure. (b) Continuous-latent diffusion LMs (e.g. ELF, Cola): within a block, noise zT is transported to a latent z0 in n denoising steps (trained toward a known embedding of the text) and decoded once; the next block restarts from fresh noise. 
+
+(c) Masked dLLMs (e.g. LLaDA 2.1): each step reads the marginal at every masked position and commits several positions in parallel (mask-to-token, M2T); tokens that turn out inconsistent, such as was was , are edited or remasked in later steps (token-to-token, T2T); the number of steps is not fixed. (d) Ours: a noise field 
+
+ε (sampled once per block, the ticket) is added to the mask embeddings and the whole block is committed in a single forward pass; the next block is committed the same way with its own field ε2 (or the same ε1). Different tickets for the same prefix give different, internally consistent blocks. fixed point of an n-token window in a few iterations; the fixed point is deterministic given the prefix, so there is no variable that selects among alternative continuations. 
+
+Continuous-latent diffusion language models. Diffusion-LM, DiffuSeq, and latent diffusion for language generate text by denoising in an embedding or latent space (13, 32, 37); ELF denoises in a frozen encoder’s embedding space with flow matching, Cola transports a sentence-level latent with a block-causal transformer, 3and DSL-LLaDA and CCDD retrofit a continuous noisy state onto a masked backbone (16, 21, 64, 66). In these models the sample identity lives in the initial noise, positions co-evolve before discretization, and a block costs n denoising steps. One-step generation in continuous diffusion is obtained by distillation or consistency training (11, 34, 48, 53, 63); our method is the analogue of this step for masked models, with the sequence of committed tokens in place of the continuous trajectory. 
+
+Masked dLLMs: parallel commitment and correction. Masked diffusion language models (1–3, 36, 40, 41, 46, 51, 62) and masked generative transformers for images (7) commit several positions per step by independent argmax; ParallelBench (25) quantifies the quality loss as parallelism increases. Confidence scheduling decides which positions to commit in a step (56); editing and remasking methods revise committed tokens in later steps (3, 12, 20, 22, 26, 50, 55, 60, 61, 65), and CoCommit re-applies the final layers to a marked commit set (59). These procedures trade additional steps for consistency. Few-step distillation of discrete diffusion halves the number of steps by matching marginals (8), enables consistency distillation for uniform-state diffusion (47), distills a teacher’s correlations into a mixing variable (19), or reaches one step for masked image generators by injecting randomness through the token initialization (69). None of these gives a masked language model a noise variable that selects the block in one pass. 
+
+Making the noise carry a mode; objectives and distillation. Latent-variable non-autoregressive trans-lation (24, 38, 52) and VADD (57) supply a latent that carries the joint of a parallel commitment and learn its coupling to the data with a VAE-style encoder or posterior that observes the target; PTP (9) constructs the coupling analytically from an AR sampler; copula and energy rescoring methods borrow joint structure from a second model at inference time (33, 58). Without an encoder, a data-independent noise input is ignored under likelihood training, as observed for conditional GANs (23, 68) and VAE posteriors (4); importance weighting over several noise samples (5) and winner-take-all (multiple-choice) losses (18, 30, 39, 45) are the standard remedies, the latter applied to noise-conditioned generators by Social GAN (17) and to language models by LoRA-MCL (35). A third way to obtain the coupling is distillation. Sequence-level knowledge distillation from an AR teacher (15, 27) makes non-autoregressive translation tractable by removing modes, since the distilled target is a deterministic function of the source (14, 43, 67). C ONDOR uses WTA only to make the teacher noise-sensitive and then distills, from the same network run for more steps, a target that is a deterministic function of the source and the noise; modes are thus indexed rather than removed. 
+
+# 3 Preliminaries 
+
+Masked diffusion language models. Let c denote a visible prefix and x = ( x1, . . . , x B ) a block of B
+
+tokens to be generated. A masked dLLM pθ is a bidirectional network that, given c and a partially masked block z, outputs at every masked position i a distribution pθ (xi | c, z ) over the vocabulary. The masked positions are predicted independently given (c, z ), so each of these distributions is a marginal : the model has no direct access to the joint distribution of several masked positions. Multi-step decoding starts from the fully masked block [M] B and, at each step, commits a subset of masked positions to their predicted tokens; the committed tokens become context for subsequent steps, and the joint structure of the block is built up across steps. One-step commitment takes the argmax of the marginal pθ (· | c, [M] B ) at all B positions simultaneously. 
+
+Notation. Throughout, c is the prefix, x = ( x1, . . . , x B ) a block of B tokens, and x⋆ the ground-truth block from the data. [M] is the mask token and [M] B the fully masked block. A block state z is a block in which some positions hold tokens and the others hold [M] ; U (z) denotes the set of positions of z that are still masked and |U (z)| their number. For a set of positions K, yK ⊕ [M] ¬K denotes the block state that carries the tokens of a block y on K and [M] elsewhere, and y¬j abbreviates the state in which only position j of y is masked. A 
+
+noise field ε = ( ε1, . . . , ε B ) is a sample of B independent standard Gaussian vectors εi ∈ Rd, one per block position ( d is the embedding dimension); a block is always generated under a single field, and generating 4several blocks for the same prefix means sampling a new field for each. When we say that several noise fields are drawn for an example, we mean independent samples of this kind. σ is the scale of the field ( σT when the teacher fills a block). Two networks of the same architecture appear: the student fθ with parameters θ and the 
+
+teacher gϕ with parameters ϕ. fθ (c, z, ε ) denotes the student’s per-position output distributions on input (c, z )
+
+under the field ε, fθ (v | c, z, ε )j the probability it assigns to token v at position j, and fθ (c, ε ), fθ (v | c, ε )j
+
+the same for the fully masked block z = [M] B ; the notation for gϕ is identical. CE( q, v ) = − log q(v) is the cross-entropy of a token v under a distribution q. ˆy is the student’s one-step argmax block, ˆx the distillation target, K the set of kept positions with keep ratio ρ, A the set of positions masked for the ground-truth anchor, 
+
+k the number of noise fields drawn per example, and T the number of decoding steps the teacher uses to fill a block. 
+
+# 4 Method 
+
+4.1 Overview 
+
+CONDOR trains a one-step block generator in two stages (Figure 2). Stage 1 trains a noise-conditioned masked LM, the teacher gϕ, with random mask ratios and the WTA objective. Stage 2 trains a student fθ, initialized from the teacher, to reproduce in one forward pass the block that the teacher decodes in several steps under the same noise field; a noise-free masked-LM term on the ground truth anchors the student’s conditionals. The teacher never receives gradients; it is either the frozen Stage-1 model or an exponential moving average of the student (Section 4.4). At inference only the student is used, one forward pass per block (Figure 1d). 
+
+4.2 Noise-conditioned denoiser 
+
+Both stages use the same modification of the masked dLLM. For every masked position i we replace the mask embedding by 
+
+˜ei = e[M] + σ · RMS( e[M] ) · εi, εi ∼ N (0 , I d) i.i.d. , (1) where e[M] is the mask embedding, RMS( ·) is the root-mean-square norm (so that σ is scale-free), and 
+
+ε = {εi}Bi=1 is a noise field covering the masked positions of one block (the ticket). Visible positions are unchanged, and σ=0 recovers the standard model. The network is deterministic, so its one-step block 
+
+ˆy(c, ε ) = arg max fθ (c, ε ) is a function of (c, ε ), and the model defines the mixture 
+
+pθ (x | c) = 
+
+Z
+
+p(ε)
+
+> B
+
+Y
+
+> i=1
+
+fθ (xi | c, ε )i dε, (2) whose integrand factorizes. All dependence between positions must therefore be carried by the shared field ε,and the training signal has to make the field carry it. 
+
+4.3 Stage 1: noise-conditioned teacher 
+
+The teacher is the noise-conditioned masked LM of Section 4.2, trained as follows. Each training example masks a random subset of the block whose size is chosen uniformly at random (from one position to all B), so that the network learns the conditionals p(xj | c, revealed tokens ) for every number of revealed tokens. For each example with masked block state z, k noise fields ε(1) , . . . , ε (k) are drawn and processed in one batched forward pass, giving one cross-entropy to the ground truth per field, summed over the masked positions, 
+
+CE j = P  
+
+> i∈U(z)
+
+− log gϕ(xi | c, z, ε (j))i. The k values can be reduced to a loss in three ways: 
+
+Lplain = 1
+
+> k
+
+P 
+
+> j
+
+CE j , Liwae = − log   1
+
+> k
+
+P 
+
+> j
+
+e−CE j
+
+, Lwta = min j CE j , (3) i.e. plain cross-entropy, the k-sample importance-weighted bound on Eq. (2) with the prior as proposal (IWAE) (5), and the winner-take-all (oracle) loss (18, 30). We train the teacher with Lwta alone, so that only 5Stage 1 — teacher gφ: noise-conditioned masked LM; same prompt, k noise  fi elds, and how the k losses are combined 
+
+random mask count per training example, m ~ Uniform{1, ..., 8}, e.g.:   
+
+> MM
+
+r = 2/8  M M M M M r = 5/8  M M M M M M M M r = 8/8 (fully masked) 
+
+this example: positions 2, 5, 7 masked; k = 4 noise  fi elds  fi ll (differs per draw)  Sⱼ = summed CE to x ★
+
+draw 1  There was a little  girl  Lucy  . was  years  called  He  very  5.8 
+
+draw 2  There was a little  girl  Lucy  . was  years  named  She  three  1.9 
+
+draw 3  There was a little  girl  Lucy  . was  years  named  She  four  3.2 
+
+draw 4  There was a little  girl  Lucy  . was  years  and  It  two  6.4 
+
+gradient weight of each draw under the three objectives 
+
+plain 
+
+mean token CE  
+
+> every draw is pulled to x ★
+> →ε ignored (Prop. 1)
+
+IWAE 
+
+> 0.02
+> 0.01
+
+log-mean-exp(S)   
+
+> soft weights ∝e^{−S ⱼ}
+> ≈ plain until draws differ
+
+WTA (used) 
+
+> 0
+> 0
+> 0
+
+min token CE  
+
+> only the winner learns
+> →draws specialize on ε
+
+Teacher objective: WTA (k = 4) under random mask ratios, so gφ learns the in-block conditionals at every reveal level and its  fi ll depends on 
+
+the noise  fi eld. WTA alone does not yield a coherent one-step map (Sec. 5.2); it seeds the noise sensitivity that Stage 2 ampli fi es. 
+
+Stage 2 — constructing a coupled label from a one-step proposal and teacher re fi ll (one training example) 
+
+1 input  There was a little  pre fi x c + 8 masks + one noise  fi eld ε₁ (the ticket) 
+
+one forward pass 
+
+2 student  Student fθ 
+
+the network being trained 
+
+output: logits de fi ning a vocabulary distribution at each of the 8 positions 
+
+(these original distributions receive the loss below) 
+
+3 student logits  There was a little 
+
+stop-grad: argmax at every position → tokens ŷ 
+
+✓ ✓ ✗ ✓ ✓ ✗ ✗ ✗
+
+4 argmax ŷ  There was a little  girl  named  Lucy  . She  was  was  years 
+
+teacher-scored variant: score each token, gφ(ŷ ⱼ | c, ŷ₋ ⱼ, ε₁); 
+
+keep the 4 highest ( ✓); the 4 lowest ( ✗) become masks again, same ε₁ 
+
+5 remasked  There was a little  girl  named  . She 
+
+stop-grad: 4 steps, one token per step (most con fi dent  fi rst), same ε₁ 
+
+6 teacher  Teacher gφ 
+
+fi lls the 4 masks; never receives gradients 
+
+stop-grad: tokens → target  x̂ (c, ε₁) (green =  fi lled by the teacher) 
+
+7 target  x̂  There was a little  girl  named  Lucy  . She  was  three  years  
+
+> student distribution (gradient fl ows back along this path)
+> teacher target (constant)
+> stop-grad
+
+8 L_distill = mean ⱼ CE( p ⱼ , x̂ ⱼ )
+
+same ε₁ on both sides 
+
+gradient  fl ows back into the student only 
+
+> EMA
+> stop-grad
+
+anchor (ε = 0): the same pre fi x with its ground-truth block x ★, a random subset masked, no noise → student, one pass → predict the masked tokens 
+
+9 anchor  There was a little  girl  M Lucy  . M was  M years  Student fθ 
+
+same weights, ε = 0 
+
+L_gold = mean ⱼ∈ₘ CE( p ⱼ , x ★ⱼ )
+
+> standard masked-LM loss; anchors the conditionals
+
+Figure 2: Training with C ONDOR . Stage 1 (top): a noise-conditioned masked LM is trained with random mask ratios. For one example, the same prompt and mask receive k=4 noise fields, giving k fills and k
+
+cross-entropies CE j to the ground truth. Plain CE averages them (the output under every field is pulled to 
+
+x⋆, so ε is ignored, Proposition 1); IWAE weights them by e−CE j (approximately uniform until the k outputs differ); WTA updates only the winner; we use WTA. The resulting teacher gϕ fills partially masked blocks and its fills depend on ε. Stage 2 (bottom), one training example: (1) prefix, 8 masks and one noise field ε1;(2) student fθ, one forward pass; (3) a distribution at every position (the latent); (4) argmax tokens ˆy; (5) the teacher scores each token and the four lowest-scored positions are masked again under the same ε1; (6) teacher 
+
+gϕ, T =4 decoding steps, same ε1; (7) target ˆx(c, ε 1); (8) Ldistill = P
+
+j CE( latent j , ˆxj ), whose gradient flows only into the student; all other arrows are stop-gradient ( // ); (9) noise-free anchor: the ground-truth block with a random mask and ε=0 passes through the same student, giving the standard masked-LM loss Lgold . The teacher is either the Stage-1 model, frozen, or an EMA copy of the student (dashed arrow). the field whose output is closest to the ground truth receives the data gradient; see Figure 2, top. For the baselines analyzed in Section 5.2.1 we also consider each of the three reductions with an added hidden-state repulsion term λdiv Ldiv , which pushes apart the final hidden states obtained under different fields at the masked positions (negative mean pairwise cosine distance (39); suffix +div ). The teacher is used in Stage 2 to refill partially masked blocks, and its fills must depend on the noise field. 64.4 Stage 2: coupled-noise distillation 
+
+Stage 2 trains the student fθ, initialized from the Stage-1 model, and uses the teacher gϕ only to construct labels; the teacher never receives gradients. Every term of the Stage-2 objective is a masked-LM loss. The student reads a prefix c, a block state z, and a noise field ε, outputs one distribution per position (the latent), and is penalized by the cross-entropy between this distribution and a label token at a set of supervised positions 
+
+P :
+
+L(θ; c, z, ε, y, P ) = X
+
+> j∈P
+
+CE  fθ (· | c, z, ε )j , y j
+
+ = − X
+
+> j∈P
+
+log fθ
+
+ yj | c, z, ε  
+
+> j
+
+, (4) where y is the label block. The objective has two branches, which differ only in the input (z, ε ) and in the label y (Figure 2, bottom). 
+
+Noise-free branch: learning from the ground truth. With ε=0 the model is an ordinary masked LM. A random subset A of the positions of the ground-truth block x⋆ is masked, and the masked positions are supervised with the ground truth itself: 
+
+Lgold = Ec,x ⋆,A L θ; c, x ⋆ 
+
+> ¬A
+
+⊕ [M] A, 0, x ⋆, A . (5) This branch anchors the student’s conditionals p(xj | c, revealed tokens ) to the data; we refer to it as the 
+
+noise-free anchor , or simply the anchor. It is deliberately evaluated without noise. A ground-truth label paired with a noise field is the same for every field, and would train the student to ignore the field (Proposition 1; Section 5.2.3). 
+
+Noisy branch: learning a coupled label. With a noise field ε̸ = 0 the student sees the fully masked block, and the label is a block ˆx(c, ε ) constructed jointly by the student and the teacher under that same field (next paragraph). All B positions are supervised: 
+
+Ldistill = Ec Eε∼N (0 ,I ) L θ; c, [M] B , ε, ˆx(c, ε ), {1, . . . , B }. (6) The label is treated as a constant (stop-gradient). Because ˆx is built for this particular ε, a single field per example suffices and no competition among several fields is needed. Unlike the Stage-1 objectives of Eq. (3), the label already specifies which block belongs to this field. 
+
+Constructing the label ˆx(c, ε ). Let ˆy = arg max fθ (c, ε ) be the student’s current one-step block, computed without gradient, and let sj be a per-position score of its tokens: either the student’s own confidence sj =max v fθ (v | c, ε )j , or the teacher’s leave-one-out probability sj = gϕ(ˆ yj | c, ˆy¬j , ε )j , obtained by masking position j alone (the teacher is trained only on masked positions and has no meaningful output at visible ones). Let K be the ⌈ρB ⌉ highest-scored positions. The label is 
+
+ˆx(c, ε ) = DT
+
+ gϕ; c, ˆyK ⊕ [M] ¬K , ε , (7) where DT (gϕ; c, z, ε ) denotes T -step confidence-ordered decoding by the teacher: each step runs one teacher forward pass on the current state with the same field ε (scale σT ), commits the ⌈| U (z)|/T ⌉ still-masked positions whose argmax token has the highest probability, and makes them visible to later steps; we use 
+
+T = |U (z)|, one token per step. On K the label coincides with the student’s own tokens; on ¬K it carries the teacher’s completion conditioned on them. We call this construction keep-and-fill , and teacher-scored keep 
+
+when the teacher’s leave-one-out probability is used as the score. Every quantity on the right of Eq. (7) is a deterministic function of (c, ε ) for the current weights, so ˆx is too. The pair (ε, ˆx) is thus a coupling between the noise prior and one joint block, and Eq. (6) transfers this coupling into the one-step readout. The keep ratio ρ interpolates between a pure-teacher label decoded from [M] B (ρ → 0, full decoding ) and the student’s own argmax ( ρ → 1), which contains no information beyond the student. 7Algorithm 1 One Stage-2 training step of C ONDOR .
+
+Require: student fθ ; teacher gϕ (frozen Stage-1 model, or EMA copy of the student); prefix c and ground-truth block x⋆; keep ratio ρ; teacher decoding steps T ; anchor weight λ 
+
+> 1:
+
+Draw one noise field ε = ( ε1, . . . , ε B ), εi ∼ N (0 , I d) 
+
+> 2:
+
+p ← fθ (c, [M] B , ε ) ▷ latent, one distribution per position; no gradient  
+
+> 3:
+
+ˆyj ← arg max v pj (v) for j = 1 , . . . , B  
+
+> 4:
+
+sj ← max v pj (v), or sj ← gϕ(ˆ yj | c, ˆy¬j , ε )j ▷ student confidence, or teacher leave-one-out score  
+
+> 5:
+
+K ← the ⌈ρB ⌉ positions with the largest sj ; z ← ˆyK ⊕ [M] ¬K 
+
+> 6:
+
+ˆx ← D T (gϕ; c, z, ε ) ▷ teacher fills U (z) under the same ε; no gradient  
+
+> 7:
+
+Ldistill ← L (θ; c, [M] B , ε, ˆx, {1, . . . , B }) ▷ Eq. (4); second student pass, with gradient  
+
+> 8:
+
+Draw a random subset A of block positions; Lgold ← L (θ; c, x ⋆ 
+
+> ¬A
+
+⊕ [M] A, 0, x ⋆, A ) 
+
+> 9:
+
+θ ← θ − η ∇θ
+
+ Ldistill + λLgold 
+
+; if EMA-updated teacher: ϕ ← βϕ + (1 − β)θ
+
+Teacher. gϕ is either the Stage-1 model kept frozen , or an EMA-updated copy of it, i.e. an exponential moving average of the student’s weights that is moved toward the student after every update, ϕ ← βϕ + (1 − β)θ with decay β close to 1 (dashed arrow in Figure 2); the anchor branch is kept in both cases. 
+
+Objective. The Stage-2 objective is L = Ldistill + λ Lgold with anchor weight λ; Algorithm 1 summarizes one training step. At inference only the student runs, once per block. 
+
+Variants. Head-anchored gold places ground-truth tokens directly in the label: k noise fields are drawn for the same example, the field whose one-step block has the lowest cross-entropy to the ground truth on the first h positions is selected, and its label is the ground-truth head followed by the teacher’s fill of the tail under that field; the other k − 1 fields receive the label of Eq. (7). A decoupled control decodes the teacher under an independent field ε′, which yields labels of the same quality that are independent of the student’s input. Further label constructions (annealed ρ, injection of ground-truth tokens where the teacher assigns them comparable probability, a second refinement round, soft labels, an ε-driven Gumbel teacher, full decoding guided by the student’s logits) are compared in Section 5.2.3. 
+
+# 5 Experiments 
+
+5.1 Experimental setup 
+
+Task and data. We use TinyStoriesV2-GPT4 (10) ( 2.72 M stories) tokenized with GPT-2 BPE (44) and split into non-overlapping 16-token windows. The first 8 tokens of a window form the prefix c and the remaining 
+
+B=8 tokens the block x; we call this the 8+8 task and write 4+4 and 8+16 for the analogous tasks with a 
+
+4-token prefix and block, and an 8-token prefix with a 16 -token block. Unless stated otherwise, the block is fully masked during training, matching the evaluation. The first 256 windows are held out from training and serve as the test set: their prefixes are the test prompts , and their blocks the reference continuations .
+
+Models. The denoiser is a 6-layer bidirectional Transformer ( d=256 , 8 heads, FFN 1024 , learned positional embeddings, tied embeddings; 17 .6M parameters). The strongest baseline configuration uses 12 layers; 24 
+
+and 48 layers are reported in Appendix C. In tables, a configuration such as “L12, b512, 3·10 −4, 80k” denotes 
+
+12 layers, batch size 512 , peak learning rate 3·10 −4, and 80 k training steps. We use σ=0 .5 and k=4 unless stated otherwise. 
+
+Baselines. The baselines are noise-conditioned one-step models (Section 4.2) trained directly on the fully masked block with one of the three Stage-1 objectives of Eq. (3); in tables they are named plain (average over 8the k fields), IWAE (log-mean-exp), and WTA (minimum), and the suffix +div indicates that the hidden-state repulsion term of Section 4.3 is added. These objectives are swept over depth, batch size, learning rate, training length, the way the block is masked during training (fully, a random subset, or a random ratio), and the layer at which ε is added (input embeddings or an intermediate layer) (Appendix C). We further sweep k for the WTA objective, and report multi-step decoding of the teacher as an upper bound on what the same weights can produce with more forward passes. Throughout, NFE (number of function evaluations) denotes the number of forward passes spent on one block. 
+
+Evaluation protocol. For a test prompt, the model receives the prompt followed by 8 mask tokens and one noise field ε, and commits all 8 positions in a single forward pass. Only this one block, the one directly following the prompt, is generated and evaluated; the model is never asked to continue past it in the 8+8 
+
+task. To measure the effect of the noise, the same block is generated several times for the same prompt, each time with a new, independently drawn noise field. “ 16 noise fields per prompt” therefore means 16 
+
+alternative one-step outputs for the same 8 positions, not 16 consecutive blocks; the outputs for one prompt differ only in ε. Legality is assessed by human evaluation. A block is legal if it could appear verbatim in natural English continuing the prompt (mid-sentence cut-offs are acceptable; repeated words, punctuation runs, non-words, and semantic inconsistencies are not). Human evaluation uses the first 32 test prompts with 16 
+
+noise fields each, i.e. 32 × 16 = 512 one-step blocks per model, each labeled legal or illegal; the protocol and its calibration are in Appendix B. Human evaluation is available for eight models; the remaining rows report an automatic proxy, marked with †, in which a pretrained GPT-2-large (44) scores each generated token by its negative log-likelihood (NLL) given the prompt and the preceding block tokens. The loose proxy calls a block legal if its mean NLL per token is below the 90th percentile of the mean NLL of the reference continuations; the strict proxy requires the block’s worst (highest-NLL) token to be below the 90th percentile of the reference continuations’ worst tokens and no two adjacent tokens to be identical. Unless stated otherwise, proxy legality means the strict proxy. On the eight human-evaluated models the strict proxy ranks the models as the human evaluation does (Spearman ρ = 0 .95 ) but inflates low legality by a factor of 2–3; proxy numbers are therefore used only for ordering variants within a table. 
+
+Metrics. Legality (Leg.) is the fraction of the 512 one-step blocks judged legal. Legal-unique (LU) measures whether the noise field changes the output: for each prompt, among the blocks (one per noise field) judged legal, the fraction that are distinct strings, averaged over prompts. Any-of-16 is the fraction of prompts for which at least one of the 16 noise fields yields a legal block. Distinct is the number of distinct strings among the 16 blocks of a prompt (one per noise field), averaged over prompts. Repetition (Rep.) is the fraction of generated tokens equal to the token at the preceding position. Gold hit is the fraction of generated tokens equal to the reference continuation’s token at the same position; a model that predicts the most likely token at every position independently scores high on it even when the block as a whole is incoherent, so it measures closeness to the data marginals rather than quality. The information carried by ε is measured on all 256 test prompts with 64 noise fields each: for position j, with pε(xj ) the output distribution under field ε,
+
+Hcond [j] = Eε H pε(xj ), Hmarg [j] = H Eε pε(xj ), MI[ j] = Hmarg [j] − Hcond [j] = I(xj ; ε | c),
+
+(8) averaged over the 256 prompts. Hcond [j] is the average uncertainty the model has left at position j once the noise field is given; Hmarg [j] is the uncertainty of its noise-averaged prediction; their difference MI[ j] is how much the noise field decides about position j. Since the output factorizes given ε, P 
+
+> j
+
+MI[ j] upper-bounds 
+
+I(ε; x1: B | c) (Appendix A); we report this sum as MI and Hcond at the last position as Htail . The per-position diagnostics of Table 2 are computed from the same 256 × 64 outputs. For a single (prompt, field) pair the output at position j is one distribution pε(xj ); p10 is the 10th percentile of its entropy H(pε(xj )) over all pairs, and frac <1 the fraction of pairs with H(pε(xj )) < 1 nat, i.e. the fraction of cases in which the model is essentially decided at that position. maxp is the mean top-1 probability; uniq the number of distinct argmax tokens across the 64 fields of a prompt; filler the fraction of argmax tokens that belong to a fixed list of function words and punctuation ( the, and, was, to, a , comma, period, newline, . . . ; Appendix G); and the WTA gap the 9Table 1: Human-evaluated one-step legality (%) of noise-conditioned baselines trained with the three objectives of Eq. (3) (plain, IWAE, WTA), without or with the hidden-state repulsion term (+div); legal-unique in parentheses. All 8+8 rows use the same 32 test prompts with 16 noise fields each (one one-step block per field). Extended grids are in Appendix C.                                                          
+
+> Task Configuration plain IWAE IWAE+div WTA WTA+div
+> 4+4 L12, b512, 3·10 −4, 80k 31.8 (.09) 43.9 (.36) 51.2 (.35) 47.3 (.54) 49.8 (.44)
+> 4+4 L6, b1024, 1.2·10 −3, 80k ———52.0 (.46) —
+> 8+8 L6, b256, 3·10 −4, 100k 4.3 (.15) 3.9 (.42) 5.3 (.38) 5.3 (.50) 4.5 (.64)
+> 8+8 L6, b512, 4·10 −4, 500k 7.4 (.09) 8.0 (.37) 8.2 (.35) 6.4 (.58) 5.7 (.67)
+> 8+8 L12, b1024, 1·10 −3, 80k ———6.6 (.62) 8.6 (.46)
+> 8+8 L24 / L48, 80k ———6.1 / 3.7 —
+> 8+16 L6, b512, 200k 0.0 ——0.8 —
+
+loser-minus-winner cross-entropy of a k=4 WTA update on the reference continuation, position by position, i.e. where the WTA gradient acts. 
+
+Implementation details. The Stage-1 teacher is a 6-layer model trained for 500 k steps with batch 512 , a uniformly random number of masked positions per block, and WTA with k=4 noise fields per example and 
+
+σ=0 .5. Students are initialized from the teacher and trained for 50 k steps with batch 512 , AdamW, learning rate 10 −4 with cosine decay and 500 warm-up steps. The teacher fills with σT =0 .5 and T = |U (z)| (one token per step: T =4 for keep-and-fill with ρ=0 .5, T =8 for full decoding); the anchor weight is λ=1 ; head-anchored gold uses k=4 , h=4 and batch 256 . EMA-updated teachers use β ∈ { 0.99 , 0.999 , 0.9999 }. Further details are in Appendix G. 
+
+5.2 One-step commitment of an 8-token block 
+
+5.2.1 Analysis of the noise-conditioned baselines Legality across objectives and scale. Table 1 reports one-step legality of the noise-conditioned baselines. On the 4+4 task the best configurations reach 50 %; on 8+8 no objective exceeds 9%, and on 8+16 legality is close to zero. Within 8+8 , the result is insensitive to the objective, to depth from 6 to 48 layers, to batch sizes from 16 to 2048 and learning rates from 10 −4 to 1.2·10 −3, to training for 500 k rather than 80 k steps, to additional WTA losses on sub-spans of the block, to masking a random subset or a random fraction of the block during training instead of the whole block, and to adding ε after an intermediate layer instead of at the input (Appendix C). Plain cross-entropy largely ignores the noise field: the 16 blocks of a prompt (one per noise field) contain only about 2 distinct strings (LU 0.09 ). WTA and IWAE do react to the noise field (about 12 
+
+distinct strings among the 16 blocks of a prompt), but their blocks are rarely legal. The strongest configuration, WTA+div with 12 layers and batch 1024 (8.6%; 8.2% on re-evaluation, Appendix B), serves as the baseline in the remainder of the paper; plain and IWAE+div trained in the same configuration are within 0.5 points on the proxy. Increasing model size or training does not change this, which suggests that the limiting factor is the training signal rather than capacity. 
+
+Why plain cross-entropy ignores the noise. Proposition 1 (Noise-ignoring optimum) . If ε ⊥ x | c and the model family is sufficiently expressive, 
+
+Eε
+
+ P  
+
+> i
+
+log pθ (xi | c, ε ) is maximized by predictors that are constant in ε, i.e. pθ (xi | c, ε ) = p(xi | c) for almost every ε.
+
+10 Table 2: Per-position analysis on the 256 test prompts with 64 noise fields each, positions 0–7 of the block (position 0 is the first token after the prompt). Top: strongest one-step baseline (WTA+div, L12). Bottom: the CONDOR student trained with keep-and-fill. All rows are defined in Section 5.1 (Metrics): Hcond , Hmarg , MI 
+
+from Eq. (8); p10 and frac <1 summarize the per-field entropy H(pε) over (prompt, field) pairs; maxp: mean top-1 probability; uniq: distinct argmax tokens across the 64 fields of a prompt; repetition: fraction of argmax tokens equal to the argmax at the previous position; filler: fraction of argmax tokens in the function-word list; WTA gap: loser-minus-winner cross-entropy of a k=4 WTA update. Entropies in nats.                                                                                                                                              
+
+> position 01234567
+> Baseline (WTA+div, one step) ,P
+> jMI[ j] = 2 .6
+> Hcond 2.01 2.91 3.50 3.90 4.15 4.47 4.71 4.87
+> p10 0.20 0.65 1.30 2.03 2.34 3.01 3.51 3.88 frac <10.29 0.14 0.08 0.04 0.04 0.008 0.002 0.001
+> Hmarg 2.18 3.22 3.91 4.34 4.58 4.83 4.99 5.07
+> MI 0.17 0.31 0.41 0.45 0.42 0.36 0.28 0.20 maxp 0.55 0.41 0.32 0.26 0.23 0.18 0.15 0.13 uniq /64 2.2 3.4 4.5 4.9 5.3 5.3 4.8 4.1 repetition 00.03 0.10 0.20 0.26 0.30 0.38 0.47
+> filler 0.15 0.21 0.21 0.27 0.29 0.34 0.39 0.50 WTA gap 0.55 1.00 1.42 1.57 1.48 1.26 0.92 0.64 CONDOR (keep-and-fill, one step) ,P
+> jMI[ j] = 9 .9
+> Hcond 0.63 0.81 0.70 0.48 0.50 0.86 1.35 1.83
+> frac <10.74 0.66 0.72 0.81 0.80 0.63 0.42 0.26
+> MI 0.52 0.86 1.05 1.24 1.38 1.63 1.73 1.54 maxp 0.81 0.78 0.81 0.86 0.86 0.76 0.64 0.54 uniq /64 3.8 5.7 7.0 7.6 9.3 12.4 15.6 16.4 repetition 00.01 0.01 0.01 0.01 0.01 0.01 0.04
+
+The proof is in Appendix A. The IWAE weights wj ∝ e−CE j are uniform while the k noise fields are exchangeable, so the IWAE gradient coincides with plain cross-entropy until specialization has begun; since 
+
+CE j sums over B positions, the weights sharpen with B and IWAE approaches WTA for long blocks (Remark 1, Appendix A). WTA breaks the symmetry from the first step. The rest of this section examines how much it can do. 
+
+Per-position analysis. Table 2 (top) decomposes the baseline’s output by position. (i) The mutual information between ε and the output peaks at 0.45 nats at positions 2–4 and decreases to 0.2 at the tail; summed over the block, ε carries at most 2.6 nats, i.e. about e2.6 ≈ 13 distinguishable continuations per prompt, against an estimated 16 –20 nats of block entropy. 1 (ii) At position 7, Hcond = 4 .87 nats against Hmarg = 5 .07 , so conditioning on ε removes almost no uncertainty; the mean top-1 probability is 0.13 , and the argmax is the most frequent filler token. As a result, 47 % of last positions repeat the preceding token and 50 % are filler tokens. (iii) The failure is not limited to a few noise fields. The 10th percentile of H(pε) at position 7 is 
+
+3.88 nats, and only 0.1% of the 256 × 64 (prompt, noise field) pairs have an output entropy below 1 nat at that position. (iv) The WTA signal itself is concentrated at the head. The loser-minus-winner gap peaks at positions 2–4 (1.4–1.6 nats) and is 0.64 at position 7. The same pattern holds for every one-step model we trained, including the 4+4 WTA model with 52 % legality ( MI = 1 .8, Htail = 4 .38 ); the higher legality of shorter blocks reflects the higher probability that a product of marginals is legal by chance, consistent with the multimodality problem of non-autoregressive generation (15, 67).     
+
+> 1An in-domain language model assigns roughly 2–2.5nats/token to TinyStories continuations, i.e. 16 –20 nats per 8-token block.
+
+11 Table 3: Sweep over the number k of competing noise fields in the WTA objective, for the 8+8 baseline configuration L6, b256, 3·10 −4, 100k, with all other settings fixed. Legality, LU, and any-of-16 are human-evaluated on the same 32 test prompts ( 16 noise fields each; any-of-16 was not recorded for k=4 ); MI , Htail ,and tail frac <1 (the fraction of (prompt, field) pairs whose output entropy at the last position is below 1 nat) use 256 prompts with 64 noise fields each.                                      
+
+> klog kLeg. (%) LU Any-of-16 (%) MI Htail tail frac <1Rep. Distinct 41.39 5.3 0.50 —2.45 5.06 0.001 0.272 12.7 16 2.77 6.4 0.87 40.6 6.48 4.74 0.005 0.143 14.9 64 4.16 12.5 0.97 71.9 10.16 4.43 0.019 0.079 15.7
+
+Why competition cannot close the gap. Consider the one-step map ε 7 → ˆy(c, ε ) as a partition of the noise space into cells, each storing one continuation of c. A WTA update on a ground-truth block y samples k cells and moves the one with the lowest cross-entropy toward y. The choice is one of k alternatives, so a single update conveys at most log k nats of assignment information, independent of the continuity of ε. For the map to store N distinct continuations of c stably, the update should reach the cell assigned to y; with k independently drawn noise fields this occurs with probability 1 − (1 − 1/N )k, which equals 0.94 for N =2 , 0.27 for N =13 ,
+
+0.04 for N =100 , and vanishes for the e16 –e20 plausible continuations of an 8-token block. Otherwise the update moves a cell that stores a different continuation toward y, and a cell updated by many different targets converges to their average, the marginal distribution. This argument makes two predictions. (i) The number of continuations a k-sample WTA map maintains scales with k rather than with the data, so the information carried by ε should grow with log k but remain far below the block entropy. (ii) The degradation concentrates at the tail of the block. The winner is selected by the block-level cross-entropy, which is dominated by the head positions on which the k candidate blocks differ, and the tail of the winning cell is subsequently overwritten by every target that shares its head. The IWAE reduction is a soft version of the same update and inherits the bound. The gap row of Table 2 is consistent with (ii); Table 3 tests (i). 
+
+Effect of k. Table 3 varies k in the WTA objective. Increasing k from 4 to 64 raises MI from 2.5 to 10 .2
+
+nats, reduces repetition from 0.27 to 0.08 , and makes almost all legal outputs distinct (LU 0.50 → 0.97 ), consistent with prediction (i). However, the tail remains close to its marginal ( Htail 5.06 → 4.43 ; even at 
+
+k=64 the model is decided at the last position for only 2% of (prompt, field) pairs) and human-evaluated legality increases only from 5.3% to 12 .5%, consistent with prediction (ii). The proxy reports 18% → 43% 
+
+for the same models because it rewards the reduction in repetition (Appendix B). A training step at k=64 
+
+requires 64 forward passes. 
+
+Multi-step decoding of the same network. Table 4 decodes the Stage-1 teacher with different procedures. Each multi-step decoder starts from the fully masked block and commits one position per step, so eight forward passes fill the block; the committed tokens are visible to later steps. The decoders differ in three choices: which position is committed next (the still-masked position whose top-1 probability is highest, the leftmost one, or a random one), whether the committed token is the argmax or a sample from the predicted distribution (drawn with the Gumbel-max trick at temperature 1), and whether a new noise field is drawn at every step or a single field is kept for all eight steps. The same weights whose one-step output is 12 .5%† legal produce, in eight steps, blocks that pass the proxy 94 –99 % of the time with no repetition. With a new field at every step and argmax commitment, the noise averages out and the decoder returns the same block for a prompt every time (Distinct 1.0); sampling restores diversity at a small cost in legality. Decoding with a single field ε held fixed across all eight steps is legal ( 96 .4%) and diverse ( 14 .9 distinct strings among the 16 blocks decoded for a prompt under 16 different fields). Each step conditions on the tokens committed under the same field, so the teacher’s limited noise sensitivity accumulates over the steps into distinct coherent completions. A plain-cross-entropy teacher decoded in the same way yields 1.8 distinct blocks. Stage 2 distills this multi-step 12 Table 4: The same Stage-1 teacher decoded with different procedures on the 256 test prompts, 16 noise fields each (the block following the prompt is decoded once per field). Every 8-step decoder commits one token per step; the decoders differ in the order in which positions are committed, in whether the committed token is the argmax or a sample, and in whether a new noise field is drawn at every step or one field is kept for all steps (Section 5.2.1). NLL/token is the GPT-2-large negative log-likelihood per generated token; legality is the 
+
+loose proxy † (mean NLL below the reference 90th percentile), used here only to compare decoders of one network; the first row scores the reference continuations themselves. 
+
+Decoder ( NFE per block) NLL/token Leg. † (%) Rep. Distinct reference continuations 3.24 89.8 0 —one step, all 8 positions at once, ε=0 (1) 5.55 12.5 0.35 1.0 8 steps, most confident position first, argmax, new ε at every step (8) 2.79 97.7 0.00 1.0 8 steps, left to right, argmax, new ε at every step (8) 2.77 98.8 0.00 1.0 8 steps, random order, argmax, new ε at every step (8) 2.93 96.9 0.00 14.2 8 steps, most confident first, token sampled (Gumbel), new ε at every step (8) 3.09 94.2 0.00 14.8 8 steps, most confident first, argmax, one ε fixed for all steps (8) 2.99 96.4 0.00 14.9 
+
+Table 5: One-step 8+8 commitment. Leg. and LU are human-evaluated on the same 32 test prompts with 16 
+
+noise fields each (one one-step block per field; 512 blocks per model); MI , Htail , Rep., Distinct, and gold hit are computed on all 256 test prompts. Any-of-16 requires per-block human labels and was recorded only for the models re-evaluated under the final protocol (Appendix B). The teacher row reports proxy legality †
+
+(Table 4). C ONDOR rows are the label constructions of Section 4.4: keep-and-fill (kept positions chosen by student confidence), teacher-scored keep (chosen by the teacher’s leave-one-out probability), the noise-free anchor, and head-anchored gold; they use the frozen Stage-1 teacher, except the row marked self , whose teacher is an EMA of the student.                                                                                                                          
+
+> Model NFE Leg. (%) LU Any-of-16 (%) MI Htail Rep. Distinct Gold hit
+> Noise-conditioned baselines, one step
+> plain, L6, 500k 17.4 0.09 —0.01 4.91 0.293 2.1 0.26 IWAE+div, L6, 500k 18.2 0.35 —2.44 4.78 0.234 11.4 0.21 WTA+div, L12, 80k 18.6 0.46 25.0 2.61 4.87 0.249 12.7 0.20 WTA, k=16 , L6, 100k 16.4 0.87 40.6 6.48 4.74 0.143 14.9 0.15 WTA, k=64 , L6, 100k 112.5 0.97 71.9 10.16 4.43 0.079 15.7 0.12
+> Teacher, multi-step
+> Stage-1 teacher, 8 steps, one εfixed for all steps 896.4 †————0.00 14.9 —CONDOR , one step
+> keep-and-fill 158.8 0.88 100 10.09 1.45 0.008 14.7 0.105 keep-and-fill +anchor 164.8 0.85 100 9.58 1.54 0.008 14.5 0.106 teacher-scored keep +anchor 173.4 0.83 100 9.28 1.21 0.006 14.2 0.111 head-anchored gold 139.5 0.92 100 8.66 2.37 0.023 15.3 0.150
+> keep-and-fill +anchor, self (EMA 0.9999 )169.7 0.92 100 11.29 0.78 0.005 14.8 0.084
+
+decoding under a fixed field into the one-step readout. 
+
+5.2.2 Main results 
+
+Table 5 compares C ONDOR with the baselines under one-step commitment. With the same architecture and the same test prompts, human-evaluated legality increases from 8.6% to 58 .8% with distillation alone, to 
+
+64 .8% with the noise-free anchor, and to 73 .4% with teacher-scored keep sets. The noise field still changes the output. Among the 16 blocks of a prompt (one per noise field), 14 –15 are distinct strings, 83 –92 % of the legal ones are distinct (LU), and for every prompt at least one noise field yields a legal block (any-of-16 
+
+25% → 100% ). The per-position analysis in Table 2 (bottom) shows the same change: MI increases from 2.6
+
+13 Table 6: Ablation of the components of C ONDOR . Default: keep-and-fill with keep ratio ρ=0 .5 (the teacher refills the 4 re-masked positions in T =4 steps under the student’s noise field), noise-free anchor, frozen teacher. Each block of rows changes one component. Legality is the strict proxy † on all 256 test prompts with 16 noise fields each (human-evaluated values for the default and the no-anchor rows are in Table 5); LU † is legal-unique with legality judged by the proxy. The ρ=0 .75 row has the highest proxy legality of all runs, but also the lowest diversity; this is the mode-seeking bias of the proxy discussed in Appendix B.                                                                                   
+
+> Variant Leg. †(%) LU †MI Htail Rep. Distinct default 76.1 0.89 9.6 1.54 0.008 14.5
+> Which noise field the teacher decodes under
+> decoupled: teacher decodes the whole block under an independent field ε′15.6 0.31 0.03 3.90 0.217 3.9 coupled: teacher decodes the whole block under the student’s ε(ρ=0 ,T=8 )48.1 0.95 7.5 2.70 0.051 15.4
+> Keep ratio ρ(fraction of the student’s tokens kept in the label)
+> ρ=0 .25 (2kept, 6refilled) 60.3 0.94 9.2 2.38 0.027 15.2
+> ρ=0 .5, no anchor 73.6 0.91 10.1 1.45 0.008 14.7
+> ρ=0 .75 (6kept, 2refilled) 89.9 0.79 5.6 0.78 0.002 12.8
+> Anchor (ground-truth term)
+> computed with the noise field in the input ( σ=0 .5)69.5 0.79 3.3 2.88 0.017 13.0 computed with ε=0 (default) 76.1 0.89 9.6 1.54 0.008 14.5
+> Shape of the noise field
+> one vector εshared by all 8positions (default: one per position) 75.2 0.67 6.7 1.69 0.011 11.3
+
+to 10 nats, Htail decreases from 4.87 to 1.2–1.8 nats, the top-1 probability at the last position increases from 
+
+0.13 to 0.54 , and repetition decreases from 0.47 to 0.04 . Across three seeds the proxy legality varies by ±0.01 
+
+(0.761 /0.746 /0.753 for keep-and-fill +anchor; 0.148 /0.135 /0.135 for the baseline). Head-anchored gold has lower legality ( 39 .5%) but the highest LU ( 0.92 ) and gold hit ( 0.150 vs. 0.105 ); it trades legality for coverage of the data distribution. With a slowly EMA-updated teacher ( β=0 .9999 ) instead of the frozen one, the student reaches 69 .7% and the highest MI (Section 5.2.4). Gold hit decreases under distillation ( 0.20 → 0.11 ) because the baseline predicts the marginal mode at each position, which coincides with the reference token more often than any single committed continuation does; the plain baseline, which ignores ε altogether, has the highest gold hit ( 0.26 ) for the same reason. Qualitative examples are given in Section 5.2.5. 
+
+5.2.3 Ablation studies Necessary components. Table 6 removes or modifies one component at a time. Coupling. The two “coupling” rows both let the teacher decode the whole block ( ρ=0 , so the label contains no student tokens) and differ only in the noise field the teacher is given: the student’s own field ε (coupled ), or an independent field ε′ (decoupled ), which produces labels of the same quality that are unrelated to the student’s input. With an independent field the student ends with MI = 0 .03 , only 3.9 distinct strings among the 16 blocks of a prompt (one per noise field), and baseline-level repetition. This is the collapse predicted by Proposition 1 for a label independent of the input noise. With the shared field the same procedure reaches MI 7 .5 and 
+
+15 .4 distinct blocks, so the shared noise field is the component that matters. Information in the label. As the keep ratio increases from 0.25 to 0.75 , the label contains more of the student’s own prediction and less teacher information; at ρ=0 .75 the student becomes confident and repetition-free, while its dependence on 
+
+ε decreases ( MI 5 .6, LU 0.79 , 12 .8 distinct blocks). Its proxy legality ( 89 .9†) is the highest of all runs, but the proxy rewards this kind of low-entropy output (Appendix B). A label must contain information beyond the student’s own argmax; ρ=0 .5 balances learnability and information. Noise-free anchor. Computing the ground-truth term with ε in the input reduces MI from 9.6 to 3.3 nats and proxy legality from 76 .1† to 69 .5†:14 Table 7: Ablation of target construction and hyperparameters around the default (keep-and-fill + anchor, frozen teacher; defaults marked ∗). Strict proxy legality †; human-evaluated values in parentheses where available. All runs 50 k steps.                                                                                                                                    
+
+> Axis Variant Leg. †(%) LU †MI
+> target keep-and-fill, no anchor 73.6 (58.8) 0.91 10.1
+> ∗keep-and-fill +anchor 76.1 (64.8) 0.89 9.6 teacher-scored keep +anchor 78.9 (73.4 )0.88 9.3 teacher logits perturbed by ε-driven Gumbel noise (scale 1) 78.5 0.88 8.4 ground-truth tokens inserted where teacher agrees ( τ=0 .1)77.6 0.88 8.8 teacher distribution as label instead of its argmax 76.3 0.85 7.5 keep-and-fill applied twice 69.4 0.93 10.5 full decoding, teacher logits mixed with student’s ( 0.5)60.3 0.96 10.0 keep ratio annealed 0.75 →0.25 over training 56.1 0.93 8.0 head-anchored gold
+> k=4 ,h=4 65.9 (39.5) 0.94 8.7
+> k=8 ,h=4 73.0 0.92 10.5
+> k=4 ,h=4 ,+anchor 61.6 0.95 8.5 teacher steps TT=1 69.8 0.85 10.0
+> T=2 74.9 0.87 9.4
+> ∗T=4 76.1 0.89 9.6 noise scale σ
+> 0.25 74.7 0.90 9.5
+> ∗0.576.1 0.89 9.6
+> 1.077.1 0.89 8.8 anchor weight λ
+> 0.375.9 0.90 9.6
+> ∗176.1 0.89 9.6
+> 375.4 0.88 8.9 batch size ×lr
+> 256 ×10 −474.6 0.90 9.5
+> ∗512 ×10 −476.1 0.89 9.6
+> 512 ×3·10 −472.7 0.91 9.7
+> 1024 ×3·10 −478.2 0.91 9.7 student depth ∗6layers ( 6-layer teacher) 76.1 0.89 9.6
+> 12 layers ( 12 -layer teacher, random mask ratios) 73.3 0.92 11.1 student input half of each batch distilled from partially masked blocks 71.7 0.93 9.9
+
+by Proposition 1 it is a label identical for every noise field and teaches the network to ignore ε. The noise-free anchor leaves MI unchanged and improves human-evaluated legality from 58 .8% to 64 .8% (Table 5). Noise field shape. A single vector ε shared by all positions preserves proxy legality but reduces diversity ( 11 .3
+
+distinct blocks, LU 0.67 ); a separate vector per position is preferable at this block length. 
+
+Target construction and hyperparameters. Table 7 varies the label construction and the hyperparameters. Choosing the kept positions by the teacher’s leave-one-out probability instead of the student’s own confidence gives the largest improvement ( 64 .8 → 73 .4% human-evaluated). The student is often confident about repeated tokens, and the teacher’s score changes the kept set on 36 % of the examples. Two further changes to the label give small gains: perturbing the teacher’s logits with Gumbel noise that is itself a fixed linear function of ε (so that the teacher’s fill depends more strongly on the field), and inserting a ground-truth token at positions where the teacher assigns it at least a fraction τ of its top probability. Constructions that let the teacher determine more of the label (running keep-and-fill twice, decoding the whole block with the teacher while mixing its logits with the student’s, or annealing the keep ratio from 0.75 to 0.25 over training) increase diversity at the 15 Table 8: Stage 2 with an EMA-updated teacher, ϕ ← βϕ + (1 − β)θ after every step; “EMA β” gives the decay. Unless stated, the label is keep-and-fill with ρ=0 .5 and the noise-free anchor is used; σT is the noise scale the teacher uses when it refills the re-masked positions ( σT =0 : the teacher refills without noise). The last three rows skip Stage 1 and start from random initialization; “long ground-truth warm-up” trains on the anchor alone before the distillation term is switched on. Legality is human-evaluated where available and the strict proxy † otherwise; LU and Distinct follow the same source.                                                                                                            
+
+> Teacher Leg. (%) LU MI Htail Distinct Outcome EMA 0.999 , no anchor 0.0 †0.06 0.0 0.00 1.0 collapse to a single repeated token EMA 0.999 , refill with σT=0 75.3 †0.17 0.19 1.23 2.7 fluent; no dependence on ε
+> EMA 0.999 , refill with σT=0 .25 75.3 †0.31 2.06 1.19 5.2 weak dependence on ε
+> EMA 0.999 , refill with σT=0 .550.1 †1.00 14.7 1.03 16.0 drifts to one repeated word EMA 0.999 ,σT=0 .5, teacher-scored keep 29.1 †0.99 14.6 1.23 15.9 same drift EMA 0.99 ,σT=0 .559.2 †0.85 11.0 1.29 14.3 partial drift
+> EMA 0.9999 ,σT=0 .569.7 0.92 11.3 0.78 14.8 stable EMA 0.9999 ,σT=0 .5, teacher-scored keep 82.2 †0.91 10.2 0.74 14.6 stable EMA 0.9999 ,σT=0 .5, head-anchored gold 66.4 †0.96 9.7 1.77 15.5 stable, higher diversity no Stage 1, EMA 0.999 ,σT=0 , head-anchored gold 70.6 †0.30 2.2 1.90 5.5 weak dependence on ε
+> no Stage 1, EMA 0.999 ,σT=0 .5, head-anchored gold 0.0 †—5.5 0.19 15.4 collapse (repetition 0.43 )
+
+expense of legality, as does head-anchored gold; doubling k in head-anchored gold improves the choice of the field that receives the ground-truth head ( 65 .9 → 73 .0†). The number of teacher decoding steps has a moderate effect ( T =1 : 69 .8†; T =4 : 76 .1†), so the shared noise field matters more than the number of steps. The noise scale, anchor weight, and batch/learning-rate settings have effects within a few points. A 12 -layer student distilled from a 12 -layer teacher carries more information about ε (MI 11 .1) at similar legality. Distilling from partially masked blocks in addition to the fully masked block does not improve one-step performance. 
+
+5.2.4 Stage 2 with an EMA-updated teacher 
+
+Table 8 replaces the frozen teacher with an EMA of the student, so that the labels are produced by a slightly delayed copy of the network being trained. We observe three failure modes and one stable regime. Without the anchor, the training loop contains no data term and the student converges to a self-consistent fixed point in which every prompt, under every noise field, produces the same repeated token. With the anchor but a noise-free refill ( σT =0 ), the output is fluent (the student’s noise-free masked-LM cross-entropy on the reference continuations is 2.73 nats per token, the same as the best runs) but the dependence on ε vanishes (2.7 distinct blocks, MI 0 .2). In this setting the label depends on ε only through the few head tokens kept from the student, and this dependence decays under the self-training loop; the teacher itself therefore has to depend on ε. With a noisy refill and a fast EMA ( β ∈ { 0.99 , 0.999 }), the dependence on ε is strong (MI 14 .7, all 16 noise fields of a prompt give distinct blocks) but the student drifts toward one word (e.g. open )repeated across prompts, and the teacher, which follows the student closely, confirms this output within a few hundred steps; teacher-scored keeps do not prevent this. With a slow EMA ( β=0 .9999 ) the teacher lags the student by approximately 10 4 steps, self-consistent errors are corrected by the anchor before the teacher confirms them, and the student reaches 69 .7% human-evaluated legality with LU 0.92 , the highest MI (11 .3)and lowest Htail (0.78 ) of all runs; three seeds agree to ±0.001 on the proxy. Head-anchored gold under the same slow EMA is also stable ( 66 .4†, 15 .5 distinct blocks). The stable regime has a cost: 92 % of its evaluated blocks contain the token said (baseline 7%, two-stage 57 –72 %, reference continuations 2 of 32 ), indicating reduced sentence-level diversity despite high token-level diversity. Skipping Stage 1 and training from random initialization with an EMA-updated teacher has not yet succeeded. With a noise-free refill the noise dependence does not form, and with a noisy refill the network collapses before it produces coherent text; a run with a long ground-truth-only warm-up followed by the slow EMA is in progress. EMA-updated teachers initialized from Stage-1 models trained only on fully masked blocks also failed. Such a model has never seen a partially masked block and cannot refill the re-masked positions, which is why Stage 1 uses 16 Table 9: One-step blocks for two test prompts. Each line is the same block position (the 8 tokens directly after the prompt) committed in one forward pass under a different noise field; the lines are alternatives, not a continuation. Baseline: WTA+div, L12. C ONDOR : keep-and-fill + anchor.    
+
+> Test prompt Baseline (one step) CONDOR (one step)
+> Once upon a time there was a little girl who loved to.... girl named Lucy.. was was was girl named She. She was. and girl named Lucy. She was three years boy named Lucy. He was very brave girl. The girl was very old and when he came across a very special v ase.... was was was ase. It was so and and. ase. He thought, “This’s ase. He said, “Look, ase.\nThease was very beautiful
+
+random mask ratios. 
+
+5.2.5 Qualitative examples 
+
+Table 9 shows, for two test prompts, the block following the prompt under several noise fields. The baseline’s blocks differ in the first one or two tokens and then degenerate into filler and repetition, whereas each C ONDOR 
+
+block forms a distinct, internally consistent continuation of the prompt. The remaining errors are of a different kind: a gender mismatch ( boy named Lucy ), an invalid contraction ( This’s ), a broken token boundary ( Thease ). These account for the 27 –35 % of blocks judged illegal. 
+
+# 6 Conclusion 
+
+We asked whether a masked diffusion language model can commit a whole block of tokens in a single forward pass. A data-independent noise field is a direct way to tell the model which joint mode to produce, but none of the standard training objectives makes the field carry that information. Plain cross-entropy ignores it; importance weighting reduces to plain cross-entropy until specialization begins; and winner-take-all competition among k sampled fields conveys at most log k nats of mode assignment per example and spends it on the head of the block. C ONDOR supplies the missing training signal by distillation. A noise-conditioned teacher, trained with random mask ratios and winner-take-all, decodes a block in several steps under a fixed noise field, and a student learns to produce the same block in one pass from the same field, with a noise-free ground-truth term anchoring its conditionals. On a controlled testbed this raises human-evaluated one-step legality from below 10 % to 65 –73 % at unchanged inference cost while different noise fields still yield different blocks, and the ablations identify the shared noise field, information in the target beyond the student’s own prediction, the noise-free anchor, a teacher that models in-block conditionals and depends on the noise, and, for an EMA-updated teacher, a sufficiently slow EMA as the necessary components. Whether the same mechanism scales to longer blocks and larger models remains to be tested. 
+
+# References 
+
+[1] Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Block discrete denoising diffusion language models. In International Conference on Learning Representations , 2025. [2] Jacob Austin, Daniel Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Structured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems , 2021. 17 [3] Tiwei Bie, Maosong Cao, Xiang Cao, Bingsen Chen, Fuyuan Chen, Kun Chen, Lun Du, Daozhuo Feng, Haibo Feng, Mingliang Gong, Zhuocheng Gong, Yanmei Gu, Jian Guan, Kaiyuan Guan, Hongliang He, Zenan Huang, Juyong Jiang, Zhonghui Jiang, Zhenzhong Lan, Chengxi Li, Jianguo Li, Zehuan Li, Huabin Liu, Lin Liu, Guoshan Lu, Yuan Lu, Yuxin Ma, Xingyu Mou, Zhenxuan Pan, Kaida Qiu, Yuji Ren, Jianfeng Tan, Yiding Tian, Zian Wang, Lanning Wei, Tao Wu, Yipeng Xing, Wentao Ye, Liangyu Zha, Tianze Zhang, Xiaolu Zhang, Junbo Zhao, Da Zheng, Hao Zhong, Wanli Zhong, Jun Zhou, Junlin Zhou, Liwang Zhu, Muzhi Zhu, and Yihong Zhuang. LLaDA2.1: Speeding up text diffusion via token editing. arXiv preprint arXiv:2602.08676 , 2026. [4] Samuel R. Bowman, Luke Vilnis, Oriol Vinyals, Andrew M. Dai, Rafal Józefowicz, and Samy Bengio. Generating sentences from a continuous space. In SIGNLL Conference on Computational Natural Language Learning , 2016. [5] Yuri Burda, Roger Grosse, and Ruslan Salakhutdinov. Importance weighted autoencoders. In Interna-tional Conference on Learning Representations , 2016. [6] Tianle Cai, Yuhong Li, Zhengyang Geng, Hongwu Peng, Jason D. Lee, Deming Chen, and Tri Dao. Medusa: Simple LLM inference acceleration framework with multiple decoding heads. In International Conference on Machine Learning , 2024. [7] Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T. Freeman. MaskGIT: Masked generative image transformer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022. [8] Justin Deschenaux and Caglar Gulcehre. Beyond autoregression: Fast LLMs via self-distillation through time. arXiv preprint arXiv:2410.21035 , 2024. [9] Felix Draxler et al. Parallel token prediction for language models. In International Conference on Learning Representations (ICLR) , 2026. arXiv:2512.21323; title and author list to be verified. [10] Ronen Eldan and Yuanzhi Li. Tinystories: How small can language models be and still speak coherent english? arXiv preprint arXiv:2305.07759 , 2023. [11] Zhengyang Geng, Mingyang Deng, Xingjian Bai, J. Zico Kolter, and Kaiming He. Mean flows for one-step generative modeling. arXiv preprint arXiv:2505.13447 , 2025. [12] Marjan Ghazvininejad, Omer Levy, Yinhan Liu, and Luke Zettlemoyer. Mask-predict: Parallel decoding of conditional masked language models. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing , 2019. [13] Shansan Gong, Mukai Li, Jiangtao Feng, Zhiyong Wu, and Lingpeng Kong. DiffuSeq: Sequence to sequence text generation with diffusion models. In International Conference on Learning Representations ,2023. [14] Jiatao Gu and Xiang Kong. Fully non-autoregressive neural machine translation: Tricks of the trade. In 
+
+Findings of the Association for Computational Linguistics: ACL-IJCNLP , 2021. [15] Jiatao Gu, James Bradbury, Caiming Xiong, Victor OK Li, and Richard Socher. Non-autoregressive neural machine translation. In International Conference on Learning Representations , 2018. [16] Hongcan Guo, Qinyu Zhao, Yian Zhao, Shen Nie, Rui Zhu, Qiushan Guo, Feng Wang, Tao Yang, Hengshuang Zhao, Guoqiang Wei, and Yan Zeng. Continuous latent diffusion language model. arXiv preprint arXiv:2605.06548 , 2026. [17] Agrim Gupta, Justin Johnson, Li Fei-Fei, Silvio Savarese, and Alexandre Alahi. Social GAN: Socially acceptable trajectories with generative adversarial networks. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2018. arXiv:1803.10892. 18 [18] Abner Guzman-Rivera, Dhruv Batra, and Pushmeet Kohli. Multiple choice learning: Learning to produce multiple structured outputs. In Advances in Neural Information Processing Systems (NeurIPS) , 2012. [19] Satoshi Hayakawa, Yuhta Takida, Masaaki Imaizumi, Hiromi Wakaki, and Yuki Mitsufuji. Distillation of discrete diffusion through dimensional correlations. arXiv preprint arXiv:2410.08709 , 2024. [20] Haoyu He, Katrin Renz, Yong Cao, and Andreas Geiger. MDPO: Overcoming the training-inference divide of masked diffusion language models. arXiv preprint arXiv:2508.13148 , 2025. [21] Keya Hu, Linlu Qiu, Yiyang Lu, Hanhong Zhao, Tianhong Li, Yoon Kim, Jacob Andreas, and Kaiming He. ELF: Embedded language flows. arXiv preprint arXiv:2605.10938 , 2026. [22] Zemin Huang, Yuhang Wang, Zhiyang Chen, and Guo-Jun Qi. Don’t settle too early: Self-reflective remasking for diffusion language models. arXiv preprint arXiv:2509.23653 , 2025. [23] Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, and Alexei A. Efros. Image-to-image translation with conditional adversarial networks. In IEEE Conference on Computer Vision and Pattern Recognition ,2017. [24] Łukasz Kaiser, Samy Bengio, Aurko Roy, Ashish Vaswani, Niki Parmar, Jakob Uszkoreit, and Noam Shazeer. Fast decoding in sequence models using discrete latent variables. In International Conference on Machine Learning , 2018. [25] Wonjun Kang, Kevin Galim, Seunghyuk Oh, Minjae Lee, Yuchen Zeng, Shuibai Zhang, Coleman Hooper, Yuezhou Hu, Hyung Il Koo, Nam Ik Cho, and Kangwook Lee. ParallelBench: Understanding the trade-offs of parallel decoding in diffusion LLMs. arXiv preprint arXiv:2510.04767 , 2025. [26] Jaeyeon Kim, Seunggeun Kim, Taekyun Lee, David Z Pan, Hyeji Kim, Sham Kakade, and Sitan Chen. Fine-tuning masked diffusion for provable self-correction. arXiv preprint arXiv:2510.01384 , 2025. [27] Yoon Kim and Alexander M. Rush. Sequence-level knowledge distillation. In Conference on Empirical Methods in Natural Language Processing , 2016. [28] Diederik P. Kingma and Max Welling. Auto-encoding variational Bayes. In International Conference on Learning Representations (ICLR) , 2014. [29] Siqi Kou, Lanxiang Hu, Zhezhi He, Zhijie Deng, and Hao Zhang. CLLMs: Consistency large language models. In International Conference on Machine Learning , 2024. [30] Stefan Lee, Senthil Purushwalkam, Michael Cogswell, Viresh Ranjan, David Crandall, and Dhruv Batra. Stochastic multiple choice learning for training diverse deep ensembles. In Advances in Neural Information Processing Systems (NeurIPS) , 2016. arXiv:1606.07839. [31] Yaniv Leviathan, Matan Kalman, and Yossi Matias. Fast inference from transformers via speculative decoding. In International Conference on Machine Learning , 2023. [32] Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy Liang, and Tatsunori B. Hashimoto. Diffusion-LM improves controllable text generation. In Advances in Neural Information Processing Systems ,2022. [33] Anji Liu, Oliver Broadrick, Mathias Niepert, and Guy Van den Broeck. Discrete copula diffusion. In 
+
+International Conference on Learning Representations , 2025. [34] Xingchao Liu, Chengyue Gong, and Qiang Liu. Flow straight and fast: Learning to generate and transfer data with rectified flow. In International Conference on Learning Representations , 2023. 19 [35] LoRA-MCL authors. Lora-mcl: Multiple choice learning with lora adapters for diverse language generation. arXiv preprint arXiv:2507.10419 , 2025. Author list to be verified against the arXiv record. [36] Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In International Conference on Machine Learning , 2024. [37] Justin Lovelace, Varsha Kishore, Chao Wan, Eliot Shekhtman, and Kilian Q. Weinberger. Latent diffusion for language generation. In Advances in Neural Information Processing Systems , 2023. [38] Xuezhe Ma, Chunting Zhou, Xian Li, Graham Neubig, and Eduard Hovy. Flowseq: Non-autoregressive conditional sequence generation with generative flow. In Empirical Methods in Natural Language Processing (EMNLP) , 2019. arXiv:1909.02480. [39] Osama Makansi, Eddy Ilg, Özgün Çiçek, and Thomas Brox. Overcoming limitations of mixture density networks: A sampling and fitting framework for multimodal future prediction. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2019. [40] Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Zhou, Ji-Rong Wen, and Chongxuan Li. LLaDA: Large language diffusion with masking. In International Conference on Machine Learning ,2025. [41] Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. In International Conference on Learning Representations , 2025. [42] Guilherme Penedo, Hynek Kydlíˇ cek, Loubna Ben Allal, Anton Lozhkov, Margaret Mitchell, Colin Raffel, Leandro von Werra, and Thomas Wolf. The fineweb datasets: Decanting the web for the finest text data at scale. In Advances in Neural Information Processing Systems , 2024. [43] Lihua Qian, Hao Zhou, Yu Bao, Mingxuan Wang, Lin Qiu, Weinan Zhang, Yong Yu, and Lei Li. Glancing transformer for non-autoregressive neural machine translation. In Annual Meeting of the Association for Computational Linguistics , 2021. [44] Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. Language models are unsupervised multitask learners. OpenAI Technical Report , 2019. [45] Christian Rupprecht, Iro Laina, Robert DiPietro, Maximilian Baust, Federico Tombari, Nassir Navab, and Gregory D. Hager. Learning in an uncertain world: Representing ambiguity through multiple hypotheses. In IEEE International Conference on Computer Vision (ICCV) , 2017. [46] Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T. Chiu, Alexander M. Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. In Advances in Neural Information Processing Systems , 2024. [47] Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin Chiu, and Volodymyr Kuleshov. The diffusion duality. In International Conference on Machine Learning , 2025. [48] Tim Salimans and Jonathan Ho. Progressive distillation for fast sampling of diffusion models. In 
+
+International Conference on Learning Representations , 2022. [49] Andrea Santilli, Silvio Severino, Emilian Postolache, Valentino Maiorca, Michele Mancusi, Riccardo Marin, and Emanuele Rodolà. Accelerating transformer inference for translation via parallel decoding. In Annual Meeting of the Association for Computational Linguistics , 2023. [50] Yair Schiff, Omer Belhasin, Roy Uziel, Guanghan Wang, Marianne Arriola, Gilad Turok, Michael Elad, and Volodymyr Kuleshov. Learn from your mistakes: Self-correcting masked diffusion models. arXiv preprint arXiv:2602.11590 , 2026. 20 [51] Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis K. Titsias. Simplified and generalized masked diffusion for discrete data. In Advances in Neural Information Processing Systems , 2024. [52] Raphael Shu, Jason Lee, Hideki Nakayama, and Kyunghyun Cho. Latent-variable non-autoregressive neural machine translation with deterministic inference using a delta posterior. In AAAI Conference on Artificial Intelligence , 2020. [53] Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models. In International Conference on Machine Learning , 2023. [54] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems , 2017. [55] Guanghan Wang, Yair Schiff, Subham Sekhar Sahoo, and Volodymyr Kuleshov. Remasking discrete diffusion models with inference-time scaling. In Advances in Neural Information Processing Systems ,2025. [56] Chengyue Wu et al. Fast-dLLM: Training-free acceleration of diffusion LLM by enabling KV cache and parallel decoding. arXiv preprint arXiv:2505.22618 , 2025. [57] Tianyu Xie, Shuchen Xue, Zijin Feng, Tianyang Hu, Jiacheng Sun, Zhenguo Li, and Cheng Zhang. Variational autoencoding discrete diffusion with enhanced dimensional correlations modeling. In 
+
+International Conference on Learning Representations (ICLR) , 2026. arXiv:2505.17384. [58] Minkai Xu et al. Energy-based diffusion language models for text generation. In International Conference on Learning Representations (ICLR) , 2025. arXiv:2410.21357. [59] Lin Yao. Don’t commit alone: Joint token commitment in diffusion language models. arXiv preprint arXiv:2607.04469 , 2026. [60] Lin Yao. Remask, don’t replace: Token-to-mask refinement in diffusion large language models. arXiv preprint , 2026. [61] Lin Yao. Self-generated error training for token editing in diffusion language models. arXiv preprint arXiv:2606.17175 , 2026. [62] Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7B: Diffusion large language models. arXiv preprint arXiv:2508.15487 , 2025. [63] Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shechtman, Frédo Durand, William T. Freeman, and Taesung Park. One-step diffusion with distribution matching distillation. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024. [64] Jiacheng Yu et al. Diffusion by stochastic localization for masked diffusion language models. arXiv preprint arXiv:2606.01024 , 2026. DSL-LLaDA; title and author list to be verified. [65] Kevin Zhai, Sabbir Mollah, Zhenyi Wang, and Mubarak Shah. CORE: Context-robust remasking for diffusion language models. arXiv preprint arXiv:2602.04096 , 2026. [66] Cai Zhou et al. Coevolutionary continuous discrete diffusion. In International Conference on Machine Learning (ICML) , 2026. arXiv:2510.03206; title and author list to be verified. [67] Chunting Zhou, Jiatao Gu, and Graham Neubig. Understanding knowledge distillation in non-autoregressive machine translation. In International Conference on Learning Representations , 2020. 21 [68] Jun-Yan Zhu, Richard Zhang, Deepak Pathak, Trevor Darrell, Alexei A. Efros, Oliver Wang, and Eli Shechtman. Toward multimodal image-to-image translation. In Advances in Neural Information Processing Systems , 2017. [69] Yuanzhi Zhu, Xi Wang, Stéphane Lathuilière, and Vicky Kalogeiton. Di[M]O: Distilling masked diffusion models into one-step generator. arXiv preprint arXiv:2503.15457 , 2025. 22 A Proofs and the IWAE remark 
+
+Proof of Proposition 1. Fix a position i and a context c. Because ε ⊥ x | c,
+
+Exi|c Eε
+
+ log pθ (xi | c, ε ) = Eε
+
+h
+
+− H p(· | c) − KL  p(· | c) pθ (· | c, ε )i
+
+,
+
+which is maximal if and only if the divergence vanishes for almost every ε, i.e. pθ (· | c, ε ) = p(· | c)
+
+independently of ε. Summing over positions gives the claim. 
+
+Remark 1 (IWAE: degenerate start, length-dependent hardness) . The gradient of Liwae in Eq. (3) is the importance-weighted average of the gradients obtained under the k noise fields, with weights wr ∝ e−Sr .(i) At an unspecialized initialization the k fields are exchangeable, wr ≈ 1/k , and the gradient coincides with plain cross-entropy: the weighting can amplify specialization that exists but not create it, which is why the ELBO-based VADD (57) needs a recognition network that sees the clean data. (ii) Sr is a sum over the B block positions, so the differences between the k fields grow with B and w = softmax( −S) hardens: encoder-free IWAE interpolates from plain cross-entropy (short blocks) toward WTA (long blocks). Both effects are visible in Appendix E: at L=4 IWAE collapses with plain CE, at L=16 it overtakes WTA. 
+
+For the factorized categorical model of Eq. (2) (not the deterministic argmax decoder), the bound I(ε; x1: B |
+
+c) ≤ P 
+
+> j
+
+MI[ j] used in Section 5.1 follows from H(x1: B | ε, c ) = P 
+
+> j
+
+H(xj | ε, c ) (the output factorizes given ε) and H(x1: B | c) ≤ P 
+
+> j
+
+H(xj | c) (sub-additivity). 
+
+# B Human evaluation protocol and proxy calibration 
+
+Human evaluation protocol. For each of the first 32 evaluation prompts (Section 5.1) we generate the block directly following the prompt 16 times, each time in one forward pass under an independently sampled noise field ( 16 alternative blocks for the same 8 positions, not a continuation), and label each of the 32 × 16 = 512 
+
+blocks given its prompt. A block is legal if the 8-token window could appear verbatim in natural English continuing the prompt. Mid-sentence cut-offs are legal, since any 8-token window of real text is a fragment. A block is illegal if it contains adjacent word repetition ( was was ), punctuation or ellipsis runs, non-words or broken token boundaries, or a semantic inconsistency ( boy named Sarah. She , He was shiny ). The same 32 prompts are used for every 8+8 model. Labels are recorded per block and released with the code (judge/*.labels.json ); re-annotating the baseline gave 42 /512 against 44 /512 in the first round. Annotation was performed by one of the authors following the written protocol; the protocol is stricter on semantics than a grammar-only criterion, so absolute values may be a few points lower than under such a criterion, while the ranking is stable. The 32 prompts are the first 32 evaluation windows rather than a random subsample; we do not estimate inter-annotator agreement or confidence intervals. From the same labels we also compute, per prompt, whether all 16 noise fields yield a legal block; this holds for only 0–3%of prompts for every model, including the best (teacher-scored keep: 1 of 32 prompts), so we report any-of-16 and legal-unique instead. 
+
+GPT-2-large proxy. For every block we compute the per-token negative log-likelihood under GPT-2-large given the prefix. Loose : mean NLL below the 90th percentile of the ground-truth blocks ( 4.36 nats; the ground truth itself passes 89 .8%). Strict : the worst-token NLL below the ground-truth worst-token 90th percentile (10 .76 nats) and no adjacent repetition. LU †: for each prompt with at least one proxy-legal block, the fraction of distinct strings among the blocks (one per noise field) that pass the strict proxy, averaged over such prompts. The proxy needs no labels and is computed on all 256 evaluation prompts with 16 noise fields each; it is used for training curves and for the ablation rows that were not human-evaluated. 23 Table 10: Proxy and human legality for models with available judgments. Rows marked ∗ are the eight models with final per-block label files; on this subset, the rank correlation between strict-proxy and human legality is Spearman ρ = 0 .95 (two adjacent swaps). The unmarked baseline rows are earlier aggregate judgments included for context and are not part of that correlation. Loose is 2.5–3× the human value at low legality and strict is 1.5–2×.                                                                       
+
+> Model human (%) loose †(%) strict †(%) plain, L6, 100k 4.3 12.5 6.0 WTA, L6, 100k 5.3 16.4 10.3 plain, L6, 500k 7.4 18.9 14.7 WTA, L6, 500k 6.4 22.8 15.5 IWAE+div, L6, 500k 8.2 24.2 15.5 WTA, L12 6.6 21.9 13.7
+> ∗WTA+div, L12 (baseline) 8.2 20.7 14.8
+> ∗WTA, k=16 6.4 30.0 27.5
+> ∗WTA, k=64 12.5 39.8 42.8
+> ∗CONDOR keep-and-fill 58.8 77.8 73.6
+> ∗CONDOR keep-and-fill +anchor 64.8 80.4 76.1
+> ∗CONDOR teacher-scored keep +anchor 73.4 86.4 78.9
+> ∗CONDOR head-anchored gold 39.5 68.1 65.9
+> ∗CONDOR EMA-updated teacher, β=0 .9999 69.7 84.4 81.4 EMA-updated teacher, no anchor (output whale ×8)—78.5 0.0
+
+Known biases. The loose proxy rewards repetition, since a language model assigns high probability to a repeated token: the collapsed whale ×8 output passes 78 .5% of the time, and the k-sweep appears to double (18 → 30 %) where human evaluation gives 5.3 → 6.4%. The strict variant removes most of this effect but still overstates models whose main improvement is reduced repetition ( k=64 : 43 † vs. 12 .5). The proxy also favors mode-seeking outputs: the ρ=0 .75 keep ratio, whose labels are mostly the student’s own confident tokens, scores highest of all runs on the strict proxy ( 89 .9†, Table 6) while having the lowest diversity ( 12 .8
+
+distinct blocks, MI 5 .6). Proxy values are therefore used only to order variants within a table and not for the paper’s main claims. 
+
+# C Coverage of the baseline space 
+
+All numbers are human-evaluated one-step legality on the 32 evaluation prompts with 16 noise fields each (512 blocks per model) unless stated otherwise; “cell” refers to one point of a hyperparameter grid and “arm” to one of the five objectives of Table 1 (plain, IWAE, IWAE+div, WTA, WTA+div). Run directories are listed in the released experiment log. 
+
+Four-plus-four, WTA, 80k steps. A grid over layers {4, 6, 12 }, batch {256 , 512 , 1024 } and learning rate 
+
+{1, 3, 4, 6, 8, 12 } × 10 −4 (36 cells) spans 34 .2–52 .0%; batch 2048 (8 cells, WTA and WTA+div) spans 37 .5–
+
+48 .2%; batch 16 gives 26 .8%. The five objectives at the L6/L12, b512, 3·10 −4 cell are in Table 1; a WTA variant in which the losing fields are trained toward their own argmax block instead of receiving no data gradient (with or without the repulsion term) scores 32 .4–38 .3%, below WTA. Three training variants at the L12 cell—noise added after layer 6 instead of at the input ( 35 .2/45 .3/47 .5% for plain/WTA/IWAE+div), masking a uniformly random fraction of the block during training ( 32 .0/43 .0/45 .5%), and training on windows in which the visible prefix has a variable length ( 34 .2/47 .9/50 .2%)—do not exceed the original cell (31 .8/47 .3/51 .2%). 24 8+8 . Two training lengths and a batch-1024 grid (L6/L12 × lr {1, 3, 6, 10 } × 10 −4, WTA and WTA+div, 
+
+16 cells: 4.1–8.6%) are in Table 1. Depth: L24 at b512 6.1%, at b128 4.5%; L48 at b128 3.7%; L24/L48 at b1024 with an 8k warm-up and lr 1.5·10 −4: 3.3% and 0.4%. Additional losses on the best cell (WTA+div, L12): adding a WTA loss on the first, middle, and last 4-token spans of the block 6.6%; adding WTA losses on nested prefixes of the block (its first 4, 6, and 8 tokens) 8.4%, without changing how many leading tokens of a block are legal before the first error. Masking during training: masking a random subset of the block (the teacher’s regime) 6.6% for WTA and 6.2% for plain; masking a random fraction of the block at the short configuration is no better than masking the whole block on the proxy. Noise added after layer 3 instead of at the input: 6.4/7.4/6.4/7.2/5.9% for the five arms (same evaluation prompts as the 500 k row, which it does not exceed). Longer blocks: 8+16 WTA 0.8%, plain 0; 8+32 all arms 0; 16+16 0 .
+
+Corpus control. On FineWeb-Edu (42) the same 17 .6M model after 500 k steps sits at 6.3–6.5 nats per token on the fully masked block, and every objective has zero human-evaluated legality: below the competence threshold of the corpus the metric does not separate objectives. TinyStories, which was constructed so that small models can produce coherent English, is used for this reason. 
+
+# D k-sweep details 
+
+The sweep re-runs the 8+8 short configuration (L6, b256, 3·10 −4, cosine, 100 k steps, σ=0 .5) changing only 
+
+k. For k ≥ 64 the logits of k × 256 rows over a 50 k vocabulary do not fit in memory; since only the winner receives gradient under pure WTA, the winner is selected in chunks without gradient and only the winning row is recomputed with gradient. The two paths agree to 10 −6 in loss and select identical winners on a k=8 test batch. The re-run at k=4 reproduces the original arm ( 17 .8† vs. 16 .4† loose). Per-position, raising k from 4
+
+to 16 doubles the peak loser-minus-winner gap ( 1.50 → 3.00 nats at position 3) while the tail gap rises only to 1.1: the winner is decided even more firmly by the head. Winner cross-entropy falls 4.21 → 3.78 → 3.36 
+
+(k=4 , 16 , 64 ). 
+
+# E Synthetic two-mode study: WTA suffices when N ≤ k
+
+The lookup-table argument of Section 5.2.1 predicts that WTA does make the ticket work when the number of modes per context is at most of order k. A synthetic task checks this and isolates Proposition 1 and Remark 1. 
+
+Construction. 512 contexts (4-token prefixes over a 64-token vocabulary), each with exactly two planted completions A, B of length L that differ at every position. Training samples a context, one completion and a random non-empty mask subset; a 0.81 M-parameter bidirectional transformer ( 4 layers, d=128 ) reconstructs the masked tokens with σ=0 .5, k=4 , batch 256 , AdamW 3·10 −4, cosine. Memorization is expected in this synthetic control; the question is whether the positions of a one-step generation coordinate to produce either planted completion rather than mixing them. Evaluation is one step, fully masked, with 1000 independently sampled noise fields per context: legality is exact equality with A or B (2 · 2−L for a per-position coin flip); a context is balanced if its legal outputs are 30 –70 % A and polarized if < 10 % or > 90 %. 
+
+Findings. Plain cross-entropy climbs to 0.45 legality within 10 k steps and then descends to the coin-flip floor as optimization drives every position to its marginal, consistent with Proposition 1. WTA at L=4 /8
+
+reaches 0.89 /0.81 with every context balanced and none polarized: with N =2 modes and k=4 noise fields per update, the probability that a WTA step lands in the right cell is 94 % and the table is stable, as Section 5.2.1 predicts. The transition is late (at L=8 : 0.14 at 20 k, 0.75 at 40 k). IWAE tracks plain CE into collapse at 
+
+L=4 and overtakes WTA at L=16 (0.74 vs. 0.62 ), where the sequence-sum softmax has hardened (Remark 1). 
+
+σ ∈ { 0.5, 1, 2} and k ∈ { 4, 8} change WTA legality by < 0.03 ; training length is the binding variable. On 25 Table 11: Two-mode study: legality of one-step commitment, ε=0 legality, noise routing over 512 contexts, and unconditional mode fractions.                                                                                                        
+
+> LObjective Steps Legality ↑ε=0 Balanced Polarized ↓frac A/B
+> 4coin-flip floor —0.125 ————4plain 20k 0.153 0.430 172 /512 129 /512 .076 /. 077
+> 4IWAE 20k 0.173 0.320 315 /512 13 /512 .086 /. 087
+> 4WTA 20k 0.376 0.467 503 /512 0.188 /. 188
+> 4WTA 60k 0.890 1.000 512 /512 0.446 /. 444
+> 8coin-flip floor —0.0078 ————8plain 60k 0.019 0.147 94 /512 289 /512 .010 /. 009
+> 8IWAE 60k 0.364 0.211 438 /512 10 /512 .182 /. 182
+> 8WTA 60k 0.807 1.000 512 /512 0.402 /. 405
+> 16 coin-flip floor —3·10 −5————16 plain 60k 0.0008 0.031 3/512 509 /512 .000 /. 000
+> 16 IWAE 60k 0.740 0.979 512 /512 0.370 /. 369
+> 16 WTA 60k 0.625 0.908 508 /512 0.312 /. 313
+
+natural language the number of modes per prompt is e16 –e20 rather than 2, and Table 3 is what the same argument predicts there. 
+
+# F Early training signals and the course of distillation 
+
+Distillation converges quickly. In a 6k-step pilot (batch 256 , 13 minutes) keep-and-fill already reached 
+
+MI 9 .9 and Htail = 1 .83 ; full decoding by the teacher under the shared field ( ρ=0 ) reached MI = 6 .7 and 
+
+Htail = 2 .99 , and the decoupled control (teacher decoding under an independent field) reached MI = 0 .06 and 
+
+Htail = 4 .05 . At 2k steps of the 50 k runs the ranking is already final: keep ratio 0.5 MI 9 .8; 0.25 : 7.9 (more teacher tokens in the label, a noisier trajectory, slower); 0.75 : 2.5 (label mostly the student’s own argmax, confident but insensitive to the noise field); full decoding 6.6; anchor with ε in the input 2.6; decoupled 0.06 .The fraction of label tokens that agree with the student’s own argmax is 0.77 for keep-and-fill against 0.50 for full decoding. In the EMA-updated-teacher run with β=0 .9999 the repetition rate stays below 0.01 throughout, whereas in the β=0 .999 run it climbs from 0.006 at 16 k steps to 0.04 at 50 k as the drift toward one repeated word sets in. 
+
+# G Implementation details 
+
+Data stream. We scan the released TinyStoriesV2-GPT4 JSONL in file order. Each story is tokenized separately and split from its beginning into non-overlapping complete windows; incomplete tails are discarded in the 8+8 experiments. The first 256 emitted windows form the evaluation set, and training starts at window 
+
+257 . When the file is exhausted, the stream rewinds. The released per-block label files identify the first 32 
+
+evaluation windows used for human judgment. 
+
+Stage-1 models. Bidirectional Transformer, pre-norm, learned positions over the window, tied embeddings, GPT-2 vocabulary plus [M] (plus a padding token in block mode). k=4 noise fields per example in one batched forward. Short 8+8 configuration: L6, batch 256 , AdamW 3·10 −4, cosine, 100 k steps. Long: L6, batch 512 , 4·10 −4, warm-up–stable–decay schedule, 500 k steps. Best grid cell: L12, batch 1024 , 10 −3, cosine, 
+
+80 k. The Stage-1 teacher (run name ts9rm-wta in the released code) is the long configuration with a uniformly random number of masked block positions per example and WTA without repulsion. For baseline 26 rows carrying the suffix +div , the repulsion weight is λdiv = 0 .1 (not annealed), with Ldiv as described in Section 4.3. 
+
+Distillation. Student initialized from the teacher; 50 k steps, batch 512 , AdamW 10 −4, cosine, 500 warm-up steps; σ=0 .5; the teacher fills re-masked positions one token per step, most confident position first, by argmax, under the same field with σT =0 .5; keep-and-fill ρ=0 .5, T =4 ; full decoding ( ρ=0 ) T =8 ; anchor λ=1 
+
+with σ=0 and a uniformly random number of masked positions; head-anchored gold k=4 , h=4 , batch 256 ;teacher-scored keep uses the teacher’s leave-one-out probability of each of the student’s tokens; ground-truth insertion replaces a label token by the reference token x⋆j wherever the teacher assigns it at least τ times its top probability, τ =0 .1 (an absolute threshold of 0.3 changes no token); the ε-driven Gumbel variant adds 
+
+Gumbel( W ε j ) noise, with a fixed random matrix W , to the teacher’s logits before the argmax; EMA decay 
+
+β ∈ { 0.99 , 0.999 , 0.9999 }. Conceptually, the noisy branch uses the first student distributions directly in 
+
+Ldistill (Algorithm 1). The released implementation instead computes those distributions without gradients while constructing the label, then recomputes the same logits with gradients before the loss. This avoids retaining the student activation graph across the teacher’s multi-step fill. Because the denoiser uses zero dropout and the weights are unchanged between the two calls, the logits and objective are identical. The noise-free anchor has a different input and always requires a separate student call. The runs that skip Stage 1 (random initialization, EMA-updated teacher) use 150 k steps at 3·10 −4 with the distillation weight ramped from 0 at 50 k to 1 at 100 k steps. Checkpoint resumption re-seeds with (seed + step) and fast-forwards the data stream so that no (window, ε) pair is replayed; the evaluation noise generator and the Gumbel projection 
+
+W are fixed on purpose. How much each label variant changes the label, measured on 256 examples with the Stage-1 teacher: teacher-scored keep changes the kept set on 36 % of examples; ground-truth insertion changes 
+
+3.1% of label tokens (gold hit of the label 0.148 → 0.163 ); applying keep-and-fill a second time changes 22 %(label repetition 0.056 → 0.003 ); Gumbel noise at scale 1 changes 21 %; mixing the student’s logits into full decoding with weight 0.5 changes 15 %. 
+
+Metrics. Worked example of Hcond , Hmarg and MI : at one tail position, a model whose 64 noise fields all give the same diffuse distribution ( was 0.13 , and 0.10 , . . . ) has Hcond ≈ 4.9, Hmarg ≈ 5.0 and MI ≈ 0.1—the baseline; a model whose noise fields split into two sharp groups ( years 0.95 for half of them, happy 0.95 
+
+for the other half) has Hcond ≈ 0.2, Hmarg ≈ 0.8 and MI ≈ 0.6—the shape we aim for. The filler-token list used for the filler diagnostic is {, . and was the a to \n . . . }: the most frequent punctuation and function tokens of the corpus. 
+
+Compute. All runs are single-GPU; a 50 k-step distillation run takes a few hours, the 500 k-step teacher about a day, the k=64 sweep point nine hours and k=256 about two days. 27

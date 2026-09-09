@@ -1,0 +1,227 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-09T21:20:09.621798+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2609.09123v1",
+      "title": "Mask Forcing: Improving Autoregressive Video Diffusion Distillation via Dual-Noise Masking Rollout",
+      "abstract": "Autoregressive (AR) video diffusion models have shown great potential in real-time video generation. Recent methods distill pretrained bidirectional video diffusion models into causal AR students through Distribution Matching Distillation (DMD), but the generated videos often suffer from over-saturation and over-smoothing issues, resulting in limited visual quality and realism. The key contributing factor is the mode-seeking behavior of the reverse KL objective in DMD, which can cause the student distribution to collapse onto only a few modes of the teacher distribution. To address this, we propose Mask Forcing, a Dual-Noise Masking Rollout strategy that perturbs the AR student self-rollout to mitigate mode collapse induced by reverse-KL mode seeking. The core idea is to inject cleaner signals into noisy rollout inputs via random masks along spatial and temporal axes during the self-rollout process of AR diffusion distillation. Such perturbations encourage the student rollouts to explore more regions of the teacher distribution, allowing DMD to provide learning signals beyond the modes already covered by the student. Moreover, the cleaner tokens act as denoising guidance for other noisier tokens, improving the intermediate rollout predictions and reducing error accumulation. Extensive experiments demonstrate that our method improves multiple AR video diffusion distillation methods with higher visual quality efficiently, without incorporating real video data or additional post-training stages.",
+      "authors": [
+        "Zhuoran Zhao",
+        "Shengju Qian",
+        "Tongtong Liang",
+        "Xianghao Kong",
+        "Songchun Zhang",
+        "Junchao Huang",
+        "Guian Fang",
+        "Xin Wang",
+        "Pan Hui",
+        "Anyi Rao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-08T17:50:05+00:00",
+      "link": "https://arxiv.org/pdf/2609.09123v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "improving autoregressive video diffusion distillation",
+      "llm_evidence_cn": "改进自回归视频扩散蒸馏",
+      "llm_evidence": "改进自回归视频扩散蒸馏",
+      "canonical_evidence": "改进自回归视频扩散蒸馏",
+      "llm_tldr_en": "Mask Forcing improves autoregressive video diffusion distillation by mitigating mode collapse during rollout.",
+      "llm_tldr_cn": "Mask Forcing通过减轻Rollout过程中的模式崩溃，改进了自回归视频扩散蒸馏。",
+      "llm_tldr": "Mask Forcing通过减轻Rollout过程中的模式崩溃，改进了自回归视频扩散蒸馏。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.06324v1",
+      "title": "A Ticket from Marginals to Joints: Coupled-Noise Distillation for One-Step Block Generation in Diffusion Language Models",
+      "abstract": "Autoregressive language models commit one token per forward pass; diffusion language models commit a block of tokens over several steps. We ask whether a block can be committed in a single forward pass. We study this with a noise-conditioned masked denoiser: a data-independent Gaussian noise field is added to the mask embeddings so that, in principle, each sampled field selects one joint mode of the block. The established way of training such a model is to sample several fields per example and let them compete for the data, by winner-take-all or importance weighting. This gives the noise only coarse control: in our experiments, the information it carries grows roughly with the logarithm of the number of competing fields, and one-step outputs remain rarely coherent across the model sizes tested. We propose CONDOR (Coupled-Noise Distillation for One-Step Readout). A noise-conditioned teacher is trained with a random number of masked positions and winner-take-all. A student proposes a one-step block, retains selected tokens, and learns from the block obtained when the teacher refills the other positions in several steps under the same noise field; a noise-free masked-LM term on the ground truth anchors the student. Human evaluation on TinyStories shows a large gain in one-step legality while different noise fields still yield different blocks, at one forward pass per block.",
+      "authors": [
+        "Lin Yao"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-06T01:09:14+00:00",
+      "link": "https://arxiv.org/pdf/2609.06324v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "compares autoregressive language models with diffusion language models for block generation",
+      "llm_evidence_cn": "比较了自回归语言模型与扩散语言模型在块生成方面的差异",
+      "llm_evidence": "比较了自回归语言模型与扩散语言模型在块生成方面的差异",
+      "canonical_evidence": "比较了自回归语言模型与扩散语言模型在块生成方面的差异",
+      "llm_tldr_en": "Explores one-step block generation in diffusion language models as an alternative to autoregressive token generation.",
+      "llm_tldr_cn": "探索扩散语言模型中的单步块生成，作为自回归逐标记生成的替代方案。",
+      "llm_tldr": "探索扩散语言模型中的单步块生成，作为自回归逐标记生成的替代方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.05981v1",
+      "title": "Accelerating Diffusion Transformers with Gaussian Process Rectified Feature Cache",
+      "abstract": "Diffusion Transformers have become the dominant paradigm in generative AI, but their high computational costs severely hinder real-time applications. Prediction-based feature caching is widely used to accelerate diffusion transformers; however, as the number of steps increases, the deviation between its predictions and the reference full-compute trajectory gradually grows. An intuitive idea is to use an online regression model to dynamically correct this deviation, but it faces the issue of label data being unavailable during the acceleration process. This paper presents a statistical observation that the residuals between the features of full computation steps using caching methods and reference full-compute trajectory locally exhibit a zero-mean Gaussian distribution. By treating the features of full computation steps as noisy observations of reference features, the data acquisition problem is resolved. Based on this observation, a plug-and-play GP-Refiner correction framework is proposed. This method utilizes Gaussian Process Regression for correction and, leveraging the properties of GPR, introduces an uncertainty-adaptive computation strategy that triggers necessary full-computation calibration by monitoring the posterior variance in real time. Experiments demonstrate significant improvements across different models when combined with various state-of-the-art methods. Integrating the proposed framework with TaylorSeer reduces the computational load by 19.3% while improving PSNR by 0.9 dB and reducing LPIPS from 0.46 to 0.29. Code is available in https://github.com/Aredstone/GP-Refiner.",
+      "authors": [
+        "Zhirong Shen",
+        "Rui Huang",
+        "Chang Zou",
+        "Shikang Zheng",
+        "Jiacheng Liu",
+        "Peiliang Cai",
+        "Zhengyi Shi",
+        "Yaosong Du",
+        "Liang Feng",
+        "Xiaobing Tu",
+        "Jinkui Ren",
+        "Xiantao Zhang",
+        "Linfeng Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-09-05T08:54:54+00:00",
+      "link": "https://arxiv.org/pdf/2609.05981v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "accelerating diffusion transformers with feature cache",
+      "llm_evidence_cn": "通过特征缓存加速扩散Transformer",
+      "llm_evidence": "通过特征缓存加速扩散Transformer",
+      "canonical_evidence": "通过特征缓存加速扩散Transformer",
+      "llm_tldr_en": "Accelerates Diffusion Transformers using a Gaussian Process to dynamically correct feature caching deviations.",
+      "llm_tldr_cn": "使用高斯过程动态修正特征缓存偏差，从而加速扩散Transformer。",
+      "llm_tldr": "使用高斯过程动态修正特征缓存偏差，从而加速扩散Transformer。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "state of the art autoregressive diffusion architectures",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.05525v1",
+      "title": "DIVA: Exploiting Cross-Step Conditional Propagation for Visual Jailbreaks in Discrete Diffusion Vision-Language Models",
+      "abstract": "Large vision-language models (VLMs) are increasingly deployed in safety-critical settings, yet existing visual jailbreak research has focused almost exclusively on autoregressive architectures, leaving an important emerging family unstudied: multimodal discrete diffusion vision-language models (dVLMs). We identify a vulnerability specific to diffusion generation: because the visual embedding conditions every reverse denoising step rather than acting as a one-time prefix, adversarial visual semantics are repeatedly propagated and amplified across the generation trajectory, a phenomenon we term cross-step conditional propagation. We provide empirical evidence through stage-sensitivity analysis, prompt-level switch rates, and pairwise denoising-bin disagreement metrics, confirmed by bootstrap resampling. We propose DIVA (Discrete-diffusion Vision-language model Attack), a white-box visual jailbreak framework using cross-modal intent obfuscation and diffusion-aware multi-timestep adversarial optimization. Across three dVLMs, DIVA reaches 58.8%, 67.7%, and 69.1% HADES ASR under the Beaver reward-model metric, outperforming visual jailbreak baselines designed for autoregressive models. Code: https://github.com/loststars2002/DIVA",
+      "authors": [
+        "Guorui Song",
+        "Runqing Tang",
+        "Jingye Zhang",
+        "Luyuan Zhang",
+        "Feice Huang",
+        "Cong Ray",
+        "Guocun Wang",
+        "Dake Zhong",
+        "Choo Sin Wai",
+        "Bingquan Dai",
+        "Chuming Wang",
+        "Tongxu Lin",
+        "Wanyu Guo",
+        "Haoqian Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-01T16:33:12+00:00",
+      "link": "https://arxiv.org/pdf/2609.05525v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "compares autoregressive and discrete diffusion architectures",
+      "llm_evidence_cn": "比较自回归和离散扩散架构",
+      "llm_evidence": "比较自回归和离散扩散架构",
+      "canonical_evidence": "比较自回归和离散扩散架构",
+      "llm_tldr_en": "Explores vulnerabilities in discrete diffusion vision-language models compared to autoregressive architectures.",
+      "llm_tldr_cn": "探讨了离散扩散视觉语言模型与自回归架构相比存在的安全漏洞。",
+      "llm_tldr": "探讨了离散扩散视觉语言模型与自回归架构相比存在的安全漏洞。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.08981v1",
+      "title": "Transformers as In-Context Samplers: From Closed-Form Diffusion to Estimation-Free Sampling",
+      "abstract": "A growing body of work establishes that large language models are not mere statistical memorizers, but are capable of in-context learning: performing inference at test time using only examples provided in the prompt, without any parameter updates. Prior theoretical work has shown that this capability extends to supervised learning tasks such as linear regression. We prove that in-context learning extends further to \\emph{data generation}: frozen transformers can simulate iterative generative samplers from in-context samples. We first show that transformers can realize closed-form and smoothed closed-form diffusion samplers. The construction identifies a concrete generative role for softmax attention: it computes responsibility weights and weighted empirical averages, while feedforward layers implement Euler updates.   To empirically relate these constructions to pretrained language models, we study \\emph{semantic-topic sampling}: prompts consisting of words drawn from a common semantic category, such as animals, foods, or cities. Across transformer layers, the normalized hidden states exhibit a two-stage geometry: they move toward a uniform spherical reference in intermediate layers and then return to structured, topic-dependent representations near the output. We further measure an interacting-particle energy on these hidden-state clouds and observe the same U-shape pattern. We then prove that transformers can approximate an energy-based sampler, constructing the same U-shape energy across the layers.",
+      "authors": [
+        "Arman Adibi",
+        "Alireza Jafari",
+        "Mohammad Ghavamzadeh",
+        "Hadi Daneshmand"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "stat.AP",
+        "stat.CO",
+        "stat.ML"
+      ],
+      "published": "2026-09-08T16:25:11+00:00",
+      "link": "https://arxiv.org/pdf/2609.08981v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "transformers simulating iterative generative samplers like diffusion from in-context samples",
+      "llm_evidence_cn": "Transformer通过上下文样本模拟扩散等迭代生成采样器",
+      "llm_evidence": "Transformer通过上下文样本模拟扩散等迭代生成采样器",
+      "canonical_evidence": "Transformer通过上下文样本模拟扩散等迭代生成采样器",
+      "llm_tldr_en": "Proves that frozen transformers can act as in-context samplers to simulate diffusion-based data generation.",
+      "llm_tldr_cn": "证明冻结的Transformer可以作为上下文采样器来模拟基于扩散的数据生成。",
+      "llm_tldr": "证明冻结的Transformer可以作为上下文采样器来模拟基于扩散的数据生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
