@@ -6,37 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-09
-- 运行时间：2026-09-09 21:20:36 UTC
+- 最新运行日期：2026-09-10
+- 运行时间：2026-09-10 21:56:04 UTC
 - 运行状态：成功
 - 本次总论文数：5
 - 精读区：2
 - 速读区：3
 
 ### 今日简报（AI）
-今日精选 5 篇扩散模型前沿论文，重点解析视频生成蒸馏与语言模型单步生成技术。
-Mask Forcing 与 Coupled-Noise Distillation 两项研究在提升生成效率与质量上表现卓越，值得深入研读。
-建议优先关注扩散模型蒸馏与加速策略，这将是优化大模型推理性能的关键方向。
-- 详情：[/202609/09/README](/202609/09/README)
+今日精选 5 篇前沿论文，聚焦扩散模型在轨迹规划与多模态探索中的创新应用。
+重点关注 DiffuSearch 与 CAVEAT，它们展示了对齐目标与递归扩散在复杂环境规划中的卓越性能。
+建议优先研读轨迹规划类论文，深入理解扩散模型如何从单纯的生成转向更精准的决策控制。
+- 详情：[/202609/10/README](/202609/10/README)
 
 ### 精读区论文标签
-1. [Mask Forcing: Improving Autoregressive Video Diffusion Distillation via Dual-Noise Masking Rollout](/202609/09/2609.09123v1-mask-forcing-improving-autoregressive-video-diffusion-distillation-via-dual-noise-masking-rollout)  
-   标签：评分：10.0/10、query:ardm
-   evidence：改进自回归视频扩散蒸馏
-2. [A Ticket from Marginals to Joints: Coupled-Noise Distillation for One-Step Block Generation in Diffusion Language Models](/202609/09/2609.06324v1-a-ticket-from-marginals-to-joints-coupled-noise-distillation-for-one-step-block-generation-in-diffusion-language-models)  
-   标签：评分：9.0/10、query:ardm
-   evidence：比较了自回归语言模型与扩散语言模型在块生成方面的差异
+1. [DiffuSearch: How Hybrid Trajectory Planning Benefits from Aligned Objectives in Diffusion and Action Space](/202609/10/2609.02252v1-diffusearch-how-hybrid-trajectory-planning-benefits-from-aligned-objectives-in-diffusion-and-action-space)  
+   标签：评分：9.0/10、query:genad
+   evidence：用于自动驾驶联合轨迹预测的引导扩散模型
+2. [CAVEAT: Recurrent Multimodal Diffusion Planning for Mapless Aerial Exploration](/202609/10/2609.06623v1-caveat-recurrent-multimodal-diffusion-planning-for-mapless-aerial-exploration)  
+   标签：评分：8.0/10、query:diffpl
+   evidence：用于航点序列生成和机器人路径规划的扩散策略
 
 ### 速读区论文标签
-1. [Accelerating Diffusion Transformers with Gaussian Process Rectified Feature Cache](/202609/09/2609.05981v1-accelerating-diffusion-transformers-with-gaussian-process-rectified-feature-cache)  
+1. [When Genomic Masking Priors Fail to Transfer: Strong Variant Prediction, Weak Functional Generation](/202609/10/2609.04861v1-when-genomic-masking-priors-fail-to-transfer-strong-variant-prediction-weak-functional-generation)  
    标签：评分：7.0/10、query:ardm
-   evidence：通过特征缓存加速扩散Transformer
-2. [Transformers as In-Context Samplers: From Closed-Form Diffusion to Estimation-Free Sampling](/202609/09/2609.08981v1-transformers-as-in-context-samplers-from-closed-form-diffusion-to-estimation-free-sampling)  
+   evidence：基因组序列生成中离散扩散模型与自回归模型的对比研究
+2. [In-Place Instruction Following in Diffusion Language Models](/202609/10/2609.07160v1-in-place-instruction-following-in-diffusion-language-models)  
    标签：评分：7.0/10、query:ardm
-   evidence：Transformer通过上下文样本模拟扩散等迭代生成采样器
-3. [DIVA: Exploiting Cross-Step Conditional Propagation for Visual Jailbreaks in Discrete Diffusion Vision-Language Models](/202609/09/2609.05525v1-diva-exploiting-cross-step-conditional-propagation-for-visual-jailbreaks-in-discrete-diffusion-vision-language-models)  
+   evidence：扩散语言模型 (dLLM) 作为自回归生成的替代方案
+3. [Line-Coupled Language Model](/202609/10/2609.07129v1-line-coupled-language-model)  
    标签：评分：6.0/10、query:ardm
-   evidence：比较自回归和离散扩散架构
+   evidence：自回归模型多行推进与扩散并行生成的对比
 
 
 <div class="dpr-home-promo-card">
