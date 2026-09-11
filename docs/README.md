@@ -6,37 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-10
-- 运行时间：2026-09-10 21:56:04 UTC
+- 最新运行日期：2026-09-11
+- 运行时间：2026-09-11 21:32:57 UTC
 - 运行状态：成功
-- 本次总论文数：5
+- 本次总论文数：4
 - 精读区：2
-- 速读区：3
+- 速读区：2
 
 ### 今日简报（AI）
-今日精选 5 篇前沿论文，聚焦扩散模型在轨迹规划与多模态探索中的创新应用。
-重点关注 DiffuSearch 与 CAVEAT，它们展示了对齐目标与递归扩散在复杂环境规划中的卓越性能。
-建议优先研读轨迹规划类论文，深入理解扩散模型如何从单纯的生成转向更精准的决策控制。
-- 详情：[/202609/10/README](/202609/10/README)
+今日精选 4 篇前沿论文，聚焦 3D 一致性视频生成与生成式边缘化模型。
+重点关注 OctWorld 的八叉树 3D 映射技术及 Particle GFlowNets 的生成建模新思路。
+建议优先研读这两篇高分佳作，深入理解视频生成与概率建模的最新演进。
+- 详情：[/202609/11/README](/202609/11/README)
 
 ### 精读区论文标签
-1. [DiffuSearch: How Hybrid Trajectory Planning Benefits from Aligned Objectives in Diffusion and Action Space](/202609/10/2609.02252v1-diffusearch-how-hybrid-trajectory-planning-benefits-from-aligned-objectives-in-diffusion-and-action-space)  
-   标签：评分：9.0/10、query:genad
-   evidence：用于自动驾驶联合轨迹预测的引导扩散模型
-2. [CAVEAT: Recurrent Multimodal Diffusion Planning for Mapless Aerial Exploration](/202609/10/2609.06623v1-caveat-recurrent-multimodal-diffusion-planning-for-mapless-aerial-exploration)  
-   标签：评分：8.0/10、query:diffpl
-   evidence：用于航点序列生成和机器人路径规划的扩散策略
+1. [OctWorld: Long-Range World-Consistent Video Generation with Octree-Based 3D Mapping](/202609/11/2609.03919v1-octworld-long-range-world-consistent-video-generation-with-octree-based-3d-mapping)  
+   标签：评分：8.0/10、query:ardm
+   evidence：执行稳定自回归世界生成的视频扩散框架
+2. [Particle GFlowNets: Rethinking Generative Marginalization Models](/202609/11/2609.11538v1-particle-gflownets-rethinking-generative-marginalization-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：离散分布的任意顺序自回归建模
 
 ### 速读区论文标签
-1. [When Genomic Masking Priors Fail to Transfer: Strong Variant Prediction, Weak Functional Generation](/202609/10/2609.04861v1-when-genomic-masking-priors-fail-to-transfer-strong-variant-prediction-weak-functional-generation)  
+1. [Logit Refiner: Improving Visual Autoregressive Models via Intra-Scale Dependency Modeling](/202609/11/2609.11804v1-logit-refiner-improving-visual-autoregressive-models-via-intra-scale-dependency-modeling)  
    标签：评分：7.0/10、query:ardm
-   evidence：基因组序列生成中离散扩散模型与自回归模型的对比研究
-2. [In-Place Instruction Following in Diffusion Language Models](/202609/10/2609.07160v1-in-place-instruction-following-in-diffusion-language-models)  
-   标签：评分：7.0/10、query:ardm
-   evidence：扩散语言模型 (dLLM) 作为自回归生成的替代方案
-3. [Line-Coupled Language Model](/202609/10/2609.07129v1-line-coupled-language-model)  
+   evidence：通过顺序采样改进视觉自回归模型
+2. [Why we should condition denoising diffusion generative models on windows of past observations](/202609/11/2609.10924v1-why-we-should-condition-denoising-diffusion-generative-models-on-windows-of-past-observations)  
    标签：评分：6.0/10、query:ardm
-   evidence：自回归模型多行推进与扩散并行生成的对比
+   evidence：将扩散模型建立在过去观测窗口的基础上以获得时间相关的先验
 
 
 <div class="dpr-home-promo-card">
