@@ -1,0 +1,51 @@
+{
+  "label": "2026-09-13",
+  "date": "2026-09-13",
+  "generated_at": "2026-09-13T21:42:43",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/13/2609.11265v1-uncertainty-dmd-restoring-diversity-in-few-step-autoregressive-video-distillation",
+      "section": "deep",
+      "title_en": "Uncertainty DMD: Restoring Diversity in Few-Step Autoregressive Video Distillation",
+      "authors": "Zixuan Duan, Xunzhi Xiang, Yabo Chen, Xin Zhang, Changhan Liu, Haibin Huang, Chi Zhang, Qi Fan, Xuelong Li",
+      "date": "2026-09-10",
+      "pdf": "https://arxiv.org/pdf/2609.11265v1",
+      "score": "9.0",
+      "evidence": "基于扩散蒸馏的自回归视频生成",
+      "tldr": "针对自回归视频生成在少步蒸馏中出现的“多样性崩溃”问题，本文分析发现这是由DMD的模式寻求偏差导致的结构性不确定性缺失。为此，作者提出了Uncertainty DMD框架，通过在首帧引入时间步扰动并在后续帧采用随机缓存写入机制，在不改变架构的前提下有效恢复了视频生成的多样性与动态表现。",
+      "tags": "query:ardm",
+      "abstract_en": "Few-step distillation improves the efficiency of autoregressive (AR) video generation, but often causes diversity collapse: under the same prompt, different noise samples tend to produce highly similar videos with weakened motion dynamics. We analyze this degradation in Distribution Matching Distillation (DMD)-distilled AR video generators and find that, in the autoregressive setting, it takes the form of a structured uncertainty collapse: the mode-seeking bias of DMD maps different noise samples to nearly identical first chunks, and the deterministic AR cache then propagates this collapsed state to all subsequent chunks, turning a local loss of stochasticity at the rollout root into a global suppression of temporal variation. Based on this analysis, we propose Uncertainty DMD, a simple uncertainty-injection framework that restores stochasticity at two key stages of AR generation: a timestep perturbation for the first chunk to increase first-chunk diversity, and a stochastic cache-writing mechanism for later chunks to preserve uncertainty in autoregressive conditioning. The method requires no architectural changes and introduces only lightweight perturbation operations. The same perturbation mechanisms are used during both training and inference. Experiments show that Uncertainty DMD consistently improves diversity and motion dynamics while maintaining comparable per-sample visual quality.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/13/2609.07756v1-decomposition-guided-diffusion-language-models-for-inertial-confinement-fusion-prediction",
+      "section": "quick",
+      "title_en": "Decomposition-Guided Diffusion Language Models for Inertial Confinement Fusion Prediction",
+      "authors": "Xiang Zhang, Varchas Gopalaswamy, Rahman Ejaz, Riccardo Betti, Dongfang Liu",
+      "date": "2026-09-07",
+      "pdf": "https://arxiv.org/pdf/2609.07756v1",
+      "score": "7.0",
+      "evidence": "基于语言模型和扩散模型的时序波形生成预测器",
+      "tldr": "针对惯性约束聚变（ICF）实验成本高昂且数据稀缺的挑战，本研究提出了ICF-DLM模型。该模型通过物理引导的分解策略、双向去噪机制及物理驱动的PPO奖励机制，实现了从激光脉冲和目标参数到中子产率波形的精准预测。在ICFBench数据集上，该方法显著降低了峰值时间预测误差，优于现有的自回归大模型及传统序列模型，为小样本、稀疏事件的科学领域预测提供了新范式。",
+      "tags": "query:ardm",
+      "abstract_en": "Inertial confinement fusion (ICF) is a leading pathway toward clean energy, but each shot at the National Ignition Facility costs on the order of one million dollars, making accurate AI surrogates a high-value target. We study exogenous-driven ICF waveform prediction, where a 512-step neutron-rate diagnostic must be inferred directly from a laser pulse and target design parameters, with no historical response observed. The regime stresses standard time-series predictors with temporal sparsity (picosecond peak in a nanosecond window), input-output scale mismatch (under 300 real shots), and peak sensitivity (picosecond timing). We propose ICF-DLM, to our knowledge the first LM-based ICF predictor, combining (i) a physics-typed decomposition into yield $Y_{DT}$, peak timing $t_{\\mathrm{peak}}$, and local waveform $w_{\\mathrm{local}}$; (ii) bidirectional denoising that defers commitment to peak location; and (iii) a physics-driven PPO reward re-injecting metric structure across numeric tokens. On ICFBench (50K simulations + 232 experimental shots), ICF-DLM cuts peak-timing error from 11.6 to 9.2 steps over a matched autoregressive LLaMA-3-8B and outperforms classical sequence models and LLM-based time-series predictors. Beyond ICF, the recipe shows potential to address science domains with low data and sparse events.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/13/2609.09009v1-let-it-go-or-learn-to-self-correct-continuous-diffusion-for-constrained-discrete-tasks",
+      "section": "quick",
+      "title_en": "Let It Go or Learn to Self-Correct: Continuous Diffusion for Constrained Discrete Tasks",
+      "authors": "Mariia Drozdova, Stéphane Liem Nguyen, François Fleuret",
+      "date": "2026-09-08",
+      "pdf": "https://arxiv.org/pdf/2609.09009v1",
+      "score": "6.0",
+      "evidence": "用于受限离散任务的扩散模型",
+      "tldr": "本文探讨了去噪扩散概率模型（DDPM）在数独、图连通性等离散约束任务中的局限性。研究发现，标准扩散采样中对早期噪声状态的过度依赖会导致错误累积。为此，作者提出直接从模型预测中采样，并引入“自校正训练”以增强模型对推理错误的鲁棒性，显著提升了离散任务的求解准确率。",
+      "tags": "query:ardm",
+      "abstract_en": "Denoising Diffusion Probabilistic Models (DDPMs) generate samples by starting from noise and repeatedly denoising while keeping each update close to the current noisy state. This behavior is effective in many continuous domains, but its role is less clear for globally constrained discrete tasks, such as Sudoku, graph connectivity, Latin squares, and N-queens. In such settings, early discrete errors can be difficult to undo. As a result, standard diffusion sampling may preserve early mistakes, even when the model's clean predictions are informative. We compare standard samplers to sampling directly from the model's clean prediction. Without retraining, this single change improves Sudoku validity from 31% to 95%, with consistent gains across the other discrete tasks. We hypothesize that staying close to the current noisy state is harmful because the reverse trajectory can drift off the forward noising distribution the model was trained on. To reduce this train-test mismatch, we further introduce self-correction training, which exposes the model to its own predictions, improving robustness to errors that arise during inference. This substantially improves the performance of standard samplers. Our results suggest that continuous diffusion models can learn nontrivial global constraints, but discrete reasoning tasks require better alignment between training and inference: either through samplers that reduce commitment to early decisions, or through training that teaches the model to correct its own inference-time errors.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
