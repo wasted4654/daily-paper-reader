@@ -1,0 +1,275 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-14T22:48:07.142861+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2609.11998v1",
+      "title": "Fixed State, Long Reach: What a Constant-Size Cache Buys Block Diffusion at Scale",
+      "abstract": "Diffusion language models decode tokens in parallel, but their bidirectional denoiser rules out the naive key--value (KV) cache behind fast autoregressive inference. Block diffusion restores caching by decoding block-by-block, and the block caches deployed on it so far are tied to attention: O(L)in memory and, if used as training-free retrofits, only an approximation of the model's computation. Both constraints can be overcome: sequence mixers that summarize finalized blocks into a reusable state support block caching, and the corresponding block-causal training objective makes the cache exact. We study this recipe at scale, pretraining three 3B block-diffusion denoisers (attention, mamba, and hybrid) on 300B tokens under one single-frontier objective and decoding all three through a single cached interface. Only the state-space cache is O(1) in sequence length: its memory and per-step latency stay constant at any context length, while an attention cache remains O(L). At 256k tokens (where attention has grown to 82GB and 29 ms/step), the Mamba cache delivers 4.3x lower latency, 11x less memory, and 2.6x higher single-stream throughput; and because that footprint is constant it scales with batch as well, reaching 14x the aggregate throughput, where attention cannot run beyond a single stream. The same linear-state bias lets the Mamba and hybrid backbones keep retrieving out to 8-16x their training length, whereas attention's retrieval collapses at 2x, at no measured quality cost.",
+      "authors": [
+        "Vaibhav Singh",
+        "Pierre-André Noël",
+        "Torsten Scholak",
+        "Eugene Belilovsky",
+        "Oleksiy Ostapenko"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-09T23:37:47+00:00",
+      "link": "https://arxiv.org/pdf/2609.11998v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "block diffusion with constant-size cache for autoregressive-like inference",
+      "llm_evidence_cn": "具有恒定大小缓存的块扩散模型，用于类自回归推理",
+      "llm_evidence": "具有恒定大小缓存的块扩散模型，用于类自回归推理",
+      "canonical_evidence": "具有恒定大小缓存的块扩散模型，用于类自回归推理",
+      "llm_tldr_en": "Scales block diffusion models with efficient caching mechanisms to bridge parallel and autoregressive decoding.",
+      "llm_tldr_cn": "扩展了具有高效缓存机制的块扩散模型，桥接了并行解码与自回归解码。",
+      "llm_tldr": "扩展了具有高效缓存机制的块扩散模型，桥接了并行解码与自回归解码。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.12382v1",
+      "title": "Representation-based Masked Diffusion Model",
+      "abstract": "Masked Diffusion Models (MDMs) have emerged as a compelling paradigm for language modeling, offering the capability for efficient parallel text generation. However, existing parallel sampling methods typically update multiple masked tokens independently and ignore the complex mutual dependencies among the masked tokens. This independent updating mechanism lacks global coordination and might lead to incoherent outputs. To address this limitation, we propose Representation-based Masked Diffusion Model (RMDM), a framework that leverages the text representation to explicitly encode global semantics and help to parallel update tokens more precisely. Specifically, we first encode text into a continuous semantic space using a pretrained encoder and learn an invertible transformation that normalizes the representation distribution to a Gaussian prior, facilitating efficient sampling during generation. Conditioned on this latent semantic representation, we train a masked diffusion model to learn the conditional text distribution, where the representation serves as global semantic guidance to coordinate parallel token updates and faithfully approximate the target distribution. Empirical results demonstrate that RMDM significantly improves generation quality, particularly in aggressive few-step sampling regimes.",
+      "authors": [
+        "Yangrong Hu",
+        "Ding Huang",
+        "Xueyu Zhou",
+        "Jian Huang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "stat.ML"
+      ],
+      "published": "2026-09-11T03:00:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.12382v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Masked diffusion models for language modeling and parallel text generation",
+      "llm_evidence_cn": "用于语言建模和并行文本生成的掩码扩散模型",
+      "llm_evidence": "用于语言建模和并行文本生成的掩码扩散模型",
+      "canonical_evidence": "用于语言建模和并行文本生成的掩码扩散模型",
+      "llm_tldr_en": "Proposes RMDM to improve global coordination in masked diffusion models for more coherent text generation.",
+      "llm_tldr_cn": "提出RMDM框架，通过显式编码全局语义来改进掩码扩散模型在文本生成中的连贯性。",
+      "llm_tldr": "提出RMDM框架，通过显式编码全局语义来改进掩码扩散模型在文本生成中的连贯性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.08981v2",
+      "title": "Transformers as In-Context Samplers: From Closed-Form Diffusion to Estimation-Free Sampling",
+      "abstract": "A growing body of work establishes that large language models are not mere statistical memorizers, but are capable of in-context learning: performing inference at test time using only examples provided in the prompt, without any parameter updates. Prior theoretical work has shown that this capability extends to supervised learning tasks such as linear regression. We prove that in-context learning extends further to \\emph{data generation}: frozen transformers can simulate iterative generative samplers from in-context samples. We first show that transformers can realize closed-form and smoothed closed-form diffusion samplers. The construction identifies a concrete generative role for softmax attention: it computes responsibility weights and weighted empirical averages, while feedforward layers implement Euler updates.   To empirically relate these constructions to pretrained language models, we study \\emph{semantic-topic sampling}: prompts consisting of words drawn from a common semantic category, such as animals, foods, or cities. Across transformer layers, the normalized hidden states exhibit a two-stage geometry: they move toward a uniform spherical reference in intermediate layers and then return to structured, topic-dependent representations near the output. We further measure an interacting-particle energy on these hidden-state clouds and observe the same U-shape pattern. We then prove that transformers can approximate an energy-based sampler, constructing the same U-shape energy across the layers.",
+      "authors": [
+        "Arman Adibi",
+        "Alireza Jafari",
+        "Mohammad Ghavamzadeh",
+        "Hadi Daneshmand"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "stat.AP",
+        "stat.CO",
+        "stat.ML"
+      ],
+      "published": "2026-09-08T16:25:11+00:00",
+      "link": "https://arxiv.org/pdf/2609.08981v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Transformers simulating iterative generative diffusion samplers in-context",
+      "llm_evidence_cn": "Transformer在上下文学习中模拟迭代生成扩散采样器",
+      "llm_evidence": "Transformer在上下文学习中模拟迭代生成扩散采样器",
+      "canonical_evidence": "Transformer在上下文学习中模拟迭代生成扩散采样器",
+      "llm_tldr_en": "Demonstrates that frozen transformers can perform data generation by simulating diffusion samplers in-context.",
+      "llm_tldr_cn": "证明了冻结的Transformer可以通过上下文学习模拟扩散采样器来进行数据生成。",
+      "llm_tldr": "证明了冻结的Transformer可以通过上下文学习模拟扩散采样器来进行数据生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.13060v1",
+      "title": "CanvasAnneal: Curriculum Reinforcement Learning for Diffusion Language Models",
+      "abstract": "Diffusion Language Models (DLMs) offer promising parallel generation capabilities but lag behind autoregressive models in complex reasoning and tool-use tasks. While Reinforcement Learning (RL) has recently been applied to enhance DLMs, standard RL approaches suffer from an exploration bottleneck. To address this, we inject reasoning priors from a stronger teacher model to guide RL exploration. In this paper, we introduce CanvasAnneal, a curriculum-guided diffusion RL framework. During the initial RL phase, we warm-start exploration by injecting teacher-generated reasoning traces into the initial diffusion canvas. As training progresses, we gradually remove this guidance and require the model to generate more of the reasoning trajectory independently. Across mathematical reasoning and tool-use benchmarks, CanvasAnneal improves over standard diffu-GRPO on MATH500, Countdown, and Tau2 and substantially accelerates reward improvement on several tasks, while gains are task-dependent. Our results suggest that structured training-time guidance can alleviate exploration bottlenecks in diffusion RL and speed up convergence on harder tasks.",
+      "authors": [
+        "Blake Olson",
+        "Yuhang Song",
+        "Emmett McQuinn",
+        "Yuan Shangguan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-11T16:59:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.13060v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "diffusion language models compared with autoregressive models",
+      "llm_evidence_cn": "扩散语言模型与自回归模型的对比与结合",
+      "llm_evidence": "扩散语言模型与自回归模型的对比与结合",
+      "canonical_evidence": "扩散语言模型与自回归模型的对比与结合",
+      "llm_tldr_en": "Introduces CanvasAnneal, a curriculum reinforcement learning framework to enhance diffusion language models.",
+      "llm_tldr_cn": "引入了CanvasAnneal，一种课程引导的扩散强化学习框架，以增强扩散语言模型。",
+      "llm_tldr": "引入了CanvasAnneal，一种课程引导的扩散强化学习框架，以增强扩散语言模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.12945v1",
+      "title": "StepAudio 3 Gen Technical Report",
+      "abstract": "We introduce StepAudio 3 Gen, a general-purpose audio generation model that supports zero-shot text-to-speech (TTS), voice design, vocal generation, sound effects, music, vibe speech, and mixtures of multiple audio types within a unified framework. At its core, StepAudio 3 Gen is a discrete autoregressive generator that models audio directly over residual vector quantization (RVQ) tokens, departing from the diffusion Transformer-based continuous generation paradigm prevalent in recent general audio models. Its StepAudio Tokenizer represents general audio at 12.5 Hz in a shared $16 \\times 2048$ residual code space, jointly quantizing semantic and waveform-level acoustic features so that each code layer preserves both types of information. For generation, the backbone predicts the first codebook along the time axis using autoregressive modeling, while a lightweight causal Transformer completes the remaining fifteen codebooks along the codebook axis. Our study further identifies three key design principles: (1) interference-aware progressive pretraining for acquiring audio capabilities while preserving the textual abilities of the large language model, (2) RVQ Adaptor for effectively incorporating multi-codebook acoustic representations, and (3) discrete autoregressive modeling over a shared representation across general audio domains. With progressive pretraining, multi-task instruction training, and supervised fine-tuning, StepAudio 3 Gen achieves state-of-the-art performance on both TTS and voice design, while retaining strong generation capabilities across speech, vocals, sound effects, and music. Audio samples are available at https://stepaudiollm.github.io/step-audio-3-gen/.",
+      "authors": [
+        "Bin Lin",
+        "Bo Zhao",
+        "Boyang Wang",
+        "Boyang Zhang",
+        "Boyong Wu",
+        "Chao Yan",
+        "Chen Geng",
+        "Chen Wu",
+        "Cheng Yi",
+        "Chengli Feng",
+        "Chenglin Zhu",
+        "DanNi Wan",
+        "Daxin Jiang",
+        "Dongqing Pang",
+        "Fei Tian",
+        "Feng Tian",
+        "Future Li",
+        "Gang Yu",
+        "Guanglong Yang",
+        "Jia Peng",
+        "Jiahao Song",
+        "Jiamin Fan",
+        "Jiangjie Zhen",
+        "Jianzheng Gao",
+        "Jun Chen",
+        "Li Xie",
+        "Lifang Zhang",
+        "Lingli Ji",
+        "Liying Shi",
+        "Lun Cai",
+        "Min Xu",
+        "Na Wang",
+        "Peilin Li",
+        "Peng Yang",
+        "Pengfei Tan",
+        "Qingjian Lin",
+        "Ruijie Xiong",
+        "Runze Li",
+        "Shenghua Hu",
+        "Shi Qiu",
+        "Siqi Tu",
+        "Siyi Zhou",
+        "Tianjiao Deng",
+        "Wanying Lu",
+        "Weiming Niu",
+        "Wen Sun",
+        "WenWen Qu",
+        "Xiangyu Zhang",
+        "Xianwei Zhang",
+        "XiaoSu Su",
+        "Xing Chen",
+        "Xinyu Liu",
+        "Xuerui Yang",
+        "Yang Li",
+        "Yang Yang",
+        "Yechang Huang",
+        "Yibo Zhu",
+        "Yifan Zhang",
+        "Yiyang Xu",
+        "Yu Fu",
+        "Yu Luo",
+        "Yu Zhou",
+        "Yumang Wang",
+        "Yunzhou Ju",
+        "Yuxiang Yang",
+        "Zekai Liu",
+        "Zengwei Yao",
+        "Zhenwei Mou",
+        "Zheqi Dai",
+        "Zhiyue Wu",
+        "Zichao Zhou"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "eess.AS"
+      ],
+      "published": "2026-09-11T15:05:20+00:00",
+      "link": "https://arxiv.org/pdf/2609.12945v1",
+      "tags": [
+        "keyword:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "discrete autoregressive generator departing from diffusion paradigm",
+      "llm_evidence_cn": "离散自回归生成器，偏离了扩散范式",
+      "llm_evidence": "离散自回归生成器，偏离了扩散范式",
+      "canonical_evidence": "离散自回归生成器，偏离了扩散范式",
+      "llm_tldr_en": "Presents StepAudio 3 Gen, a discrete autoregressive audio generation model that departs from diffusion transformers.",
+      "llm_tldr_cn": "提出了StepAudio 3 Gen，这是一种偏离扩散Transformer的离散自回归音频生成模型。",
+      "llm_tldr": "提出了StepAudio 3 Gen，这是一种偏离扩散Transformer的离散自回归音频生成模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
