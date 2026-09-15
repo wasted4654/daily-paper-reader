@@ -1,0 +1,385 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-15T22:24:28.241044+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2609.13909v1",
+      "title": "DiTAR+: Dual Optimization for Robust Autoregressive Diffusion Speech Synthesis",
+      "abstract": "Continuous-latent Autoregressive Diffusion Transformer (AR-DiT) models have demonstrated immense potential in zero-shot speech generation. However, they still suffer from limited decoding stability when synthesizing long utterances or complex linguistic structures. This instability primarily stems from a restricted historical receptive field and an acoustic inertia dependency within the diffusion decoder, which causes the model to ignore semantic conditions. To address these challenges, we propose DiTAR+, a dual-optimization framework. First, we introduce Dilated Context Sampling to expand the macro-level historical receptive field without violating physical temporal continuity, thereby preventing cumulative error propagation. Second, we propose Hierarchical Acoustic Masking to prevent shallow layers from attending to acoustic pre-context, explicitly decoupling semantic alignment from acoustic detail reconstruction. Extensive experiments show that our framework effectively mitigates pronunciation errors and semantic hallucinations, enhances generation robustness on challenging sentences, and maintains exceptionally high speaker similarity throughout the entirety of long-form utterances. On the linguistically challenging ZH-Hard set, DiTAR+ reduces the word error rate from 12.478% to 9.893%, and on extended utterances of 25 to 35 seconds it improves speaker similarity from 0.741 to 0.759 while simultaneously lowering the word error rate from 2.778% to 2.173%, outperforming both discrete-token and pure flow-matching baselines.",
+      "authors": [
+        "Ziyu Zhang",
+        "Tianlun Zuo",
+        "Hanzhao Li",
+        "Haoyu Zhang",
+        "Lei Xie"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI",
+        "eess.AS"
+      ],
+      "published": "2026-09-12T12:32:02+00:00",
+      "link": "https://arxiv.org/pdf/2609.13909v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Proposes DiTAR+, an Autoregressive Diffusion Transformer for speech synthesis",
+      "llm_evidence_cn": "提出了 DiTAR+，一种用于语音合成的自回归扩散 Transformer",
+      "llm_evidence": "提出了 DiTAR+，一种用于语音合成的自回归扩散 Transformer",
+      "canonical_evidence": "提出了 DiTAR+，一种用于语音合成的自回归扩散 Transformer",
+      "llm_tldr_en": "Enhances autoregressive diffusion transformers for speech synthesis using dual-optimization for stability.",
+      "llm_tldr_cn": "通过双重优化增强了用于语音合成的自回归扩散 Transformer 的稳定性。",
+      "llm_tldr": "通过双重优化增强了用于语音合成的自回归扩散 Transformer 的稳定性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.15504v1",
+      "title": "How Lossless Is Lossless Speculative Decoding? The Role of Numerical Precision in Orthrus",
+      "abstract": "Orthrus is a hybrid autoregressive-diffusion architecture that accelerates autoregressive language-model inference by generating multiple tokens in parallel while using a frozen autoregressive backbone. Its central claim is that an intra-model consensus mechanism enables lossless speculative decoding, producing the same output sequence as the autoregressive model.   We independently reproduce Orthrus and examine this claim under different numerical precisions. Under BF16 inference, exact trajectory matching occurs in only 45% of cases for the authors' checkpoint and 43% for our independently trained model across 1,190 prompts from 12 domains. The probability of exact matching is also strongly associated with the response-conditional perplexity of the reference model. Despite this trajectory divergence, Orthrus does not show systematic degradation on downstream lm-eval-harness benchmarks. In contrast, repeating the trajectory evaluation with FP32 yields exact trajectory matching on all evaluated prompts.   These results show that the practical losslessness of Orthrus depends on numerical precision and that exact trajectory equivalence should be evaluated separately from downstream task performance.",
+      "authors": [
+        "Ilya Koziev",
+        "Leonid Sinev",
+        "Ivan Oseledets"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-09-14T12:55:08+00:00",
+      "link": "https://arxiv.org/pdf/2609.15504v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Analyzes Orthrus, a hybrid autoregressive-diffusion architecture for language models",
+      "llm_evidence_cn": "分析了 Orthrus，一种用于语言模型的自回归-扩散混合架构",
+      "llm_evidence": "分析了 Orthrus，一种用于语言模型的自回归-扩散混合架构",
+      "canonical_evidence": "分析了 Orthrus，一种用于语言模型的自回归-扩散混合架构",
+      "llm_tldr_en": "Evaluates the numerical precision and losslessness of the Orthrus hybrid autoregressive-diffusion model.",
+      "llm_tldr_cn": "评估了 Orthrus 自回归-扩散混合模型在不同数值精度下的无损性。",
+      "llm_tldr": "评估了 Orthrus 自回归-扩散混合模型在不同数值精度下的无损性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.15177v1",
+      "title": "Temporal Self-Distillation: Faster Inference in Discrete Diffusion Language Models",
+      "abstract": "Diffusion language models (dLLMs) promise fast inference by generating multiple tokens in parallel, but suffer severe performance degradation when parallel decoding is pushed too aggressively. We introduce Temporal Self-Distillation (TSD), a simple on-policy method that trains dLLMs for fast inference by distilling predictions across time. Specifically, TSD distills the model's denoising distribution at earlier timesteps toward its distribution at the final timestep at which a token is committed. This encourages earlier predictions to better anticipate the model's eventual output, enabling much more aggressive parallel decoding. Because its teacher signal comes from the model itself, TSD requires no offline teacher generation and applies seamlessly to both base and post-trained policies. Across seven benchmarks in mathematics, planning, and code, TSD substantially shifts the speed--quality frontier toward the low-compute regime. TSD thus provides a simple, single-stage approach to accelerating dLLMs, achieving speedups competitive with offline distillation while avoiding a complex two-stage pipeline.",
+      "authors": [
+        "Shijian Xu",
+        "Andrea Miele",
+        "Metod Jazbec",
+        "Volker Roth",
+        "Eric Nalisnick",
+        "Ilija Bogunovic"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-14T07:59:45+00:00",
+      "link": "https://arxiv.org/pdf/2609.15177v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "faster inference in discrete diffusion language models",
+      "llm_evidence_cn": "离散扩散语言模型的快速推理",
+      "llm_evidence": "离散扩散语言模型的快速推理",
+      "canonical_evidence": "离散扩散语言模型的快速推理",
+      "llm_tldr_en": "Introduces Temporal Self-Distillation to accelerate parallel decoding in discrete diffusion language models.",
+      "llm_tldr_cn": "引入时间自蒸馏技术以加速离散扩散语言模型的并行解码。",
+      "llm_tldr": "引入时间自蒸馏技术以加速离散扩散语言模型的并行解码。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.15903v1",
+      "title": "Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning",
+      "abstract": "Discrete diffusion and flow models are a promising alternative to autoregressive language models, but compressing many-step sampling into fewer steps typically requires distilling a pretrained teacher model. This caps the student at the teacher's quality and requires a costly two-stage training pipeline. We introduce Discrete Beckmann Transport Models (DBTM), built on a time-independent flow whose autonomous transport map provably carries any point in the ambient space to a fixed point on the vertices of the simplex in a single step. We show that this fixed-point property is characterized by a conservation equation whose residual can be minimized directly from data, removing the requirement for a teacher flow and time conditioning. Under this construction, a partially trained map corresponds to the flow truncated at finite time, so generation reduces to iterating one map until it reaches a fixed point. We further extend the map to a partial-context interpolant where additional function evaluations act as refinement steps rather than ODE integration steps. On language modeling and reasoning tasks, DBTM enables one- and few-step generation that improves quality and accuracy over discrete diffusion and continuous flow baselines.",
+      "authors": [
+        "Sophia Tang",
+        "Shiyi Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-14T17:19:47+00:00",
+      "link": "https://arxiv.org/pdf/2609.15903v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Discrete diffusion models as alternatives to autoregressive language models",
+      "llm_evidence_cn": "离散扩散模型作为自回归语言模型的替代方案",
+      "llm_evidence": "离散扩散模型作为自回归语言模型的替代方案",
+      "canonical_evidence": "离散扩散模型作为自回归语言模型的替代方案",
+      "llm_tldr_en": "Introduces Discrete Beckmann Transport Models for one-step language modeling as an alternative to AR models.",
+      "llm_tldr_cn": "引入离散Beckmann传输模型，作为自回归模型的一种单步语言建模替代方案。",
+      "llm_tldr": "引入离散Beckmann传输模型，作为自回归模型的一种单步语言建模替代方案。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.14850v1",
+      "title": "Self-Orchestrating Language Models: Leveraging Semantic Dependence for Efficient Inference",
+      "abstract": "Large language models (LLMs) demonstrate impressive capabilities, but their deployment presents significant efficiency challenges. Autoregressive decoding imposes substantial inference latency and under-utilizes hardware accelerators in low batch size regimes. Discrete diffusion models can generate in parallel but struggle to match autoregressive quality without many diffusion denoising steps. Long-context reasoning creates memory bottlenecks that strain even state-of-the-art accelerators.   My thesis is that language models can direct their own inference execution strategy by annotating semantic dependence -- which tokens depend on which others -- in their generation. I call such models self-orchestrating language models. For each system, I design a runtime that acts on these annotations to parallelize autoregressive decoding, evict intermediate context, or derive denoising orders, achieving Pareto-optimal quality-efficiency trade-offs.   I demonstrate this approach through three self-orchestrating systems. First, PASTA uses semantic dependence to parallelize autoregressive decoding, training the model to annotate which output chunks can generate independently. Second, TIP uses semantic dependence to evict intermediate reasoning steps from the KV cache, reducing memory consumption while preserving accuracy. Third, Planned Diffusion uses semantic dependence to derive a denoising order for discrete diffusion, autoregressively generating a plan that specifies which chunks to denoise in parallel.",
+      "authors": [
+        "Tian Jin"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-09-13T23:48:33+00:00",
+      "link": "https://arxiv.org/pdf/2609.14850v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Discusses autoregressive decoding vs discrete diffusion models for language generation",
+      "llm_evidence_cn": "讨论了语言生成的自回归解码与离散扩散模型",
+      "llm_evidence": "讨论了语言生成的自回归解码与离散扩散模型",
+      "canonical_evidence": "讨论了语言生成的自回归解码与离散扩散模型",
+      "llm_tldr_en": "Proposes self-orchestrating LMs that annotate semantic dependence to optimize autoregressive and diffusion inference.",
+      "llm_tldr_cn": "提出自编排语言模型，通过标注语义依赖来优化自回归和扩散推理效率。",
+      "llm_tldr": "提出自编排语言模型，通过标注语义依赖来优化自回归和扩散推理效率。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.11648v1",
+      "title": "RDDMPI: Residual Denoising Diffusion Model for Probabilistic Multivariate Time Series Imputation",
+      "abstract": "Multivariate time series imputation (MTSI) aims to recover missing values in temporal data composed of multiple interdependent variables. This problem is central to real-world applications such as healthcare monitoring, traffic networks, and energy systems. Recent diffusion-based approaches have shown strong potential for probabilistic imputation by learning to generate missing values through iterative denoising. However, most existing approaches perform diffusion directly in the original data space, requiring the denoising network to simultaneously capture global structure, temporal dynamics, and stochastic variability. This makes the generative task unnecessarily complex, especially when modern deterministic imputers can already provide accurate initial reconstructions. To address this limitation, we propose RDDMPI, a conditional residual diffusion framework that operates directly in residual space. Instead of modeling the full missing signal directly, we reformulate probabilistic imputation as a baseline-residual decomposition, where a pretrained model captures the dominant signal and a diffusion process models the residual uncertainty. To better exploit deterministic guidance, \\model{} conditions the reverse denoising process on both the baseline-completed signal and its latent representation, while a reliability-aware conditioning mechanism adaptively controls the influence of baseline information during residual generation. This formulation simplifies the diffusion learning objective, enabling it to focus on structured correction terms rather than reconstructing the full signal. Experiments on multiple benchmark datasets demonstrate that RDDMPI consistently improves both reconstruction accuracy and uncertainty quantification.",
+      "authors": [
+        "Ramiro Valdes Jara",
+        "David Chapman",
+        "Adam Meyers"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published": "2026-09-10T14:53:38+00:00",
+      "link": "https://arxiv.org/pdf/2609.11648v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "diffusion-based approaches for multivariate time series generation",
+      "llm_evidence_cn": "基于扩散模型的多变量时间序列生成方法",
+      "llm_evidence": "基于扩散模型的多变量时间序列生成方法",
+      "canonical_evidence": "基于扩散模型的多变量时间序列生成方法",
+      "llm_tldr_en": "Proposes a residual denoising diffusion model for probabilistic multivariate time series imputation.",
+      "llm_tldr_cn": "提出一种用于概率性多变量时间序列填补的残差去噪扩散模型。",
+      "llm_tldr": "提出一种用于概率性多变量时间序列填补的残差去噪扩散模型。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.15070v1",
+      "title": "DA-DLM: Explicitly Modeling Token Dependencies in Diffusion Language Models",
+      "abstract": "Diffusion Language Models (DLMs) generate text by iteratively denoising a masked sequence, independently predicting multiple tokens at each step. This conditional independence discards inter-token dependencies and degrades coherence-an issue that parallels the multi-modality problem in Non-Autoregressive Translation (NAT). Drawing on the Directed Acyclic Transformer (DAT), which tackles this problem in NAT via a Directed Acyclic Graph (DAG), we propose DA-DLM, a model that adapts DAG-based dependency modeling to DLMs' iterative setting through a position-oriented DAG design. The position-oriented DAG binds node groups to fixed output positions so that tokens fixed in earlier steps anchor neighboring predictions via learned transitions, and evolves with denoising to focus on remaining uncertainty as anchors accumulate. On language modeling, open-ended generation, and summarization, DA-DLM consistently outperforms Block Diffusion, especially under fewer denoising steps, and matches autoregressive models while preserving the parallel generation advantage. Our code is publicly available at https://github.com/jipy0222/DA-DLM.",
+      "authors": [
+        "Pengyu Ji",
+        "Zichen Zhang",
+        "Xiang Hu",
+        "Kewei Tu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-14T05:39:12+00:00",
+      "link": "https://arxiv.org/pdf/2609.15070v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Addresses token dependencies in diffusion language models as an alternative to AR",
+      "llm_evidence_cn": "解决扩散语言模型中的标记依赖问题，作为自回归的替代方案",
+      "llm_evidence": "解决扩散语言模型中的标记依赖问题，作为自回归的替代方案",
+      "canonical_evidence": "解决扩散语言模型中的标记依赖问题，作为自回归的替代方案",
+      "llm_tldr_en": "Proposes DA-DLM to model token dependencies in diffusion language models using directed acyclic graphs.",
+      "llm_tldr_cn": "提出 DA-DLM，利用有向无环图建模扩散语言模型中的标记依赖关系。",
+      "llm_tldr": "提出 DA-DLM，利用有向无环图建模扩散语言模型中的标记依赖关系。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.13425v1",
+      "title": "ReCAST: Reward Credit Assignment across Timesteps for Online Diffusion Reinforcement",
+      "abstract": "Training diffusion models with multiple rewards requires distinguishing user preference from reward informativeness. User preference determines how much each reward should contribute to the overall objective; reward informativeness determines when its feedback is useful during denoising. Some rewards can meaningfully evaluate a sample as soon as global structure emerges, but others become informative only when the sample is nearly clean. To address both questions jointly, we propose ReCAST (Reward Credit ASsignment across T}imesteps), the first method, to our knowledge, for per-reward, timestep-dependent credit assignment in diffusion reward fine-tuning. ReCAST separates user preferences from temporal allocation through a reward-by-timestep weight matrix $W$, whose row sums match the user-specified reward budgets $λ$, while its column sums are equal, assigning the same total weight to each denoising step. Under these marginal constraints, ReCAST allocates weight according to each reward's informativeness, quantified by its Rényi discriminability gain at each step. These gains telescope to the total discriminability between the reward-induced positive policy and the current policy, providing a basis for temporal credit assignment. We evaluate ReCAST by training SD3.5-Medium under two distinct four-reward settings, each across five reward budgets $λ$. ReCAST improves the training rewards in one setting and matches them in the other, improves every held-out judge in both, and is preferred by an independent LLM-as-a-Judge. Together, these results show that ReCAST yields improvements that generalize beyond the training rewards and support its core principle: assigning each reward greater weight at the denoising timesteps where its feedback is most informative.",
+      "authors": [
+        "Yihang Chen",
+        "Yuanhao Ban",
+        "Kuei-Chun Kao",
+        "Cho-Jui Hsieh"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-09-11T18:41:09+00:00",
+      "link": "https://arxiv.org/pdf/2609.13425v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "timestep-dependent credit assignment in diffusion reinforcement",
+      "llm_evidence_cn": "扩散强化学习中的时间步相关信用分配",
+      "llm_evidence": "扩散强化学习中的时间步相关信用分配",
+      "canonical_evidence": "扩散强化学习中的时间步相关信用分配",
+      "llm_tldr_en": "Proposes a method for per-reward, timestep-dependent credit assignment in diffusion reward fine-tuning.",
+      "llm_tldr_cn": "提出了一种在扩散奖励微调中进行逐奖励、时间步相关的信用分配方法。",
+      "llm_tldr": "提出了一种在扩散奖励微调中进行逐奖励、时间步相关的信用分配方法。",
+      "llm_tags": [
+        "query:diffpl:composite"
+      ],
+      "matched_query_tag": "query:diffpl:composite",
+      "matched_query_text": "Papers central to 查找diffusionplanner及相关的扩散模型规划器研究, especially work that connects or combines: p; DiffusionPlanner model for motion planning; trajectory generation using diffusion models; generative models for robot path planning; comparison of diffusionplanner and other generative planners.",
+      "matched_requirement_id": "req-composite-diffpl",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.15357v1",
+      "title": "Diffusion Trajectory Modeling for Semantic Correspondence",
+      "abstract": "Diffusion models generate images through an iterative diffusion process, and recent studies have demonstrated that the intermediate feature maps produced during this process contain rich visual representations, leading to their adoption across a variety of downstream tasks. However, most existing approaches are limited to either using a single feature map at a specific timestep or aggregating feature maps across multiple timesteps. We observe that intermediate representations in the diffusion process form meaningful trajectories along the time axis. In particular, the representation of each spatial patch evolves progressively throughout the generative process, encoding semantics that are difficult to capture from static snapshots alone. This observation motivates the need to treat diffusion representations as temporally structured trajectories rather than static snapshots. To this end, we propose Diffusion Trajectory Modeling (DTM), a framework that interprets the temporal evolution of each spatial patch as a trajectory and leverages it for semantic correspondence. By effectively modeling patch-wise trajectories generated across multiple timesteps, DTM captures correspondence cues that prior methods are not designed to capture. We further demonstrate empirically that spatially corresponding patches form similar trajectory patterns throughout the diffusion process, suggesting that the temporal axis of diffusion carries semantic information. Experiments on SPair-71k, SPair-U and AP-10K show that DTM achieves strong performance, presenting a new perspective for exploiting diffusion representations from a trajectory-centric viewpoint.",
+      "authors": [
+        "Yusung Choi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-14T10:39:44+00:00",
+      "link": "https://arxiv.org/pdf/2609.15357v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "diffusion trajectory modeling for semantic correspondence",
+      "llm_evidence_cn": "用于语义对应的扩散轨迹建模",
+      "llm_evidence": "用于语义对应的扩散轨迹建模",
+      "canonical_evidence": "用于语义对应的扩散轨迹建模",
+      "llm_tldr_en": "Models intermediate diffusion representations as trajectories to capture evolving semantic information.",
+      "llm_tldr_cn": "将扩散中间表示建模为轨迹，以捕捉演变的语义信息。",
+      "llm_tldr": "将扩散中间表示建模为轨迹，以捕捉演变的语义信息。",
+      "llm_tags": [
+        "query:genad:composite"
+      ],
+      "matched_query_tag": "query:genad:composite",
+      "matched_query_text": "Papers central to 查找DiffusionDrive后续及生成式端到端自动驾驶研究, especially work that connects or combines: DiffusionDrive autonomous driving follow-up research; Generative end-to-end autonomous driving; Diffusion policy for autonomous driving control; End-to-end autonomous driving systems; Diffusion-based motion planning for vehicles; Diffusion models for trajectory forecasting; Research papers citing or following DiffusionDrive methodology.",
+      "matched_requirement_id": "req-composite-genad",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.15643v1",
+      "title": "Principal-timestep Restricted Init via Sparse Matrix-decomposition in Flow-matching",
+      "abstract": "Flow-matching diffusion models have recently emerged as a strong paradigm for high-fidelity visual generation. However, their prohibitively high fine-tuning cost limits scalability to downstream tasks. While Low-Rank Adaptation (LoRA) combined with spectral initialization has demonstrated accelerated convergence and improved performance in autoregressive language models by better aligning gradient directions, we find that it fails to deliver similar gains in diffusion fine-tuning, often yielding marginal or even negative improvements over vanilla LoRA.We attribute this discrepancy to a fundamental mismatch between LoRA's low-rank parameterization and the intrinsically high-rank gradients induced by the flow-matching objective. In particular, stochastic timestep sampling introduces directionally heterogeneous gradient signals across training steps, leading to misaligned updates under low-rank constraints.To address this issue, we propose Prism-LoRA,a Principal-timestep Restricted Init via Sparse Matrix-decomposition framework that improves gradient alignment during fine-tuning. Our method consists of two key components: (i) principal timestep selection, which restricts initialization gradients to a subset of dominant timesteps to suppress effective gradient rank, and (ii) principal channel filtering, which removes task-irrelevant channels, enabling the one-step spectral initialization gradient to better align with the long-horizon optimization trajectory. Extensive experiments demonstrate that our method consistently improves both convergence speed and final performance across multiple diffusion fine-tuning benchmarks, including subject-driven generation, controllable generation, and deblurring, achieving not only performance improvement but also earlier stages of convergence over baseline LoRA and other spectral-init methods.",
+      "authors": [
+        "Jiayang Gu",
+        "Zheng Fang",
+        "Lichaun Xiang",
+        "Fanghui Liu",
+        "Xu Cai",
+        "Hongkai Wen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-14T14:30:54+00:00",
+      "link": "https://arxiv.org/pdf/2609.15643v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Comparison of LoRA performance between autoregressive models and diffusion models",
+      "llm_evidence_cn": "对比LoRA在自回归模型与扩散模型中的性能表现",
+      "llm_evidence": "对比LoRA在自回归模型与扩散模型中的性能表现",
+      "canonical_evidence": "对比LoRA在自回归模型与扩散模型中的性能表现",
+      "llm_tldr_en": "Analyzes why spectral initialization for LoRA succeeds in AR models but fails in flow-matching diffusion models.",
+      "llm_tldr_cn": "分析了为什么LoRA的光谱初始化在自回归模型中成功但在流匹配扩散模型中失败。",
+      "llm_tldr": "分析了为什么LoRA的光谱初始化在自回归模型中成功但在流匹配扩散模型中失败。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
