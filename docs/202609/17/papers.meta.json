@@ -1,0 +1,79 @@
+{
+  "label": "2026-09-17",
+  "date": "2026-09-17",
+  "generated_at": "2026-09-17T22:26:11",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202609/17/2609.15903v2-discrete-beckmann-transport-models-for-one-step-language-modeling-and-reasoning",
+      "section": "deep",
+      "title_en": "Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning",
+      "authors": "Sophia Tang, Shiyi Wang",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.15903v2",
+      "score": "8.0",
+      "evidence": "离散扩散模型作为自回归语言模型的替代方案",
+      "tldr": "本文提出离散贝克曼传输模型（DBTM），旨在解决离散扩散模型在语言建模中采样步数多、依赖教师模型蒸馏的问题。该方法利用时间无关流的固定点特性，通过最小化守恒方程残差直接从数据学习，实现了单步或少步的高质量文本生成，在推理任务中表现优于现有离散扩散和连续流基线。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion and flow models are a promising alternative to autoregressive language models, but compressing many-step sampling into fewer steps typically requires distilling a pretrained teacher model. This caps the student at the teacher's quality and requires a costly two-stage training pipeline. We introduce Discrete Beckmann Transport Models (DBTM), built on a time-independent flow whose autonomous transport map provably carries any point in the ambient space to a fixed point on the vertices of the simplex in a single step. We show that this fixed-point property is characterized by a conservation equation whose residual can be minimized directly from data, removing the requirement for a teacher flow and time conditioning. Under this construction, a partially trained map corresponds to the flow truncated at finite time, so generation reduces to iterating one map until it reaches a fixed point. We further extend the map to a partial-context interpolant where additional function evaluations act as refinement steps rather than ODE integration steps. On language modeling and reasoning tasks, DBTM enables one- and few-step generation that improves quality and accuracy over discrete diffusion and continuous flow baselines.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.18216v1-cpr-combining-global-composing-local-performing-and-full-sequence-refining-in-piano-rendering-with-continuous-autoregressive-modelling",
+      "section": "deep",
+      "title_en": "CPR: Combining global composing, local performing and full-sequence refining in piano rendering with continuous autoregressive modelling",
+      "authors": "Chong Jing, Junan Zhang, Zhizheng Wu",
+      "date": "2026-09-16",
+      "pdf": "https://arxiv.org/pdf/2609.18216v1",
+      "score": "8.0",
+      "evidence": "连续自回归建模与流匹配",
+      "tldr": "该论文提出了CPR框架，旨在解决钢琴MIDI到音频渲染中离散编码器信息丢失与扩散模型计算成本高的问题。通过结合连续自回归建模、局部流匹配和全序列细化，CPR实现了高效且高质量的钢琴渲染。引入的BREPA和MT-RoPE机制显著增强了音乐语义结构与跨模态对齐能力，在保持音色还原度的同时，有效提升了生成效率与音频质量。",
+      "tags": "query:ardm",
+      "abstract_en": "Prompt-conditioned piano MIDI-to-Music rendering aims to faithfully render target notes while reproducing the timbre of a reference recording. Existing approaches primarily follow two paradigms: autoregressive (AR) modeling and flow matching (or diffusion). Discrete-codec AR models provide causal temporal modeling, but quantization can discard acoustic detail. Flow matching better preserves acoustic structure in the cost of full-sequence attention costs and worse semantic structure. Continuous autoregressive models operate directly on continuous representations. It not only combines the condition-following ability of AR models and distribution-modeling capacity of flow matching but also bypasses the quantization bottleneck with lower computational costs. Building on this principle, we present Composer--Performer--Refiner (CPR) framework. Composer autoregressively predicts continuous hidden states, Performer generates 24kHz acoustic latents through local flow matching and Refiner then upsamples the waveform to 48 kHz. We further introduce Bottlenecked Representation Alignment (BREPA) and Modality--Time RoPE (MT-RoPE) to strengthen musical semantic structure in Composer hidden states and temporal alignments across modalities. Codes are available at https://github.com/FEAfeatherTHER/CPR_official",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.16312v1-efficient-one-to-many-translation-with-joint-multi-stream-diffusion",
+      "section": "quick",
+      "title_en": "Efficient One-to-Many Translation with Joint Multi-Stream Diffusion",
+      "authors": "Yiwen Guan, Jacob Whitehill",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.16312v1",
+      "score": "7.0",
+      "evidence": "用于并行序列生成的离散扩散框架",
+      "tldr": "针对传统自回归模型在多语言翻译中计算开销大、延迟随目标语言数量线性增长的问题，本文提出了一种基于离散扩散模型的联合多流翻译框架。该方法通过并行细化所有目标语言实现亚线性延迟扩展，并利用连续语义锚点支持零样本跨语言迁移，在保持高效推理的同时显著提升了多语言翻译的灵活性与性能。",
+      "tags": "query:ardm",
+      "abstract_en": "One-to-many machine translation (MT) is computationally expensive for autoregressive (AR) systems, which suffer from linear latency scaling with both sequence length and the number of target languages. We explore how diffusion can enable multilingual translation with a discrete diffusion framework that refines all target languages in parallel, achieving sublinear latency scaling with the number of targets, and supports deployment as a single unified model to replace multiple independent systems. Conditioned on a continuous semantic anchor rather than source tokens, our framework supports zero-shot transfer to unseen source languages without retraining, maintaining approximately $75\\%$ of its supervised translation quality on zero-shot sources. We investigate the quality-latency frontier and find that with accelerated sampling, it achieves comparable supervised quality to AR baselines with a $2 \\times$ speedup and $11.9\\%$ better zero-shot BLEU. These results highlight the potential of joint multi-stream diffusion as a practical and flexible alternative for efficient one-to-many translation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.16244v1-the-world-model-hardware-accelerator",
+      "section": "quick",
+      "title_en": "The World Model Hardware Accelerator",
+      "authors": "Shashank Chaurasia",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.16244v1",
+      "score": "6.0",
+      "evidence": "扩散Transformer与自回归解码硬件对比",
+      "tldr": "本文提出了世界模型硬件加速器（WMHA），专为扩散Transformer推理设计。针对扩散模型非自回归、全序列前向传播的特性，WMHA通过VLIW定序器、权重驻留双点积阵列及单遍在线Softmax注意力流水线，实现了高效的低延迟推理。该设计在SystemVerilog中实现并经UVM验证，在多个基准测试中表现优异，显著降低了均方误差，为扩散模型的高性能硬件部署提供了新方案。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion transformers invert the arithmetic that autoregressive decoding made familiar. There is no token-by-token recurrence: every denoising step is a full-sequence forward pass over static shapes, so the entire schedule is known at compile time and the only serial dimension is the step count itself. We exploit that structure in WMHA, a latency-first diffusion-transformer inference accelerator: a very-long-instruction-word sequencer issues four engines from one instruction word, a weight-stationary 16x16 dual-dot array streams FP8 and BF16 contractions, and a single-pass online-softmax attention pipeline keeps keys and values resident through a skewed software pipeline. The design is specified in a frozen micro-architecture document, implemented in synthesizable SystemVerilog, and verified against a double-precision reference model by a UVM environment whose acceptance criterion is semantic: the device must run a real denoising trajectory and reduce mean squared error against a clean latent by at least a factor of ten. It does so by a factor of 23, at both synthesized configurations, with zero element failures across 237 million checked values. Eleven application benchmarks built from published model shapes, including the original diffusion-transformer configuration, run on the device and report measured occupancy beside separately labelled projections. Five engines are taken to routed layout in sky130 with parasitic-annotated timing and measured-activity power; the full chip is synthesized, and the host limit that stopped its place-and-route is quantified together with the machine that would remove it.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/17/2609.17691v1-accelerating-diffusion-sampling-via-speculative-draft-trees",
+      "section": "quick",
+      "title_en": "Accelerating Diffusion Sampling via Speculative Draft Trees",
+      "authors": "Marcello Bullo, Yanxiao Liu, Öykü Sıla Güner, Arpan Mukherjee, Deniz Gündüz",
+      "date": "2026-09-15",
+      "pdf": "https://arxiv.org/pdf/2609.17691v1",
+      "score": "6.0",
+      "evidence": "通过推测性草图树加速扩散采样",
+      "tldr": "该研究针对扩散模型采样速度慢的问题，提出了一种基于“草稿树”（Draft Trees）的推测采样加速方法。通过将推测采样与相对熵编码（REC）联系起来，打破了传统线性链式结构的限制，利用树状结构并行生成多个候选状态，并结合贪婪拒绝采样机制，在保证采样分布精确性的前提下，显著减少了昂贵的目标模型评估次数，实现了扩散模型生成过程的加速。",
+      "tags": "query:ardm",
+      "abstract_en": "Speculative sampling accelerates diffusion model generation by drafting inexpensive candidate states and correcting them under a coupling that preserves the target distribution exactly, reducing the number of expensive target evaluations. Existing diffusion samplers, notably those based on reflection maximal coupling, are topologically constrained: their lookahead drafts form a chain graph, a single linear sequence, which inherently limits the acceptance rate per target evaluation. We connect speculative sampling in diffusion models to relative entropy coding (REC). This perspective shows the lookahead need not be linear and motivates our central contribution, draft trees, which enrich the candidates considered per round and lower the target function evaluations. We further adopt greedy rejection sampling, an REC algorithm, as the draft-target coupling, improving acceptance while guaranteeing exact target samples. Experiments across diverse target and draft models demonstrate up to 8.3% acceleration over the reflection coupling baseline in practical settings.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
