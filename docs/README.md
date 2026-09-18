@@ -6,37 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-17
-- 运行时间：2026-09-17 22:26:09 UTC
+- 最新运行日期：2026-09-18
+- 运行时间：2026-09-18 21:19:42 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：2
-- 速读区：3
+- 本次总论文数：6
+- 精读区：4
+- 速读区：2
 
 ### 今日简报（AI）
-今日精选 5 篇前沿论文，涵盖离散建模、钢琴演奏生成及扩散模型加速等核心技术。
-重点关注离散 Beckmann 传输模型在推理任务中的表现，以及钢琴渲染中全局组合与局部细化的协同机制。
-建议优先研读精读列表中的两篇高分论文，深入理解大模型推理与多模态生成的最新优化路径。
-- 详情：[/202609/17/README](/202609/17/README)
+今日聚焦扩散模型前沿，深度解析 Zarya 混合架构与分布式长上下文训练的高效优化方案。
+重点关注 Zarya 模型的双模推理灵活性及块并行训练技术，它们正显著提升大模型生成效率。
+建议优先研读 Zarya 论文，掌握混合架构如何平衡自回归与扩散模型的性能优势。
+- 详情：[/202609/18/README](/202609/18/README)
 
 ### 精读区论文标签
-1. [Discrete Beckmann Transport Models for One-Step Language Modeling and Reasoning](/202609/17/2609.15903v2-discrete-beckmann-transport-models-for-one-step-language-modeling-and-reasoning)  
+1. [Zarya: A Hybrid Autoregressive--Masked Diffusion Language Model with Flexible Training and Dual-Mode Inference](/202609/18/2609.19868v1-zarya-a-hybrid-autoregressive--masked-diffusion-language-model-with-flexible-training-and-dual-mode-inference)  
+   标签：评分：10.0/10、query:ardm
+   evidence：在单一架构中联合优化自回归和掩码扩散目标的混合语言模型
+2. [Block Parallelism For Efficient Distributed Long-Context Diffusion Language Model Training](/202609/18/2609.19242v1-block-parallelism-for-efficient-distributed-long-context-diffusion-language-model-training)  
+   标签：评分：9.0/10、query:ardm
+   evidence：块扩散语言模型结合了跨块的自回归依赖与块内并行去噪
+3. [dQwen3.5: Hybrid-Attention Diffusion Language Models](/202609/18/2609.20751v1-dqwen35-hybrid-attention-diffusion-language-models)  
+   标签：评分：9.0/10、query:ardm
+   evidence：将预训练自回归模型适配为扩散语言模型
+4. [Parallelism, critical windows, and separations among diffusion language models](/202609/18/2609.20539v1-parallelism-critical-windows-and-separations-among-diffusion-language-models)  
    标签：评分：8.0/10、query:ardm
-   evidence：离散扩散模型作为自回归语言模型的替代方案
-2. [CPR: Combining global composing, local performing and full-sequence refining in piano rendering with continuous autoregressive modelling](/202609/17/2609.18216v1-cpr-combining-global-composing-local-performing-and-full-sequence-refining-in-piano-rendering-with-continuous-autoregressive-modelling)  
-   标签：评分：8.0/10、query:ardm
-   evidence：连续自回归建模与流匹配
+   evidence：扩散语言模型与自回归模型的对比研究
 
 ### 速读区论文标签
-1. [Efficient One-to-Many Translation with Joint Multi-Stream Diffusion](/202609/17/2609.16312v1-efficient-one-to-many-translation-with-joint-multi-stream-diffusion)  
+1. [Limits of Confidence in Diffusion](/202609/18/2609.20581v1-limits-of-confidence-in-diffusion)  
    标签：评分：7.0/10、query:ardm
-   evidence：用于并行序列生成的离散扩散框架
-2. [The World Model Hardware Accelerator](/202609/17/2609.16244v1-the-world-model-hardware-accelerator)  
+   evidence：离散扩散序列生成的依赖关系
+2. [Recency Forcing: Bridging the Long-Horizon Gap in Autoregressive Video Generation](/202609/18/2609.19729v1-recency-forcing-bridging-the-long-horizon-gap-in-autoregressive-video-generation)  
    标签：评分：6.0/10、query:ardm
-   evidence：扩散Transformer与自回归解码硬件对比
-3. [Accelerating Diffusion Sampling via Speculative Draft Trees](/202609/17/2609.17691v1-accelerating-diffusion-sampling-via-speculative-draft-trees)  
-   标签：评分：6.0/10、query:ardm
-   evidence：通过推测性草图树加速扩散采样
+   evidence：具有KV缓存优化的自回归视频生成
 
 
 <div class="dpr-home-promo-card">

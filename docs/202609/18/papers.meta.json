@@ -1,0 +1,93 @@
+{
+  "label": "2026-09-18",
+  "date": "2026-09-18",
+  "generated_at": "2026-09-18T21:19:44",
+  "count": 6,
+  "papers": [
+    {
+      "paper_id": "202609/18/2609.19868v1-zarya-a-hybrid-autoregressive--masked-diffusion-language-model-with-flexible-training-and-dual-mode-inference",
+      "section": "deep",
+      "title_en": "Zarya: A Hybrid Autoregressive--Masked Diffusion Language Model with Flexible Training and Dual-Mode Inference",
+      "authors": "Leonid Sinev, Ilya Koziev, Vladislav Leshchuk",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.19868v1",
+      "score": "10.0",
+      "evidence": "在单一架构中联合优化自回归和掩码扩散目标的混合语言模型",
+      "tldr": "Zarya是一种新型混合语言模型，通过在单一架构中联合优化自回归（AR）和掩码扩散（MDM）目标，解决了AR模型生成受限与MDM模型计算开销大及生成不连贯的问题。该模型引入了变量槽位训练和课程学习策略，支持两种推理模式：高效的MDM采样和利用KV缓存复用的槽位推测解码，在保持高性能的同时实现了训练与推理的灵活解耦。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive language models (ARMs) are constrained by sequential, left-to-right generation, while masked diffusion models (MDMs) enable parallel decoding but suffer from high computational overhead due to the inability to reuse Key-Value (KV) cache and from incoherent generation arising from learning dependencies over an intractable space of token combinations. We introduce Zarya, a family of hybrid language models that jointly optimizes an autoregressive (AR) objective and a masked-diffusion objective within a single architecture. Zarya structures training data into variable-size slots and employs a curriculum that gradually increases slot granularity, enabling a smooth transition from fine-grained AR learning to coarse-grained diffusion learning. At inference, Zarya provides two distinct decoding paradigms through a unified interface: (i) MDM sampling with first-hitting denoising, and (ii) slotted speculative decoding that interleaves inter-slot diffusion-based selection with intra-slot autoregressive infilling, achieving full KV cache reuse. The training and inference regimes are fully decoupled, allowing a model trained with any configuration to be deployed in either mode. Extensive configurability --- including grouped noise patterns (Prefix Completion, Fill-In-the-Prefix, Fill-In-the-Middle), ordered sampling schedules, and noise-level permutation strategies --- enables flexible research exploration. We release Zarya models publicly in sizes 0.6B, 1.7B, and 4B, demonstrating performance on standard benchmarks while offering a principled integration of autoregressive and diffusion paradigms.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.19242v1-block-parallelism-for-efficient-distributed-long-context-diffusion-language-model-training",
+      "section": "deep",
+      "title_en": "Block Parallelism For Efficient Distributed Long-Context Diffusion Language Model Training",
+      "authors": "Tarun Suresh, Pranshu Chaturvedi, Hangoo Kang, Parth Shroff, Ishan S. Khare, Hermann Kumbong, Azalia Mirhoseini",
+      "date": "2026-09-16",
+      "pdf": "https://arxiv.org/pdf/2609.19242v1",
+      "score": "9.0",
+      "evidence": "块扩散语言模型结合了跨块的自回归依赖与块内并行去噪",
+      "tldr": "本文针对块扩散语言模型（BDLM）在长上下文训练中面临的通信与内存瓶颈，提出了一种新型分布式并行策略——上下文分片块并行（CSBP）。该方法通过将受损块计算分配至不同节点并对共享的干净序列进行分片，有效避免了冗余通信与内存占用。实验表明，CSBP在超长上下文（高达1M）训练中显著提升了吞吐量，并改善了模型在复杂基准测试中的性能表现。",
+      "tags": "query:ardm",
+      "abstract_en": "Block diffusion language models (BDLMs) combine autoregressive dependencies across blocks with parallel denoising within blocks, but long-context training is constrained by distributed attention communication and activation memory. Conventional context parallelism (CP) shards the combined clean-plus-corrupted sequence by position, communicating shared clean K/V together with block-specific corrupted K/V and their gradients. We observe that the BDLM objective separates over target blocks. We introduce block parallelism (BP), a new distributed parallelism dimension that assigns each corrupted-block computation to one rank. To scale BP to long contexts, we introduce context-sharded block parallelism (CSBP), which also shards the shared clean sequence across those ranks. CSBP keeps corrupted K/V and gradients local, avoids replicated clean prefixes, and preserves BDLM training semantics. On 16 H200 GPUs at 256K context, CSBP improves throughput over the best baseline by 1.18-1.45x for supervised fine-tuning and 1.27-1.33x for conversion of autoregressive models to BDLMs, while matching or reducing peak HBM. Full-model speedup reaches 1.61x at 512K. On eight H100 GPUs, CSBP accelerates DFlash2 speculative-decoder training by 2.48x at 512K and 7.59x at 1M. In matched 12-hour DiffusionGemma 26B-A4B SFT runs, CSBP achieves higher pass rates at every trained checkpoint on SWE-bench Verified and Terminal-Bench Lite. Code: https://github.com/ScalingIntelligence/Turbo-dLLM",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.20751v1-dqwen35-hybrid-attention-diffusion-language-models",
+      "section": "deep",
+      "title_en": "dQwen3.5: Hybrid-Attention Diffusion Language Models",
+      "authors": "Anton Xue, Litu Rout, Aditya Akella, Adam Klivans, Sujay Sanghavi, Sanjay Shakkottai",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.20751v1",
+      "score": "9.0",
+      "evidence": "将预训练自回归模型适配为扩散语言模型",
+      "tldr": "dQwen3.5是一系列基于混合架构（Attention+RNN）的扩散语言模型。研究探讨了如何将Qwen3.5等混合架构模型适配为扩散模型，克服了RNN结构难以双向化的挑战。实验表明，混合架构在扩散模型训练中表现出极高的效率，仅需全注意力模型一半的训练Token即可达到相同损失，且在并行解码任务中表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Adapting a pretrained autoregressive (AR) model is a cost-efficient route to a diffusion language model (DLM). While nearly all such adaptations start from a full-attention transformer, AR modeling has shifted toward hybrid architectures that interleave attention and RNN layers. This creates an obstacle for adaptation: unlike attention, RNNs are structurally causal and nontrivial to bidirectionalize. Despite this mismatch, we investigate whether such backbones can become effective DLMs by adapting Qwen3.5 at 0.8B, 2B, 4B, and 9B scales, yielding the dQwen3.5 family. We find that hybrid backbones can be efficient starting points for adaptation: against a full-attention control, the hybrid reaches a given training loss in about half the tokens. Across scales, dQwen3.5 resembles full-attention DLMs in any-order decoding behavior and performs strongly under parallel decoding.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.20539v1-parallelism-critical-windows-and-separations-among-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Parallelism, critical windows, and separations among diffusion language models",
+      "authors": "Sitan Chen, Liye Wang",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.20539v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型与自回归模型的对比研究",
+      "tldr": "本文深入研究了扩散语言模型（dLLMs）的并行生成能力，对比了掩码、均匀和高斯扩散三种主流范式。研究证明了均匀和高斯扩散的采样步数可由分布的对偶总相关性决定，并首次揭示了三种范式在并行效率上的理论分离，指出掩码扩散因其关键窗口更窄而可能需要更多采样步数，挑战了关于掩码扩散并行性的传统认知。",
+      "tags": "query:ardm",
+      "abstract_en": "A popular selling point of diffusion large language models (dLLMs) is their capacity for parallelism: the ability to generate sequences of text far more efficiently than autoregressive models, which require one forward pass per token. Yet among the many competing paradigms for dLLMs, from masked to uniform to Gaussian diffusion, principled understanding of how these different proposals compare in parallelism remains limited. In this work, we initiate a fine-grained comparison of the capacity for parallelism among these three leading approaches and prove the following:   - Uniform and Gaussian diffusion can sample in a number of forward passes which scales with the dual total correlation of the underlying distribution, a measure of intrinsic complexity which can be much smaller than the context length. Previously, it was only known how to achieve this using masked diffusion.   - For a certain family of random empirical measures, we show that $\\widetildeΘ(\\sqrt{d})$ forward passes are necessary and sufficient to sample using uniform or Gaussian diffusion, yet there exist approximate score oracles for which $\\widetildeΩ(d)$ forward passes are needed for masked diffusion. This establishes the first provable separation in parallelism between the three prevailing dLLM paradigms.   Contrary to popular intuition that masked diffusions are harder to parallelize because they must commit to token values, the latter separation instead comes from the fact that the critical windows in masked diffusion sampling are asymptotically narrower than those in uniform and Gaussian diffusion sampling.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.20581v1-limits-of-confidence-in-diffusion",
+      "section": "quick",
+      "title_en": "Limits of Confidence in Diffusion",
+      "authors": "Russ Webb, Amitis Shidani, Alice Bizeul, Dan Busbridge",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.20581v1",
+      "score": "7.0",
+      "evidence": "离散扩散序列生成的依赖关系",
+      "tldr": "本文研究了离散扩散模型在多位置并行生成时的局限性。研究指出，当模型在单步中同时生成多个存在依赖关系的Token时，若假设各位置条件独立，则无法准确拟合训练分布。作者通过理论证明了边缘分布无法完全刻画联合分布的依赖结构，并通过ScanAndAdd任务验证了现有方法在处理依赖关系时的显著偏差。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion, including remasking and uniform-state samplers, generate a sequence by writing multiple token positions per step, drawing each from a per-position distribution and choosing which positions to write from those same distributions. For domains of general interest (pixels, phonemes, or words) there are inherent dependencies between tokens. We show that a step matches the training distribution only when the positions it writes are conditionally independent given the tokens already fixed, that no product of per-position distributions can match a dependent group, and that per-position distributions do not determine whether a group is dependent: two joint distributions can have identical per-position marginals while differing in which combinations of values occur. On ScanAndAdd, a synthetic task whose joint distribution is available in closed form, we verify that every group of two or more undetermined positions a confidence ranking writes is dependent, and measure the generated distribution to be $29\\times$ the sampling-noise floor total variation while per-sample metrics are $1.0$.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.19729v1-recency-forcing-bridging-the-long-horizon-gap-in-autoregressive-video-generation",
+      "section": "quick",
+      "title_en": "Recency Forcing: Bridging the Long-Horizon Gap in Autoregressive Video Generation",
+      "authors": "Tri Cao, Hung Nguyen, Phong Nguyen, Khoi Nguyen",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.19729v1",
+      "score": "6.0",
+      "evidence": "具有KV缓存优化的自回归视频生成",
+      "tldr": "针对自回归视频生成在长序列推理中因KV缓存溢出导致的性能下降问题，本文提出了Recency Forcing方法。通过分析发现模型对上下文的依赖随时间距离呈指数衰减，研究引入时间响应偏置（TRB）和偏置注意力重参数化（BAR），在不改变上下文长度或训练目标的前提下，有效弥合了训练与推理间的KV缓存不匹配差距，实现了高质量的长视频生成。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) video generation degrades over long horizons due to an overlooked train-inference discrepancy we term KV eviction mismatch: models train on short clips where all context frames reside in the KV cache, but at inference, memory constraints force distant frames to be evicted from the KV cache - removing context the model was conditioned on. Rather than simulating eviction via context truncation - which discards temporal information the model still needs and degrades motion coherence - we keep the context but while progressively reducing the influence of distant frames, making their eventual eviction negligible. To guide this design, we introduce the positional response $R( Δ, \\, t_{\\text{denoise}})$, a perturbation-based sensitivity measure revealing that context influence decays steeply with temporal distance and varies systematically across denoising steps. Motivated by this analysis, we propose Recency Forcing, which applies a non-positive, timestep-dependent bias, termed Temporal Response Bias (TRB), on pre-softmax attention logits derived directly from $R$, closing the train-inference gap without modifying context length or training objectives. We further introduce Biased Attention Reparameterization (BAR), an exact reformulation that moves the bias outside the softmax, making TRB a standard FlashAttention call at zero overhead. Recency Forcing operates in both training-free mode and training-based mode. Experiments on VBench and VBench-Long demonstrate state-of-the-art long-horizon generation quality at no additional inference cost.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

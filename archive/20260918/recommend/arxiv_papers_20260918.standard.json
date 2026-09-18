@@ -1,0 +1,243 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-18T21:19:23.249428+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 4,
+    "deep_cap": 6,
+    "deep_selected": 4,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2609.19868v1",
+      "title": "Zarya: A Hybrid Autoregressive--Masked Diffusion Language Model with Flexible Training and Dual-Mode Inference",
+      "abstract": "Autoregressive language models (ARMs) are constrained by sequential, left-to-right generation, while masked diffusion models (MDMs) enable parallel decoding but suffer from high computational overhead due to the inability to reuse Key-Value (KV) cache and from incoherent generation arising from learning dependencies over an intractable space of token combinations. We introduce Zarya, a family of hybrid language models that jointly optimizes an autoregressive (AR) objective and a masked-diffusion objective within a single architecture. Zarya structures training data into variable-size slots and employs a curriculum that gradually increases slot granularity, enabling a smooth transition from fine-grained AR learning to coarse-grained diffusion learning. At inference, Zarya provides two distinct decoding paradigms through a unified interface: (i) MDM sampling with first-hitting denoising, and (ii) slotted speculative decoding that interleaves inter-slot diffusion-based selection with intra-slot autoregressive infilling, achieving full KV cache reuse. The training and inference regimes are fully decoupled, allowing a model trained with any configuration to be deployed in either mode. Extensive configurability --- including grouped noise patterns (Prefix Completion, Fill-In-the-Prefix, Fill-In-the-Middle), ordered sampling schedules, and noise-level permutation strategies --- enables flexible research exploration. We release Zarya models publicly in sizes 0.6B, 1.7B, and 4B, demonstrating performance on standard benchmarks while offering a principled integration of autoregressive and diffusion paradigms.",
+      "authors": [
+        "Leonid Sinev",
+        "Ilya Koziev",
+        "Vladislav Leshchuk"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-09-17T08:21:14+00:00",
+      "link": "https://arxiv.org/pdf/2609.19868v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Hybrid language model jointly optimizing autoregressive and masked-diffusion objectives",
+      "llm_evidence_cn": "在单一架构中联合优化自回归和掩码扩散目标的混合语言模型",
+      "llm_evidence": "在单一架构中联合优化自回归和掩码扩散目标的混合语言模型",
+      "canonical_evidence": "在单一架构中联合优化自回归和掩码扩散目标的混合语言模型",
+      "llm_tldr_en": "Introduces Zarya, a hybrid model combining autoregressive and masked diffusion for flexible, dual-mode inference.",
+      "llm_tldr_cn": "推出了Zarya，一种结合自回归和掩码扩散的混合模型，支持灵活的双模式推理。",
+      "llm_tldr": "推出了Zarya，一种结合自回归和掩码扩散的混合模型，支持灵活的双模式推理。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.19242v1",
+      "title": "Block Parallelism For Efficient Distributed Long-Context Diffusion Language Model Training",
+      "abstract": "Block diffusion language models (BDLMs) combine autoregressive dependencies across blocks with parallel denoising within blocks, but long-context training is constrained by distributed attention communication and activation memory. Conventional context parallelism (CP) shards the combined clean-plus-corrupted sequence by position, communicating shared clean K/V together with block-specific corrupted K/V and their gradients. We observe that the BDLM objective separates over target blocks. We introduce block parallelism (BP), a new distributed parallelism dimension that assigns each corrupted-block computation to one rank. To scale BP to long contexts, we introduce context-sharded block parallelism (CSBP), which also shards the shared clean sequence across those ranks. CSBP keeps corrupted K/V and gradients local, avoids replicated clean prefixes, and preserves BDLM training semantics. On 16 H200 GPUs at 256K context, CSBP improves throughput over the best baseline by 1.18-1.45x for supervised fine-tuning and 1.27-1.33x for conversion of autoregressive models to BDLMs, while matching or reducing peak HBM. Full-model speedup reaches 1.61x at 512K. On eight H100 GPUs, CSBP accelerates DFlash2 speculative-decoder training by 2.48x at 512K and 7.59x at 1M. In matched 12-hour DiffusionGemma 26B-A4B SFT runs, CSBP achieves higher pass rates at every trained checkpoint on SWE-bench Verified and Terminal-Bench Lite. Code: https://github.com/ScalingIntelligence/Turbo-dLLM",
+      "authors": [
+        "Tarun Suresh",
+        "Pranshu Chaturvedi",
+        "Hangoo Kang",
+        "Parth Shroff",
+        "Ishan S. Khare",
+        "Hermann Kumbong",
+        "Azalia Mirhoseini"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-16T17:35:09+00:00",
+      "link": "https://arxiv.org/pdf/2609.19242v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Block diffusion language models combining autoregressive dependencies with parallel denoising",
+      "llm_evidence_cn": "块扩散语言模型结合了跨块的自回归依赖与块内并行去噪",
+      "llm_evidence": "块扩散语言模型结合了跨块的自回归依赖与块内并行去噪",
+      "canonical_evidence": "块扩散语言模型结合了跨块的自回归依赖与块内并行去噪",
+      "llm_tldr_en": "Introduces block parallelism to scale training of diffusion language models with autoregressive block dependencies.",
+      "llm_tldr_cn": "引入块并行技术，以扩展具有自回归块依赖关系的扩散语言模型的训练规模。",
+      "llm_tldr": "引入块并行技术，以扩展具有自回归块依赖关系的扩散语言模型的训练规模。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.20751v1",
+      "title": "dQwen3.5: Hybrid-Attention Diffusion Language Models",
+      "abstract": "Adapting a pretrained autoregressive (AR) model is a cost-efficient route to a diffusion language model (DLM). While nearly all such adaptations start from a full-attention transformer, AR modeling has shifted toward hybrid architectures that interleave attention and RNN layers. This creates an obstacle for adaptation: unlike attention, RNNs are structurally causal and nontrivial to bidirectionalize. Despite this mismatch, we investigate whether such backbones can become effective DLMs by adapting Qwen3.5 at 0.8B, 2B, 4B, and 9B scales, yielding the dQwen3.5 family. We find that hybrid backbones can be efficient starting points for adaptation: against a full-attention control, the hybrid reaches a given training loss in about half the tokens. Across scales, dQwen3.5 resembles full-attention DLMs in any-order decoding behavior and performs strongly under parallel decoding.",
+      "authors": [
+        "Anton Xue",
+        "Litu Rout",
+        "Aditya Akella",
+        "Adam Klivans",
+        "Sujay Sanghavi",
+        "Sanjay Shakkottai"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-09-17T17:39:46+00:00",
+      "link": "https://arxiv.org/pdf/2609.20751v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Adapting pretrained autoregressive models to diffusion language models",
+      "llm_evidence_cn": "将预训练自回归模型适配为扩散语言模型",
+      "llm_evidence": "将预训练自回归模型适配为扩散语言模型",
+      "canonical_evidence": "将预训练自回归模型适配为扩散语言模型",
+      "llm_tldr_en": "Explores adapting hybrid autoregressive backbones into efficient diffusion language models.",
+      "llm_tldr_cn": "探索将混合自回归骨干网络高效适配为扩散语言模型的方法。",
+      "llm_tldr": "探索将混合自回归骨干网络高效适配为扩散语言模型的方法。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.20539v1",
+      "title": "Parallelism, critical windows, and separations among diffusion language models",
+      "abstract": "A popular selling point of diffusion large language models (dLLMs) is their capacity for parallelism: the ability to generate sequences of text far more efficiently than autoregressive models, which require one forward pass per token. Yet among the many competing paradigms for dLLMs, from masked to uniform to Gaussian diffusion, principled understanding of how these different proposals compare in parallelism remains limited. In this work, we initiate a fine-grained comparison of the capacity for parallelism among these three leading approaches and prove the following:   - Uniform and Gaussian diffusion can sample in a number of forward passes which scales with the dual total correlation of the underlying distribution, a measure of intrinsic complexity which can be much smaller than the context length. Previously, it was only known how to achieve this using masked diffusion.   - For a certain family of random empirical measures, we show that $\\widetildeΘ(\\sqrt{d})$ forward passes are necessary and sufficient to sample using uniform or Gaussian diffusion, yet there exist approximate score oracles for which $\\widetildeΩ(d)$ forward passes are needed for masked diffusion. This establishes the first provable separation in parallelism between the three prevailing dLLM paradigms.   Contrary to popular intuition that masked diffusions are harder to parallelize because they must commit to token values, the latter separation instead comes from the fact that the critical windows in masked diffusion sampling are asymptotically narrower than those in uniform and Gaussian diffusion sampling.",
+      "authors": [
+        "Sitan Chen",
+        "Liye Wang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DS",
+        "math.ST",
+        "stat.ML"
+      ],
+      "published": "2026-09-17T15:10:18+00:00",
+      "link": "https://arxiv.org/pdf/2609.20539v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "comparison between diffusion language models and autoregressive models",
+      "llm_evidence_cn": "扩散语言模型与自回归模型的对比研究",
+      "llm_evidence": "扩散语言模型与自回归模型的对比研究",
+      "canonical_evidence": "扩散语言模型与自回归模型的对比研究",
+      "llm_tldr_en": "Analyzes the parallelism and efficiency of diffusion language models compared to autoregressive generation.",
+      "llm_tldr_cn": "分析并对比了扩散语言模型与自回归生成在并行性和效率方面的差异。",
+      "llm_tldr": "分析并对比了扩散语言模型与自回归生成在并行性和效率方面的差异。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.20581v1",
+      "title": "Limits of Confidence in Diffusion",
+      "abstract": "Discrete diffusion, including remasking and uniform-state samplers, generate a sequence by writing multiple token positions per step, drawing each from a per-position distribution and choosing which positions to write from those same distributions. For domains of general interest (pixels, phonemes, or words) there are inherent dependencies between tokens. We show that a step matches the training distribution only when the positions it writes are conditionally independent given the tokens already fixed, that no product of per-position distributions can match a dependent group, and that per-position distributions do not determine whether a group is dependent: two joint distributions can have identical per-position marginals while differing in which combinations of values occur. On ScanAndAdd, a synthetic task whose joint distribution is available in closed form, we verify that every group of two or more undetermined positions a confidence ranking writes is dependent, and measure the generated distribution to be $29\\times$ the sampling-noise floor total variation while per-sample metrics are $1.0$.",
+      "authors": [
+        "Russ Webb",
+        "Amitis Shidani",
+        "Alice Bizeul",
+        "Dan Busbridge"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-09-17T15:36:53+00:00",
+      "link": "https://arxiv.org/pdf/2609.20581v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Discrete diffusion sequence generation dependencies",
+      "llm_evidence_cn": "离散扩散序列生成的依赖关系",
+      "llm_evidence": "离散扩散序列生成的依赖关系",
+      "canonical_evidence": "离散扩散序列生成的依赖关系",
+      "llm_tldr_en": "Analyzes token dependencies in discrete diffusion sequence generation compared to joint distributions.",
+      "llm_tldr_cn": "分析了离散扩散序列生成中标记依赖关系与联合分布的匹配问题。",
+      "llm_tldr": "分析了离散扩散序列生成中标记依赖关系与联合分布的匹配问题。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.19729v1",
+      "title": "Recency Forcing: Bridging the Long-Horizon Gap in Autoregressive Video Generation",
+      "abstract": "Autoregressive (AR) video generation degrades over long horizons due to an overlooked train-inference discrepancy we term KV eviction mismatch: models train on short clips where all context frames reside in the KV cache, but at inference, memory constraints force distant frames to be evicted from the KV cache - removing context the model was conditioned on. Rather than simulating eviction via context truncation - which discards temporal information the model still needs and degrades motion coherence - we keep the context but while progressively reducing the influence of distant frames, making their eventual eviction negligible. To guide this design, we introduce the positional response $R( Δ, \\, t_{\\text{denoise}})$, a perturbation-based sensitivity measure revealing that context influence decays steeply with temporal distance and varies systematically across denoising steps. Motivated by this analysis, we propose Recency Forcing, which applies a non-positive, timestep-dependent bias, termed Temporal Response Bias (TRB), on pre-softmax attention logits derived directly from $R$, closing the train-inference gap without modifying context length or training objectives. We further introduce Biased Attention Reparameterization (BAR), an exact reformulation that moves the bias outside the softmax, making TRB a standard FlashAttention call at zero overhead. Recency Forcing operates in both training-free mode and training-based mode. Experiments on VBench and VBench-Long demonstrate state-of-the-art long-horizon generation quality at no additional inference cost.",
+      "authors": [
+        "Tri Cao",
+        "Hung Nguyen",
+        "Phong Nguyen",
+        "Khoi Nguyen"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-17T05:40:53+00:00",
+      "link": "https://arxiv.org/pdf/2609.19729v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Autoregressive video generation with KV cache optimization",
+      "llm_evidence_cn": "具有KV缓存优化的自回归视频生成",
+      "llm_evidence": "具有KV缓存优化的自回归视频生成",
+      "canonical_evidence": "具有KV缓存优化的自回归视频生成",
+      "llm_tldr_en": "Addresses long-horizon degradation in autoregressive video generation via recency forcing.",
+      "llm_tldr_cn": "通过强迫近期性解决了自回归视频生成中的长程退化问题。",
+      "llm_tldr": "通过强迫近期性解决了自回归视频生成中的长程退化问题。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
