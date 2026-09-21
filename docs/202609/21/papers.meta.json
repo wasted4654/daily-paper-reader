@@ -1,0 +1,37 @@
+{
+  "label": "2026-09-21",
+  "date": "2026-09-21",
+  "generated_at": "2026-09-21T22:58:16",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202609/21/2609.20981v1-calr-causal-latent-revision-for-robust-diffusion-reasoning",
+      "section": "deep",
+      "title_en": "CaLR: Causal Latent Revision for Robust Diffusion Reasoning",
+      "authors": "Wei Cai, Jian Zhao, Yuchen Yuan, Xuelong Li",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.20981v1",
+      "score": "9.0",
+      "evidence": "将自回归因果结构与扩散模型结合",
+      "tldr": "针对自回归模型局部贪婪与扩散语言模型缺乏因果结构的问题，本文提出了因果潜在修正（CaLR）框架。该方法将推理重构为受限潜在优化，利用专家模型的因果拓扑矩阵和隐式微分进行梯度引导的“思维修正”，在并行生成过程中强制执行逻辑一致性，实现了动态自我纠错，显著提升了扩散语言模型的推理能力与鲁棒性。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive (AR) models suffer from local greediness, while diffusion language models (DLMs) often lack the strict causal structure required for reasoning. To combine the advantages and overcome the drawbacks of the dual, we propose Causal Latent Revision (CaLR), a framework that reformulates reasoning as constrained latent optimization. By adopting a causal topology matrix (CTM) from an expert model and implicit differentiation, CaLR performs gradient-guided ``thought revision\" to enforce logical consistency, enabling dynamic self-correction of intermediate steps during parallel generation. Empirically, CaLR achieves SOTA DLM performance on complex benchmarks, surpassing strong AR baselines and demonstrating superior robustness in constrained tasks like Sudoku.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/21/2609.20539v2-parallelism-critical-windows-and-separations-among-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Parallelism, critical windows, and separations among diffusion language models",
+      "authors": "Sitan Chen, Liye Wang",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.20539v2",
+      "score": "8.0",
+      "evidence": "扩散语言模型与自回归模型的对比研究",
+      "tldr": "本文深入研究了扩散语言模型（dLLMs）的并行生成能力，对比了掩码、均匀和高斯扩散三种主流范式。研究证明了均匀和高斯扩散的采样步数可由分布的对偶总相关性决定，并首次揭示了三种范式在并行效率上的理论分离，指出掩码扩散因其更窄的临界窗口而在特定任务中表现出更差的并行扩展性。",
+      "tags": "query:ardm",
+      "abstract_en": "A popular selling point of diffusion large language models (dLLMs) is their capacity for parallelism: the ability to generate sequences of text far more efficiently than autoregressive models, which require one forward pass per token. Yet among the many competing paradigms for dLLMs, from masked to uniform to Gaussian diffusion, principled understanding of how these different proposals compare in parallelism remains limited. In this work, we initiate a fine-grained comparison of the capacity for parallelism among these three leading approaches and prove the following:   - Uniform and Gaussian diffusion can sample in a number of forward passes which scales with the dual total correlation of the underlying distribution, a measure of intrinsic complexity which can be much smaller than the context length. Previously, it was only known how to achieve this using masked diffusion.   - For a certain family of random empirical measures, we show that $\\widetildeΘ(\\sqrt{d})$ forward passes are necessary and sufficient to sample using uniform or Gaussian diffusion, yet there exist approximate score oracles for which $\\widetildeΩ(d)$ forward passes are needed for masked diffusion. This establishes the first provable separation in parallelism between the three prevailing dLLM paradigms.   Contrary to popular intuition that masked diffusions are harder to parallelize because they must commit to token values, the latter separation instead comes from the fact that the critical windows in masked diffusion sampling are asymptotically narrower than those in uniform and Gaussian diffusion sampling.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
