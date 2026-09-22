@@ -6,29 +6,42 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-09-21
-- 运行时间：2026-09-21 22:58:14 UTC
+- 最新运行日期：2026-09-22
+- 运行时间：2026-09-22 22:19:15 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：2
-- 速读区：0
+- 本次总论文数：7
+- 精读区：3
+- 速读区：4
 
 ### 今日简报（AI）
-今日精读两篇扩散模型前沿论文，深度解析因果推理与并行机制的演进。
-重点关注 CaLR 框架如何通过因果潜变量提升扩散模型的鲁棒性，以及扩散语言模型在并行计算与关键窗口上的理论突破。
-建议优先研读 CaLR 论文，以掌握提升生成模型推理稳定性的核心逻辑。
-- 详情：[/202609/21/README](/202609/21/README)
+具身智能仿真基础设施 / Embodied AI simulation)
+        *   Skim: Diffusion confidence, optimizers benchmark, irregular graphs.
+- 详情：[/202609/22/README](/202609/22/README)
 
 ### 精读区论文标签
-1. [CaLR: Causal Latent Revision for Robust Diffusion Reasoning](/202609/21/2609.20981v1-calr-causal-latent-revision-for-robust-diffusion-reasoning)  
+1. [Planning and Rendering in Concert: DeepFusion of Autoregressive Layouts and Diffusion for Visual Text Generation](/202609/22/2609.22916v1-planning-and-rendering-in-concert-deepfusion-of-autoregressive-layouts-and-diffusion-for-visual-text-generation)  
    标签：评分：9.0/10、query:ardm
-   evidence：将自回归因果结构与扩散模型结合
-2. [Parallelism, critical windows, and separations among diffusion language models](/202609/21/2609.20539v2-parallelism-critical-windows-and-separations-among-diffusion-language-models)  
+   evidence：联合学习自回归布局规划和连续扩散渲染
+2. [Uranus: Building the Next-Generation Simulation Infrastructure for Embodied AI](/202609/22/2609.24815v1-uranus-building-the-next-generation-simulation-infrastructure-for-embodied-ai)  
+   标签：评分：9.0/10、query:genad
+   evidence：用于机器人模拟的联合轨迹条件自回归扩散模型
+3. [VISTA: Video-Injected Stylized Text-to-Animation](/202609/22/2609.23817v1-vista-video-injected-stylized-text-to-animation)  
    标签：评分：8.0/10、query:ardm
-   evidence：扩散语言模型与自回归模型的对比研究
+   evidence：用于动作生成的掩码自回归扩散骨干网络
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [Limits of Confidence in Diffusion](/202609/22/2609.20581v2-limits-of-confidence-in-diffusion)  
+   标签：评分：7.0/10、query:ardm
+   evidence：分析了离散扩散序列生成中的标记依赖性
+2. [Optimizers for Diffusion Models: A Controlled Benchmark](/202609/22/2609.23055v1-optimizers-for-diffusion-models-a-controlled-benchmark)  
+   标签：评分：7.0/10、query:ardm
+   evidence：离散扩散与自回归预训练优化器的基准测试
+3. [TWIG: A Time-Causal Wavelet Operator for Autoregressive Forecasting on Irregular Graphs](/202609/22/2609.22585v1-twig-a-time-causal-wavelet-operator-for-autoregressive-forecasting-on-irregular-graphs)  
+   标签：评分：6.0/10、query:ardm
+   evidence：针对区域扩散问题的自回归代理建模
+4. [Object-Centric Conditioning for Visuomotor Flow Matching](/202609/22/2609.24155v1-object-centric-conditioning-for-visuomotor-flow-matching)  
+   标签：评分：6.0/10、query:diffpl
+   evidence：机器人操控的流匹配策略，作为扩散模型的替代方案
 
 
 <div class="dpr-home-promo-card">
