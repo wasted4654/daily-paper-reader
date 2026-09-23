@@ -1,0 +1,65 @@
+{
+  "label": "2026-09-23",
+  "date": "2026-09-23",
+  "generated_at": "2026-09-23T22:29:45",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/23/2609.24815v2-uranus-building-the-next-generation-simulation-infrastructure-for-embodied-ai",
+      "section": "deep",
+      "title_en": "Uranus: Building the Next-Generation Simulation Infrastructure for Embodied AI",
+      "authors": "Wenkang Qin, Yukun Zhou, Noah Shen, Jisong Cai, Dongxiao Mao, Baicheng Li, Yue Zhang, Wei Sui",
+      "date": "2026-09-21",
+      "pdf": "https://arxiv.org/pdf/2609.24815v2",
+      "score": "9.0",
+      "evidence": "关节轨迹条件的自回归扩散模型",
+      "tldr": "Uranus 是一款面向具身智能的下一代数据驱动机器人仿真器。它利用联合轨迹条件自回归扩散模型，实现了无需固定视界的流式、开放式仿真。该系统支持低延迟（24 FPS）生成，并提供统一接口以适配多种机器人形态与相机配置，旨在解决传统仿真器构建成本高、扩展性差的问题，为机器人数据生成与策略训练提供高效工具。",
+      "tags": "query:genad",
+      "abstract_en": "Scalable simulation is essential for robot data generation, policy training, evaluation, and safe iteration, yet real-world interaction is costly and conventional simulators require labor-intensive construction. We present Uranus, a data-driven robot simulator built around a joint-trajectory-conditioned autoregressive diffusion model. Uranus offers three key capabilities: (1) streaming, open-ended rollout, which receives future joint-position trajectories online and autoregressively generates one latent frame per step, corresponding to four RGB frames, without a fixed horizon; (2) low-latency generation, achieving 24 FPS after inference optimization; and (3) scalable, extensible robot control, providing a unified interface for synchronized multi-view generation across diverse robot embodiments and camera configurations. We conduct comprehensive quantitative and qualitative evaluations on both in-distribution and out-of-distribution data, providing an objective assessment of Uranus and clearly identifying its current limitations. We release the code and model weights to empower the community with practical tools and insights.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.26796v1-flash-dllm-io-aware-kv-caching-and-parallel-decoding-for-fast-memory-efficient-diffusion-llms",
+      "section": "deep",
+      "title_en": "Flash-dLLM: IO-Aware KV Caching and Parallel Decoding for Fast, Memory-Efficient Diffusion LLMs",
+      "authors": "Quan Nguyen-Tri, Mukul Ranjan, Zhiqiang Shen",
+      "date": "2026-09-22",
+      "pdf": "https://arxiv.org/pdf/2609.26796v1",
+      "score": "8.0",
+      "evidence": "作为自回归替代方案的扩散大模型的推理加速",
+      "tldr": "Flash-dLLM 是一款针对扩散大语言模型（dLLM）的训练后推理加速框架。针对 dLLM 推理中 KV 缓存导致的 I/O 瓶颈，该研究提出了 I/O 感知的融合 KV 缓存内核，并结合自驱动的“草稿-验证”并行解码策略，在无需额外模型的情况下显著提升了推理速度与内存效率，在数学推理和代码生成任务中表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Large Language Models (dLLMs) have recently emerged as a promising alternative to autoregressive LLMs by enabling non-autoregressive text generation. However, their practical deployment remains limited by inefficient inference, largely due to the absence of effective Key-Value (KV) caching and scalable parallel decoding mechanisms. Existing acceleration methods typically study KV caching and parallel decoding in isolation, overlooking the I/O bottlenecks that arise when cache reuse and parallel token verification are jointly applied. In this work, we introduce $\\textbf{Flash-dLLM}$, a training-free inference acceleration framework for fast and memory-efficient dLLMs. Flash-dLLM first identifies GPU memory I/O as a dominant bottleneck in KV-cache-enabled dLLM inference and addresses it with an I/O-aware fused KV-cache kernel that reduces redundant memory movement. Building on this optimized cache mechanism, Flash-dLLM further proposes an efficient KV-cache-driven draft-and-verify decoding strategy, where the dLLM itself serves as both drafter and verifier without requiring an auxiliary model. This unified design enables faster decoding while preserving generation quality and improving scalability to longer sequences and larger batch size. Extensive experiments on mathematical reasoning and code-generation benchmarks demonstrate that Flash-dLLM consistently outperforms existing state-of-the-art dLLM acceleration methods in both inference speed and memory efficiency. In particular, it achieves $5.1\\times$ and $11.0\\times$ speedups over prior strongest baseline Elastic-Cache on GSM8K and HumanEval, respectively.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.25927v1-informed-masking-structure-aware-perturbation-for-reinforcement-learning-in-diffusion-large-language-models",
+      "section": "quick",
+      "title_en": "Informed Masking: Structure-Aware Perturbation for Reinforcement Learning in Diffusion Large Language Models",
+      "authors": "Xiaoyi Yu, Enver Sangineto, Pei Fu, Fiorenzo Parascandolo, Wenhui Tan, Ruikang Zhang, Rita Cucchiara, Ruihua Song, Jian Luan",
+      "date": "2026-09-22",
+      "pdf": "https://arxiv.org/pdf/2609.25927v1",
+      "score": "7.0",
+      "evidence": "扩散语言模型作为自回归模型的替代方案",
+      "tldr": "该研究针对扩散大语言模型（dLLM）在强化学习对齐中依赖随机掩码导致训练效率低的问题，提出了“知情掩码”（Informed Masking, IM）策略。通过识别dLLM推理中的“上游”与“下游”令牌结构，利用去噪轨迹计算优先级，优先掩码对模型置信度影响较小的下游令牌，从而构建更优的重构子问题，显著提升了模型在数学与规划任务中的性能与训练稳定性。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Large Language Models (dLLMs) have emerged as an efficient alternative to autoregressive models, yet aligning them via Reinforcement Learning (RL) requires likelihood surrogates estimated from masked reconstruction subproblems under a small Monte Carlo budget per rollout. Existing methods construct these subproblems by uniform random masking, leaving open the question of which subproblems to prioritize. We identify a systematic upstream/downstream structure in dLLM rollouts. Some tokens, when revealed, trigger large confidence changes in nearby undecoded positions; we call them upstream. Others induce only small local changes and are therefore downstream. We find masking downstream tokens yields substantially better-posed subproblems than masking upstream tokens, a phenomenon we term subproblem difficulty asymmetry. Based on the observation, we propose Informed Masking (IM), which derives a per-token priority score from the denoising trajectory at zero extra inference cost and biases mask sampling toward downstream tokens. IM is plug-and-play: when plugged into three state-of-the-art dLLM RL methods on LLaDA-8B-Instruct, it delivers up to 2.01%, 8.68%, and 5.77% relative average gains on math and planning benchmarks with improved training stability.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/23/2609.19702v1-understanding-and-exploiting-diagonal-attention-sparsity-in-autoregressive-image-generation",
+      "section": "quick",
+      "title_en": "Understanding and Exploiting Diagonal Attention Sparsity in Autoregressive Image Generation",
+      "authors": "Daeun Kim, Junwha Hong, Changhun Oh, Yoonsung Kim, Yoonhyeong Lee, Jongse Park",
+      "date": "2026-09-17",
+      "pdf": "https://arxiv.org/pdf/2609.19702v1",
+      "score": "6.0",
+      "evidence": "自回归图像生成效率",
+      "tldr": "本文针对自回归图像生成中KV缓存访问导致的推理瓶颈问题，系统分析了视觉Transformer中的注意力稀疏性特征。研究发现视觉Token具有独特的对角线稀疏模式，据此提出了对角线感知稀疏注意力机制。该方法通过跳过对角线附近的冗余KV条目，在保持高质量生成的同时，显著提升了推理吞吐量并降低了延迟，为高效视觉生成提供了新思路。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive image generation has emerged as a paradigm for multimodal AI systems due to its compatibility with transformer-based LLM serving infrastructures. However, generating thousands of visual tokens per request makes decoding increasingly bottlenecked by KV cache accesses during attention computation. Sparse attention is particularly attractive for this workload because many visual generation applications tolerate moderate quality degradation in exchange for improved performance and efficiency. While sparse attention has been extensively explored for text-based LLM inference, it remains unclear whether its sparsity assumptions generalize effectively to autoregressive image generation. We present the first systematic characterization of attention sparsity in autoregressive image generation across diverse workloads and representative open-source models. Our analysis reveals several distinguishing properties, including a pronounced prefill-decode asymmetry, strong attention concentration on prompt and local tokens, and a unique diagonal attention sparsity pattern arising from the spatial locality of visual tokens. Motivated by these observations, we propose a diagonal-aware sparse attention mechanism that selectively skips KV entries along the diagonal attention direction within a recent window. Implemented on top of a GPU-based serving system using FlexGen, FlashAttention-2, and custom kernels, our approach achieves up to 3.1x throughput and 1.19x latency improvements with less than 2% quality degradation compared to dense inference.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
