@@ -1,0 +1,65 @@
+{
+  "label": "2026-09-24",
+  "date": "2026-09-24",
+  "generated_at": "2026-09-24T21:52:45",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/24/2609.24815v3-uranus-building-the-next-generation-simulation-infrastructure-for-embodied-ai",
+      "section": "deep",
+      "title_en": "Uranus: Building the Next-Generation Simulation Infrastructure for Embodied AI",
+      "authors": "Wenkang Qin, Yukun Zhou, Noah Shen, Jisong Cai, Dongxiao Mao, Baicheng Li, Yue Zhang, Wei Sui",
+      "date": "2026-09-21",
+      "pdf": "https://arxiv.org/pdf/2609.24815v3",
+      "score": "9.0",
+      "evidence": "用于机器人模拟的关节轨迹条件自回归扩散模型",
+      "tldr": "Uranus 是一款面向具身智能的下一代数据驱动机器人仿真器。它利用联合轨迹条件自回归扩散模型，实现了无需固定视界的流式长序列仿真。该系统支持低延迟（24 FPS）生成，并提供统一接口以适配多种机器人形态与相机配置，为机器人数据生成与策略训练提供了高效、可扩展的仿真基础设施。",
+      "tags": "query:genad",
+      "abstract_en": "Scalable simulation is essential for robot data generation, policy training, evaluation, and safe iteration, yet real-world interaction is costly and conventional simulators require labor-intensive construction. We present Uranus, a data-driven robot simulator built around a joint-trajectory-conditioned autoregressive diffusion model. Uranus offers three key capabilities: (1) streaming, open-ended rollout, which receives future joint-position trajectories online and autoregressively generates one latent frame per step, corresponding to four RGB frames, without a fixed horizon; (2) low-latency generation, achieving 24 FPS after inference optimization; and (3) scalable, extensible robot control, providing a unified interface for synchronized multi-view generation across diverse robot embodiments and camera configurations. We conduct comprehensive quantitative and qualitative evaluations on both in-distribution and out-of-distribution data, providing an objective assessment of Uranus and clearly identifying its current limitations. We release the code and model weights to empower the community with practical tools and insights.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/24/2609.27306v1-discrete-diffusion-models-via-evolving-variational-autoregressive-networks",
+      "section": "deep",
+      "title_en": "Discrete Diffusion Models via Evolving Variational Autoregressive Networks",
+      "authors": "Kewen Pan, Ying Tang",
+      "date": "2026-09-23",
+      "pdf": "https://arxiv.org/pdf/2609.27306v1",
+      "score": "9.0",
+      "evidence": "使用变分自回归网络的离散扩散模型",
+      "tldr": "本文提出了一种基于变分自回归网络的离散扩散模型，旨在解决传统扩散模型难以直接评估归一化概率密度的问题。通过引入马尔可夫跳跃算子，该方法将离散扩散模型扩展至高维晶格自旋系统。研究在Ising模型中验证了其在计算热力学量方面的准确性，并结合自适应扩散步骤提升了蒙特卡洛采样的效率与多样性，为离散概率分布建模提供了新的神经网络框架。",
+      "tags": "query:ardm",
+      "abstract_en": "Conventional score-based diffusion models learn scores without representing normalized densities, whereas tractable normalized models support both sampling and direct likelihood evaluation. A recent tensor-network approach provides such a representation but is largely restricted to low-dimensional lattices. Here we introduce a discrete diffusion model that parameterizes normalized probability distributions using variational autoregressive networks. Explicit Markov jump operators govern the forward noising and reverse denoising dynamics, extending discrete diffusion models with normalized distributions to spin systems on higher-dimensional lattices. We apply this framework to the two- and three-dimensional Ising models across ordered, critical, and disordered regimes, accurately computing thermodynamic quantities including free energy, energy, and magnetization. We further integrate the framework with Monte Carlo sampling, using adaptive diffusion steps to maintain high acceptance rates even at low temperatures while enhancing sample diversity. These results establish a neural-network framework for the discrete diffusion model with normalized probability distributions.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/24/2609.28272v1-towards-efficient-reasoning-learning-causal-shortcuts-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "Towards Efficient Reasoning: Learning Causal Shortcuts for Diffusion Language Models",
+      "authors": "Dian Jin, Kairong Han, Baohong Li, Xinpeng Dong, Zijing Hu, Nuanqiao Shan, Fei Wu, Kun Kuang",
+      "date": "2026-09-23",
+      "pdf": "https://arxiv.org/pdf/2609.28272v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型与自回归模型在推理方面的对比",
+      "tldr": "针对扩散语言模型（DLMs）在双向注意力机制下推理空间过大、难以聚焦关键推理步骤的问题，本文提出了因果捷径学习（CSL）框架。通过提取覆盖全序列的因果捷径并应用并行优先掩码训练，该方法有效引导模型聚焦推理路径，显著提升了推理准确率与收敛效率，在MATH-500等基准测试中表现优于现有SFT方法。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Language Models (DLMs) have attracted significant attention for their strong reasoning ability. However, under a bidirectional attention mechanism, DLMs operate over an exponentially large exploration space compared to autoregressive models (ARMs), making it challenging to focus on reasoning-guiding tokens under random masking. We define causal shortcuts as token chains that cover the full sequence and provide explicit guidance towards correct reasoning trajectories. We analyze the effects of causal shortcuts on the reasoning accuracy and convergence speed of DLMs, and find that they largely improve answer convergence efficiency and generation accuracy. Motivated by this, we propose a Causal Shortcut Learning (CSL) Framework for DLMs. Specifically, we introduce a step-by-step token extraction procedure to extract causal shortcuts from data, and apply parallel prioritized masking on these tokens during training to enable efficient and accurate convergence to correct answers via causal shortcuts. Extensive experiments across multiple reasoning benchmarks and two base models demonstrate that CSL consistently outperforms existing SFT-variant baselines, achieving an average improvement of $1.92\\%$ over SFT-only models, and up to $4.20\\%$ on MATH-500. The code is available at the \\href{https://github.com/ZJUDianJin/Causal-Shortcuts-Learning}{https://github.com/ZJUDianJin/Causal-Shortcuts-Learning",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/24/2609.28466v1-the-past-frames-the-future-memory-for-autoregressive-video-generation",
+      "section": "quick",
+      "title_en": "The Past Frames the Future: Memory for Autoregressive Video Generation",
+      "authors": "Harold Haodong Chen, Rongjin Guo, Disen Lan, Wen-Jie Shu, Hongfei Zhang, Hanzhe Hu, Shengtao Yao, Zixin Zhang, Guibin Zhang, Zhefan Rao, Jinxiu Liu, Yexin Liu, Rui Peng, Yuhao Liu, Bin Ren, Shuai Yang, Yukang Chen, Salman Khan, Ying-Cong Chen, Ser-Nam Lim, Rynson W. H. Lau, Nicu Sebe, Yu Cheng, Ming-Hsuan Yang, Qifeng Chen",
+      "date": "2026-09-23",
+      "pdf": "https://arxiv.org/pdf/2609.28466v1",
+      "score": "7.0",
+      "evidence": "自回归视频生成与序列建模",
+      "tldr": "本文系统综述了自回归视频生成中的记忆机制。针对模型在长序列生成中受限于上下文窗口导致历史信息丢失的问题，文章提出了一个统一的记忆框架，从表现形式、功能需求、操作流程、学习范式及评估方法五个维度对现有文献进行了分类梳理，旨在为构建具备长期时间一致性和状态持久性的视频生成系统提供理论基础与研究方向。",
+      "tags": "query:ardm",
+      "abstract_en": "Advances in generative models have improved video fidelity, enabling long-horizon generation, interactive world modeling, and evolving visual environments. Autoregressive (AR) video generation extends visual sequences through causal rollouts. However, a fundamental bottleneck emerges: as the generated sequence expands, practical models must operate under strictly bounded context windows, storage, and computational limits. Consequently, critical historical information, e.g., entity identities, dynamic states, and intervention-induced causal changes, often leaves the active context long before its relevance diminishes. Overcoming this limitation and maintaining temporal persistence constitutes a fundamental memory problem. We present a systematic and comprehensive review of memory mechanisms in AR video generation. We formulate memory operationally as persistent historical information maintained across outer AR steps, capable of influencing future generation even after the originating evidence is no longer locally accessible. Building upon this unified framework, we organize the literature through five complementary perspectives: (I) Forms, the representational carriers of history; (II) Functions, the specific semantic and physical information requiring preservation; (III) Operations, the lifecycle of writing, reading, updating, managing, and integrating memory; (IV) Learning, the optimization of memory behaviors under closed-loop rollouts; and (V) Evaluation, the paradigms for diagnosing genuine memory capabilities. We conclude by synthesizing open challenges, including composable and resource-aware memory architectures, trustworthy state updating, self-rollout learning, and standardized evaluation. By bridging representations, mechanisms, and learning paradigms, this paper establishes a structured foundation for developing reliable, memory-conditioned video generation systems.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
