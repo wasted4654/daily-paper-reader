@@ -1,0 +1,37 @@
+{
+  "label": "2026-09-25",
+  "date": "2026-09-25",
+  "generated_at": "2026-09-25T21:56:09",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202609/25/2609.23817v2-vista-video-injected-stylized-text-to-animation",
+      "section": "deep",
+      "title_en": "VISTA: Video-Injected Stylized Text-to-Animation",
+      "authors": "Monseej Purkayastha, Anindita Ghosh, Philipp Slusallek",
+      "date": "2026-09-20",
+      "pdf": "https://arxiv.org/pdf/2609.23817v2",
+      "score": "9.0",
+      "evidence": "掩码自回归扩散骨干网络",
+      "tldr": "VISTA是一个创新的两阶段框架，旨在通过融合文本提示的结构内容与参考视频的表达风格来生成风格化的3D人体动画。该方法无需成对数据，利用双通道自编码器和掩码自回归扩散模型，通过双路径融合机制实现内容与风格的解耦，为可控动画合成提供了高效的解决方案。",
+      "tags": "query:ardm",
+      "abstract_en": "We present VISTA, a two-stage framework for generating stylized 3D human motion by fusing structural content from text prompts with expressive style from reference videos, without requiring jointly paired (text, video, stylized motion) triplets. A Dual-channel Autoencoder first maps motion sequences and video clips into a shared latent manifold. A masked autoregressive diffusion backbone then operates within this manifold, injecting video-derived style through a dedicated late-fusion Dual-AdaLN pathway while preserving text-conditioned content structure. A cross-batch unpaired training protocol with latent cycle consistency enables joint learning across separate semantically rich and stylistically diverse datasets. As a proof-of-concept for controllable animation synthesis, we validate VISTA on rendered motion-capture references: it achieves the highest style recognition accuracy among video-conditioned methods while preserving competitive content alignment, and its decomposed 3-way classifier-free guidance provides independent, user-controllable calibration of the content-style balance at inference time.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/25/2609.26638v1-diffusion-drafts-ar-verifies-accelerating-document-ocr-with-self-speculative-decoding",
+      "section": "deep",
+      "title_en": "Diffusion Drafts, AR Verifies: Accelerating Document OCR with Self-Speculative Decoding",
+      "authors": "Dohyun Kim, Sungjun Han, Hyungguk Kim, Yusik Kim, Jamin Shin, Paul Hongsuck Seo, Hongjoon Ahn",
+      "date": "2026-09-22",
+      "pdf": "https://arxiv.org/pdf/2609.26638v1",
+      "score": "9.0",
+      "evidence": "用于并行草拟和因果验证的参数共享自回归块扩散模型",
+      "tldr": "针对自回归OCR模型推理速度慢的问题，本文提出了GravityOCR模型。该模型通过参数共享的AR-块扩散架构，实现了并行草稿生成与因果自回归验证。通过在验证阶段利用GRPO优化，模型在保持高精度的同时，显著提升了文档OCR的推理速度，在OmniDocBench v1.6上实现了3.94倍的区域解码加速。",
+      "tags": "query:ardm",
+      "abstract_en": "Autoregressive OCR vision-language models accurately convert document images into text and structured markup, but require one sequential decoding step per output token, limiting inference speed. Unlike open-ended text generation, OCR outputs are strongly grounded in the input image, making diffusion-based parallel generation promising. However, when several tokens are predicted in one diffusion step, each is predicted before the others are known. Committing them directly can therefore introduce errors. We therefore introduce GravityOCR, a parameter-shared AR-block-diffusion model jointly trained for parallel drafting and causal AR verification. Verifying drafts before commitment lets the model commit multiple output tokens per round without a separate drafting network. The causal AR path also enables GRPO with sequence- and structure-level OCR rewards, avoiding diffusion-trajectory likelihood estimation while updating the shared drafter parameters. On OmniDocBench v1.6, AR-path GRPO improves the Overall score from 94.92 to 95.16 without reducing diffusion drafting efficiency, while the final model remains close to the original GLM-OCR score of 95.48. In an SGLang serving deployment, GravityOCR commits an average of 9.7 output tokens per forward pass and achieves a $3.94\\times$ decode-only speedup on region crops and a $1.32\\times$ end-to-end page-processing speedup over AR decoding.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
