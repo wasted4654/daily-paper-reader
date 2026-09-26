@@ -1,0 +1,1327 @@
+Title: Memory-Conditioned Diffusion Model for Generalized Langevin Dynamics
+
+URL Source: https://arxiv.org/pdf/2609.28371v1
+
+Published Time: Thu, 24 Sep 2026 01:30:15 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+# Memory-Conditioned Diffusion Model for Generalized Langevin Dynamics ⋆
+
+Minglei Yang a, ∗, Sicheng He b
+
+> aFusion Energy Division, Oak Ridge National Laboratory, Oak Ridge, TN, USA
+> bDepartment of Mechanical and Aerospace Engineering, University of Tennessee, Knoxville, TN, USA
+
+Abstract 
+
+Generalized Langevin equations describe non-Markovian dynamics in which the evolution of resolved variables depends on their past. We propose a memory-conditioned diffusion method for learning stochastic flow maps of these dynamics from observed trajectories, without identifying a memory kernel or reconstructing unresolved variables. A compact, recursively updated bank of exponential filters enables the flow map to retain predictive history over multiple time scales without conditioning on long observation windows. The next-step distribution is conditioned on the current observation and this memory state, whose storage and update costs are independent of the history length for a fixed bank size. Predictive criteria guide the memory budget, with reference-assisted selection in the vector benchmark, and an optional linear projection further reduces the conditioning dimension. A kernel-based score estimator generates conditional samples without training a score network, and these samples are used to train a neural flow map for autoregressive simulation. Three numerical examples assess long-memory retention at small conditioning dimension, predic-tive compression in coupled vector dynamics, and non-Gaussian conditional distributions and intermittent events. The non-Gaussian example reproduces conditional asymmetry and burst statistics in a stochastic model of the plasma scrape-off layer. 
+
+Keywords: generalized Langevin equation, non-Markovian stochastic dynamics, training-free conditional diffusion, stochastic flow map, fading memory, predictive state 
+
+1. Introduction 
+
+When a complex system is observed through only a few resolved variables, their evolution is generally not Markovian: unresolved degrees of freedom retain information about the past and feed it back into the future. The Mori–Zwanzig formalism makes this mechanism explicit     
+
+> ⋆Notice : This manuscript has been authored by UT-Battelle, LLC, under contract DE-AC05-00OR22725 with the US Department of Energy (DOE). The US government retains and the publisher, by accepting the article for publication, acknowledges that the US government retains a nonexclusive, paid-up, irrevocable, worldwide license to publish or reproduce the published form of this manuscript, or allow others to do so, for US government purposes. DOE will provide public access to these results of federally sponsored research in accordance with the DOE Public Access Plan.
+> ∗Corresponding author
+> Email addresses: yangm@ornl.gov (Minglei Yang), sicheng@utk.edu (Sicheng He) arXiv:2609.28371v1 [stat.ML] 23 Sep 2026
+
+by expressing reduced dynamics in terms of an instantaneous contribution, a memory term, and an orthogonal fluctuating force [1–3]. The generalized Langevin equation (GLE) is a canonical continuous-time realization and is widely used in molecular coarse graining and anomalous diffusion [4, 5]. We focus on learning GLE dynamics from trajectories of the resolved variables. The same formulation also applies to partially observed pulse processes, including models of intermittent scrape-off-layer fluctuations [6, 7]. When a closed reduced equation and its latent variables are known, history dependence can often be handled by augmenting the state and applying standard simulation methods; ex-ponential memory kernels, for example, admit extended-variable Markovian representations [8, 9]. When only resolved trajectories are available, the latent state and the conditional distribution must instead be represented from data. A useful learned model must there-fore retain the predictive information in the observed history, represent the full conditional distribution rather than only its mean, and remain stable when propagated autoregressively. One line of work identifies an explicit non-Markovian reduced model before simulation. Jung et al. [10] construct and numerically integrate coarse-grained particle models with distance-dependent memory kernels reconstructed from fine-grained simulations, addressing systems with incomplete time-scale separation. Memory kernels have been inferred from correlation functions and regularized inverse formulations [4, 11], including neural estima-tors designed for long-lived kernels [12]; likelihood-based formulations parameterize extended models with hidden auxiliary variables [13]; and other approaches construct discrete non-Markovian closures, learn history-encoding features, or model state-dependent memory di-rectly from resolved trajectories [14–16]. These methods provide an interpretable reduced equation, but they also require choosing a model structure for the memory and the fluctu-ating terms. A second line learns the reduced evolution directly from trajectories. Finite history windows and recurrent networks have been used to represent memory in reduced and par-tially observed dynamics [17–19], including long short-term memory (LSTM) networks [20]. Separately, stochastic flow-map methods use generative sub-maps to represent unresolved randomness [21, 22]. More recently, flow matching has been used to model non-Markovian and non-Gaussian flux distributions in coarse-grained stochastic particle systems [23]. These approaches motivate two separate questions: how to retain predictive history in a compact state, and how to represent the conditional distribution given that state. A recurrent repre-sentation addresses the first question, but the distributions it can generate also depend on its output family. Training-free conditional diffusion provides a complementary route for learning stochastic flow maps [24]. For a Markovian SDE, the score of the one-step conditional distribution has an explicit representation that can be estimated from neighboring trajectory pairs without training a score network. Solving the associated reverse probability-flow equation then gen-erates labeled conditional samples, which are distilled into a supervised flow-map network. The framework has since been extended to bounded domains with particle escape and to parameter-dependent SDEs [25, 26], and dimension-dependent reverse-ODE discretization estimates have been developed for Gaussian-mixture targets [27]. These constructions con-dition on the instantaneous state, together with any prescribed parameters, and therefore pool observations that share the same current state even when their histories imply different next-step laws. 2Our central contribution is a compact, recursively updated memory representation that enables conditional generative flow maps to preserve long-time dependence without condi-tioning on long observation windows. We realize this construction by extending training-free conditional diffusion to condition on a multiscale bank of exponential filters of the observed increments. The bank retains history over prescribed time scales, with storage and up-date costs independent of the history length for a fixed bank size. One-step prediction and closed-loop correlation criteria guide the choice of filter rates and bank size, with reference-assisted choices identified in the vector benchmark. A linear predictive reduction can further compress the conditioning variable before score estimation. The memory representation, conditional sampler, and trained flow map are evaluated separately to distinguish repre-sentation, sampling, and deployment errors. The construction combines established ideas in a conditional sampling framework. Exponential filters are related to classical smoothing and extended-variable memory representations [8, 9]. The predictive reduction uses linear covariance structure, as in reduced-rank regression [28]. Here the purpose is to obtain a low-dimensional conditioning variable for a nonparametric score estimator while retaining a recursive update of the full memory bank. The numerical examples assess three complemen-tary aspects of the construction. The scalar multiscale GLE tests long-memory retention at small conditioning dimension; the coupled vector GLE tests predictive compression and memory-induced coupling; and the stochastic scrape-off-layer model tests non-Gaussian con-ditional distributions and intermittent events. Comparisons with memoryless, raw-history, and recurrent models help assess the roles of history representation and conditional output family. Section 2 formulates the non-Markovian flow-map learning problem, and Section 3 presents the memory model, conditional sampler, relevance metric, and distillation proce-dure. Section 4 presents the numerical examples, and Section 5 concludes. The appendices provide details of the memory representation, reverse-ODE discretization, and conditional score construction. 
+
+2. Problem setting 
+
+Our aim is to learn stochastic dynamics from trajectories of observed variables when un-resolved degrees of freedom make their evolution depend on the past. Generalized Langevin equations describe this history dependence through a memory force and temporally corre-lated fluctuations. We consider the following system for the position x(t) ∈ Rd and velocity 
+
+v(t) ∈ Rd [29]: 
+
+dx(t) = v(t) d t, M dv(t) = 
+
+
+
+F (x(t)) − Γ0v(t) −
+
+Z t
+
+> 0
+
+K(t − s)v(s) d s + η(t)
+
+
+
+dt + Σ 0 dWt. (1) Here M is a positive-definite mass matrix and F is a deterministic force. The term −Γ0v(t)
+
+represents instantaneous drag, while the convolution with the matrix-valued kernel K de-scribes the influence of past velocities. Random forcing consists of a colored force η(t) —which this GLE formulation models as a centered stationary Gaussian process, an assump-tion specific to Eq. (1) and not shared by the Poisson-pulse process of Section 4.3 — and a 3direct white-noise contribution with amplitude matrix Σ0, where W is a standard Brownian motion. For a stationary formulation, the memory integral extends over the entire past, with lower limit −∞ .Related generalized Langevin models, including extensions with configuration-dependent memory outside the fixed convolution form of Eq. (1), are used in molecular coarse-graining and memory-kernel reconstruction [10, 30], and measured hydrodynamic memory of this kind produces resonances in Brownian motion [31]. In viscoelastic microrheology, such mod-els connect the motion of trapped Brownian particles to the mechanical properties of the surrounding fluid [32]. Their ergodic and long-time behavior has also been studied mathe-matically [5, 33]. Equation (1) restricts attention to linear convolution memory; more general reduced equations can have nonlinear or state-dependent memory [3]. For an equilibrium bath with symmetric K(t) and symmetric nonnegative Γ0, the fluctuation–dissipation rela-tions [34] are 
+
+Σ0Σ⊤ 
+
+> 0
+
+= 2 kB T Γ0, E[η(t)η(s)⊤] = kB T K (|t − s|),
+
+where kB is Boltzmann’s constant and T is the temperature. Here the colored force is centered and Gaussian, independent of W , and initialized compatibly with equilibrium. These equilibrium relations are not required by the proposed learning method. We seek to generate trajectories that reproduce the conditional evolution of the observed variables, without identifying K or reconstructing the unresolved bath state. We there-fore formulate the learning task in terms of the available observations and their history-conditioned next-step distribution. Let X denote the d-dimensional observed process, sampled at a prescribed interval ∆t.The symbol X denotes the observable used for learning and is distinct from the physical position x(t) in Eq. (1); for velocity observations, X(t) = v(t). For a continuous-time process, Xn := X(tn) denotes the state on the uniform mesh tn = n∆t; for an intrinsically discrete process, Xn denotes its n-th state. The available data consist of Ntraj ≥ 1 records sampled on the same mesh, 
+
+Dobs :=  X(i)0 , X (i)1 , . . . , X (i) 
+
+> L
+
+i = 1 , . . . , N traj , (2) where X(i) 
+
+> n
+
+denotes the state of the i-th trajectory at time tn. Only resolved observations enter the conditional estimator and flow-map training. Known models can provide inde-pendent reference statistics for validation; any use of these references to select the memory representation is stated explicitly. Because the current observation need not determine the next-step distribution, the learn-ing target conditions on the observed history. Writing Hn := ( . . . , X n−1, X n) for the his-tory of the resolved state up to time tn, the resolved dynamics is governed by the history-conditioned one-step law 
+
+Xn+1 ∼ p  · | H n
+
+, (3) where p( · | H n) denotes a regular conditional distribution given σ(Xk : k ≤ n), which exists on the Polish state spaces considered here, and the dependence on the fixed step ∆t is left implicit. No parametric form is assumed for this conditional law. Each data record supplies a finite portion of the history Hn.A model conditioned only on Xn estimates the Markovian projection p( · | Xn), which averages over histories with different predictive laws. We instead seek a generative flow map 4conditioned on a recursively computable summary of Hn, to represent the full conditional distribution and generate new trajectories by repeated sampling and memory updates. We make two assumptions to support learning this law from finite trajectory records. (A1) Stationarity and ergodicity : the law in Eq. (3) is invariant under a shift of the time index, the process is statistically stationary, and time averages along a trajectory con-verge to the corresponding ensemble averages. For a spatially homogeneous process, whose state need not be stationary, this is required only of the translation-invariant observables, namely the increments and the memory features computed from them. (A2) Fading memory : the predictive influence of the remote past on the law of the next state diminishes with the time lag. This is a predictive analogue of fading memory for input–output operators [35]. Generalized Langevin equations with stable Prony-series kernels are a familiar example: their memory terms weight the remote past by decaying exponentials, and the same structure admits a finite-dimensional auxiliary-variable representation [8, 9]. Stationarity and ergodicity allow trajectory tuples to estimate a common conditional law. Fading memory motivates a finite summary of the observed history, but does not by itself guarantee that such a summary accurately determines the next-step distribution. 
+
+3. Memory-conditioned diffusion and flow-map learning 
+
+We build on the training-free conditional diffusion framework for stochastic flow-map learning [24] and its extensions [25, 26]. That framework estimates a conditional score from trajectory data, generates increment samples by reverse diffusion, and trains a neural network to reproduce the sampler. Here we extend the conditioning to include a recursively updated summary of the observed history. The central construction combines multiscale memory fil-ters, predictive selection and optional compression of their outputs, and conditional sampling within an autoregressive simulator. We first describe the memory construction, then sum-marize the inherited sampling and training steps with the modifications needed for history conditioning. We write Xn for the sampled observed process and xn for an observed or generated realiza-tion of Xn; lowercase xn in the learning formulation does not denote the physical position x(t)
+
+in Eq. (1). The prediction target is the observed-state increment ∆Xn+1 := Xn+1 − Xn, from which the next state is obtained by addition to Xn. Throughout, training-free refers specif-ically to score estimation and conditional sample generation: no score network is trained. 
+
+3.1. A recursive memory model 
+
+Conditioning on the full history is impractical, and even a long finite window can make conditional estimation difficult because of its dimension. We therefore compress it into a 
+
+memory model : a low-dimensional summary of the history, updated recursively along the trajectory, 
+
+mn = φ(mn−1, X n−1, X n). (4) The summary is chosen to approximate the next-step law by 
+
+p Xn+1 | H n
+
+ ≈ p Xn+1 | Xn, m n
+
+. (5) 5We realize φ as a bank of exponential moving averages of the observed increments, fol-lowing the classical exponential-smoothing recursion, 
+
+m(i) 
+
+> n
+
+= ρi m(i) 
+
+> n−1
+
++  Xn − Xn−1
+
+, i = 1 , . . . , k, with ρi := e−λi∆t, (6) with m0 = 0 and rates 0 < λ 1 < · · · < λ k; the summary is mn := ( m(1)  
+
+> n
+
+, . . . , m (k) 
+
+> n
+
+) ∈
+
+Rkd . Each filter accumulates past increments with exponential decay: small λi retain longer histories, while large λi emphasize recent changes. The k rates are logarithmically spaced over a selected interval [λmin , λ max ]. They provide a set of history features and are not estimates of the physical memory-kernel parameters. Compared with an LSTM, whose retention of history is learned through recurrent gates, the bank provides explicit memory scales without training recurrent weights. This is useful when predictive information persists over widely separated time scales, since slow filters retain long histories by construction; the tradeoff is a fixed linear summary rather than a learned nonlinear memory representation. The bank has kd components and costs O(kd ) operations per update, independently of the trajectory length. Training discards an initial transient, and simulation initializes the bank from an observed prehistory. The rate interval and bank size are selected from the time scales the data resolve. Writing 
+
+ℓsig for the largest lag at which the normalized autocorrelation of a declared diagnostic observable exceeds a sampling-noise threshold, candidate lower endpoints are log-spaced between 1/(ℓsig ∆t) and 1/∆t, and candidate upper endpoints are λmax = c/ ∆t for a few prescribed constants c of order one, since rates faster than the sampling rate act only as filters of the most recent increment. Stage A retains, for each candidate k, the bands whose held-out one-step prediction risk of a linear next-increment predictor given (xn, m n) lies within a declared tolerance of the best; this risk is nearly flat across bands whenever slow memory contributes little to the next step. Stage B therefore rolls each retained linear surrogate forward autoregressively with its fitted residual covariance and selects the smallest 
+
+k, and at that k the band, whose closed-loop autocovariance error meets a preset tolerance; if none does, the smallest-error pair is retained and the failure is reported. Appendix A.1 gives the numerical selection settings; reference-based choices are identified with the examples. Correlated filters can make the conditioning dimension larger than necessary. An op-tional linear projection therefore retains the memory directions most predictive of future observations under a linear covariance diagnostic: after removing the part of the bank ex-plained linearly by the current state, the singular spectrum of the whitened memory–future covariance defines a predictive rank — the number of memory directions resolved by this diagnostic — and its leading directions give mpred  
+
+> n
+
+∈ Rdpred . The conditional model then receives (xn, m pred  
+
+> n
+
+), while the full bank continues to be updated by Eq. (6); the construc-tion and its validation are given in Appendix A.2. We assess the adequacy of the memory summary using prediction errors (Appendix A.3) and generated-trajectory statistics. 
+
+3.2. Conditional sampling by diffusion 
+
+We apply the conditional sampler of [24] to the current observation together with its memory summary: 
+
+cn = ( xn, m n). (7) 6When the predictive reduction of Section 3.1 is applied, mpred  
+
+> n
+
+replaces mn in Eq. (7). Each condition cn is paired with the scaled increment zn = ( xn+1 − xn) κs, where κs > 0 is fixed so that the increments have order-one variance. Pooling over the trajectories of Eq. (2) gives 
+
+{(ci, z i)}Ni=1 , whose conditional law we write p(z | c); a generated z gives the next state as 
+
+x + z/κ s. This conditioning allows observations with similar current values but different predictive histories to contribute differently to the estimated next-step law. For a fixed condition c, let Zc 
+
+> 0
+
+have the target density p( · | c). Diffusion sampling introduces an artificial time τ , distinct from the physical time t, and gradually adds Gaussian noise to the increment: 
+
+Zcτ | Zc 
+
+> 0
+
+= z0 ∼ N  ατ z0, β 2 
+
+> τ
+
+I. (8) Here ατ = 1 − τ and β2 
+
+> τ
+
+= τ for 0 ≤ τ < 1, so the density pτ ( · | c) approaches the standard normal as τ ↑ 1. We denote its conditional score by 
+
+S(z, τ | c) := ∇z log pτ (z | c). (9) To generate an increment, we reverse this transformation using the probability-flow ordinary differential equation (ODE) [36]: 
+
+dZcτ
+
+dτ = b(τ ) Zcτ − 12 σ2(τ ) S(Zcτ , τ | c), (10) where b(τ ) = ddτ log ατ and σ2(τ ) = ddτ β2 
+
+> τ
+
+− 2b(τ )β2 
+
+> τ
+
+. With the exact score, the ideal reverse flow maps standard-normal draws to the target distribution in the endpoint limit. Numerical sampling uses a regularized finite-step approximation; the scheme and endpoint error are described in Appendix B. We estimate the score directly from the observed pairs (cj , z j ), without fitting a score network. At a query condition c∗, we select its J nearest neighbors and weight each increment by both the similarity of its condition to c∗ and its compatibility with the current diffused state z. This gives 
+
+bSMC (z, τ | c∗) := X 
+
+> j∈J (c∗)
+
+wj (z, τ ) ατ zj − zβ2
+
+> τ
+
+, (11) where the weights combine the two kernels, 
+
+wj (z, τ ) ∝ e− ∥z−ατ z j ∥22β2
+
+> τ
+
+| {z }
+
+> diffusion kernel
+
+e− d(c∗,c j )22ν2
+
+| {z }
+
+> conditioning kernel
+
+,
+
+where J (c∗) is the index set of the J nearest neighbors of c∗ under the metric d defined below, and the weights are normalized so that P  
+
+> j∈J (c∗)
+
+wj = 1 . Solving Eq. (10) with the estimator in Eq. (11) in place of the exact score transports latent draws ξ ∼ N (0 , I ) to approximate samples of p( · | c∗). The derivation of this estimator is given in Appendix C. The memoryless baseline replaces the conditioning of Eq. (7) by its instantaneous counterpart, cn = xn, which recovers the Markovian method of [24]. The state and memory components of c have different scales and can be strongly cor-related, and concentration of distances in high dimensions can reduce the discrimination of nearest-neighbor queries [37]. We therefore whiten the condition, u = Σ −1/2 
+
+> c
+
+(c − ¯c),7where ¯c and Σc are the empirical mean and covariance of the conditioning data with eigen-values floored at a small positive value, and fit the centered increment by least squares, 
+
+E[z | u] − ¯z ≈ A⊤
+
+> reg
+
+u. Writing Areg = Ureg diag( sreg ) V ⊤ 
+
+> reg
+
+for its singular value decomposition, we set ˜U := Ureg diag( sreg )/s reg ,max and use the distance 
+
+d(c, c ′)2 = ˜U ⊤(u − u′) 2 + ε2∥u − u′∥2, (12) with ε > 0; if sreg ,max = 0 , the supervised term is omitted. The first term emphasizes direc-tions that predict the conditional mean; the second keeps the distance sensitive to all con-ditioning directions. Neighborhood quality is monitored through the radius of each query’s neighbor set and the effective sample size of its normalized weights, and the bandwidth ν
+
+balances localization in the conditioning variable against the number of points contributing appreciably to the estimate. Sampler settings are reported with each example. 
+
+3.3. Neural flow-map training and simulation 
+
+To avoid repeatedly solving the reverse ODE during long simulations, we use the su-pervised flow-map training procedure of [24] with the history-dependent condition c. The neural flow map Gθ : Rdc × Rd → Rd, where dc is the conditioning dimension, reproduces the sampler’s output from c and a Gaussian input ξ. The observed pairs (ci, z i) do not specify corresponding Gaussian inputs; the diffusion sampler supplies these input–output training pairs. We draw Q condition–latent pairs, with cq sampled from the conditioning data and 
+
+ξq ∼ N (0 , I ) independently; a condition may be paired with more than one latent. For each pair, Eq. (10), with bSMC in place of the exact score, produces a scaled-increment label zTF  
+
+> q
+
+.We use a fully connected network with hyperbolic-tangent activations and a linear output layer. Its parameters θ are trained by least squares on the generated labels, 
+
+min 
+
+> θ
+
+1
+
+Q
+
+> Q
+
+X
+
+> q=1
+
+D−1
+
+> z
+
+ Gθ(cq, ξ q) − zTF 
+
+> q
+
+ 2. (13) Here Dz is the diagonal matrix of label standard deviations, floored away from zero, account-ing for the output standardization used in training. Network inputs are also standardized, and Gθ denotes the complete map after undoing output standardization. The Gaussian input ξ allows the network to generate different increments at the same condition; the re-gression learns the sampler’s output for each input pair, rather than only the conditional mean. Network sizes and optimization settings are reported with the examples. The trained network is deployed autoregressively. Starting from a state and memory bank computed from an observed prehistory, we form the condition cn of Eq. (7), draw 
+
+ξn ∼ N (0 , I ), and set 
+
+xn+1 = xn + Gθ(cn, ξ n)/κ s, m(i) 
+
+> n+1
+
+= ρi m(i) 
+
+> n
+
++ ( xn+1 − xn), i = 1 , . . . , k, (14) so that the memory summary is updated from the generated increments. The cost per step is one network evaluation plus the O(kd ) bank update, independently of the trajectory length. The complete workflow is summarized in Algorithm 1. 8Algorithm 1 Memory-conditioned flow-map learning and deployment 
+
+Require: observed training trajectories Dobs and an observed prehistory for rollout initial-ization 
+
+Ensure: trained flow map Gθ and a generated trajectory {xn}
+
+Construct the conditioning data  
+
+> 1:
+
+select the rate band and bank size using the predictive criteria of Section 3.1, with any reference-based choices stated  
+
+> 2:
+
+compute the full bank mn along the training trajectories by Eq. (6) and discard the feature burn-in  
+
+> 3:
+
+form cn from the current observation and memory, applying the selected reduction when used  
+
+> 4:
+
+pair cn with zn = κs(xn+1 − xn) 
+
+> 5:
+
+fit the conditioning metric d in Eq. (12) 
+
+Generate labels and train the flow map  
+
+> 6:
+
+for each sampled condition–latent pair (cq, ξ q) do  
+
+> 7:
+
+select the J nearest training tuples to cq under d 
+
+> 8:
+
+integrate the regularized reverse probability-flow ODE with Eq. (11) to obtain zTF  
+
+> q
+> 9:
+
+end for  
+
+> 10:
+
+train Gθ on the resulting condition–latent–label pairs by Eq. (13) 
+
+Generate a trajectory  
+
+> 11:
+
+set x0 to the last state of the initial prehistory and compute m0 from that prehistory using Eq. (6)  
+
+> 12:
+
+for n = 0 , 1, . . . until the desired trajectory length do  
+
+> 13:
+
+form cn using the same conditioning variables as in training and draw ξn ∼ N (0 , I ) 
+
+> 14:
+
+set zgen  
+
+> n
+
+= Gθ(cn, ξ n) and xn+1 = xn + zgen  
+
+> n
+
+/κ s 
+
+> 15:
+
+update the full bank mn+1 by Eq. (6) using xn+1 − xn and apply the same predictive read-out used in training  
+
+> 16:
+
+end for  
+
+> 17:
+
+return Gθ and {xn}
+
+4. Numerical examples 
+
+We present three complementary tests of memory-conditioned flow-map learning. Exam-ple 1 evaluates long-memory retention at small conditioning dimension, Example 2 examines coupled vector dynamics and predictive compression, and Example 3 evaluates non-Gaussian conditional distributions and intermittent-event statistics. Unless stated otherwise, all examples share the same numerical settings. The conditional sampler uses J = 1024 neighbors, conditioning bandwidth ν = 0 .2, metric floor ε = 0 .3,and nODE = 400 reverse-ODE steps, and generates 2 × 10 5 training labels ( 1.8 × 10 5 in Example 2). The flow map has three hidden layers of 128 hyperbolic-tangent units and is trained with Adam at learning rate 10 −3, batch size 4096 , and at most 3000 epochs with validation-based early stopping. The LSTM baselines use 128 hidden units in one recurrent layer and are trained by one-step maximum likelihood; their training-context lengths and deployment warm-ups are stated with each example. 94.1. Linear GLE with multiscale memory 
+
+This example tests whether a small memory bank retains the history information needed for conditional forecasts and long-time correlations when the forcing contains widely sepa-rated time scales. We consider a scalar velocity Xt with unit mass and no external force, governed by 
+
+dXt =
+
+"
+
+−γX t − cK
+
+Z t
+
+> −∞
+
+e−λK (t−s)Xs ds +
+
+> 4
+
+X
+
+> j=1
+
+Fj,t 
+
+#
+
+dt, 
+
+dFj,t = − 1 
+
+> Tj
+
+Fj,t dt + σj
+
+q
+
+2/T j dWj,t ,
+
+(15) where γ = 0 .5, cK = 2 , and λK = 1 . The four Ornstein–Uhlenbeck forces have correlation times Tj ∈ { 0.5, 4, 30 , 200 } and stationary standard deviations σj ∈ { 0.6, 0.5, 0.45 , 0.45 }.In Eq. (1), this corresponds to Σ0 = 0 and ηt = P 
+
+> j
+
+Fj,t , prescribed independently of the friction kernel without imposing equilibrium fluctuation–dissipation relations. Introduc-ing ζt = R t 
+
+> −∞
+
+e−λK (t−s)Xs ds gives the six-dimensional linear Markovian embedding Y =(X, ζ, F 1, . . . , F 4).We generate data using the exact discrete transition, 
+
+Yn+1 = Ad Yn + ηn, with Ad := eA∆t,ηn ∼ N  0, Σ − AdΣA⊤
+
+> d
+
+, Y0 ∼ N (0 , Σ) . (16) Here A and Σ are the embedding drift matrix and stationary covariance. Only X is retained as observed data. We use ∆t = 0 .2, with 100 training trajectories and 20 test trajecto-ries, each containing 2 × 10 4 steps. The forcing times span 2.5 to 1000 sampling intervals. The embedding supplies exact references for all conditioning choices. Stages A and B of Section 3.1, with the state autocovariance as the diagnostic observable that fixes ℓsig , select 
+
+k = 6 filters over the rate band [λmin , λ max ] = [0 .038 , 15 .0] , with the individual rates placed by Eq. (A.2). The sampler and neural flow map use the full six-filter bank. We compare the memory model with a memoryless model, a raw-history model condi-tioned on cn = ( xn, . . . , x n−6), and a Gaussian-head LSTM, all trained on the same data. The first three share the diffusion pipeline; the raw-history model and EMA bank also have equal conditioning dimensions. The LSTM receives the current state and increment, predicts the next increment’s mean and variance, and samples during rollout. For the main compar-ison, it is trained by one-step maximum likelihood with a 1000 -step context and initialized from a 3000 -step observed history; the separate training-context study in Table 1(b) uses a common 5000 -step initialization history. Its Gaussian output family matches the exact conditional laws. To assess the memory approximation separately, Figure 1(a) compares exact conditional models based on the selected bank and a raw window with k = 6 . The selected six-filter bank has substantially smaller autocovariance error than short raw-history windows; comparable window accuracy requires a much larger conditioning dimension. The predictive-coordinate diagnostic in panels (b)–(c) measures how much of this information lies in a smaller linear subspace. The sharp drop in the predictive spectrum after the fifth direction agrees with the five hidden variables that influence X, and retaining these five directions introduces no measurable loss over the tested prediction horizons. 10 10 1 10 2                          
+
+> conditioning dimension
+> 10 1
+> ideal closed-loop ACF error
+> (a) Representation error
+> raw AR( M)EMA bank selected k= 6
+> 123456
+> direction j
+> 10 8
+> 10 6
+> 10 4
+> 10 2
+> 10 0
+> singular value  rank 5
+> (b) Predictive spectrum
+> 123456
+> kept dimensions p
+> 10 8
+> 10 6
+> 10 4
+> 10 2
+> 10 0
+> worst-horizon loss  ²p (c) Projection loss Figure 1: Memory representation for Example 1, evaluated without learning error. (a) Closed-loop autoco-variance error for a raw window and an EMA bank; the star marks the selected six-filter bank. (b) Predictive spectrum of the selected bank. (c) Worst-horizon loss after projection onto the first dpred predictive coordi-nates.
+
+We next evaluate the complete learned simulators through long autoregressive rollouts (Figure 2). The memory model follows both the intermediate shoulder and the slowly de-caying tail of the exact autocovariance. The raw-history model loses the correlation after the first few time units, while the memoryless model decays on the wrong time scale. The LSTM captures more of the intermediate behavior but still misses the slowest component. The mean-squared velocity change E[( Xt+τ − Xt)2] shows the same differences; because the observed variable is a velocity, this statistic measures decorrelation of the velocity rather than a position displacement. We quantify slow-memory accuracy using the exact autocovariance 
+
+C and rollout estimate bC:
+
+Eslow =
+
+P  
+
+> τ∈T
+
+bC(τ ) − C(τ )
+
+P  
+
+> τ∈T
+
+C(τ ) , T = { 50 ≤ τ ≤ 200 }. (17) Here T contains the sampled lags between 50 and 200 in physical time units, rather than sampling steps. A vanishing rollout autocovariance over this interval gives Eslow = 1 . The shoulder statistic is the maximum of | bC(τ ) − C(τ )|/C (0) over physical time lags 0 ≤ τ ≤ 30 .Figure 2(c) shows that the memory model remains close to the ideal bank reference, while the raw-history model and LSTM have slow-tail errors near unity. Figure 3 examines conditional forecasts initialized from the same observed history. The chosen history has a large contribution from the slow hidden mode, making the effect of memory visible in the subsequent relaxation. Panel (a) shows that the memory model follows the exact conditional mean through the slow rebound and remains close to the exact EMA-conditioning reference. The raw-history and memoryless models relax too quickly, while the LSTM captures only part of the rebound. Panel (b) shows that beyond the first several time units the four models predict a similar conditional spread; at shorter horizons the memoryless and window spreads deviate visibly from the exact one. Over the remaining horizons, their main difference is therefore the history-dependent conditional mean, rather than the forecast variance. To assess forecast accuracy beyond a single history, Table 1(a) compares conditional distributions over 32 test histories using normalized squared Wasserstein distance. The 11 10 0 10 1 10 2         
+
+> lag time τ
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> normalized autocovariance (a) autocovariance to 2Tmax
+> exact ideal bank (closed form) no memory raw last-khistory LSTM + Gaussian head memory bank (ours)
+> 10 010 110 2
+> lag time τ
+> 10 1
+> [( Xt + τ − Xt)2]
+> (b) mean-squared velocity change
+> no memory raw window LSTM memory bank
+> 10 1
+> 10 0
+> Eslow
+> (c) slow-tail error (median, seed band)
+> measured ideal floor (seed band) ideal bank (closed form)
+
+Figure 2: Closed-loop statistics for Example 1. (a) Normalized autocovariance; the shaded interval defines the slow-tail error. (b) Mean-squared velocity change. (c) Slow-tail error, with the ideal EMA-bank error shown as a reference. 10 0 10 1 10 2
+
+time τ after release 
+
+1.5 
+
+1.0 
+
+0.5 
+
+0.0 0.5 
+
+> ensemble mean
+
+(a) conditional mean (shading: exact ±2σ)  
+
+> exact | full history exact | (xn, m n)
+> no memory raw last-khistory LSTM + Gaussian head memory bank (ours)
+
+10 0 10 1 10 2
+
+time τ after release 
+
+0.1 0.2 0.3 0.4 
+
+> ensemble standard deviation
+
+(b) conditional spread    
+
+> exact | full history exact | (xn, m n)
+> no memory raw last-khistory LSTM + Gaussian head memory bank (ours) stationary σ
+
+Figure 3: Conditional forecasts for Example 1. (a) Conditional mean and (b) conditional standard deviation of an ensemble initialized from the same observed history. The solid black curve is the exact full-history forecast, and the dotted curve is the exact EMA-conditioning reference. 
+
+memory model has the smallest error among the learned models. The table also tests whether the LSTM improves when its training context is increased from 1000 to 2500 and 5000 steps. The slow-tail error remains between 0.88 and 1.00 across the nine trained models, with no systematic improvement as the context grows. Because the Gaussian output family is correctly specified here, these comparisons establish an empirical advantage for the tested configurations; they do not isolate whether the remaining gap stems from the recurrent representation, the optimization, or the one-step training objective. As a sampler-refinement check — doubling nODE both refines the reverse-ODE discretization and shrinks the endpoint regularization h = 1 /n ODE (Appendix B) — repeating 16 conditional queries with identical latent draws at 2nODE steps gives, for the memory model, a median across queries of the mean squared paired-sample difference of approximately 1.52 ×10 −5, normalized by the exact conditional variance. The selected memory bank preserves slow temporal dependence in both autoregressive simulation and conditional forecasting. 12 Table 1: Robustness checks for Example 1. (a) Median normalized squared Wasserstein distance to the exact full-history conditional law at τ = 30 , over 32 test histories with 1000 forecast samples per history. The finite-sample floor compares a finite Gaussian sample with the analytic quantiles of the same Gaussian law; the exact EMA-conditioning error is evaluated analytically. (b) Slow-tail error for LSTMs trained with three context lengths; entries are the median and range over three training seeds. All LSTMs in (b) use the same 5000 -step observed warm-up at deployment. 
+
+(a) Conditional forecast error at τ = 30 
+
+model median W 22 /σ 2exact 
+
+memoryless 0.0405 
+
+raw-history model, k = 6 0.0386 
+
+LSTM 0.0145 
+
+memory model 0.0040 
+
+exact EMA conditioning 0.0004 
+
+finite-sample floor 0.0027 
+
+(b) LSTM training-context study model training context Eslow 
+
+LSTM 1000 0.978 [0 .913 , 0.979] 
+
+LSTM 2500 0.973 [0 .882 , 0.982] 
+
+LSTM 5000 0.991 [0 .980 , 0.992] 
+
+memory model — 0.087 
+
+4.2. A two-dimensional viscoelastic GLE 
+
+GLEs with instantaneous drag and exponential memory describe Brownian motion in viscoelastic fluids [32], and sums of exponential memory modes admit extended-variable formulations [9]. Here we use two coupled relaxation modes to test whether the method reproduces velocity correlations and conditional forecasts in a viscoelastic bath. This bench-mark tests vector dynamics with noncommuting memory modes and predictive compression using reference-assisted bank selection; the observation-based selection procedure is exercised in Examples 1 and 3. We consider a particle in an equilibrium viscoelastic bath with unit mass, no external force, and Γ0 = γI :
+
+dvt =
+
+
+
+−γv t −
+
+Z t
+
+> −∞
+
+K(t − s)vs ds + ηt
+
+
+
+dt + p2γk B T dWt,K(t) = a1e−t/τ 1 u1u⊤ 
+
+> 1
+
++ a2e−t/τ 2 u2u⊤ 
+
+> 2
+
+, E[ηtη⊤ 
+
+> s
+
+] = kB T K (|t − s|).
+
+(18) Here vt ∈ R2, Wt is two-dimensional Brownian motion, and the centered Gaussian force η
+
+is independent of W . Both fluctuation–dissipation relations in Section 2 hold with Σ0 =√2γk B T I . We set u1 = (1 , 0) ⊤, u2 = (1 /2, √3/2) ⊤, a1 = 1 , a2 = 0 .2, τ1 = 1 , τ2 = 5 ,
+
+γ = 1 /9, and kB T = 1 . The two rank-one kernel matrices do not commute, so no fixed rotation diagonalizes K(t) at every lag. The velocity autocovariance is 
+
+C(τ ) = E[v(t + τ )v(t)⊤]. (19) It satisfies C(0) = I and has nonzero lagged cross-components with Cxy (τ ) = Cyx (τ ).A four-dimensional linear embedding supplies exact discrete transitions and transport statistics [8, 9], and Kalman filtering gives conditional reference laws [38]. We retain only the sampled velocity Xn = vn := v(tn), using 32 training and 8 test trajectories of 2.5 × 10 4
+
+steps each at ∆t = 0 .2. We use k = 5 filters over [0 .0521 , 5] , giving a 12 -dimensional state– memory vector. Here the rate band is determined from the exact state autocovariance and 13 the bank size from exact conditional and correlation references. To reduce the conditioning dimension, we compress this vector to the increment predictor 
+
+bqn = bb + bBvvn + bBmmn ∈ R2
+
+fitted by ordinary least squares on the training tuples. The exact bank-conditioned law is Gaussian with constant covariance, so its mean determines the increment distribution. We set cn = bqn for both sampling and flow-map training and update the full bank during rollout. We compare against memoryless diffusion and an LSTM with a full-covariance Gaussian output head. The LSTM receives the current velocity and increment, uses a 500 -step training context, and is initialized from a 1000 -step observed history. Its Gaussian output family matches this example’s conditional laws. We examine the entries of the covariance matrix in Eq. (19): diagonal entries measure temporal correlations within each velocity component, and off-diagonal entries measure correlations between components. Figure 4 compares velocity covariances from 64 autoregressive trajectories of 10 4 steps per model. The memory model and LSTM reproduce the negative correlation lobes and subsequent relaxation in all four entries. The memoryless model instead produces slowly decaying diagonal correlations and nearly vanishing cross-correlations. 0 10                        
+
+> lag τ
+> 0.0 0.5 1.0
+> velocity covariance  (a) Cxx (τ)
+> 010
+> lag τ
+> 0.10
+> 0.05
+> 0.00
+> (b) Cxy (τ)
+> 010
+> lag τ
+> 0.15
+> 0.10
+> 0.05
+> 0.00 0.05 (c) Cyx (τ)
+> 010
+> lag τ
+> 0.0 0.5 1.0
+> (d) Cyy (τ)
+> exact ours memoryless LSTM
+> Figure 4: Velocity-covariance matrix for Example 2 from long autoregressive rollouts. Panels (a)–(d) show
+> Cxx ,Cxy ,Cyx , and Cyy against the exact curves; the nonzero lagged cross-covariance reflects the memory-induced coupling between the components (at equilibrium Cxy =Cyx ).
+
+We next compare conditional forecasts with 3000 paths from one test history, selected by reference predictive means among nearby current velocities, without using model errors. The reference ensemble starts from the Kalman posterior of the embedding. Figure 5 shows two views of the conditional velocity distribution at forecast horizons of h = 1 , 4, 16 steps (∆t = 0 .2), with columns corresponding to successive horizons. The upper panels show the joint density in the (vx, v y) plane, with the reference ensemble in the first row and the memory model in the second; these panels display the location, spread, and dependence between the velocity components. The memory model reproduces the reference density’s location and spread as the ensemble evolves. The lower panels show the marginal densities of vx and vy
+
+in the first and second rows, respectively, comparing the reference with the memory model, LSTM, and memoryless diffusion. These curves assess each velocity component separately: 14 4
+
+> 2
+> 024
+> exact
+> vy
+> 0.0% outside
+
+h = 1 , t = 0 .2
+
+> 0.0% outside
+
+h = 4 , t = 0 .8
+
+> 0.0% outside
+
+h = 16 , t = 3 .2  
+
+> 2.5 0.0 2.5
+
+vx  
+
+> 4
+> 2
+> 024
+> ours
+> vy
+> 0.0% outside 2.5 0.0 2.5
+
+vx  
+
+> 0.0% outside 2.5 0.0 2.5
+
+vx  
+
+> 0.0% outside 0.0 0.2 0.4 0.6 0.8 1.0
+> relative density (normalized per column) 10
+
+vx
+
+> 0.0 0.5 1.0 1.5
+> density
+
+h = 1 , t = 0 .2  
+
+> 202
+
+vx
+
+> 0.0 0.2 0.4 0.6
+
+h = 4 , t = 0 .8  
+
+> 2.5 0.0 2.5
+
+vx
+
+> 0.0 0.2 0.4
+
+h = 16 , t = 3 .2 
+
+> 10
+
+vy  
+
+> 01
+> density
+> 202
+
+vy  
+
+> 0.0 0.5 2.5 0.0 2.5
+
+vy   
+
+> 0.0 0.2 0.4 exact ours LSTM memoryless
+
+Figure 5: Conditional forecast for Example 2 from one observed test history. Top: joint velocity densities at h = 1 , 4, 16 for the exact conditional law (upper row) and memory model (lower row); contours enclose 
+
+50% and 95% of the smoothed in-frame mass. Bottom: velocity marginals for all models. Color scales and marginal axis limits are shared within each column. 
+
+15 both the memory model and LSTM match the marginal densities closely, while memoryless predictions are shifted, particularly in vx.For the same forecast, Figure 6 compares E[∥rn+h − rn∥2 | H n] and E[∥vn+h − vn∥2 | H n],with sampled displacement rn+h − rn = ∆ t Phj=1 vn+j . The memory model and LSTM reproduce both the displacement growth and nonmonotone velocity-change relaxation. The memoryless model overestimates displacement growth and misses the early maximum in the velocity-change statistic. 10 0 10 1
+
+forecast time 
+
+> 020 40 60 80 100 120 140
+> [|rn + h − rn|2 | Hn]
+
+(a) Sampled-displacement MSD  
+
+> exact ours LSTM memoryless 10 010 1
+
+forecast time 
+
+> 0.0 0.5 1.0 1.5 2.0 2.5 3.0
+> [|vn + h − vn|2 | Hn]
+
+(b) Velocity change 
+
+> exact ours LSTM memoryless
+> Figure 6: Conditional second moments of the forecast of Figure 5. (a) Sampled-displacement mean-squared displacement and (b) mean-squared velocity change, against the analytic conditional references (black).
+
+4.3. Intermittent scrape-off-layer fluctuations 
+
+We apply the method to a stochastic model of intermittent scrape-off-layer (SOL) fluctu-ations [6], a physical application with memory and non-Gaussian bursts. This example tests conditional prediction and the reproduction of burst statistics. We use a filtered Poisson process with two populations of randomly arriving pulses — our two-population, finite-rise extension of the one-population model analyzed in [7] — observed as 
+
+yn =
+
+> 2
+
+X
+
+> j=1
+
+X
+
+> k
+
+Ajk ψj (tn − tjk ) + σobs ϵn, ϵn
+
+> iid
+
+∼ N (0 , 1) ,ψj (s) = τdj 
+
+τdj − τr
+
+
+
+e−s/τ dj − e−s/τ r
+
+
+
+, s ≥ 0.
+
+(20) Here ψj (s) = 0 for s < 0, tjk are Poisson arrival times, and the amplitudes Ajk are expo-nentially distributed; the two arrival processes, all amplitudes, and the observation noise are mutually independent. We set the decay times to τd1 = 1 and τd2 = 10 , the common rise time to τr = 0 .1τd1, and the intermittency parameters γj = τdj /τ wj to γ1 = 2 and γ2 = 1 ,where τwj is the mean waiting time. The amplitude means are 1 and p101 /55 for the two populations, fixed so that the populations contribute equal variance. Only the combined signal Xn = yn is observed, at ∆t = 0 .5τd1, with observation-noise variance equal to 1% of Var( yn). We use 400 training and 120 test records of 4000 steps 16 each. The next-step distribution reflects both the decay of existing pulses and new arrivals. An 8000 -particle filter on the hidden pulse state approximates the conditional reference law 
+
+p(yn+1 | y0: n).Memory selection gives one filter with rate 0.26 τ −1 
+
+> d1
+
+and condition cn = ( yn, m pred  
+
+> n
+
+) ∈ R2.The baseline is a Gaussian-head LSTM trained by one-step maximum likelihood on the same records; a single training instance (seed 5, fixed in advance) is used throughout. It receives (yn, ∆yn), with ∆yn = yn −yn−1, and uses a 1000 -step training context and 1000 -step initialization history. For one-step evaluation we group histories by the current observed signal amplitude yn.The quiet group contains 64 test histories with yn below its median, representing relatively low signal levels; the active group contains 64 histories with yn above its 80 th percentile, representing elevated signal levels associated with intermittent pulses. These labels describe amplitude groups within the same stationary SOL model, rather than distinct plasma oper-ating regimes. For each test history, let bPmodel be the empirical distribution of 1024 next-step samples from the model being evaluated, and let bP (1) PF and bP (2) PF be the empirical distributions of two independently drawn ensembles of the same size from the particle-filter predictive law conditioned on that history. We measure the normalized excess error by 
+
+E =
+
+W 22
+
+ bPmodel , bP (1) PF 
+
+
+
+− W 22
+
+ bP (2) PF , bP (1) PF 
+
+
+
+s2PF 
+
+,
+
+where W2 is the Wasserstein distance of order two and s2PF is the sample variance of the first reference ensemble. The first term measures the discrepancy between model and reference samples; the second estimates the discrepancy caused by finite sampling of the reference law itself. Dividing by s2PF makes the error dimensionless. Table 2 shows smaller diffusion-model errors in both amplitude groups. The LSTM errors are close to those of the moment-matched Gaussian, indicating that the Gaussian output family limits conditional accuracy in this test.   
+
+> Table 2: Median one-step excess error for the SOL example. Quiet and active histories have current signal amplitudes below the median and above the 80 th percentile, respectively ( 64 histories per group). The moment-matched Gaussian uses the conditional mean and variance estimated from the particle-filter predictive law.
+
+model quiet active memory + diffusion 0.0050 0.0113 
+
+moment-matched Gaussian 0.185 0.130 
+
+Gaussian-head LSTM 0.187 0.142 
+
+Figure 7 compares the joint distributions of signal and increment in long rollouts. New arrivals form the upper branch and decaying pulses the lower branch. The diffusion model reproduces this asymmetry, while the LSTM narrows the upper branch and suppresses large positive increments. A likely contributor is the LSTM’s single Gaussian output head: at a fixed history, it represents the next increment by a symmetric distribution, whereas random pulse arrivals produce a skewed conditional law with a pronounced positive tail. The similar 17 one-step errors of the LSTM and the moment-matched Gaussian in Table 2 support this interpretation, although accumulated rollout errors can also affect the joint distribution. 0 5 10              
+
+> yn
+> 5
+> 0510
+> ∆yn + 1 /∆t
+> held-out truth
+> 0510
+> yn
+> memory-conditioned diffusion
+> 0510
+> yn
+> LSTM + Gaussian head
+> Figure 7: Stochastic phase portrait of the held-out data and long model rollouts. Color shows the joint density of ynand ∆yn+1 /∆ton a common logarithmic scale; white curves show the conditional mean and
+> 10 –90% interval, and the red dotted line marks the burst threshold μ+ 2 .5σ.
+
+Conditional forecasts from one active history show the same distinction (Figure 8, 4000 
+
+paths per model). The diffusion model follows the reference ridge and upper tail during relaxation, while the LSTM produces a more elliptical cloud and underestimates the upper quantile. We next evaluate bursts, defined as contiguous excursions above μ + 2 .5σ, where μ and 
+
+σ are the reference signal’s stationary mean and standard deviation; chains of excursions whose consecutive peaks are separated by less than 2τd1 are merged into a single event, whose peak is the largest of the merged excursions. Figure 9 shows that the diffusion model captures the rapid rise, slower decay, and broad peak-amplitude distribution. Table 3 shows a burst rate close to the reference; the diffusion model’s extreme-event probability has a lower point estimate than the reference, with marginally overlapping bootstrap intervals. The LSTM produces fewer bursts, a broader peak-aligned average waveform, and a shorter peak-amplitude tail. 
+
+Table 3: Burst statistics on 120 records of duration 1500 τd1 for each source, with 95% trajectory-bootstrap intervals. The extreme-event probability is the fraction of time samples with y > μ + 5 σ.
+
+held-out data memory + diffusion Gaussian-head LSTM burst rate ( ×10 −2/τ d1) 1.99 [1 .91 , 2.06] 1.88 [1 .80 , 1.97] 0.91 [0 .85 , 0.97] 
+
+extreme-event prob. ( ×10 −4) 8.9 [7 .1, 10 .8] 5.7 [4 .5, 7.1] 0.19 [0 .05 , 0.39] 
+
+Long rollouts reproduce the skewed stationary density and both correlation scales with the diffusion model (Figure 10). The LSTM captures the slow correlation tail but misses the distribution’s upper tail. These comparisons demonstrate the method’s ability to reproduce non-Gaussian fluctuations as well as temporal dependence. 18 5
+
+05
+
+> observable-history reference (PF)
+> (yn + h − yn + h − 1)/∆t
+
+y99 = 11 .9
+
+t − tn = 0 .5 τd1
+
+y99 = 12 .1
+
+t − tn = 2 τd1
+
+y99 = 11 .5
+
+t − tn = 5 τd1
+
+5
+
+05
+
+> memory-conditioned diffusion
+> (yn + h − yn + h − 1)/∆t
+
+y99 = 12 .3 y99 = 11 .9 y99 = 11 .6
+
+0 10 
+
+yn + h
+
+5
+
+05
+
+> LSTM + Gaussian head
+> (yn + h − yn + h − 1)/∆t
+
+1.8% outside 
+
+y99 = 10 .5
+
+0 10 
+
+yn + h
+
+y99 = 10 .7
+
+0 10 
+
+yn + h
+
+y99 = 10 .0Figure 8: Evolution of 4000 paths released from the same active test history, shown at three forecast horizons in the phase plane. Rows correspond to the particle-filter reference, the memory-conditioned diffusion model, and the Gaussian-head LSTM; contours enclose 50 /80 /95% of the in-frame mass, the red line marks the burst threshold, and y99 is the 99 th percentile of the amplitude. −20 −15 −10 −5 0 5 10 15 20 
+
+(t ¡ tpeak )=¿ d1
+
+> 3456789
+> conditionally averaged  y
+
+(a) burst waveform         
+
+> held-out truth (3507 bursts) memory-conditioned diffusion (3274 bursts) LSTM + Gaussian head (1589 bursts)
+> 8.5 9.0 9.5 10.0 10.5 11.0 11.5 12.0 12.5
+
+peak amplitude q
+
+> 10 −3
+> 10 −2
+> 10 −1
+> 10 0
+> P(Ypeak  > q )
+
+(b) amplitude exceedance 
+
+> held-out truth memory-conditioned diffusion LSTM + Gaussian head
+
+Figure 9: Burst statistics of the held-out data and model rollouts. (a) Conditionally averaged waveform of bursts above μ + 2 .5σ, with 95% trajectory-bootstrap bands. (b) Exceedance probability of the per-event peak amplitude; the extreme-event probability of Table 3 is instead a fraction of time samples and is not a peak statistic. 
+
+19 10 0 10 1 10 2             
+
+> τ/τ d1
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> normalized ACF (a) autocovariance in rollout
+> closed form ours LSTM + Gaussian head 010 20
+> y
+> 10 5
+> 10 4
+> 10 3
+> 10 2
+> 10 1
+> 10 0(b) stationary PDF
+> data ours LSTM Figure 10: Closed-loop statistics of the model rollouts; the displayed model curves use rollout seed 0with
+> 64 trajectories of 8000 steps. (a) Normalized autocovariance compared with the closed form. (b) Stationary density compared with the held-out data.
+
+5. Conclusions 
+
+We developed a memory-conditioned diffusion method in which a compact, recursively updated filter bank enables generative flow maps to preserve long-time dependence without conditioning on long observation windows. The bank summarizes resolved trajectories over multiple time scales, and predictive coordinates can reduce the dimension used by the condi-tional score estimator. Conditional diffusion samples train a flow map whose evaluation and memory update have a cost independent of trajectory length for a fixed bank and network size. The three examples demonstrate complementary capabilities. In the scalar multiscale GLE, a compact filter bank retains the predictive information needed to reproduce slow correlations. In the equilibrium vector GLE, compression to a two-dimensional increment predictor supports conditional sampling while the full bank maintains the recursive memory update, reproducing correlations induced by coupled, noncommuting memory modes. This example uses reference-assisted bank selection, whereas Examples 1 and 3 use observation-based selection. For the non-Gaussian SOL process, the method represents conditional asym-metry and intermittent-event statistics. Together, these results illustrate the complementary roles of a compact history representation and an expressive conditional distribution. The recurrent baselines provide context for these tests: the full-covariance Gaussian-head LSTM gives comparable correlation accuracy in the vector GLE, while the SOL comparison is lim-ited by its Gaussian output family and does not establish a limitation of recurrent models with more expressive conditional distributions. The present method assumes stationary, ergodic observations with fading memory that can be approximated by a modest filter bank. The nonparametric sampler requires control of the conditioning dimension, while mean-based compression need not preserve non-Gaussian conditional laws. Future work will consider richer memory representations and nonlinear predictive reductions for state-dependent and nonstationary dynamics. 20 Acknowledgments 
+
+This material is based upon work supported in part by the U.S. Department of Energy, Office of Science, Offices of Advanced Scientific Computing Research and Fusion Energy Science, and by the Laboratory Directed Research and Development program at the Oak Ridge National Laboratory, which is operated by UT-Battelle, LLC, for the U.S. Department of Energy under Contract DE-AC05-00OR22725. S. He acknowledges support from the University of Tennessee, Knoxville AI seed grant. 
+
+Data availability 
+
+The code for the numerical examples is available at https://github.com/mlmathphy/ DiffusionMemory_GLE2 .
+
+Appendix A. Additional details on the memory representation 
+
+This appendix specifies memory selection, initialization, and predictive reduction, and relates the filters to exponential-memory variables. 
+
+Appendix A.1. Filter conventions, initialization, and rate placement 
+
+We use the unnormalized convention in Eq. (6); the usual factor 1 − ρi would only rescale component i and is absorbed when the conditioning variables are whitened. Unrolling the recursion, 
+
+m(i) 
+
+> n
+
+=
+
+> n−1
+
+X
+
+> l=0
+
+ρ li
+
+ Xn−l − Xn−l−1
+
+, (A.1) the initialization transient decays as ρni . For the selected bank, training begins at nburn =
+
+⌈− log δ/ (λ1∆t)⌉, with δ = 0 .03 , 0.001 , and 0.05 in Examples 1–3, respectively; deployment initializes the bank from observed prehistory. Within each candidate band [λmin , λ max ] of Section 3.1, the rates are log-spaced: for 
+
+k ≥ 2,
+
+λi = λmin 
+
+λmax 
+
+λmin 
+
+(i−1) /(k−1) 
+
+, i = 1 , . . . , k, (A.2) and for k = 1 the geometric center λ1 = √λmin λmax . These are history-feature rates, not estimates of physical decay rates. Examples 1 and 3 search k = 1 , . . . , 10 and k = 1 , . . . , 8, respectively. Both use eight logarithmically spaced lower endpoints over the interval in Section 3.1 and upper endpoints 
+
+{1, 2, 3}/∆t, retaining only bands with λmin < λ max . The state-autocorrelation thresholds defining ℓsig are 0.05 and 0.02 , respectively. Selection uses the first 20 and 40 training trajectories, split 60% /40% for fitting and validation. Stage A evaluates rates on a 40 -point logarithmic dictionary and retains bands within 2% of the best validation risk at each k;Stage B refits at the exact rates and requires max l |Csur (l) − Cdata (l)|/C data (0) ≤ 0.05 , over lags 0–2000 and 0–400 , respectively. Here Csur and Cdata are the surrogate and selection-data autocovariances. Example 2 uses the reference-based selection described in Section 4.2. 21 Appendix A.2. Predictive rank and predictive coordinates 
+
+Correlated bank features can contain redundant predictive information. We identify linear combinations that explain future variations beyond those predicted by the current state, and use their singular spectrum to define candidate reduced dimensions. All quantities are linear residual covariances of centered variables, well defined for any second-order stationary process. With ¯m, ¯x the stationary means and Qx = Σ † 
+
+> xx
+
+the Moore– Penrose inverse on the covariance support, put 
+
+˜mn = ( mn − ¯m) − Σmx Qx(xn − ¯x), ˜Xn+h = ( Xn+h − ¯x) − ΣXn+hxQx(xn − ¯x), (A.3) for the residuals of the best linear predictors from the current state, and let Σm|x =Cov( ˜ mn) = ErΛrE⊤ 
+
+> r
+
+be its eigendecomposition on the effective support, r = rank(Σ m|x) and 
+
+Λr > 0. We take as whitening of the memory residual the canonical choice 
+
+Wm := Λ −1/2 
+
+> r
+
+E⊤ 
+
+> r
+
+∈ Rr×kd , so that WmΣm|xW ⊤ 
+
+> m
+
+= Ir. (A.4) Calling a matrix an admissible whitening when it satisfies both WmΣm|xW ⊤ 
+
+> m
+
+= Ir and 
+
+Wm = WmErE⊤ 
+
+> r
+
+— that is, when it does not act on ker Σ m|x — every admissible whiten-ing is OΛ−1/2 
+
+> r
+
+E⊤ 
+
+> r
+
+for an orthogonal O, and the choice among them leaves everything below invariant; for positive definite Σm|x = LL ⊤ the Cholesky whitening Wm = L−1 is admissi-ble. Equations (A.3) and (A.4) are population constructions; in finite samples Qx and Wm
+
+are replaced by eigenvalue-floored, full-rank counterparts for numerical stability, so that the empirical predictive spectrum is a regularized estimator of the population one. For a set of horizons h = 1 , . . . , H we collect the whitened residual cross-covariances of the memory with the future, 
+
+B = Wm
+
+ g1 g2 · · · gH
+
+, with gh := Cov   ˜mn, ˜Xn+h
+
+, (A.5) estimated from the training trajectories by the same least-squares machinery as stage A. The singular values of B = U diag( σ1, σ 2, . . . ) V ⊤ form the predictive spectrum of the bank: the square of each is the contribution of one orthogonal whitened memory direction to the linearly explained variance of the future, summed over horizons. Retaining the dpred leading left singular vectors defines the predictive memory coordinates 
+
+mpred  
+
+> n
+
+= P ˜mn ∈ Rdpred , with P := U ⊤ 
+
+> dpred
+
+Wm. (A.6) The linearly explained variance discarded by this projection is measured by 
+
+ϵdpred = max  
+
+> 1≤h≤H, ∥bh∥>0
+
+∥bh∥2 − ∥ U ⊤ 
+
+> dpred
+
+bh∥2
+
+∥bh∥2 , with bh := Wm gh, (A.7) the worst-horizon fraction of memory-explained variance lost by the projection, the norms being Frobenius norms when the observable is multivariate. The horizon count H is set so that H∆t covers the predictive-memory decay range; it need not extend to the full evaluation horizon of the closed-loop statistics. The predictive spectrum supplies candidate dimensions — those at which it drops sharply — so that no elbow heuristic is treated as a rank estimator on its own. 22 The coordinates serve two distinct purposes. As a diagnostic, the predictive rank counts the linearly predictive directions resolved in the chosen bank; Example 1 reports it against a system whose hidden variables are known. As a compression, they suggest replacing the full-bank conditioning (xn, m n) ∈ R(k+1) d by 
+
+Hn −→ mn −→ mpred  
+
+> n
+
+= P ˜mn −→ p Xn+1 | Xn, m pred 
+
+> n
+
+, (A.8) at conditioning dimension d+dpred , the full bank still being updated by Eq. (6) and projected on read-out since mpred  
+
+> n
+
+is not autonomous. The bank-update cost then scales with kd while the dimension presented to the conditional model is d+dpred , so increasing k need not force a proportional increase in the latter. The predictive loss of Eq. (A.8) is evaluated in Example 1, whose deployed simulator retains the full bank; a mean-coordinate special case that includes the current state in the regression is deployed in Example 2 (Section 4.2); and the data-selected bank of Example 3 reduces to a single predictive coordinate, computed with the future one-step increments and their squares over horizons h = 1 , . . . , 6 as prediction targets, each residualized on the current signal and standardized to unit variance, so the retained direction is sensitive to both the conditional mean and the conditional spread. 
+
+Appendix A.3. Conditional-mean sufficiency of a selected bank 
+
+Equation (5) is a modeling approximation whose accuracy must be assessed. Stability of the filter recursion alone does not imply stability of the coupled simulator, because generated increments depend on the current memory. To assess the history information retained for conditional-mean prediction, we use the prediction risk of a conditioning set C,
+
+V (C) = E
+
+h
+
+Xn+1 − Xn − E[ Xn+1 − Xn | C ] 2i
+
+, (A.9) writing Vmarkov = V (xn), Vmem (k) = V  (xn, m n), and Vfull for the full-history limit; stage A of Section 3.1 minimizes a held-out empirical estimate of the risk of the best linear predictor given (xn, m n); the population value of this linear-prediction risk upper-bounds V  (xn, m n)
+
+and coincides with it only when the conditional mean is linear in the conditioning variables, while the finite held-out estimate is a proxy that need not preserve the bound. When these risks are computable — as in the linear-Gaussian benchmark of Example 1 — and 
+
+Vmarkov > V full , we define the conditional-mean sufficiency diagnostic 
+
+ϵk = Vmem (k) − Vfull 
+
+Vmarkov − Vfull 
+
+∈ [0 , 1] , (A.10) with ϵk = 1 indicating no improvement in optimal conditional-mean prediction over state-only conditioning and ϵk = 0 indicating that the bank captures all history information relevant to that conditional mean. In general, this diagnostic does not establish sufficiency for the full conditional law: history-dependent variance or higher-order distributional features may remain unresolved. This is a benchmark diagnostic rather than a requirement of the method: Vfull is unavailable in general, and the construction of Section 3.1 never uses it. A monotonicity property is worth recording alongside it: for nested banks, enlarging the conditioning state cannot increase the best achievable prediction risk under a fixed proper loss, although finite-data estimation becomes harder as the dimension grows. This concerns the ideal predictor only and does not assert convergence of the complete learned simulator. 23 Appendix A.4. Exact algebraic relation to exponential-memory embeddings 
+
+This correspondence concerns one member of the problem class of Section 2: an observed process governed by a generalized Langevin equation, 
+
+˙Xt = a(Xt) −
+
+Z t
+
+> −∞
+
+K(t − s) Xs ds + Ft, (A.11) with drift a : Rd → Rd, memory kernel K : [0 , ∞) → Rd×d, and random force Ft, a stationary zero-mean Gaussian process with covariance R(t − s) = E[FtF ⊤ 
+
+> s
+
+] [5, 33]. For a kernel with poles μj , K(t) = P 
+
+> j
+
+aj e−μj t, the memory integral is carried by auxiliary variables obeying ˙ζj = −μj ζj + Xt [8, 9], which are exponentially weighted averages of the past state ,whereas the features of Eq. (6) are exponentially weighted averages of the past increments ;summation by parts converts one into the other. The identity below does not require the equilibrium relation R(t) = kB T K (|t|) [34]; it applies to both thermal and independently prescribed forcing. Fix a rate λi of the bank, ρi = e−λi∆t, and define the discrete auxiliary variable 
+
+ζ∆ 
+
+> i,n
+
+:= ρ ni ζ∆ 
+
+> i, 0
+
++ ∆ t
+
+> n−1
+
+X
+
+> l=0
+
+ρ li Xn−1−l, equivalently ζ∆ 
+
+> i,n +1
+
+= ρi ζ∆ 
+
+> i,n
+
++ ∆ t X n, (A.12) whose initial value carries the prehistory: ζ∆ 
+
+> i, 0
+
+= 0 represents a truncated prehistory, while the stationary choice 
+
+ζ∆ 
+
+> i, 0
+
+= ∆ t
+
+> ∞
+
+X
+
+> l=0
+
+ρ li X−1−l (A.13) represents the history before t = 0 , and makes (ζ∆
+
+> i, 0
+
+, X 0, X −1, . . . ) jointly stationary. Equa-tion (A.12) is the first-order (rectangle-rule) discretization of the exponential convolution 
+
+ζ(t) = R t 
+
+> −∞
+
+e−λi(t−s)Xs ds, itself the auxiliary variable ζj of the Markovian embedding when 
+
+λi coincides with a kernel pole μj . Summation by parts applied to Eq. (A.1) gives the identity 
+
+> n−1
+
+X
+
+> l=0
+
+ρ li Xn−1−l = Xn − m(i) 
+
+> n
+
+− ρ ni X0
+
+1 − ρi
+
+, (A.14) so that, for ζ∆ 
+
+> i, 0
+
+= 0 ,
+
+ζ∆ 
+
+> i,n
+
+= ∆t
+
+1 − ρi
+
+ Xn − m(i)
+
+> n
+
+ − ∆t ρ ni
+
+1 − ρi
+
+X0. (A.15) The relation between (Xn, m (i) 
+
+> n
+
+) and ζ∆ 
+
+> i,n
+
+is therefore exact , not approximate: given X0, the pair determines the discrete auxiliary variable, the residual dependence being the explicitly displayed term ∝ ρ ni , which is the initialization transient controlled by the burn-in. Three distinct errors separate ζ∆ 
+
+> i,n
+
+from the stationary continuous-time auxiliary variable ζj (tn): the quadrature error of Eq. (A.12); the truncation of the prehistory, i.e. the discrepancy between 
+
+ζ∆ 
+
+> i, 0
+
+= 0 and a stationary initial value, which decays as ρ ni ; and the rate mismatch when 
+
+λi̸ = μj .The second memory channel is the correlated forcing. The future realization of the force is not determined by the observed path; what the path determines is its conditional law, and 24 this predictive information is what a memory summary must capture. For linear-Gaussian models it is carried by a linear filter of the observed history with lag-decaying weights; such filters can be approximated by elements of the span of Eq. (A.1), and the accuracy of this approximation, rather than the kernel alone, governs the error of the approximation hypothesis Eq. (5). 
+
+Appendix B. Reverse-ODE discretization and endpoint regularization 
+
+The coefficients b and σ2 of Eq. (10) diverge as τ ↑ 1, so the implementation evaluates them with the regularized schedule 
+
+α(h) 
+
+> τ
+
+= 1 − τ + h, (β(h) 
+
+> τ
+
+)2 = τ + h, h = 1 /n ODE . (B.1) Writing Fh(Z, τ | c) for the right-hand side of Eq. (10) evaluated with these coefficients and 
+
+bSMC , and τj = 1 − j∆τ with ∆τ = 1 /n ODE for the backward grid, the state is advanced from a standard-normal terminal condition by 
+
+Zj+1 = Zj − ∆τ F h
+
+ Zj , τ j+1 | c, j = 0 , . . . , n ODE − 1. (B.2) This update is based on the explicit Euler scheme of [24], but evaluates the time-dependent coefficients at the lower node τj+1 rather than at the state node τj , which avoids τ0 = 1 ,where the regularized coefficients are stiffest ( |b| = 1 /h ) and the unregularized ones are singular. The regularized α(h) 
+
+> τ
+
+and β(h) 
+
+> τ
+
+enter both the reverse drift and the score estimator; the score identity Eq. (C.2) is the unregularized one. The regularized schedule Eq. (B.1) is associated with the Gaussian corruption family 
+
+q(h) 
+
+> τ
+
+(z | z0) := N  z; (1 − τ + h) z0, (τ + h) I, (B.3) which at τ = 1 is N  hz 0, (1 + h)I, whereas Eq. (B.2) is initialized from N (0 , I ), and which at τ = 0 is the law of the blurred variable (1+ h)Zc 
+
+> 0
+
++√h Ξ with Ξ standard normal. Because 
+
+q(h)0 is already blurred, Eq. (B.3) is not the transition law of a process started at Zc
+
+> 0
+
+; the regularization and the shifted-node discretization are coupled numerical approximations, and they do not exactly realize the reverse flow of this family. Reading the endpoint blur in the original units, ∆X(h) = (1 + h) ∆ X + √h Ξ/κ s, so that 
+
+Cov  ∆X(h) | c = (1 + h)2 Σ( c) + hκ2
+
+> s
+
+I, Σ( c) := Cov  ∆X | c. (B.4) Along a unit direction v, writing Vv = v⊤Σ( c) v, the relative variance increase is 2h + h2 +
+
+h/ (κ2 
+
+> s
+
+Vv), whose final term is the additive endpoint blur and grows in relative importance along directions in which the conditional law is narrow. In the error analysis of [27] this inflation is an explicit parameter, separate from the integration step; tying the two together through h = 1 /n ODE means that refining the integration also shrinks the endpoint regular-ization, so the step-doubling check reported in Example 1 measures the combined change from both effects rather than either alone. 25 Appendix C. Conditional score construction 
+
+For 0 < τ < 1, Eq. (11) is the score of a Gaussian mixture whose component weights are determined by the conditioning kernel. This construction is related to kernel conditional density estimation [39]. Its accuracy depends on the conditioning dimension, bandwidth, and available trajectory data. The Gaussian corruption in Eq. (8) is generated by the auxiliary diffusion 
+
+dZcτ = b(τ )Zcτ dτ + σ(τ ) d Bτ , (C.1) where Bτ is a Brownian motion in diffusion time and b, σ are defined in Section 3.2. Because the diffused conditional is the Gaussian mixture 
+
+pτ (z | c) = 
+
+Z
+
+N (z; ατ z0, β 2 
+
+> τ
+
+I) p(z0 | c) d z0,
+
+the score has an exact weighted-average representation [24], 
+
+S(z, τ | c) = 
+
+Z ατ z0 − zβ2
+
+> τ
+
+wτ (z0 | z, c ) d z0, (C.2) where 
+
+wτ (z0 | z, c ) := N (z; ατ z0, β 2 
+
+> τ
+
+I) p(z0 | c)
+
+Z
+
+N (z; ατ ¯z0, β 2 
+
+> τ
+
+I) p(¯ z0 | c) d¯ z0
+
+.
+
+Three steps turn Eq. (C.2) into a data-driven estimator. First, the observation data are samples of the joint law of (c, z ) rather than of the conditional law at any fixed query c∗, so the conditional is written in the normalized form 
+
+p(z0 | c∗) = 
+
+Z
+
+δ(˜ c − c∗) p(z0, ˜c) d˜ c
+
+Z
+
+δ(˜ c − c∗) p(˜ c) d˜ c, (C.3) in which the sampling density of the conditioning variable appears explicitly. Second, the Dirac delta is mollified into a Gaussian kernel of bandwidth ν in the conditioning variable and both integrals are replaced by empirical sums over the data tuples, which produces the self-normalized conditioning weights of Eq. (11), following the conditional smoothing con-struction of [24]. Here the tuples are temporally dependent, so the nominal neighborhood count does not directly measure the amount of independent information it carries; we there-fore choose ν as an empirical trade-off between conditioning bias and neighborhood size. Third, the sum is restricted to the J nearest neighbors of c∗, a computational truncation whose adequacy is monitored through the neighborhood radius and the effective sample size of the conditioning weights. Combining these steps yields Eq. (11). The weight effective sample size measures concentration of the empirical weights, not the number of statistically independent observations. 26 References 
+
+[1] R. Zwanzig, Memory effects in irreversible thermodynamics, Physical Review 124 (4) (1961) 983–992. doi:10.1103/PhysRev.124.983 .[2] H. Mori, Transport, collective motion, and Brownian motion, Progress of Theoretical Physics 33 (3) (1965) 423–455. doi:10.1143/PTP.33.423 .[3] R. Zwanzig, Nonequilibrium Statistical Mechanics, Oxford University Press, 2001. doi: 10.1093/oso/9780195140187.001.0001 .[4] H. Lei, N. A. Baker, X. Li, Data-driven parameterization of the generalized Langevin equation, Proceedings of the National Academy of Sciences 113 (50) (2016) 14183–14188. 
+
+doi:10.1073/pnas.1609587113 .[5] S. A. McKinley, H. D. Nguyen, Anomalous diffusion and the generalized Langevin equation, SIAM Journal on Mathematical Analysis 50 (5) (2018) 5119–5160. doi: 10.1137/17M115517X .[6] O. E. Garcia, Stochastic modeling of intermittent scrape-off layer plasma fluctuations, Physical Review Letters 108 (26) (2012) 265001. doi:10.1103/PhysRevLett.108. 265001 .[7] A. Theodorsen, O. E. Garcia, M. Rypdal, Statistical properties of a filtered Poisson process with additive random noise: distributions, correlations and moment estimation, Physica Scripta 92 (5) (2017) 054002. doi:10.1088/1402-4896/aa694c .[8] M. Ceriotti, G. Bussi, M. Parrinello, Colored-noise thermostats à la carte, Journal of Chemical Theory and Computation 6 (4) (2010) 1170–1180. doi:10.1021/ct900563s .[9] A. D. Baczewski, S. D. Bond, Numerical integration of the extended variable generalized Langevin equation with a positive Prony representable memory kernel, The Journal of Chemical Physics 139 (4) (2013) 044107. doi:10.1063/1.4815917 .[10] G. Jung, M. Hanke, F. Schmid, Generalized Langevin dynamics: construction and nu-merical integration of non-Markovian particle-based models, Soft Matter 14 (46) (2018) 9368–9382. doi:10.1039/C8SM01817K .[11] Q. Lang, J. Lu, Learning memory kernels in generalized Langevin equations, SIAM Jour-nal on Mathematics of Data Science 8 (1) (2026) 141–166. doi:10.1137/24M1651101 .[12] M. Kerr Winter, I. Pihlajamaa, V. E. Debets, L. M. C. Janssen, A deep learning ap-proach to the measurement of long-lived memory kernels from generalized Langevin dynamics, The Journal of Chemical Physics 158 (24) (2023) 244115. doi:10.1063/5. 0149764 .[13] H. Vroylandt, L. Goudenège, P. Monmarché, F. Pietrucci, B. Rotenberg, Likelihood-based non-Markovian models from molecular dynamics, Proceedings of the National Academy of Sciences 119 (13) (2022) e2117586119. doi:10.1073/pnas.2117586119 .27 [14] K. K. Lin, F. Lu, Data-driven model reduction, Wiener projections, and the Koopman– Mori–Zwanzig formalism, Journal of Computational Physics 424 (2021) 109864. doi: 10.1016/j.jcp.2020.109864 .[15] Z. She, P. Ge, H. Lei, Data-driven construction of stochastic reduced dynamics encoded with non-Markovian features, The Journal of Chemical Physics 158 (3) (2023) 034102. 
+
+doi:10.1063/5.0130033 .[16] P. Ge, Z. Zhang, H. Lei, Data-driven learning of the generalized Langevin equation with state-dependent memory, Physical Review Letters 133 (7) (2024) 077301. doi: 10.1103/PhysRevLett.133.077301 .[17] C. Ma, J. Wang, W. E, Model reduction with memory and the machine learning of dynamical systems, Communications in Computational Physics 25 (4) (2019) 947–962. 
+
+doi:10.4208/cicp.OA-2018-0269 .[18] X. Fu, L.-B. Chang, D. Xiu, Learning reduced systems via deep neural networks with memory, Journal of Machine Learning for Modeling and Computing 1 (2) (2020) 97–118, arXiv:2003.09451. doi:10.1615/.2020034232 .[19] J. Harlim, S. W. Jiang, S. Liang, H. Yang, Machine learning for prediction with missing dynamics, Journal of Computational Physics 428 (2021) 109922. doi:10.1016/j.jcp. 2020.109922 .[20] S. Hochreiter, J. Schmidhuber, Long short-term memory, Neural Computation 9 (8) (1997) 1735–1780. doi:10.1162/neco.1997.9.8.1735 .[21] Y. Chen, D. Xiu, Learning stochastic dynamical system via flow map operator, Journal of Computational Physics 508 (2024) 112984. doi:10.1016/j.jcp.2024.112984 .[22] Y. Chen, D. Xiu, Data-driven effective modeling of multiscale stochastic dynamical systems, Applied Mathematics for Modern Challenges 2 (4) (2024) 348–364. doi:10. 3934/ammc.2024018 .[23] B. S. Siddani, J. B. Bell, A. L. Garcia, I. Srivastava, Capturing non-Markovian dynamics in non-equilibrium stochastic systems using flow matching, arXiv:2606.06658; accepted to the 2026 Conference on Physics and AI (2026). doi:10.48550/arXiv.2606.06658 .URL https://arxiv.org/abs/2606.06658 
+
+[24] Y. Liu, Y. Chen, D. Xiu, G. Zhang, A training-free conditional diffusion model for learning stochastic dynamical systems, SIAM Journal on Scientific Computing 47 (5) (2025) C1144–C1171. doi:10.1137/24M1699589 .[25] M. Yang, Y. Liu, D. del Castillo-Negrete, Y. Cao, G. Zhang, Generative AI models for learning flow maps of stochastic dynamical systems in bounded domains, Journal of Computational Physics 544 (2026) 114434. doi:10.1016/j.jcp.2025.114434 .28 [26] M. Yang, S. He, Training-free score-based diffusion for parameter-dependent stochastic dynamical systems, Advances in Computational Science and Engineering 7 (2026) 92– 114. doi:10.3934/acse.2026005 .[27] P. Wang, Z. Zhang, M. Yang, F. Bao, Y. Cao, G. Zhang, Error estimates of a training-free diffusion model for high-dimensional sampling, arXiv:2601.19740 (2026). doi:10. 48550/arXiv.2601.19740 .URL https://arxiv.org/abs/2601.19740 
+
+[28] A. J. Izenman, Reduced-rank regression for the multivariate linear model, Journal of Multivariate Analysis 5 (2) (1975) 248–264. doi:10.1016/0047-259X(75)90042-1 .[29] G. Didier, H. D. Nguyen, The generalized Langevin equation in harmonic potentials: Anomalous diffusion and equipartition of energy, Communications in Mathematical Physics 393 (2) (2022) 909–954. doi:10.1007/s00220-022-04378-x .[30] Z. Li, X. Bian, X. Li, G. E. Karniadakis, Incorporation of memory effects in coarse-grained modeling via the Mori–Zwanzig formalism, The Journal of Chemical Physics 143 (24) (2015) 243128. doi:10.1063/1.4935490 .[31] T. Franosch, M. Grimm, M. Belushkin, F. M. Mor, G. Foffi, L. Forró, S. Jeney, Res-onances arising from hydrodynamic memory in Brownian motion, Nature 478 (7367) (2011) 85–88. doi:10.1038/nature10498 .[32] S. Paul, N. Narinder, A. Banerjee, K. R. Nayak, J. Steindl, C. Bechinger, Bayesian inference of the viscoelastic properties of a Jeffrey’s fluid using optical tweezers, Scientific Reports 11 (1) (2021) 2023. doi:10.1038/s41598-021-81094-x .[33] M. Ottobre, G. A. Pavliotis, Asymptotic analysis for the generalized Langevin equation, Nonlinearity 24 (5) (2011) 1629–1653. doi:10.1088/0951-7715/24/5/013 .[34] R. Kubo, The fluctuation-dissipation theorem, Reports on Progress in Physics 29 (1) (1966) 255–284. doi:10.1088/0034-4885/29/1/306 .[35] S. Boyd, L. O. Chua, Fading memory and the problem of approximating nonlinear operators with Volterra series, IEEE Transactions on Circuits and Systems 32 (11) (1985) 1150–1161. doi:10.1109/TCS.1985.1085649 .[36] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, B. Poole, Score-based generative modeling through stochastic differential equations, in: International Confer-ence on Learning Representations, 2021. URL https://openreview.net/forum?id=PxTIG12RRHS 
+
+[37] K. Beyer, J. Goldstein, R. Ramakrishnan, U. Shaft, When is “nearest neighbor” mean-ingful?, in: Database Theory — ICDT’99, Vol. 1540 of Lecture Notes in Computer Science, Springer, 1999, pp. 217–235. doi:10.1007/3-540-49257-7_15 .[38] R. E. Kalman, A new approach to linear filtering and prediction problems, Journal of Basic Engineering 82 (1) (1960) 35–45. doi:10.1115/1.3662552 .29 [39] P. Hall, J. Racine, Q. Li, Cross-validation and the estimation of conditional probability densities, Journal of the American Statistical Association 99 (468) (2004) 1015–1026. 
+
+doi:10.1198/016214504000000548 .30
