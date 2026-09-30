@@ -1,0 +1,37 @@
+{
+  "label": "2026-09-30",
+  "date": "2026-09-30",
+  "generated_at": "2026-09-30T23:21:44",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202609/30/2609.35924v1-grab-a-coffee-future-aware-guidance-for-discrete-diffusion-with-compiled-objectives",
+      "section": "quick",
+      "title_en": "Grab a Coffee: Future-Aware Guidance for Discrete Diffusion with Compiled Objectives",
+      "authors": "Hua, Xu, Dongxin Li, Gwen Yidou-Weng, Guy Van den Broeck, Wei Wang, Anji Liu",
+      "date": "2026-09-28",
+      "pdf": "https://arxiv.org/pdf/2609.35924v1",
+      "score": "7.0",
+      "evidence": "离散扩散模型作为从左到右自回归生成的替代方案",
+      "tldr": "本文提出COFFEE框架，旨在解决离散扩散模型在序列级目标引导下的计算难题。通过将序列依赖与目标分离，利用目标无关的载体构建联合模型，并结合编译后的有限状态机记录全局偏好，实现了无需重训练即可对预训练模型进行高效的序列级引导，在符号、语言及生物序列生成任务中表现出色。",
+      "tags": "query:ardm",
+      "abstract_en": "Discrete diffusion models generate sequences by iteratively resolving multiple tokens in parallel, offering a flexible alternative to left-to-right generation. However, guiding this process with a sequence-level objective is difficult because the value of one unresolved token depends on the other tokens with which it can form a high-reward sequence. Enumerating all such completions makes the whole guidance computation grow exponentially with the number of unresolved positions. We introduce COFFEE, a plug-and-play framework that avoids this enumeration by separating sequence dependence from the objective. At each diffusion step, a target-free carrier absorbs the marginal token distributions predicted by the denoiser to construct a joint model over the unresolved tokens, while a compiled finite-state model records how their combinations affect the sequence-level preference. Pairing their states allows COFFEE to transfer global preferences to unresolved positions and sample a clean reconstruction without retraining the diffusion model. The same framework supports explicit hard constraints and learned soft objectives. We evaluate COFFEE across multiple symbolic, language, and biological benchmarks, where it achieves strong control results with task-dependent quality and diversity trade-offs. By making objectives available to inference rather than only evaluation, COFFEE brings joint conditioning, completion-weighted guidance, and optimization-based constraints into pretrained neural generation, showing the potential of neural-symbolic methods in diffusion guidance.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/30/2609.32415v1-refadapt-dit-adaptive-joint-attention-for-reference-conditioned-diffusion-transformers",
+      "section": "quick",
+      "title_en": "RefAdapt-DiT: Adaptive Joint Attention for Reference-Conditioned Diffusion Transformers",
+      "authors": "Jian Tang, Jiawei Fan, Qiannan Zhou, Qingbin Liu, Jiang Bian, Zang Li",
+      "date": "2026-09-26",
+      "pdf": "https://arxiv.org/pdf/2609.32415v1",
+      "score": "6.0",
+      "evidence": "优化用于条件生成的扩散 Transformer (DiT) 架构",
+      "tldr": "RefAdapt-DiT 针对参考条件扩散模型（DiT）在处理大规模参考流时计算开销巨大的问题，提出了一种无需训练的自适应联合注意力控制框架。该方法通过监测目标查询的变化与注意力权重，动态调整参考信息的计算频率，在极少步数生成任务中显著提升了推理速度，同时保持了高质量的生成效果。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion Transformers (DiTs) have become the standard backbone for high-quality generative modeling, yet deploying them in conditional generation tasks remains computationally prohibitive because bidirectional joint attention repeatedly processes large reference streams. While existing optimization schemes mitigate generic temporal redundancy, they typically rely on coarse-grained static reuse and overlook the distinct dynamics of references and targets. Specifically, we observe that reference representations often evolve slowly along the generation trajectory, while the target often assigns little attention mass to them; reference drift and this target-to-reference exposure jointly shape how strongly stale reference states affect the target. To exploit these patterns, we introduce \\RefAdapt, a training-free framework for adaptive control of joint attention between references and targets. Instead of rigid static strategies, \\RefAdapt combines consecutive target-Q change with previously observed target-to-reference attention mass to control reference computation adaptively at block granularity. Under ultra-few-step settings, \\RefAdapt enables speedups of up to $2.097\\times$ on 4-step MiniMax H3 and $3.54\\times$ on 8-step Qwen Image Edit, while maintaining comparable visual quality.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

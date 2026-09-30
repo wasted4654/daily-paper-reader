@@ -1,0 +1,96 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-30T23:21:36.712245+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.35924v1",
+      "title": "Grab a Coffee: Future-Aware Guidance for Discrete Diffusion with Compiled Objectives",
+      "abstract": "Discrete diffusion models generate sequences by iteratively resolving multiple tokens in parallel, offering a flexible alternative to left-to-right generation. However, guiding this process with a sequence-level objective is difficult because the value of one unresolved token depends on the other tokens with which it can form a high-reward sequence. Enumerating all such completions makes the whole guidance computation grow exponentially with the number of unresolved positions. We introduce COFFEE, a plug-and-play framework that avoids this enumeration by separating sequence dependence from the objective. At each diffusion step, a target-free carrier absorbs the marginal token distributions predicted by the denoiser to construct a joint model over the unresolved tokens, while a compiled finite-state model records how their combinations affect the sequence-level preference. Pairing their states allows COFFEE to transfer global preferences to unresolved positions and sample a clean reconstruction without retraining the diffusion model. The same framework supports explicit hard constraints and learned soft objectives. We evaluate COFFEE across multiple symbolic, language, and biological benchmarks, where it achieves strong control results with task-dependent quality and diversity trade-offs. By making objectives available to inference rather than only evaluation, COFFEE brings joint conditioning, completion-weighted guidance, and optimization-based constraints into pretrained neural generation, showing the potential of neural-symbolic methods in diffusion guidance.",
+      "authors": [
+        "Hua",
+        "Xu",
+        "Dongxin Li",
+        "Gwen Yidou-Weng",
+        "Guy Van den Broeck",
+        "Wei Wang",
+        "Anji Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-09-28T11:51:38+00:00",
+      "link": "https://arxiv.org/pdf/2609.35924v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "discrete diffusion models as an alternative to left-to-right autoregressive generation",
+      "llm_evidence_cn": "离散扩散模型作为从左到右自回归生成的替代方案",
+      "llm_evidence": "离散扩散模型作为从左到右自回归生成的替代方案",
+      "canonical_evidence": "离散扩散模型作为从左到右自回归生成的替代方案",
+      "llm_tldr_en": "Introduces COFFEE for efficient sequence-level guidance in discrete diffusion models.",
+      "llm_tldr_cn": "引入 COFFEE 框架，为离散扩散模型提供高效的序列级引导。",
+      "llm_tldr": "引入 COFFEE 框架，为离散扩散模型提供高效的序列级引导。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive sequence generation with diffusion",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.32415v1",
+      "title": "RefAdapt-DiT: Adaptive Joint Attention for Reference-Conditioned Diffusion Transformers",
+      "abstract": "Diffusion Transformers (DiTs) have become the standard backbone for high-quality generative modeling, yet deploying them in conditional generation tasks remains computationally prohibitive because bidirectional joint attention repeatedly processes large reference streams. While existing optimization schemes mitigate generic temporal redundancy, they typically rely on coarse-grained static reuse and overlook the distinct dynamics of references and targets. Specifically, we observe that reference representations often evolve slowly along the generation trajectory, while the target often assigns little attention mass to them; reference drift and this target-to-reference exposure jointly shape how strongly stale reference states affect the target. To exploit these patterns, we introduce \\RefAdapt, a training-free framework for adaptive control of joint attention between references and targets. Instead of rigid static strategies, \\RefAdapt combines consecutive target-Q change with previously observed target-to-reference attention mass to control reference computation adaptively at block granularity. Under ultra-few-step settings, \\RefAdapt enables speedups of up to $2.097\\times$ on 4-step MiniMax H3 and $3.54\\times$ on 8-step Qwen Image Edit, while maintaining comparable visual quality.",
+      "authors": [
+        "Jian Tang",
+        "Jiawei Fan",
+        "Qiannan Zhou",
+        "Qingbin Liu",
+        "Jiang Bian",
+        "Zang Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-26T09:44:33+00:00",
+      "link": "https://arxiv.org/pdf/2609.32415v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "optimizing diffusion transformer (DiT) architectures for conditional generation",
+      "llm_evidence_cn": "优化用于条件生成的扩散 Transformer (DiT) 架构",
+      "llm_evidence": "优化用于条件生成的扩散 Transformer (DiT) 架构",
+      "canonical_evidence": "优化用于条件生成的扩散 Transformer (DiT) 架构",
+      "llm_tldr_en": "Proposes RefAdapt-DiT to reduce computational overhead in reference-conditioned diffusion models.",
+      "llm_tldr_cn": "提出 RefAdapt-DiT，减少参考条件扩散模型中的计算开销。",
+      "llm_tldr": "提出 RefAdapt-DiT，减少参考条件扩散模型中的计算开销。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "state of the art autoregressive diffusion architectures",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
