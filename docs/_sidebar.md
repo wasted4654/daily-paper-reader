@@ -1,6 +1,9 @@
 * <a class="dpr-sidebar-root-link" href="#/">首页</a>
 * <a class="dpr-sidebar-root-link dpr-sidebar-noactive-link" href="javascript:void(0)" data-dpr-hash="#/tutorial/README">使用教程</a>
 * Daily Papers
+  * 2026-10-01 <!--dpr-date:20261001-->
+    * 速读区
+      * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202610/01/2609.34511v2-halo-enhancing-time-series-generation-via-hyperspherical-latents-and-masked-autoregressive-modeling" data-sidebar-item="{&quot;title&quot;: &quot;HALO: Enhancing Time Series Generation via Hyperspherical Latents and Masked AutoregRessive Modeling&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.34511v2-halo-enhancing-time-series-generation-via-hyperspherical-latents-and-masked-autoregressive-modeling&quot;, &quot;score&quot;: &quot;6.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;时间序列连续潜空间中的自回归建模&quot;}">HALO: Enhancing Time Series Generation via Hyperspherical Latents and Masked AutoregRessive Modeling</a>
   * 2026-09-30 <!--dpr-date:20260930-->
     * 速读区
       * <a class="dpr-sidebar-item-link dpr-sidebar-item-structured" href="#/202609/30/2609.35924v1-grab-a-coffee-future-aware-guidance-for-discrete-diffusion-with-compiled-objectives" data-sidebar-item="{&quot;title&quot;: &quot;Grab a Coffee: Future-Aware Guidance for Discrete Diffusion with Compiled Objectives&quot;, &quot;link&quot;: &quot;https://arxiv.org/abs/2609.35924v1-grab-a-coffee-future-aware-guidance-for-discrete-diffusion-with-compiled-objectives&quot;, &quot;score&quot;: &quot;7.0&quot;, &quot;tags&quot;: [{&quot;kind&quot;: &quot;query&quot;, &quot;label&quot;: &quot;ardm&quot;}], &quot;evidence&quot;: &quot;离散扩散模型作为从左到右自回归生成的替代方案&quot;}">Grab a Coffee: Future-Aware Guidance for Discrete Diffusion with Compiled Objectives</a>
