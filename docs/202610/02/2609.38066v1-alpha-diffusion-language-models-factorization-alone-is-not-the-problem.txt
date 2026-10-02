@@ -1,0 +1,1376 @@
+Title: Alpha Diffusion Language Models: Factorization Alone Is Not the Problem
+
+URL Source: https://arxiv.org/pdf/2609.38066v1
+
+Published Time: Wed, 30 Sep 2026 02:30:51 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+# ALPHA DIFFUSION LANGUAGE MODELS :FACTORIZATION ALONE IS NOT THE PROBLEM 
+
+Nikita Gushchin 1,2 Dmitry Baranchuk 3 Alexander Korotin 1,21Applied AI Institute, Moscow, Russia 2AXXX, Russia 
+
+> 3
+
+Yandex Research 
+
+# ABSTRACT 
+
+Discrete diffusion language models can generate multiple tokens in parallel, but reducing the number of denoising steps can lead to inconsistent predictions. Stan-dard cross-entropy training fits conditional token marginals, whereas parallel gen-eration requires consistent joint predictions. We introduce Alpha Diffusion Lan-guage Models (AlphaDLM) , trained with a sequence-level alpha loss that recovers cross-entropy in the limit of vanishing alpha and has a joint-mode optimum at alpha one. Our analysis characterizes how the objective and factorization jointly determine the fitted distribution. We identify conditions under which intermediate alpha preserves multiple valid completions while excluding invalid token combi-nations. Trained on TinyGSM, our method achieves 34.6% accuracy on GSM8K with only four model evaluations. We further scale the method to SDAR-1.7B and evaluate it on code and mathematics benchmarks. These results show that changing the training objective can improve the accuracy-computation trade-off of factorized diffusion language models. 1 2 4 8 16 
+
+Model evaluations (NFE) 
+
+010 20 30 40 
+
+> GSM8K accuracy (%)
+
+## 34.6% accuracy 
+
+with 4 model evaluations 
+
+AlphaDLM (ours) 
+
+MDLM (confidence) FMLM+ (Init) DUO ( T = 0.1) MDLM (ancestral) 
+
+-FLM (top-1) 
+
+-FLM (exact, T = 0.1) DBTM 
+
+Figure 1: GSM8K accuracy with 1–16 model evaluations. A single AlphaDLM (ours) checkpoint with k = 16 reaches 34.6% in four evaluations. AlphaDLM and MDLM (confidence) use fixed-NFE confidence sampling with the token-reveal schedule of FMLM+. Other methods use their respective samplers. Sources and protocols: Table 1 and Appendix C. 
+
+# 1 INTRODUCTION 
+
+Discrete diffusion language models generate text by reconstructing corrupted sequences (Sahoo et al., 2024; Nie et al., 2025). A single evaluation predicts distributions at many positions, allowing 1arXiv:2609.38066v1 [cs.LG] 29 Sep 2026 several tokens to be committed in parallel. Independently predicted tokens can each fit the visible context yet form an invalid sequence when generated together (Wu et al., 2026). Under cross-entropy training, the optimal factorized denoiser fits the conditional distribution of each token separately. When several completions are possible, independently combining these predictions can produce invalid sequences (Figure 2). One approach is to model token dependencies explicitly (Liu et al., 2025; Xu et al., 2025). However, a factorized distribution can already represent any single valid completion by assigning probability one to its tokens. Factorization therefore does not by itself prevent consistent parallel predictions. This suggests changing the training objective to favor token distributions that produce valid completions when combined. We introduce Alpha Diffusion Language Models (AlphaDLM) , trained with sequence-level alpha loss, a form of generalized cross-entropy (Zhang & Sabuncu, 2018). This loss includes cross-entropy as the limit α → 0, while at α = 1 , predicting a joint mode minimizes the expected loss. These endpoints suggest a way to move from fitting token marginals toward fitting complete sequences. We analyze what happens between them when the denoiser is factorized. The optimum can pre-serve several valid completions while excluding invalid combinations, rather than selecting only one answer. We establish sufficient conditions for this behavior. This change in the training objective is intended to improve generation when many tokens must be predicted in parallel within a small number of model evaluations. Recent approaches pursue this goal through trajectory supervision or self-distillation (Zhang et al., 2026; Chen et al., 2026; Kim et al., 2026). Our method instead trains directly on corrupted data, without teacher-generated trajectories, and uses the factorized denoiser. We evaluate whether this change improves accuracy at a fixed generation budget, using TinyGSM for comparisons between training objectives and SDAR-1.7B for experiments on code and mathematics. Figure 1 summarizes the low-NFE result on GSM8K. Appendix A further discusses related work. 
+
+Contributions. We combine this training approach with an analysis of its factorized optimum and experiments on parallel generation. Our main contributions are: 1. We introduce Alpha Diffusion Language Models : diffusion language models whose factor-ized denoisers are trained with sequence-level alpha loss. We characterize the distribution that minimizes this loss within the class of factorized models and explain how it differs from the optimum of token-wise alpha loss (Sections 3.1–3.3). 2. We establish conditions under which the optimal factorized denoiser trained with sequence-level alpha loss assigns probability only to valid completions and can preserve several pos-sible answers (Section 3.2, Appendix B.1). 3. We empirically demonstrate that our method achieves 34.6% GSM8K accuracy with four model evaluations and 7.66% with a single evaluation after training on TinyGSM. Sequence-level training also achieves higher accuracy than token-wise alpha loss at matched evaluation budgets (Section 4.1). We also demonstrate improved accuracy–TPF trade-offs with SDAR-1.7B on code and mathematics benchmarks (Section 4.2). 
+
+# 2 BACKGROUND 
+
+To understand how the training objective affects parallel generation, we first review how discrete diffusion language models are trained and decoded (Section 2.1). We then turn to generalized cross-entropy, a family of losses that includes standard cross-entropy as a limiting case (Section 2.2). 2.1 DISCRETE DIFFUSION LANGUAGE MODELS 
+
+Discrete diffusion models learn to reverse a corruption process (Austin et al., 2021a; Lou et al., 2024). A denoiser predicts clean tokens from corrupted inputs, and a sampler uses these predictions to reconstruct the sequence. 2Fixed context: “I think ready.”      
+
+> Target distribution q
+> am is Ihe she
+> q1
+> q2
+> Cross-entropy
+> am is Ihe she
+> p1
+> p2
+> Token-wise alpha
+> am is Ihe she
+> p1
+> p2
+> Sequence-level alpha
+> am is Ihe she
+> p1
+> p2
+
+.40 
+
+.35 .25 
+
+000
+
+.40 
+
+.35 .25 .40 .60 
+
+> Joint mode: I am Token modes: I + is
+
+.16 .24 .14 .21 .10 .15 .40 .35 .25 .40 .60      
+
+> Fits marginals
+> p1=q1,p2=q2
+
+100 00 01000 1 
+
+> Fits token modes
+> I is (ungrammatical)
+
+1 00 00 01001 0  
+
+> Fits the joint mode
+> Iam (grammatical)
+
+Figure 2: Marginal fitting, token-mode fitting, and joint-mode fitting. Cross-entropy assigns probability 0.48 to ungrammatical completions. At α = 1 , token-wise alpha loss predicts I is ,while sequence-level alpha loss fits the joint mode I am . Each fitted distribution minimizes its pop-ulation loss within the same factorized family. Green and red mark grammatical and ungrammatical outcomes with positive probability. 
+
+Corruption process. Let x ∈ V L be a clean sequence conditioned on a prompt or preceding blocks c, and let z ∼ qt(· | x) be its corruption at time t ∈ [0 , 1] . Discrete corruption replaces tokens with vocabulary symbols or a mask. Masked diffusion independently keeps each token or replaces it with m /∈ V :
+
+qt(zi | xi) = ¯ αt1{zi = xi} + (1 − ¯αt)1{zi = m}, qt(z | x) = 
+
+> L
+
+Y
+
+> i=1
+
+qt(zi | xi). (1) The probability of keeping a token unchanged decreases from ¯α0 = 1 to ¯α1 = 0 . Despite indepen-dent corruption, the clean tokens can remain dependent conditional on z.
+
+Factorized denoiser. For this masking process, the optimal clean-token denoiser under cross-entropy training is independent of time t (Zheng et al., 2025, Proposition 3.2). We therefore write the denoiser without explicit time conditioning. Let M = {i : zi = m} be the masked positions and xM = ( xi)i∈M their original tokens, in sequence order. Given the visible context, the denoiser predicts a categorical distribution at each position in M :
+
+pθ (xM | z, c ) = Y
+
+> i∈M
+
+pθ,i (xi | z, c ). (2) Factorization holds within each evaluation. Later predictions depend on previously revealed tokens, so the generated sequence can contain dependencies despite the factorized denoiser. 
+
+Training objective. The denoiser learns from corrupted inputs using weighted token cross-entropy (Sahoo et al., 2024; Shi et al., 2024): 
+
+LCE (θ) = Ex,c,t,z 
+
+"
+
+−w(t) X
+
+> i∈M
+
+log pθ,i (xi | z, c )
+
+#
+
+, (3) The expectation is over data, training times, and corruptions z ∼ qt(· | x). With uniform times and 
+
+¯αt = 1 − t, the continuous-time masked diffusion bound uses w(t) = 1 /t .For a token value v ∈ V , fixed (z, c ), and unrestricted token predictors, the population cross-entropy is minimized by the conditional token marginals, p∗ 
+
+> i
+
+(v | z, c ) = pdata (xi = v | z, c ). Their product can differ from the joint posterior over the missing tokens. In particular, independently selecting their modes can produce invalid token combinations. 3Parallel decoding. Confidence sampling selects positions to reveal using the maximum predicted token probability at each position. In our confidence-sampling experiments, revealed tokens are chosen by argmax. Fixed-NFE confidence sampling uses a prescribed evaluation budget and ranks positions by confidence to meet a reveal schedule (Nie et al., 2025). The fixed-NFE sampler used for TinyGSM also reveals positions above a threshold (Section 4.1). Adaptive confidence sampling 
+
+follows Fast-dLLM (Wu et al., 2026): it reveals positions above a threshold, or the most confident position if none qualifies. It runs until all positions are filled, so NFE varies across examples. 
+
+Blockwise diffusion. The same denoising procedure can operate within blocks generated autore-gressively (Arriola et al., 2025; Cheng et al., 2025). Writing x(b) for block b among B blocks and 
+
+x(<b ) for all preceding blocks, the full sampling distribution is 
+
+pgen  
+
+> θ
+
+(x | c) = 
+
+> B
+
+Y
+
+> b=1
+
+pgen  
+
+> θ
+
+(x(b) | x(<b ), c ). (4) Each block uses iterative calls to pθ with the preceding context cached. 2.2 GENERALIZED CROSS -ENTROPY 
+
+The cross-entropy used to train the diffusion denoiser is the standard loss for categorical prediction. For a target class y and predicted class probabilities p, it is ℓCE (p, y ) = − log p(y). This familiar loss is a limiting case of a broader family, generalized cross-entropy, also known as alpha loss (Zhang & Sabuncu, 2018): 
+
+ℓα(p, y ) = 1 − p(y)α
+
+α , lim  
+
+> α→0
+
+ℓα(p, y ) = − log p(y). (5) The parameter α controls the penalty for low target probabilities. Cross-entropy diverges as p(y) →
+
+0, whereas alpha loss is bounded by 1/α for α > 0. At α = 1 , it reduces to 1 − p(y).
+
+# 3 ALPHA DIFFUSION LANGUAGE MODELS 
+
+We first define our sequence-level objective by applying alpha loss to the joint probability of the masked tokens (Section 3.1). We then analyze how factorization changes the distribution that min-imizes this loss, compare sequence-level and token-wise training, and establish conditions for ex-cluding invalid token combinations (Section 3.2). Finally, we describe how we normalize the loss across different mask counts and train the denoiser for use with parallel and blockwise samplers (Section 3.3). 3.1 SEQUENCE -LEVEL DENOISING OBJECTIVE 
+
+We seek a training objective that improves joint predictions while using a factorized denoiser. Given a corrupted sequence z, the denoiser reconstructs the original tokens at the masked positions M . As in Section 2.1, we omit explicit time conditioning because the conditional distribution of the original tokens given z and c does not depend on t. The factorized denoiser assigns them the joint probability 
+
+pθ (xM | z, c ) = Y
+
+> i∈M
+
+pθ,i (xi | z, c ).
+
+Applying cross-entropy to this probability still gives a sum of token-level losses, because the loga-rithm turns the product into a sum. For positive α, generalized cross-entropy (Section 2.2) applied to this product no longer gives a sum of separate token losses. This yields the sequence-level alpha loss: 
+
+ℓseq  
+
+> α
+
+(θ; xM , z, c ) = 1 − pθ (xM | z, c )α
+
+α = 1 − Q  
+
+> i∈M
+
+pθ,i (xi | z, c )α
+
+α . (6) This loss recovers the sum of token cross-entropies as α → 0 (Section 2.2). 43.2 FROM MARGINAL FITTING TO JOINT MODE FITTING 
+
+Fix a corrupted sequence z and context c. Let q denote the conditional distribution of the original tokens at the masked positions: 
+
+q(y) = pdata (xM = y | z, c ). (7) We compare the distribution minimizing the expected sequence-level alpha loss with and without factorization over the m = |M | masked positions, indexed by i ∈ M . Figure 3 compares these two cases with token-wise training at the same values of α.
+
+Without factorization. We first allow the predictor to represent any joint distribution. For 0 < α < 
+
+1, we define the lower-temperature target 
+
+qT (y) := q(y)1/T 
+
+P 
+
+> y′
+
+q(y′)1/T , T = 1 − α. (8) The temperature T changes the target distribution, not the sampling procedure. The expected sequence-level alpha loss is minimized by fitting this target (Sypherd et al., 2022, Proposition 1): 
+
+p∗,joint  
+
+> α
+
+(y) = qT (y). (9) At α = 1 , any distribution supported on joint modes is optimal. For α > 1, only point masses on joint modes are optimal. Appendix B gives the parameter correspondence and the elementary argument for α ≥ 1.
+
+Without factorization, alpha loss fits a lower-temperature target. For 0 < α < 1, more likely complete sequences receive a larger share of the probability (Figure 3, top row). 
+
+With factorization. Lowering the temperature does not remove token dependencies, so qT generally cannot be represented by a factorized denoiser. The optimal denoiser instead fits the marginals of a joint distribution that balances closeness to qT against dependence between tokens. For 0 < α < 1,this distribution solves (Lapidoth & Pfister, 2019, Lemma 8, extended to m factors): 
+
+π∗ 
+
+> α
+
+∈ arg min 
+
+> π
+
+
+
+DKL (π∥qT ) + α
+
+1 − α TC( π)
+
+
+
+, p∗,fact  
+
+> α
+
+= Y
+
+> i∈M
+
+π∗
+
+> α,i
+
+. (10) The KL term measures the departure from qT . Total correlation, TC( π) = DKL (π∥ Q 
+
+> i∈M
+
+πi),measures dependence between tokens and is zero when they are independent. Appendix B gives the derivation, including zero probabilities. 
+
+With factorization, the denoiser fits the marginals of π∗
+
+> α
+
+. The auxiliary distribution π∗ 
+
+> α
+
+bal-ances closeness to qT against token dependence. The denoiser represents the product of its marginals (Figure 3, middle row). 
+
+Why sequence-level rather than token-wise? Applying alpha loss separately to each token prob-ability gives 
+
+ℓtok  
+
+> α
+
+= X
+
+> i∈M
+
+1 − pθ,i (xi | z, c )α
+
+α . (11) For 0 < α < 1, minimizing its expectation gives 
+
+p∗,tok  
+
+> α,i
+
+(yi) = qi(yi)1/T 
+
+P 
+
+> y′
+> i∈V
+
+qi(y′
+
+> i
+
+)1/T , T = 1 − α. (12) Here qi is the marginal of q at position i, and yi ∈ V is a token value. When q factorizes, the two objectives have the same optimum. 
+
+Sequence-level fitting uses the joint target. Token-wise loss sharpens each marginal of q
+
+separately. Sequence-level loss instead fits the marginals of π∗
+
+> α
+
+, which depends on the joint distribution q. Figures 2 and 3 compare the endpoints and intermediate α, respectively. 5Sequence-level alpha loss One loss for the whole sequence                                                                                                                                                
+
+> Unrestricted joint predictor Eq
+> [1−pα
+> α
+> ]
+> α= 0 (CE)
+> am is I.40 0
+> he 0.35
+> she 0.25
+> α= 0 .4
+> am is I.44 0
+> he 0.35
+> she 0.20
+> α= 0 .5
+> am is I.46 0
+> he 0.36
+> she 0.18
+> α= 0 .65
+> am is I.51 0
+> he 0.35
+> she 0.13
+> α= 1
+> am is I10
+> he 00
+> she 00
+> Sequence-level alpha loss One loss for the whole sequence
+> Factorized predictor Eq
+> [1−(p1p2)α
+> α
+> ]
+> α= 0 (CE)
+> am is I.16 .24
+> he .14 .21
+> she .10 .15
+> α= 0 .4
+> am is I.11 .22
+> he .14 .28
+> she .08 .16
+> α= 0 .5
+> am is I00
+> he 0.66
+> she 0.34
+> α= 0 .65
+> am is I10
+> he 00
+> she 00
+> α= 1
+> am is I10
+> he 00
+> she 00
+> Token-wise alpha loss Sum of losses for the two tokens
+> Factorized predictor Eq
+> [1−pα
+> 1
+> α+ 1−pα
+> 2
+> α
+> ]
+> α= 0 (CE)
+> am is I.16 .24
+> he .14 .21
+> she .10 .15
+> α= 0 .4
+> am is I.15 .29
+> he .12 .24
+> she .07 .13
+> α= 0 .5
+> am is I.14 .32
+> he .11 .25
+> she .06 .13
+> α= 0 .65
+> am is I.12 .39
+> he .08 .27
+> she .03 .10
+> α= 1
+> am is I01
+> he 00
+> she 00
+
+Figure 3: Interpolating from cross-entropy to mode fitting. Rows show globally optimal dis-tributions for Figure 2’s target: sequence-level loss without factorization, sequence-level loss with factorization, and token-wise loss with factorization. Columns use the same α, with α = 0 denoting cross-entropy. At α = 0 .5, the unrestricted optimum qT supports all three original completions, while the sequence-level factorized optimum supports only he is and she is . Both sequence-level rows reach I am at α = 1 , whereas token-wise fitting reaches I is . Here p = p(x1, x 2) and 
+
+pi = pi(xi). Green marks grammatical combinations, red ungrammatical ones. Entries are rounded. 
+
+Preserving multiple valid completions. Can a factorized predictor exclude invalid token combi-nations while assigning positive probability to several completions? Here, valid completions are those with positive probability under q. The following result gives sufficient conditions for this behavior. 
+
+Proposition 1 (Multiple valid completions) . Consider m ≥ 2 masked tokens, and suppose the valid completions split into groups such that any within-group combination of tokens is valid, and different groups use disjoint token sets at every position. For 1/m < α < 1, every globally optimal factorized predictor selects one group and assigns positive probability to all completions in that group. To illustrate the behavior described by Proposition 1, we consider the two-token example ( m = 2 )in Figure 3 at α = 1 /m = 1 /2, the boundary of the proposition’s range. Without factorization, the optimal predictor still assigns positive probability to all three original completions. With factoriza-tion, the first position predicts either he or she , and the second always predicts is . Independent predictions then produce only he is and she is , both valid completions. This is a global opti-mum for this example, as verified separately at the boundary. Appendix B.1 gives the calculation 6for this example. As α increases further, the sequence-level optimum switches to I am , whereas token-wise fitting approaches the invalid combination I is .Appendix B.1 gives an illustrated elementary proof and a counterexample showing why the support condition matters. 3.3 TRAINING AND DECODING 
+
+During training, examples have different numbers of masked tokens m = |M |. Multiplying more token probabilities makes the joint probability smaller, even when the probability assigned to each target token stays the same. We therefore normalize the log-probability by m. For m > 0, let 
+
+sθ = 1
+
+> m
+
+P 
+
+> i∈M
+
+log pθ,i (xi | z, c ). With a fixed training parameter k, we use: 
+
+ℓk(sθ ) = 1 − exp( ks θ )
+
+k = 1 − pθ (xM | z, c )αeff 
+
+mα eff 
+
+, αeff = km . (13) This is sequence-level alpha loss (Equation 6) with αeff = k/m , scaled by 1/m . At a fixed corrupted context, this scaling leaves the optimum unchanged. As k → 0, the loss reduces to mean token cross-entropy. For k > 0, the gradient is the mean-token CE gradient multiplied by exp( ks θ ) (Appendix B). Larger 
+
+k gives less weight to examples whose target tokens receive low probabilities. We therefore initialize training from a pretrained denoiser. To relate this training rule to Section 3.2, substitute α = k/m . Equation 10 applies when 0 <k < m . Under the assumptions of Proposition 1, 1 < k < m guarantees that the optimal predictor assigns positive probability to every completion in one group and none outside it. For k ≥ m,predicting a single most likely completion is optimal (Appendix B). At inference, we use the parallel or blockwise samplers described in Section 2.1. 
+
+# 4 EXPERIMENTS 
+
+We compare training objectives in the TinyGSM-to-GSM8K setting, a common evaluation setup in recent work on diffusion and flow language models (Deschenaux & Gulcehre, 2026; Agarwal et al., 2026; Li et al., 2026a) (Section 4.1). We then test transfer to SDAR-1.7B on code and mathematics (Section 4.2). TinyGSM results use task accuracy versus the number of model evaluations (NFE). SDAR results use accuracy versus tokens per forward (TPF), defined as returned response tokens divided by denoising forwards plus one prompt-prefill forward per example. Table 1: GSM8K accuracy (%) ↑ at fixed NFE. Recomputed MDLM, DUO, and S-FLM results and published FMLM+ and DBTM values. IDLM values are reevaluated at 4–16 NFE and taken from the publication at 32–64 NFE. MDLM (confidence) and AlphaDLM use the same fixed-NFE confidence sampler. Other baselines use their original samplers. Bold values are the column max-ima. Protocols are detailed in Appendix C.                                                                              
+
+> Method / NFE 4816 32 64 MDLM (ancestral) (Sahoo et al., 2024) 1.7 5.3 13.0 22.1 28.2 DUO ( T= 0 .1) (Sahoo et al., 2025) 5.2 14.0 23.0 30.8 31.2
+> S-FLM (exact, T= 0 .1) (Deschenaux & Gulcehre, 2026) 7.6 12.6 15.1 16.9 16.9
+> S-FLM (top-1) 7.7 12.4 14.9 16.5 17.4 FMLM+ (Agarwal et al., 2026) 2.9 8.7 13.4 19.0 19.1 FMLM+ (Distill) 3.9 10.3 18.7 21.6 23.4 FMLM+ (Init) 5.1 15.1 26.1 31.8 33.6 DBTM (Tang & Wang, 2026) 5.7 10.1 14.3 16.8 16.2 IDLM (MDLM) (Li et al., 2026a) 0.4 1.8 6.5 12.8 14.9 IDLM (DUO) 2.3 7.1 11.7 15.4 19.0 MDLM (confidence) 4.2 20.1 37.7 43.9 40.6
+> AlphaDLM (ours, k= 8 )28.9 44.0 49.2 49.9 50.0 AlphaDLM (ours, k= 16 )34.6 39.0 40.6 40.9 40.9
+
+74.1 TINY GSM 
+
+Training setup. We train on TinyGSM (Liu et al., 2023) and evaluate Python solutions on all 1,319 GSM8K test problems (Cobbe et al., 2021), following the protocol of S-FLM and FMLM+ (De-schenaux & Gulcehre, 2026; Agarwal et al., 2026). Objective ablations start from a shared k = 1 
+
+checkpoint at 200k updates and continue for 50k updates with the same architecture and optimizer settings. We test sequence-level k ∈ { 1, 2, 4, 8, 16 } and token-wise α ∈ { 0.25 , 0.375 , 0.5, 0.75 },with larger k tested for one-evaluation generation. We use αeff = k/m (Equation 13) and average 
+
+ℓk over data and corruptions without time weighting. Each recipe uses one training seed and EMA weights. Appendix C gives the protocols. 
+
+Sampling protocol. We use fixed-NFE confidence sampling (Section 2.1) with the FMLM+ token-reveal schedule (Agarwal et al., 2026). Each round reveals positions above confidence 0.999, adding highest-confidence positions as needed to distribute the remaining masks across the remain-ing rounds. Tokens are chosen by argmax. Regardless of the threshold, every example executes all prescribed forwards, even if all masks are filled earlier. 
+
+Comparison with existing methods. At four NFE, our AlphaDLM ( k = 16 ) reaches 34.6% ac-curacy, compared with 4.2% for MDLM using the same sampler and at most 7.7% for the other baselines shown (Figure 1, Table 1). To isolate the effect of applying alpha loss jointly rather than token-wise, we compare runs with the same initialization, training budget, and sampler (Figure 4 (a,b)). At four NFE, sequence-level 
+
+k = 16 reaches 34.6%, compared with 8.1% for the k = 1 continuation and 19.9% for the best tested token-wise setting. At sixteen NFE, sequence-level k = 8 reaches 49.2%, compared with 44.4% for the best token-wise setting. The best token-wise parameter is selected separately at each budget. 
+
+With the same initialization, training budget, and sampler, sequence-level alpha loss gives higher accuracy than every tested token-wise setting at four and sixteen NFE. 1 2 4 8 16 
+
+Model evaluations (NFE) 
+
+> 010 20 30 40 50
+> GSM8K accuracy (%)
+
+(a) Sequence-level sweep          
+
+> k= 1
+> k= 2
+> k= 4
+> k= 8
+> k= 16 124816
+
+Model evaluations (NFE) 
+
+(b) Objective comparison                   
+
+> Sequence k= 8 Sequence k= 16 Token α= 0.25 Token α= 0.375 Token α= 0.5 Token α= 0.75 124816 32 64
+
+Training parameter k  
+
+> 02468
+> GSM8K accuracy (%)
+> 0.91 0.99 1.82 2.73 6.29 7.66 6.75
+
+(c) One-evaluation: sequence-level    
+
+> 0.25 0.375 0.5 0.75
+
+Training parameter α   
+
+> 0.83 1.67 1.36 2.12
+
+(d) One-evaluation: token-wise 
+
+Figure 4: How the objective changes parallel prediction. (a) Sequence-level sweep. (b) Token-wise comparison. All runs continue the same 200k-update k = 1 checkpoint to 250k using fixed-NFE confidence sampling. Values: Table 3. Panels (c,d) continue on page 9. 
+
+Choosing k. The advantage of k = 16 at four NFE does not persist as we allow more evaluations. At sixteen NFE, it reaches 40.6%, matching k = 1 but trailing k = 8 . Each curve uses one checkpoint, so this reversal shows that the best tested k depends on the decoding budget. 8To check whether the comparison depends on other experimental choices, we also evaluate adaptive confidence sampling (Appendix C.1) and CE initialization (Appendix E). With CE initialization, sequence-level training still outperforms the tested token-wise settings at four and sixteen NFE. 
+
+One-evaluation generation. We next test whether this advantage persists when all tokens are pre-dicted in a single model evaluation. Every masked position receives its argmax token, so a correct solution requires the independently predicted tokens to form a jointly correct answer (Figure 4 (c,d)). At k = 16 , our method solves 83 of 1,319 problems (6.29%), compared with 28 (2.12%) for the best tested token-wise setting. Accuracy increases from 0.91% at k = 1 to 101/1,319 (7.66%) at k = 32 ,then falls to 6.75% at k = 64 . These results remain below multi-step accuracy and do not identify the true conditional mode. 1 2 4 8 16 
+
+Model evaluations (NFE) 
+
+> 010 20 30 40 50
+> GSM8K accuracy (%)
+
+(a) Sequence-level sweep          
+
+> k= 1
+> k= 2
+> k= 4
+> k= 8
+> k= 16 124816
+
+Model evaluations (NFE) 
+
+(b) Objective comparison                   
+
+> Sequence k= 8 Sequence k= 16 Token α= 0.25 Token α= 0.375 Token α= 0.5 Token α= 0.75 124816 32 64
+
+Training parameter k  
+
+> 02468
+> GSM8K accuracy (%)
+> 0.91 0.99 1.82 2.73 6.29 7.66 6.75
+
+(c) One-evaluation: sequence-level    
+
+> 0.25 0.375 0.5 0.75
+
+Training parameter α   
+
+> 0.83 1.67 1.36 2.12
+
+(d) One-evaluation: token-wise 
+
+Figure 4 (continued): One-evaluation generation. (c,d) Exact-argmax accuracy for sequence-level and token-wise sweeps from the same initialization. 
+
+Ancestral sampling. We also test whether the improvement depends on confidence-based position selection. In this sampler, reveal positions are random and independent of confidence (Figure 5, Table 4). At 32 NFE, increasing k from 1 to 16 raises accuracy from 8.2% to 32.5% with sampled tokens ( T = 1 ), and from 26.0% to 37.1% with argmax tokens ( T = 0 ). The gain at T = 0 also rules out scalar logit sharpening as the sole explanation, since sharpening changes neither argmax tokens nor reveal probabilities. Appendix F reports ancestral pass@ K.
+
+The gains persist when all tokens are predicted at once and when reveal positions are sampled independently of confidence. 1 2 4 8 16 
+
+Training parameter k
+
+> 010 20 30 40
+> GSM8K accuracy (%)
+
+NFE = 32   
+
+> Argmax tokens ( T= 0) Sampled tokens ( T= 1)
+
+Figure 5: Ancestral sampling at 32 NFE. Reveal positions are random and independent of confi-dence. Tokens are selected by argmax ( T = 0 ) or sampled ( T = 1 ). Values: Table 4. 94.2 TRANSFER TO SDAR ON MATHEMATICS AND CODE 
+
+We next test whether sequence-level alpha loss also improves blockwise generation with SDAR-1.7B-Chat (Cheng et al., 2025). We fine-tune on Nemotron-SFT-Math-v4 for mathematics and OpenCodeInstruct for code, and compare our AlphaDLM with the original model, CE fine-tuning, and entropy-regularized fine-tuning (CE+CAP) (Bie et al., 2025). We apply Equation 13 separately to each four-token response block. All methods use adaptive confidence sampling following Fast-dLLM (Wu et al., 2026) within four-token blocks (Section 2.1), with argmax tokens. We vary the threshold to compare accuracy and TPF. Figure 6 (a–d) uses k = 0 .8 for mathematics and k = 0 .4
+
+for code. Panels (e,f) show the mathematics parameter sweep. Appendix D gives training and evaluation details, including block-loss aggregation. 
+
+Mathematics. At threshold 0.99, our method improves both accuracy and TPF over CE (Fig-ure 6 (a,b)). Accuracy reaches 51.5% on MATH500 and 77.2% on GSM8K, compared with 50.6% and 76.3% for CE. TPF increases by 31.6% and 27.1%, respectively. 1.6 2.0 2.4 72.5 75.0 77.5 Accuracy (%)             
+
+> (a) GSM8K
+> 1.5 2.0 2.5 44 48 52
+> (b) MATH500
+> 1.8 2.4 3.0 48 56 64 Pass@1 (%)
+> (c) HumanEval-Instruct
+> 1.2 1.8 2.4 54 60 66
+> (d) MBPP-Instruct
+> 1.8 2.4 3.0 66 72 78 Accuracy (%)
+> (e) GSM8K, vary k
+> 1.6 2.4 3.2 36 42 48 54
+> (f) MATH500, vary k
+
+Tokens per forward               
+
+> SDAR CE CE + CAP AlphaDLM (ours) Panels (e,f): training parameter CE ( k= 0) k= 0.4 k= 0.8 k= 1.2 k= 1.6 k= 2.0
+
+Figure 6: Accuracy–TPF trade-offs with SDAR-1.7B. (a–d) Objective comparisons on mathe-matics and code. AlphaDLM (ours) uses k = 0 .8 for mathematics and k = 0 .4 for code. (e,f) Mathematics parameter sweep. All panels use adaptive confidence sampling with argmax tokens. Points average accuracy and TPF across runs at each confidence threshold. Rings in (a–d) mark threshold 0.99. Appendix D provides standard-deviation bands (Figures 12–13). 10 Code. At the same threshold, our method increases TPF over CE+CAP with similar pass@1 (Fig-ure 6 (c,d)). On HumanEval-Instruct, both achieve 60.6% pass@1, while TPF increases from 1.74 to 1.94. On MBPP-Instruct, TPF increases from 1.51 to 1.68 with a 0.19-percentage-point drop in pass@1. This comparison concerns threshold 0.99. Across the full sweep, peak accuracy is highest for CE on HumanEval-Instruct and CE+CAP on MBPP-Instruct. 
+
+Choosing k. The mathematics sweep shows that larger k can increase TPF at the cost of peak accuracy (Figure 6 (e,f)). Among the tested values, k = 0 .4 and k = 0 .8 give the highest peak accuracies. Increasing k to 1.6 or 2.0 increases TPF but reduces peak accuracy on both benchmarks. 
+
+# 5 DISCUSSION AND CONCLUSION 
+
+AlphaDLM applies alpha loss to the joint probability of masked tokens, interpolating between cross-entropy and joint-mode fitting. Our analysis explains why this sequence-level objective behaves differently from applying the same loss to individual tokens. For 0 < α < 1, alpha loss lowers the target temperature without factorization. With factorization, the optimal denoiser fits marginals of a joint distribution that balances closeness to this target against dependence between tokens. Under the conditions of Proposition 1, it can exclude invalid combinations while preserving several valid completions. The experiments show that sequence-level alpha loss improves low-NFE accuracy while keeping the factorized architecture. The gains persist in fully parallel prediction and ancestral sampling, extend-ing beyond confidence-based position selection. Together, these results show that the limitations of parallel prediction depend on the combination of factorization and the training objective. Alpha loss provides a way to improve this combination without explicitly modeling token dependencies within each denoising evaluation. 
+
+# REFERENCES 
+
+Manan Agarwal, Sheel Shah, Chanhyuk Lee, Jaehoon Yoo, Jerry Huang, Seunghoon Hong, Aditi Raghunathan, Jinwoo Kim, and Nicholas M. Boffi. Posterior Refinement: Fast Language Gener-ation via Any-Order Flow Maps, 2026. URL https://arxiv.org/abs/2606.24773 .Wasi Uddin Ahmad, Aleksander Ficek, Mehrzad Samadi, Jocelyn Huang, Vahid Noroozi, Somshubra Majumdar, and Boris Ginsburg. OpenCodeInstruct: A Large-scale Instruction Tuning Dataset for Code LLMs, 2025. URL https://arxiv.org/abs/2504.04030 .Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Sub-ham Sekhar Sahoo, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregres-sive and diffusion language models. In International Conference on Learning Representations ,2025. URL https://arxiv.org/abs/2503.09573 .Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van den Berg. Struc-tured Denoising Diffusion Models in Discrete State-Spaces. In Advances in Neural Information Processing Systems , volume 34, 2021a. URL https://arxiv.org/abs/2107.03006 .Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program Synthesis with Large Language Models, 2021b. URL https://arxiv.org/abs/2108.07732 .Parikshit Bansal and Sujay Sanghavi. Enabling approximate joint sampling in diffusion lms, 2025. URL https://arxiv.org/abs/2509.22738 .Tiwei Bie, Maosong Cao, Kun Chen, Lun Du, Mingliang Gong, Zhuochen Gong, Yanmei Gu, Jiaqi Hu, Zenan Huang, Zhenzhong Lan, Chengxi Li, Chongxuan Li, Jianguo Li, Zehuan Li, Huabin Liu, Lin Liu, Guoshan Lu, Xiaocheng Lu, Yuxin Ma, Jianfeng Tan, Lanning Wei, Ji-Rong Wen, Yipeng Xing, Xiaolu Zhang, Junbo Zhao, Da Zheng, Jun Zhou, Junlin Zhou, Zhanchao Zhou, Liwang Zhu, and Yihong Zhuang. LLaDA2.0: Scaling up diffusion language models to 100B, 2025. URL https://arxiv.org/abs/2512.15745 .Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, et al. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374 , 2021. URL https:// arxiv.org/abs/2107.03374 .11 Zigeng Chen, Gongfan Fang, Xinyin Ma, Ruonan Yu, and Xinchao Wang. dParallel: Learnable parallel decoding for dLLMs. In International Conference on Learning Representations , 2026. URL https://openreview.net/forum?id=hVOcstAURb .Shuang Cheng, Yihan Bian, Dawei Liu, Linfeng Zhang, Qian Yao, Zhongbo Tian, Wenhai Wang, Qipeng Guo, Kai Chen, Biqing Qi, and Bowen Zhou. SDAR: A Synergistic Diffusion-AutoRegression Paradigm for Scalable Sequence Generation, 2025. URL https://arxiv. org/abs/2510.06303 .Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. Training Verifiers to Solve Math Word Problems, 2021. URL https://arxiv. org/abs/2110.14168 .Justin Deschenaux and Caglar Gulcehre. Language Modeling with Hyperspherical Flows, 2026. URL https://arxiv.org/abs/2605.11125 .Jiatao Gu, James Bradbury, Caiming Xiong, Victor O. K. Li, and Richard Socher. Non-autoregressive neural machine translation. In International Conference on Learning Represen-tations , 2018. URL https://arxiv.org/abs/1711.02281 .Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Jacob Steinhardt. Measuring Mathematical Problem Solving With the MATH Dataset. In 
+
+NeurIPS Datasets and Benchmarks , 2021. URL https://arxiv.org/abs/2103.03874 .Fei Huang, Tianhua Tao, Hao Zhou, Lei Li, and Minlie Huang. On the Learning of Non-Autoregressive Transformers. In Proceedings of the 39th International Conference on Machine Learning , volume 162 of Proceedings of Machine Learning Research , pp. 9356–9376. PMLR, 2022. URL https://proceedings.mlr.press/v162/huang22k.html .Byoungkwon Kim and Minhyuk Sung. Tensor-train joint modeling for few-step discrete diffusion, 2026. URL https://arxiv.org/abs/2607.03788 .Minseo Kim, Chenfeng Xu, Coleman Hooper, Harman Singh, Ben Athiwaratkun, Ce Zhang, Kurt Keutzer, and Amir Gholami. CDLM: Consistency diffusion language models for faster sampling. In Conference on Machine Learning and Systems , 2026. URL https://arxiv.org/abs/ 2511.19269 .Amos Lapidoth and Christoph Pfister. Two Measures of Dependence. Entropy , 21(8):778, 2019. doi: 10.3390/e21080778. URL https://www.isiweb.ee.ethz.ch/papers/docu/ alap-pfis-2019-2.pdf .David Li, Nikita Gushchin, Dmitry Abulkhanov, Eric Moulines, Ivan Oseledets, Maxim Panov, and Alexander Korotin. IDLM: Inverse-distilled Diffusion Language Models. In International Conference on Machine Learning , 2026a. URL https://arxiv.org/abs/2602.19066 .Gaotang Li, Ruizhong Qiu, Xiusi Chen, Heng Ji, and Hanghang Tong. Beyond log likeli-hood: Probability-based objectives for supervised fine-tuning across the model capability continuum. In Proceedings of the 43rd International Conference on Machine Learn-ing , volume 306 of Proceedings of Machine Learning Research . PMLR, 2026b. URL 
+
+https://gaotangli.github.io/project_page/Beyond-Log-Likelihood/ static/pdfs/beyond-log-likelihood.pdf .Anji Liu, Oliver Broadrick, Mathias Niepert, and Guy Van den Broeck. Discrete copula diffusion. In 
+
+International Conference on Learning Representations , 2025. URL https://arxiv.org/ abs/2410.01949 .Bingbin Liu, Sebastien Bubeck, Ronen Eldan, Janardhan Kulkarni, Yuanzhi Li, Anh Nguyen, Rachel Ward, and Yi Zhang. TinyGSM: Achieving > 80% on GSM8k with Small Language Models, 2023. URL https://arxiv.org/abs/2312.09241 .Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In International Conference on Machine Learning , 2024. URL 
+
+https://arxiv.org/abs/2310.16834 .Thomas Minka. Divergence Measures and Message Passing. Technical Report MSR-TR-2005-173, Microsoft Research, 2005. URL https://tminka.github.io/papers/ message-passing/minka-divergence.pdf .12 Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large Language Diffusion Models. In Advances in Neural Information Processing Systems , volume 38, 2025. URL https://arxiv.org/abs/2502. 09992 .Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T. Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and Effective Masked Diffusion Lan-guage Models. In Advances in Neural Information Processing Systems , volume 37, 2024. URL 
+
+https://arxiv.org/abs/2406.07524 .Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin Chiu, and Volodymyr Kuleshov. The Diffusion Duality. In Proceedings of the 42nd International Con-ference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pp. 52584–52619, 2025. URL https://arxiv.org/abs/2506.10892 .Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis K. Titsias. Simplified and gener-alized masked diffusion for discrete data. In Advances in Neural Information Processing Systems ,2024. URL https://arxiv.org/abs/2406.04329 .Tyler Sypherd, Mario Diaz, John Kevin Cava, Gautam Dasarathy, Peter Kairouz, and Lalitha Sankar. A tunable loss function for robust classification: Calibration, landscape, and generalization. arXiv preprint arXiv:1906.02314 , 2022. URL https://arxiv.org/abs/1906.02314v6 . Ver-sion 6. Sophia Tang and Shiyi Wang. Discrete Beckmann Transport Models for One-Step Language Mod-eling and Reasoning, 2026. URL https://arxiv.org/abs/2609.15903 .Martin J. Wainwright and Michael I. Jordan. Graphical models, exponential families, and variational inference. Foundations and Trends in Machine Learning , 1(1–2):1–305, 2008. doi: 10.1561/ 2200000001. URL https://doi.org/10.1561/2200000001 .Chuling Wen, Weijie Liang, and Jian Lu. Conditional Total Correlation and the Serial Depth of Adaptive Parallel Sampling, 2026. URL https://arxiv.org/abs/2608.25505 .Chengyue Wu, Hao Zhang, Shuchen Xue, Zhijian Liu, Shizhe Diao, Ligeng Zhu, Ping Luo, Song Han, and Enze Xie. Fast-dLLM: Training-free Acceleration of Diffusion LLM by Enabling KV Cache and Parallel Decoding. In International Conference on Learning Representations , 2026. URL https://arxiv.org/abs/2505.22618 .Minkai Xu, Tomas Geffner, Karsten Kreis, Weili Nie, Yilun Xu, Jure Leskovec, Stefano Ermon, and Arash Vahdat. Energy-based diffusion language models for text generation. In International Conference on Learning Representations , 2025. URL https://arxiv.org/abs/2410. 21357 .Tunyu Zhang, Xinxi Zhang, Ligong Han, Haizhou Shi, Xiaoxiao He, Zhuowei Li, Hao Wang, Kai Xu, Akash Srivastava, Chengzhi Mao, Hao Wang, Vladimir Pavlovic, and Dimitris N. Metaxas. Few-step diffusion language models via trajectory self-distillation. arXiv preprint arXiv:2602.12262 , 2026. URL https://arxiv.org/abs/2602.12262 .Zhilu Zhang and Mert R. Sabuncu. Generalized cross entropy loss for training deep neural networks with noisy labels. In Advances in Neural Information Processing Systems , vol-ume 31, 2018. URL https://papers.neurips.cc/paper_files/paper/2018/ hash/f2925f97bc13ad2852a7a551802feea0-Abstract.html .Yunxiao Zhao and Changxiao Cai. Adaptation to Intrinsic Dependence in Diffusion Language Mod-els, 2026. URL https://arxiv.org/abs/2602.20126 .Kaiwen Zheng, Yongxin Chen, Hanzi Mao, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. Masked Diffusion Models are Secretly Time-Agnostic Masked Models and Exploit Inaccurate Categorical Sampling. In International Conference on Learning Representations , 2025. URL https:// arxiv.org/abs/2409.02908 .13 A RELATED WORK 
+
+Diffusion language models and decoding. Masked diffusion models learn token predictions un-der a corruption process (Sahoo et al., 2024; Shi et al., 2024; Nie et al., 2025). Confidence-based decoding controls how many tokens are revealed at each evaluation (Wu et al., 2026), while SDAR combines parallel prediction within blocks with autoregression across blocks (Arriola et al., 2025; Cheng et al., 2025). Our method, AlphaDLM, changes the training objective and can be used with either decoding structure. 
+
+Training for few-step generation. Several methods adapt diffusion language models for gener-ation with fewer model evaluations. T3D (Zhang et al., 2026) combines trajectory self-distillation with a reverse-KL-inspired discriminative objective and analyzes how trajectory supervision reduces conditional token dependence. dParallel (Chen et al., 2026) combines trajectory supervision with en-tropy minimization on correctly predicted tokens to encourage earlier parallel commitments. CDLM (Kim et al., 2026) distills teacher trajectories into a block-causal student using teacher-distribution matching and consistency objectives. Our method shares the goal of improving generation under limited decoding budgets, but directly applies sequence-level alpha loss to training examples and their corruptions, without requiring teacher trajectories or distribution matching. Our analysis char-acterizes how this objective changes the joint target fitted by a factorized denoiser and establishes conditions under which its optimum preserves multiple valid completions while excluding invalid combinations. 
+
+Modeling token dependencies. Parallel prediction and its multimodality challenge predate diffu-sion language models, including non-autoregressive translation (Gu et al., 2018; Huang et al., 2022). For discrete diffusion, Discrete Copula Diffusion (Liu et al., 2025) supplements the denoiser with a generative model that supplies dependency information. EDLM (Xu et al., 2025) introduces a sequence-level energy correction. Kim & Sung (2026) represent the conditional clean distribution through low-rank tensor decompositions, while Bansal & Sanghavi (2025) train a lightweight sam-pler on top of a frozen diffusion model to approximate joint sampling. These approaches enrich the modeled dependencies or the sampling procedure. Our method uses the factorized denoiser and changes its training objective. Our analysis asks which joint target this restricted predictor fits and when independent predictions can exclude invalid combinations without concentrating on a single completion. 
+
+Evaluation and baselines. TinyGSM (Liu et al., 2023) is a shared setting for generating mathe-matical solutions as programs. S-FLM (Deschenaux & Gulcehre, 2026) compares hyperspherical flows with MDLM and DUO (Sahoo et al., 2025). FMLM+ (Agarwal et al., 2026) uses posterior re-finement, DBTM (Tang & Wang, 2026) learns a discrete transport map, and IDLM (Li et al., 2026a) distills a pretrained diffusion teacher. Our comparison uses their respective generation procedures. Our AlphaDLM uses fixed-NFE confidence sampling with the token-reveal schedule of FMLM+, while its objective ablations hold the sampler fixed. Appendix C documents the baseline sources and sampling protocols. 
+
+Objectives and dependence. Generalized cross-entropy interpolates between cross-entropy and mean absolute error in classification (Zhang & Sabuncu, 2018). Li et al. (2026b) study probability-based objectives for autoregressive supervised fine-tuning, including the same alpha-loss family applied token-wise to individual token probabilities. They show that downweighting low-probability tokens can help when the pretrained model already has strong task-relevant capabilities, while cross-entropy performs better when these capabilities are weak. We apply alpha loss to the joint probability of masked tokens and analyze how factorization changes the distribution that minimizes this sequence-level objective. Huang et al. (2022) analyze dependence lost by non-autoregressive marginal fitting and interpret alternative objectives through proxy targets. Minka (2005) shows how the divergence shapes a factorized approximation, and Lapidoth & Pfister (2019) establish variational identities for product-distribution optimization. Our analysis connects this viewpoint to denoising objectives, characterizing the selected joint target, distinguishing sequence-level and token-wise fitting, and establishing conditions under which a factorized predictor assigns probability only to valid completions. Recent analyses relate unmasking schedules and parallel-sampling error to total correlation (Zhao & Cai, 2026; Wen et al., 2026). Our characterization concerns the joint target selected by training. Token-wise alpha loss and entropy-regularized SFT provide relevant empirical controls because both also change prediction confidence. 14 B POPULATION OPTIMUM OF SEQUENCE -LEVEL ALPHA LOSS 
+
+We explain why alpha loss fits a lower-temperature target when the predictor is unrestricted, and what changes when it predicts tokens independently. The key step is to separate two questions: which joint distribution to fit, and how to predict its individual tokens. Appendix B.1 proves Propo-sition 1 directly from the expected alpha loss, using an elementary argument illustrated on the two-token example. Throughout, we fix the visible context. A sequence y = ( y1, . . . , y m) fills the m masked positions, 
+
+q is its true conditional distribution, and p is the predictor. The space of sequences is finite. We optimize over distributions directly, without neural-network constraints, and initially assume 0 <α < 1. All logarithms are natural. The expected loss depends on p only through the following weighted sum: 
+
+Ey∼q [ℓseq  
+
+> α
+
+(p; y)] = 1 − Fα(p)
+
+α , Fα(p) = X
+
+> y
+
+q(y)p(y)α. (14) Thus minimizing the loss means maximizing Fα. Taking its logarithm also leaves the maximizing predictor unchanged. 
+
+Without factorization: the optimum is the lower-temperature target. 
+
+Derivation of Equation (9) . We first allow p to be any joint distribution. At an optimum, moving a small amount of probability from one sequence to another cannot improve Fα. The gain from adding probability must therefore be the same for every sequence with q(y) > 0:
+
+∂F α
+
+∂p (y) = αq (y)p(y)α−1 = λ =⇒ p(y) ∝ q(y)1/(1 −α). (15) Here λ is the common gain. Normalizing the probabilities gives exactly p = qT , with T = 1 − α,as defined in Equation 8. Two facts ensure that this calculation finds the unique global optimum. First, an optimum puts no probability where q = 0 , since moving that probability to a sequence with q > 0 increases Fα. It puts positive probability on every sequence with q > 0, since the gain in Equation 15 grows without bound as its predicted probability approaches zero. Second, xα is strictly concave for 0 < α < 1.The weighted sum Fα is therefore strictly concave on this support, so the stationary solution is the unique maximum. This is the optimum in Sypherd et al. (2022, Proposition 1). Their parameter β = 1 /(1 − α) gives 
+
+1 − 1/β = α and β/ (β − 1) = 1 /α , recovering both our loss and this optimum. 
+
+With factorization: the optimum fits the marginals of a selected target. 
+
+Derivation of Equation (10) . Now p(y) = Q 
+
+> i
+
+pi(yi). To fit the positions separately, we rewrite the objective using log-probabilities, which turn a product into a sum. An auxiliary joint distribution π
+
+will supply the weights for this fit. It is used only in the proof. The following three steps specialize the product-distribution identity of Lapidoth & Pfister (2019) to m positions. 
+
+1. The auxiliary distribution gives an equivalent objective. For a fixed predictor with Fα(p) > 0,normalize the terms in its objective to obtain a distribution: 
+
+πp(y) = q(y)p(y)α
+
+Fα(p) .
+
+For any joint distribution π supported where q > 0, expanding the definition of KL divergence gives 
+
+α Ey∼π log p(y) − DKL (π∥q) = log Fα(p) − DKL (π∥πp). (16) KL divergence is nonnegative and is zero exactly when its two distributions agree. Thus the left-hand side is at most log Fα(p), with equality at π = πp. Maximizing it over π recovers the original 15 objective exactly. This is the finite-distribution form of the Gibbs variational identity (Wainwright & Jordan, 2008, Theorem 3.4). 
+
+2. The best token predictions are the target marginals. We can now maximize over p and π
+
+together. Fix π first. Factorization makes the log-probability a sum over positions: 
+
+Ey∼π log p(y) = X
+
+> i
+
+X
+
+> yi
+
+πi(yi) log pi(yi) = − X
+
+> i
+
+H(πi) − X
+
+> i
+
+DKL (πi∥pi). (17) Here πi is the token marginal and H(r) = − P 
+
+> x
+
+r(x) log r(x) measures uncertainty in a distribution 
+
+r. Each position is an ordinary cross-entropy fitting problem, solved by pi = πi. Substituting these optimal token distributions leaves only the choice of π:
+
+max  
+
+> p=Q
+> ipi
+
+log Fα(p) = − min  
+
+> π
+
+J(π), J(π) := DKL (π∥q) + α X
+
+> i
+
+H(πi). (18) Thus the optimal denoiser fits the marginals of a distribution minimizing J.
+
+3. The selected target balances fit and token dependence. The sum of token entropies equals the joint entropy plus total correlation: X
+
+> i
+
+H(πi) = H(π) + TC( π).
+
+Total correlation is the dependence measure defined in Section 3.2. To express J using the lower-temperature target, write qT (y) = q(y)1/(1 −α)/Z T , where ZT = P 
+
+> y
+
+q(y)1/(1 −α). Using log q =(1 − α)(log qT + log ZT ) and DKL (π∥q) = −H(π) − Eπ log q gives 
+
+J(π) = (1 − α)DKL (π∥qT ) + α TC( π) − (1 − α) log ZT . (19) The last term is constant in π. Removing it and dividing by 1 − α > 0 gives the claimed characteri-zation: 
+
+π∗ 
+
+> α
+
+∈ arg min 
+
+> π
+
+
+
+DKL (π∥qT ) + α
+
+1 − α TC( π)
+
+
+
+, p∗,fact  
+
+> α
+
+= Y
+
+> i
+
+π∗
+
+> α,i
+
+.
+
+Both optimization steps are exact. Every minimizing π∗ 
+
+> α
+
+gives an optimal predictor through its marginals. Conversely, any optimal predictor p∗ paired with πp∗ attains the joint maximum in Steps 1–2. It must therefore satisfy p∗ 
+
+> i
+
+= πp∗,i , and πp∗ must minimize J. This proves the statement for all global optima. 
+
+Zero probabilities. We use 0 log 0 = 0 and set KL divergence to infinity when its first argument assigns probability outside the support of its second. In Equation 16, a distribution π assigning mass where p = 0 gives value −∞ on the left and cannot maximize it. A predictor with Fα(p) = 0 cannot be optimal, since predicting any sequence with q > 0 gives a positive value. Thus zeros require no positivity assumption on the target or the optimal predictor. 
+
+Token-wise loss and the endpoints. For token-wise loss, the expected objective is a sum of sep-arate objectives for individual positions. Applying the unrestricted calculation to each marginal qi
+
+gives Equation 12. If q already factorizes, so does qT . Taking π = qT then makes both terms in Equation 10 zero, so sequence-level and token-wise loss have the same optimum. At α = 0 , both losses for a factorized predictor become the sum of token cross-entropies, whose optimal factors are the marginals of q. For α ≥ 1, use p(y)α ≤ p(y) to obtain 
+
+Fα(p) ≤ X
+
+> y
+
+q(y)p(y) ≤ max  
+
+> y
+
+q(y).
+
+Predicting a most likely sequence with probability one attains this bound and is possible with a factorized predictor. It is the unique optimum when the mode is unique. At α = 1 , any joint distribution supported on tied modes is also optimal if it belongs to the allowed predictor class. For 
+
+α > 1, equality requires a point mass on one mode. These statements optimize distributions at one fixed context. Taking a logarithm preserves this opti-mum, but does not generally preserve an objective averaged over contexts with shared model param-eters. Appendix B.1 gives the additional support condition needed to exclude invalid combinations. 16 Numerical implementation. The mask-normalized sequence-level loss has a shared gradient weight determined by the joint probability of the original tokens at all masked positions: 
+
+∇θ
+
+ ℓseq 
+
+> α
+
+m
+
+
+
+= pθ (xM | z, c )α ∇θ ℓCE , ℓCE = − 1
+
+m log pθ (xM | z, c ). (20) All missing-token predictions share this weight, whereas token-wise alpha loss assigns a separate weight to each position. Under αeff = k/m , the shared weight is exp( ks θ ). Small target prob-abilities suppress this weight more strongly at large k, motivating a warm start. Averaging log-probabilities makes k comparable across mask counts, but does not remove this suppression. The implemented loss evaluates 1 − exp( ks θ ) as − expm1( ks θ ) to avoid cancellation near zero. Examples without active positions contribute zero. B.1 GROUPS OF VALID COMPLETIONS AT INTERMEDIATE ALPHA 
+
+The example in Figure 3 has two groups of valid completions: {I} × { am } and {he , she } × { is }.Combining tokens within either group is safe, while mixing the groups can produce invalid answers. We prove directly that alpha loss can select one group while giving positive probability to every completion within it. The proof uses only probabilities, powers, and the arithmetic–geometric mean inequality. Selection of a single group was established for two tokens with one completion per group by Minka (2005, Section 3.4) and Lapidoth & Pfister (2019, Lemma 32). Here each group may contain multi-ple completions, with arbitrary dependencies in their target probabilities. 
+
+The support condition. For position i and group g, let Aig be the allowed token set. The valid sequences form G nonempty groups 
+
+{y : q(y) > 0} =
+
+> G
+
+[
+
+> g=1
+
+Sg , Sg = A1g × · · · × Amg , Aig ∩ Aig ′ = ∅ (g̸ = g′). (21) Thus every combination within a group is valid, and a token at any one position identifies its group. The index g refers to a group of completions, not a decoding block. 
+
+Proposition 1 (Multiple valid completions, restated). Consider m ≥ 2 masked tokens, and suppose the valid completions split into groups such that any within-group combination of tokens is valid, and different groups use disjoint token sets at every position. For 1/m < α < 1, every globally optimal factorized predictor selects one group and assigns positive probability to all completions in that group. 
+
+Setting and running example. We fix the visible context and write p(y) = Q 
+
+> i
+
+pi(yi). By Equa-tion 14, minimizing expected alpha loss is equivalent to maximizing 
+
+Fα(p) = X
+
+> y
+
+q(y)p(y)α.
+
+The five steps below first show that an optimum selects one group, then that it covers the whole group. The figures use the same target as Figures 2 and 3, with α = 0 .55 strictly inside the proposi-tion’s range for m = 2 . The example at the boundary α = 1 /2 is treated separately below. Figure 7 starts from the cross-entropy optimum, whose factors are the marginals of q. It assigns 0.48 
+
+probability to invalid completions. We will compare this predictor with the predictors obtained by restricting it to either valid group. 
+
+Conditioning on a group. Write pi(Aig ) for the probability that position i chooses a token from group g. Independence gives 
+
+p(Sg ) = 
+
+> m
+
+Y
+
+> i=1
+
+pi(Aig ), X
+
+> g
+
+pi(Aig ) ≤ 1.
+
+17 (a) Target q                        
+
+> I0.40 0
+> he 00.35
+> she 00.25
+> am is
+> S1={Iam }
+> S2={he is ,she is }
+> (b) CE predictor p
+> I0.16 0.24
+> he 0.14 0.21
+> she 0.10 0.15
+> am is
+> p(S1) = 0 .16 ,p(S2) = 0 .36
+
+Figure 7: Valid groups and a predictor that mixes them. The target is the two-token example of Figure 3. Rows are the first token and columns the second, as in that figure. Green cells are valid and red cells are invalid. In (b), row heights are p1 and column widths are p2, so cell areas equal joint probabilities. The two valid groups receive total probability 0.16 + 0 .36 = 0 .52 . The remaining 
+
+0.48 falls on invalid combinations. The inequality allows tokens outside all valid groups. If p(Sg ) > 0, conditioning on Sg gives another factorized predictor, denoted p(g), with factors p(g) 
+
+> i
+
+= pi( · | Aig ). It gives probability only to sequences in Sg .
+
+Proof of Proposition 1. Step 1. Split the objective over groups. The target is zero outside the valid groups. Within a group of positive probability, p(y) = p(Sg )p(g)(y). Substitution into the objective gives 
+
+Fα(p) = X  
+
+> g:p(Sg)>0
+
+p(Sg )αFα(p(g)). (22) Groups with p(Sg ) = 0 contribute zero. Every displayed Fα(p(g)) is positive, since p(g) gives positive probability to at least one valid completion. These values use the original q, without renor-malizing it within a group. Thus Fα(p) is a weighted sum of the values obtained by conditioning on individual groups. We next show that these weights sum to less than one unless p already selects one group. 
+
+Step 2. Splitting probability between groups reduces the total weight. For α > 1/m and any group, raising a number in [0 , 1] to a larger power makes it no larger. The arithmetic–geometric mean inequality then gives 
+
+p(Sg )α ≤ p(Sg )1/m =
+
+> m
+
+Y
+
+> i=1
+
+pi(Aig )
+
+!1/m 
+
+≤ 1
+
+m
+
+> m
+
+X
+
+> i=1
+
+pi(Aig ).
+
+Summing over groups and using their disjoint token sets yields 
+
+X
+
+> g
+
+p(Sg )α ≤ X
+
+> g
+
+p(Sg )1/m ≤ 1
+
+m
+
+> m
+
+X
+
+> i=1
+
+X
+
+> g
+
+pi(Aig ) ≤ 1. (23) The first inequality is strict whenever any p(Sg ) lies strictly between zero and one. Consequently, the sum can equal one only when exactly one group has p(Sg ) = 1 . Figure 8 illustrates both the bound and the threshold 1/m .18 (a) Equal split 
+
+Ihe she am is 
+
+p(Sg ) = 0 .25 
+
+(b) Select group 2 
+
+he she is 
+
+p(S2) = 1 0 0.5 10.75 11.25 
+
+α = 0 .3
+
+α = 0 .5
+
+α = 0 .55 
+
+α = 0 .8
+
+Probability s of group 1 
+
+> Wα(s)
+
+(c) Total group weight 
+
+Figure 8: Why the threshold is 1/m . For m = 2 , assigning group 1 probability s at both positions gives Wα(s) = P 
+
+> g
+
+p(Sg )α = s2α + (1 − s)2α. This is the total weight in Equation 22, not the objective itself. It is below one for 0 < s < 1 when α > 1/2. At α = 0 .55 , (a) gives W ≈ 0.933 ,while (b) gives W = 1 .
+
+Step 3. Every optimum selects one group. Let p be an optimal factorized predictor. Its objective is positive, since predicting any valid completion with probability one gives Fα = q(y) > 0. Therefore at least one group has positive probability. Let Fmax be the largest value of Fα(p(g)) among these groups. Steps 1–2 imply 
+
+Fα(p) ≤ Fmax 
+
+X
+
+> g
+
+p(Sg )α ≤ Fmax . (24) But Fmax is attained by one of the factorized predictors p(g). Optimality of p requires Fα(p) ≥
+
+Fmax , so equality must hold throughout. Since Fmax > 0, Step 2 forces p(Sg ) = 1 for one group g.Every factor then satisfies pi(Aig ) = 1 , because their product is one and none can exceed one. This proves the first half of the proposition: the predictor assigns no probability outside one valid group. Figure 9 shows the improvement from conditioning a predictor that has not yet selected a group. 
+
+(a) Original p
+
+Ihe she am is 
+
+Fα(p) ≈ 0.382 
+
+(b) Condition on S1
+
+I 1.00 
+
+am 
+
+Fα(p(1) ) = 0 .400 
+
+(c) Condition on S2
+
+he 0.583 
+
+she 0.417 
+
+is 
+
+Fα(p(2) ) ≈ 0.415 
+
+Figure 9: Conditioning improves the running predictor at α = 0 .55 . Both conditioned predictors outperform (a). The comparison in Step 3 gives Fα(p) ≈ 0.382 ≤ Fmax 
+
+P 
+
+> g
+
+p(Sg )α ≈ 0.388 <Fmax ≈ 0.415 . Conditioning preserves the relative token probabilities within each group. It does not yet optimize them. 
+
+Step 4. A token that can contribute cannot have probability zero. This step uses 0 < α < 1 and applies to any target q. Hold all positions except i fixed and group the objective by the token value 
+
+v ∈ V at that position: 
+
+Fα(p) = X
+
+> v∈V
+
+ai(v)pi(v)α, ai(v) = X 
+
+> y:yi=v
+
+q(y) Y 
+
+> j̸=i
+
+pj (yj )α. (25) 19 The coefficient ai(v) is positive exactly when this token forms a valid completion with some tokens that the other positions predict with positive probability. Suppose ai(v) > 0 but pi(v) = 0 . Give this missing token probability ε, and multiply all existing probabilities at position i by 1 − ε, where 0 < ε < 1. The resulting predictor ep is still factorized. Its objective changes by 
+
+Fα(ep) − Fα(p) = ai(v)εα − 1 − (1 − ε)αFα(p).
+
+For α < 1, (1 − ε)α ≥ 1 − ε, so the loss is at most εF α(p). Hence 
+
+Fα(ep) − Fα(p) ≥ εαai(v) − ε1−αFα(p) > 0 (26) for sufficiently small ε, because ε1−α tends to zero. This contradicts optimality. Thus every token with ai(v) > 0 has pi(v) > 0: adding a missing valid possibility brings a gain of order εα, which outweighs a loss of order ε.
+
+Step 5. Every completion in the selected group has positive probability. Take a token v ∈ Aig 
+
+in the group selected in Step 3. At each other position j, choose a token yj ∈ Ajg with pj (yj ) > 0.Such a token exists because pj (Ajg ) = 1 . With yi = v, these tokens form a valid completion by the support condition. Its contribution to ai(v) is positive, so Step 4 gives pi(v) > 0.This holds for every token at every position within the selected group. Their products are positive, so every completion in that group has positive probability. Together with Step 3, this proves the proposition. If the selected group contains several completions, all of them remain possible. Figure 10 illustrates Steps 4–5. At α = 0 .55 , the best predictor within the second group gives probabilities approximately 0.679 and 0.321 to he is and she is , respectively. Its objective is approximately 0.417 , above the value 0.400 for the only completion in the first group. By Step 3, it is therefore a global optimum.                 
+
+> 00.321 1
+> 0.25 0.35 0.4
+> only he is
+> ε= 0 .1
+> best within S2
+> Probability εassigned to she
+> Fα
+> (a) Add a missing completion (b) Optimal predictor
+> he 0.679
+> she 0.321
+> is
+> Fα≈0.417 >0.400
+
+Figure 10: Selecting a group preserves all of its completions. At α = 0 .55 , start with a pre-dictor that always generates he is and give she probability ε at the first position. The objective becomes 0.35(1 − ε)0.55 + 0 .25 ε0.55 , which increases for small positive ε. Its maximum assigns positive probability to both valid completions. This best predictor within S2 also outperforms the only predictor within S1.
+
+Where the assumptions enter. The Cartesian group structure makes conditioning preserve factor-ization. Disjoint token sets give the probability bound in Step 2. The condition α > 1/m makes that bound strict whenever the predictor splits probability between groups. The condition α < 1 makes a small addition to a missing token beneficial in Step 4. Finally, validity of every within-group com-bination makes every token eligible for that argument in Step 5. The requirement m ≥ 2 makes the interval 1/m < α < 1 nonempty. 
+
+What happens at the threshold? The strict lower bound on α is necessary for a guarantee cover-ing all targets with this support. To compare groups, define their best achievable objective values 
+
+Cg (α) = max     
+
+> p=Q
+> ipi:p(Sg)=1
+
+Fα(p), C⋆ = max  
+
+> g
+
+Cg (α). (27) 20 These maxima exist because the spaces of token probabilities are compact and Fα is continuous. 
+
+At α = 1 /m . The arithmetic–geometric mean bound still gives P 
+
+> g
+
+p(Sg )1/m ≤ 1. Equation 22 therefore implies 
+
+Fα(p) ≤ X
+
+> g
+
+p(Sg )1/m Cg (α) ≤ C⋆.
+
+A best single-group predictor attains C⋆. If one group is uniquely best, positive probability on any other group makes the second inequality strict. Equality then forces p(Sg ) = 1 for the best group, and Steps 4–5 ensure that all its completions have positive probability. If two groups tie, take optimal predictors p′ and p′′ within them and mix their factors at every position: pi = (1 − s)p′ 
+
+> i
+
++ sp ′′  
+
+> i
+
+for 0 < s < 1. This is a product of mixed token distributions. Since 
+
+mα = 1 , its objective is 
+
+Fα(p) = (1 − s)mα C⋆ + smα C⋆ = C⋆.
+
+It is optimal but also generates invalid cross-group combinations. For example, with q(00) = 
+
+q(11) = 1 /2 and α = 1 /2, independent uniform factors are optimal while assigning half their probability to invalid pairs. 
+
+Below 1/m . The group decomposition also gives the exact optimal allocation across groups. Let 
+
+sg = 1
+
+> m
+
+P 
+
+> i
+
+pi(Aig ) be the mean probability assigned to group g across positions. By arithmetic– geometric mean, p(Sg ) ≤ smg , so 
+
+Fα(p) ≤ X
+
+> g
+
+Cg (α)smα g , X
+
+> g
+
+sg ≤ 1.
+
+Every allocation with P 
+
+> g
+
+sg = 1 attains this bound if each position chooses group g with probability 
+
+sg and uses the corresponding factor of a best within-group predictor. All Cg are positive, so its maximum uses the full allocation P 
+
+> g
+
+sg = 1 . It remains to maximize this weighted sum of powers. For 0 < mα < 1, Equation 15 gives the unique optimal allocation 
+
+pi(Aig ) = s∗ 
+
+> g
+
+= Cg (α)1/(1 −mα )
+
+P 
+
+> g′
+
+Cg′ (α)1/(1 −mα ) > 0 for every position i. (28) To attain the bound, equality in arithmetic–geometric mean requires all positions to use these same group probabilities. With at least two groups, every optimum therefore generates invalid cross-group combinations. At the threshold, ties can allow such combinations. Above it, Proposition 1 excludes them under its support condition. 
+
+The two-token example at α = 1 /2. In Figure 3, the target probabilities of I am , he is , and 
+
+she is are 0.4, 0.35 , and 0.25 . The first group has only one completion, so C1 = 0 .4. In the second group, the second token is always is , leaving only the first token to fit. Equation 15 gives 
+
+C2(α) = 
+
+
+
+0.35 1/(1 −α) + 0 .25 1/(1 −α)1−α
+
+.
+
+At α = 1 /2, C2 = √0.185 > 0.4. The unique optimum therefore chooses the second group, with probabilities proportional to 0.35 2 and 0.25 2. These are 49 /74 for he is and 25 /74 for she is . This establishes the example at the boundary, which the strict inequality in Proposition 1 does not cover. The group values become equal at α⋆ ≈ 0.6162 . Since mα ⋆ > 1, either single-group predictor is then optimal, but mixtures between the groups are not. 
+
+Why the support condition matters. Consider instead two binary tokens with joint probabilities 
+
+q =
+
+0.4 0.30.3 0
+
+
+
+, rows and columns indexed by 0, 1.
+
+The pairs 00 , 01 , and 10 are valid, while 11 is not. These valid pairs cannot be divided into the disjoint Cartesian groups required by the proposition. For every 0 < α < 1, an optimal factorized predictor assigns positive probability to all four pairs. To see this, use Step 4 of the proof above, which applies to any target. Token 0 has a positive coefficient 21 at either position regardless of the other position’s distribution, because it forms a valid pair with both 0 and 1. Thus p1(0) > 0 and p2(0) > 0. Token 1 then also has a positive coefficient at each position, since it forms a valid pair with the other position’s 0. Hence p1(1) > 0 and p2(1) > 0,giving positive probability to the invalid pair 11 .Factorization and increasing alpha alone therefore do not guarantee valid samples for 0 < α < 1.The support condition is essential. Proposition 1 concerns the population optimum at a fixed context, not convergence of neural-network training. 
+
+# C TINY GSM COMPARISON PROTOCOLS 
+
+We document the TinyGSM training and evaluation protocols and the sources of baseline results. Appendix C.1 then extends the fixed-budget comparisons to adaptive confidence sampling. 
+
+AlphaDLM (ours). The teaser uses one EMA checkpoint at 250k updates, with k = 16 after 
+
+k = 1 pretraining to 200k. Evaluation uses 512-token sequences, the SmolLM-135M tokenizer, exact argmax token selection, and untempered confidence scores. Each round reveals the union of positions above confidence 0.999 and the highest-confidence ⌈m/r ⌉ remaining positions, where m
+
+is the current mask count and r is the number of rounds left. Revealed tokens remain fixed. This fixed-NFE confidence sampler adapts the commitment rule of FMLM+ (Agarwal et al., 2026) to an absorbing-mask denoiser with a fixed number of model evaluations. Every example executes all R forwards, including rounds after all masks have been filled. Accuracy is the observed correct fraction over 1,319 test problems. These are single-checkpoint estimates, without repeated-training uncertainty. 
+
+Program verification. The shared GSM8K verifier extracts the first fenced code block when present, discards text before the first function definition, and attempts to remove trailing text that prevents parsing. It executes simple math problem() with a 5 s time limit and reads its nu-meric return value or, when unavailable, a numeric answer from its printed output. This value is compared with the number following #### in the reference answer. Integers must match exactly, while floating-point comparisons use absolute tolerance 10 −3. Missing functions, parsing or execu-tion failures, timeouts, and missing numeric answers count as incorrect. 
+
+Common-initialization objective comparisons. The k = 1 checkpoint at 200k updates initializes the sequence-level and token-wise continuations, which are evaluated at 250k. Table 2 specifies the shared training recipe. Sequence-level and token-wise objectives first normalize over the active positions of each example and then average over examples. Neither objective uses an additional 1/t 
+
+weight. Examples with no active positions contribute zero. We tokenize each TinyGSM example as a beginning-of-sequence token, the question, the literal two-character separator \n, the Python solution, and an end-of-sequence token. We exclude examples longer than 512 tokens and pad the remaining examples to this length without packing different ex-amples together. The question and separator remain clean context. Response, end-of-sequence, and padding positions participate in corruption and training. A fixed 1% split is reserved for validation with split seed 42. The tokenizer is HuggingFaceTB/SmolLM-135M .Training times are stratified using the implementation’s antithetic sampler for a uniform distribution on [ε, 1] , with ε = 10 −3. The probability of keeping a token unchanged follows the stabilized linear schedule ¯αt = ε + (1 − ε)(1 − t). It uses no adaptive schedule or importance sampling. The model does not receive a time-conditioning signal. The one-evaluation token-wise control uses EMA weights, exact argmax tokens, and confidence threshold zero, revealing all missing tokens in a single forward. In the 32-evaluation ancestral comparison, T = 0 takes the argmax over clean-token predictions and still samples reveal positions from the ancestral transition. It is not an argmax over the complete reverse transition including the mask state. The fixed-budget objective comparison evaluates each checkpoint at 1, 2, 4, 8, and 16 forwards using the same sampling protocol. The confidence threshold is 0.999, tokens are exact argmax predictions, 22 Table 2: Shared TinyGSM training recipe. Sequence-level and token-wise continuations use the same architecture, data processing, and optimizer settings.                    
+
+> Component Setting Denoiser Bidirectional DiT with 12 blocks, 12 attention heads, hidden width 768, and conditioning width 128 Regularization Dropout 0.1 and zero weight decay Sequence length 512 tokens including prompt, response, and padding Optimizer AdamW, learning rate 3×10 −4,(β1, β 2) = (0 .9,0.999) ,ϵ= 10 −8
+> Learning-rate schedule 2,500 warmup updates followed by a constant rate Optimization Global batch size 512, gradient clipping 1.0, and training seed 1 Weight averaging EMA decay 0.9999 Training duration Common sequence-level k= 1 prefix through 200k updates, followed by 50k continuation updates
+
+Table 3: GSM8K accuracy (%) ↑ with a shared initialization and fixed-NFE confidence sampling. All checkpoints use 250k total updates, including the common k = 1 prefix through 200k. Each value is an observed correct fraction over 1,319 examples.                                                                     
+
+> Objective 1 NFE 2 NFE 4 NFE 8 NFE 16 NFE Sequence k= 1 0.91 0.91 8.11 26.23 40.56 Sequence k= 2 0.99 1.29 10.61 28.58 43.06 Sequence k= 4 1.82 2.58 16.68 35.33 46.47 Sequence k= 8 2.73 7.73 28.89 43.97 49.20 Sequence k= 16 6.29 18.04 34.65 39.04 40.56 Token α= 0 .25 0.83 1.74 12.66 33.28 44.35 Token α= 0 .375 1.67 3.56 17.97 35.63 44.12 Token α= 0 .51.36 5.46 19.86 36.01 39.95 Token α= 0 .75 2.12 5.23 7.66 7.88 7.88
+
+and all models use four GPUs with batch size 16 per GPU, EMA weights, and seed 1. Every example executes the prescribed number of forwards. Table 3 reports all points. 
+
+MDLM with fixed-NFE confidence sampling. We evaluate the released MDLM checkpoint from the S-FLM repository on the same 1,319 problems at R ∈ { 1, 2, 4, 8, 16 , 32 , 64 }. We use the same fixed-NFE confidence sampling implementation and evaluation configurations as our method, in-cluding the tokenizer, confidence threshold, argmax token selection, and EMA weights. Each ex-ample’s recorded forward count is verified against R. The respective correct counts are 10, 9, 56, 265, 497, 579, and 536. This controls the sampler, while the training objectives and initialization histories differ. 
+
+Reevaluation of released checkpoints. We evaluate the released TinyGSM MDLM (Sahoo et al., 2024), DUO (Sahoo et al., 2025), and S-FLM (Deschenaux & Gulcehre, 2026) checkpoints with the authors’ sampling implementation. MDLM and DUO use ancestral sampling at T = 0 .1. Both 
+
+S-FLM curves use the spherical backbone with the trained adaptive truncated schedule, with exact velocity at T = 0 .1 or top-1 velocity at T = 1 , followed by greedy final decoding. We use EMA weights, seed 1, four GPUs, and batch size 32 per GPU. The plot and table report integer correct counts divided by 1,319, rounded to one decimal in the table. 
+
+Published table values. FMLM+ uses greedy posterior refinement with threshold 0.999 from Ta-ble 8 of Agarwal et al. (2026). We show Init in the teaser and all three variants in Table 1. DBTM uses greedy refinement with threshold 0.8 from Table 8 of Tang & Wang (2026). For IDLM, we use the published values from Table 1 of Li et al. (2026a) at 32 and 64 NFE. We evaluate the released IDLM–MDLM and IDLM–DUO TinyGSM checkpoints at 4, 8, and 16 NFE using the S-FLM an-cestral sampler at T = 1 , EMA weights, seed 1, and batch size 32 on one GPU. We verify the exact forward count for all 1,319 examples. The correct counts are 5, 24, and 86 for IDLM–MDLM and 30, 93, and 154 for IDLM–DUO. As a reproduction check, our 32-NFE evaluations yield 12.51% 23 and 17.06%, compared with the published 12.81% and 15.39%. These methods use their published training recipes. FMLM+ Init and the distillation variants incur teacher training in addition to their own training, so this comparison does not match total training compute. For context, the autoregressive references in Deschenaux & Gulcehre (2026) reach 53.9% with sam-pling and 63.3% with greedy decoding. Table 4: Ancestral accuracy (%) ↑ at 32 NFE. Checkpoints share the k = 1 initialization and 250k total updates. At T = 0 , clean-token predictions are argmax while reveal positions remain stochastic. Training parameter Ancestral ( T = 1 ) Ancestral ( T = 0 )k=1 8.19 26.00 k=2 10.46 26.61 k=4 15.09 29.80 k=8 21.30 34.95 k=16 32.52 37.07 C.1 ADAPTIVE CONFIDENCE SAMPLING 
+
+Here we use adaptive confidence sampling from Fast-dLLM (Wu et al., 2026) (Section 2.1) with argmax tokens and no prescribed NFE. We vary the confidence threshold, so each point reports the resulting average NFE (Figure 11, Table 5). At threshold 0.9, k = 8 reaches 49.43% at 17.83 NFE, while k = 1 reaches 43.06% at 57.59 NFE. The k = 16 run attains 40.03% at 5.70 NFE. Token-wise α = 0 .25 reaches 47.31% at 32.00 NFE, so the sequence-level k = 8 point has 2.12 percentage points higher accuracy with 1.79 times fewer evaluations. 2 4 8 16 32 64 
+
+Average NFE 
+
+> 010 20 30 40 50
+> GSM8K accuracy (%)
+
+(a) Sequence-level sweep           
+
+> k= 1
+> k= 2
+> k= 4
+> k= 8
+> k= 16 24816 32 64
+
+Average NFE 
+
+(b) Objective comparison             
+
+> Sequence k= 8 Sequence k= 16 Token α= 0.25 Token α= 0.375 Token α= 0.5 Token α= 0.75
+
+Figure 11: Accuracy–NFE trade-offs under adaptive confidence sampling. Left: AlphaDLM (ours) parameter sweep. Right: sequence-level and token-wise objectives. All checkpoints share the 
+
+k = 1 initialization and 250k total updates. Points vary the confidence threshold. Higher accuracy and fewer evaluations are preferable. 24 Table 5: Adaptive confidence sampling from a common initialization. Each entry gives accuracy (%) ↑ / average NFE ↓ on all 1,319 examples. The checkpoints are evaluated at 250k updates after the common sequence-level k = 1 initialization at 200k.                                                               
+
+> Objective τ= 0 .6τ= 0 .7τ= 0 .8τ= 0 .9
+> Sequence k= 1 28.58 / 7.64 40.41 / 15.54 42.61 / 28.42 43.06 / 57.59 Sequence k= 2 26.76 / 6.94 40.41 / 13.09 44.43 / 24.12 45.87 / 49.54 Sequence k= 4 26.00 / 5.61 38.21 / 9.57 45.87 / 16.72 48.82 / 35.32 Sequence k= 8 24.72 / 4.06 35.33 / 5.69 42.15 / 8.83 49.43 / 17.83 Sequence k= 16 17.74 / 2.79 26.31 / 3.37 32.15 / 4.03 40.03 / 5.70 Token α= 0 .25 18.20 / 5.21 32.52 / 7.82 42.30 / 12.86 47.31 / 32.00 Token α= 0 .375 11.52 / 4.37 26.76 / 5.70 36.54 / 8.15 46.02 / 18.84 Token α= 0 .54.85 / 3.72 14.78 / 4.60 26.23 / 5.72 39.88 / 10.06 Token α= 0 .75 2.43 / 2.68 2.88 / 3.23 3.79 / 3.72 7.66 / 4.48
+
+# D SDAR EXPERIMENTAL DETAILS 
+
+Data and training. We fine-tune JetLM/SDAR-1.7B-Chat on the same data for all objectives within each domain. For mathematics, we use 272,872 examples from the CoT subset of Nemotron-SFT-Math-v4. 1 We use assistant content, omit separate reasoning fields, remove lexical overlap candidates with GSM8K and MATH500, and keep complete examples with at most 256 prompt and 1,280 response tokens. For code, we use OpenCodeInstruct (Ahmad et al., 2025). For all setups, we use a batch size of 128 and a learning rate of 5 × 10 −6, and train for 4,000 steps. CE+CAP (Bie et al., 2025) uses a correctness-conditioned entropy regularizer of weight 0.5 to encourage confident correct predictions. 
+
+Block-level objective. Our method applies Equation 13 separately to each four-token response block. For the masked supervised positions Mb in block b, we use 
+
+sb = 1
+
+|Mb|
+
+X
+
+> j∈Mb
+
+log pθ,j (yj | context) , ℓb(k) = 1 − exp( ks b)
+
+k . (29) The k = 0 limit is mean cross-entropy within the block. A block with no active targets contributes zero. We sum block losses within each example, divide by a fixed dataset estimate of the mean number of valid response blocks, and average over examples. Thus, the nonlinear transformation couples targets within a block rather than across the entire response. 
+
+Confidence-aware parallel training. CAP adds an entropy penalty on correctly predicted masked targets. Let C contain masked supervised positions whose logit argmax equals the target and let 
+
+rj = softmax( zj /0.5) , where zj denotes the vocabulary logits. The objective is 
+
+LCE+CAP = LCE + 0.5
+
+|C|
+
+X
+
+> j∈C
+
+H(rj ). (30) The entropy term is zero when C is empty. The correctness gate is discrete, while gradients pass through the entropy of the selected distributions. The normalization uses the correct masked posi-tions in each microbatch. 
+
+Evaluation. We evaluate accuracy on 1,319 GSM8K problems (Cobbe et al., 2021) and 500 MATH500 problems (Hendrycks et al., 2021), and pass@1 on 164 HumanEval-Instruct problems (Chen et al., 2021) and 427 MBPP-Instruct problems (Austin et al., 2021b). We use adaptive confidence sampling within four-token blocks, with confi-dence thresholds τ ∈ {0.75 , 0.80 , 0.85 , 0.90 , 0.95 , 0.97 , 0.99 } for mathematics and τ ∈{0.60 , 0.70 , 0.80 , 0.85 , 0.90 , 0.95 , 0.97 , 0.99 } for code. 
+
+> 1https://huggingface.co/datasets/nvidia/Nemotron-SFT-Math-v4 .
+
+25 Candidate tokens are selected by argmax ( T = 0 ). At each iteration, the sampler accepts remaining positions whose confidence is strictly above the threshold. If none qualifies, it accepts the highest-confidence position. Accepted tokens are not remasked. Each block therefore requires at most four denoising evaluations. Generation uses prefix KV caching and response limits of 1,280 tokens for mathematics and 384 for code, stopping after completing the block containing EOS or the turn-end token. 1.6 2.0 2.4 72.5 75.0 77.5 Accuracy (%)          
+
+> (a) GSM8K
+> 1.5 2.0 2.5 44 48 52
+> (b) MATH500
+> 1.8 2.4 3.0
+> Tokens per forward
+> 48 56 64 Pass@1 (%)
+> (c) HumanEval-Instruct
+> 1.2 1.8 2.4
+> Tokens per forward
+> 54 60 66
+> (d) MBPP-Instruct
+> SDAR CE CE + CAP AlphaDLM (ours)
+
+Figure 12: SDAR accuracy–TPF trade-offs. AlphaDLM (ours) uses k = 0 .8 for mathematics and k = 0 .4 for code. Points show means at each confidence threshold, with bands of ±1 sample standard deviation in accuracy across runs. Rings mark threshold 0.99. Axes match Figure 6 (a–d). 
+
+Tokens per forward (TPF). For a benchmark with N examples, let Li be the number of returned response tokens and Di the number of denoising forwards used for example i. We compute 
+
+TPF = 
+
+PNi=1 Li
+
+PNi=1 (Di + 1) , (31) where the additional forward accounts for prompt prefill once per example. The numerator excludes prompt tokens, the first EOS or stop token, and all subsequent tokens, and respects the response-length limit. Denoising forwards are counted separately for each active example, including all steps in the block containing its stop token. Additional forwards used only to update the KV cache are excluded. We aggregate token and forward counts over the benchmark before taking their ratio, then average the resulting TPF values across runs at each confidence threshold. With four-token blocks, TPF is at most four. Prompt prefill and partially filled final blocks reduce the measured value even when each block requires only one denoising step. 
+
+Aggregation. At each threshold, we average accuracy and TPF separately across 5 runs. Figure 12 shows the main-text means with ±1 sample standard deviation in accuracy. 
+
+Parameter sweep. Figure 13 compares k ∈ { 0, 0.4, 0.8, 1.2, 1.6, 2.0} on mathematics with a learning rate of 5 × 10 −6 and a batch size of 128, using 4,000 training steps. 26 1.8 2.4 3.0 
+
+Tokens per forward    
+
+> 66 72 78 Accuracy (%)
+> (e) GSM8K, vary k
+> 1.6 2.4 3.2
+
+Tokens per forward  
+
+> 36 42 48 54
+> (f) MATH500, vary k
+
+CE ( k = 0) 
+
+k = 0.4 
+
+k = 0.8 
+
+k = 1.2 
+
+k = 1.6 
+
+k = 2.0 Figure 13: SDAR parameter sweep for AlphaDLM (ours) and CE. Panels (e,f) use the same axes as Figure 6 (e,f). Bands show ±1 sample standard deviation in accuracy. 
+
+# E SENSITIVITY TO TRAINING INITIALIZATION 
+
+The main TinyGSM comparison starts from a sequence-level k = 1 checkpoint at 200k up-dates. Here we repeat the objective comparison from a CE-trained checkpoint at the same up-date count. Both sets of continuations train for another 50k updates. We compare sequence-level 
+
+k ∈ { 2, 4, 8, 16 } and token-wise α ∈ { 0.25 , 0.5, 0.75 }, using the same architecture, optimizer set-tings, and fixed-NFE confidence sampler. Each evaluation uses EMA weights, exact argmax token selection, confidence threshold 0.999, and exactly 1, 2, 4, 8, or 16 forwards on all 1,319 GSM8K problems. There is one training seed per recipe. 1 2 4 8 16              
+
+> Model evaluations (NFE)
+> 010 20 30 40 50
+> GSM8K accuracy (%)
+> (a) Sequence-level (AlphaDLM, ours)
+> k= 2
+> k= 4
+> k= 8
+> k= 16
+> 124816
+> Model evaluations (NFE)
+> (b) Token-wise
+> α= 0.25
+> α= 0.5
+> α= 0.75
+> k= 1 initialization CE initialization
+
+Figure 14: Objective comparisons under two initializations. Colors identify the continuation objective. Solid lines start from k = 1 and dashed lines from CE, both at 200k updates and evaluated at 250k. Only parameters available under both initializations are shown. The qualitative advantage of sequence-level training persists under CE initialization (Figure 14). At four NFE, sequence-level k = 16 reaches 35.33%, compared with 19.86% for the strongest tested 27 token-wise setting. At sixteen NFE, k = 8 reaches 47.61%, compared with 42.38% for the strongest tested token-wise setting. Among the tested sequence-level parameters, k = 16 is best at 1–4 NFE and k = 8 at 8–16 NFE under both initializations. The k = 1 initialization generally yields higher accuracy for subsequent sequence-level k = 2 , 4, 8
+
+training. However, CE initialization improves k = 16 at 4–16 NFE, by 0.68–1.22 percentage points. Token-wise differences also depend on the loss parameter and evaluation budget (Table 6). These single-seed comparisons support robustness of the objective comparison, rather than a uniform ad-vantage of either initialization. Table 6: GSM8K accuracy (%) ↑ under two initializations. Each paired row uses the same continuation objective and decoding protocol. The final row reports the CE training run continued to 250k, whose 200k checkpoint initializes the CE-start experiments. It is a reference, not a matched-objective comparison with the k = 1 continuation.                                                                                                                                    
+
+> Objective Initialization 1 NFE 24816 Sequence k= 2 k= 1 0.99 1.29 10.61 28.58 43.06 Sequence k= 2 CE 0.99 1.14 9.40 25.93 41.17 Sequence k= 4 k= 1 1.82 2.58 16.68 35.33 46.47 Sequence k= 4 CE 1.59 2.12 14.71 31.99 43.37 Sequence k= 8 k= 1 2.73 7.73 28.89 43.97 49.20 Sequence k= 8 CE 2.27 5.91 25.02 40.49 47.61 Sequence k= 16 k= 1 6.29 18.04 34.65 39.04 40.56 Sequence k= 16 CE 5.23 16.53 35.33 40.26 41.77 Token α= 0 .25 k= 1 0.83 1.74 12.66 33.28 44.35 Token α= 0 .25 CE 0.61 1.14 10.99 29.26 42.38 Token α= 0 .5k= 1 1.36 5.46 19.86 36.01 39.95 Token α= 0 .5CE 1.29 5.08 19.86 36.85 39.73 Token α= 0 .75 k= 1 2.12 5.23 7.66 7.88 7.88 Token α= 0 .75 CE 1.52 4.85 7.13 7.35 7.35 CE CE 0.45 0.53 5.69 18.50 36.32
+
+This ablation covers fixed-budget decoding and the shared parameter grid only. The k = 1 -start results for token-wise α = 0 .375 , sequence-level k = 32 , 64 , ancestral decoding, and pass@ K
+
+remain separate experiments. 
+
+# F MULTIPLE -ANSWER GENERATION 
+
+We study how the training objective affects the benefit of generating several answers to the same problem. We use the three sequence-level checkpoints with k ∈ { 1, 8, 16 } at 250k training updates, all continued from the common k = 1 checkpoint at 200k updates. For each of the 1,319 GSM8K test problems, we generate n = 32 answers with independently seeded ancestral sampling. We consider R ∈ { 4, 16 } model evaluations per answer and temperatures T ∈ { 0, 1}, giving 12 config-urations and 506,496 generated answers in total. At T = 0 , the clean-token prediction is the argmax, while the ancestral reveal trajectory remains random. All runs use EMA weights, top-p = 1 , the 512-token sequence limit, and the same program verifier as the single-answer evaluation. Let ci denote the number of correct answers among the 32 samples for problem i. We estimate the probability that at least one of K answers is correct using the unbiased pass@ K estimator of Chen et al. (2021), 
+
+\pass@ K = 11319 
+
+> 1319
+
+X
+
+> i=1
+
+1 −
+
+ 32 −ci
+
+> K
+
+ 32 
+
+> K
+
+!
+
+, K ∈ { 1, 2, 4, 8, 16 , 32 }, (32) where the numerator is zero when K > 32 − ci. We include repeated answers in the estimator. This metric measures verifier-assisted coverage among K attempts, with a total generation budget of KR 
+
+model evaluations per problem. The sampling repeats use one trained checkpoint for each value of 
+
+k.28 Figure 15 and Table 7 show that the preferred training parameter depends on the number of attempts. With T = 0 and R = 16 , increasing k from 1 to 16 improves pass@1 from 16.83% to 32.24%. At 32 attempts, k = 8 reaches 74.22%, compared with 72.71% for k = 16 and 68.39% for k = 1 . At 
+
+T = 1 , k = 16 has the highest observed pass@ K across the tested values of K at both per-answer budgets. 1 2 4 8 16 32                                        
+
+> Number of answers ( K)
+> 020 40 60 80
+> Pass@ K (%) (a) T= 0
+> 124816 32
+> Number of answers ( K)(b) T= 1
+> 4816 32 64 128 256 512
+> Total NFE ( K×R)
+> 020 40 60 80
+> Pass@ K (%) (c) T= 0
+> 4816 32 64 128 256 512
+> Total NFE ( K×R)(d) T= 1
+> k= 1 k= 8 k= 16
+> R= 4 NFE/answer R= 16 NFE/answer
+
+Figure 15: GSM8K pass@ K with ancestral sampling. Top: coverage versus number of answers. Bottom: the same results versus total NFE, KR . Colors identify k, and line styles identify NFE per answer R. Estimates use 32 attempts per problem. Reveal positions remain random at T = 0 .At each shared total budget (16, 32, 64, and 128 NFE), using sixteen evaluations per answer gives higher coverage than using four for every tested checkpoint and temperature. Table 7: GSM8K pass@ K (%) ↑ estimated from 32 answers per problem. T is the sampling tem-perature, R is NFE per answer, and k is the training parameter. Bold entries mark the highest value across training parameters for the same T , R, and K.
+
+T R k Pass@1 ↑ Pass@2 ↑ Pass@4 ↑ Pass@8 ↑ Pass@16 ↑ Pass@32 ↑
+
+0 4 1 2.56 3.62 5.03 6.86 9.33 12.74 0 4 8 8.51 11.52 15.23 19.91 25.60 32.07 0 4 16 14.73 19.14 24.17 29.89 36.34 43.37 
+
+0 16 1 16.83 26.23 37.45 48.77 59.04 68.39 0 16 8 27.33 38.14 48.95 58.56 66.85 74.22 
+
+0 16 16 32.24 42.35 51.62 59.55 66.39 72.71 1 4 1 0.09 0.17 0.30 0.50 0.80 1.21 1 4 8 3.16 4.65 6.36 8.20 10.33 12.96 1 4 16 8.20 11.59 15.42 19.67 24.42 29.64 
+
+1 16 1 3.79 6.84 11.62 18.25 26.43 35.71 1 16 8 15.08 22.87 32.31 42.62 53.04 63.08 1 16 16 24.64 34.61 44.91 54.59 63.12 70.89 
+
+29

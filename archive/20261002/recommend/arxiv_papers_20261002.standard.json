@@ -1,0 +1,777 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-02T23:08:22.489840+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 15,
+    "deep_cap": 6,
+    "deep_selected": 10,
+    "quick_candidates": 9,
+    "quick_skim_target": 11,
+    "quick_selected": 9
+  },
+  "deep_dive": [
+    {
+      "id": "2609.35491v3",
+      "title": "From Scores to Samples: Elastic Forcing for Autoregressive Video Generation",
+      "abstract": "Few-step autoregressive video generation commonly relies on Distribution Matching Distillation (DMD), requiring a bidirectional diffusion teacher and an online fake-score model. We instead learn the rollout distribution directly from reference videos, eliminating both score models during post-training. Our framework minimizes maximum mean discrepancy (MMD) in frozen self-supervised video representation spaces, using a hybrid Nyström--Monte Carlo estimator to balance approximation bias and sampling variance. Memory-efficient replay and gradient subsampling make this objective practical. Using the same architecture and initialization as Self-Forcing, our 1.3B model improves the VBench Total score from 83.80 to 84.64 while retaining 17 FPS. Removing auxiliary score models also enables 14B post-training on eight H200 GPUs. Beyond distillation, learning from reference videos enables the acquisition of new visual styles, semantic concepts, and spatial priors without a target-specific diffusion teacher.",
+      "authors": [
+        "Chi Zhang",
+        "Yueyi Liu",
+        "Shi Haoyang",
+        "Ruichuan An",
+        "Haoyu Li",
+        "Yuhang Wu",
+        "Sen Cui",
+        "Miao Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-09-28T16:00:49+00:00",
+      "link": "https://arxiv.org/pdf/2609.35491v3",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Elastic Forcing for autoregressive video generation",
+      "llm_evidence_cn": "用于自回归视频生成的弹性强制方法",
+      "llm_evidence": "用于自回归视频生成的弹性强制方法",
+      "canonical_evidence": "用于自回归视频生成的弹性强制方法",
+      "llm_tldr_en": "Proposes Elastic Forcing to improve autoregressive video generation by learning rollout distributions directly.",
+      "llm_tldr_cn": "提出弹性强制方法，通过直接学习展开分布来改进自回归视频生成。",
+      "llm_tldr": "提出弹性强制方法，通过直接学习展开分布来改进自回归视频生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.39096v1",
+      "title": "DeCoPrune: Efficient KV-Cache Pruning for Autoregressive Video Diffusion via Denoising Consistency",
+      "abstract": "Autoregressive video diffusion supports streaming generation and interactive control, but its KV cache grows with the generated history. Existing compression strategies discard history using fixed windows or select tokens through local attention and similarity signals, without directly measuring whether a chunk contributes information beyond the retained context. We introduce DeCoPrune, a training-free method that treats cache compression as a denoising-consistency problem. We find that tokens with larger discrepancies between intermediate clean predictions and final denoised values tend to carry visual evidence less predictable from the retained context. DeCoPrune uses this model-intrinsic signal to retain high-discrepancy tokens in the long-term cache while pruning low-discrepancy tokens. To evaluate information retention, we introduce CMBench, comprising 58 approximately one-minute generated or real-world context episodes and 116 Reappear or Revisit continuation tasks requiring recall of earlier events or objects. Experiments with LingBot World v2 show that DeCoPrune achieves a DINO score of 0.6701 on a 0-1 scale, with an 85.43% reduction in cumulative historical KV token counts and a 4.14-fold continuation-generation speedup over FullKV. Its head-specialized variant reaches 0.6783 at an 86.19% pruning ratio, approaching FullKV's 0.6803 score and exceeding the evaluated compression baselines at similar budgets. These results indicate that denoising consistency can support long-range information retention while reducing autoregressive inference cost. Our project homepage is https://decoprune.github.io. The code is available at https://github.com/DeCoPrune/CMBench, and the benchmark at https://huggingface.co/datasets/Aoraku/CMBench.",
+      "authors": [
+        "Zeqi Xiao",
+        "Qingle Liu",
+        "Kaiwen Zhang",
+        "Yifan Zhou",
+        "Zihan Ding",
+        "Xingang Pan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-30T06:33:16+00:00",
+      "link": "https://arxiv.org/pdf/2609.39096v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "KV-Cache pruning for autoregressive video diffusion",
+      "llm_evidence_cn": "自回归视频扩散模型的KV缓存剪枝",
+      "llm_evidence": "自回归视频扩散模型的KV缓存剪枝",
+      "canonical_evidence": "自回归视频扩散模型的KV缓存剪枝",
+      "llm_tldr_en": "Introduces DeCoPrune for efficient KV-cache management in autoregressive video diffusion models.",
+      "llm_tldr_cn": "为自回归视频扩散模型引入DeCoPrune，实现高效的KV缓存管理。",
+      "llm_tldr": "为自回归视频扩散模型引入DeCoPrune，实现高效的KV缓存管理。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.00894v1",
+      "title": "Clock Diffusion: Efficient Semi-Autoregressive Continuous Diffusion Language Models",
+      "abstract": "Recent works on continuous diffusion for discrete data have demonstrated performance on par with comparable discrete diffusion models. However, these continuous counterparts lack key features that are essential to practical use as language models, namely variable-length generation and support for a key-value cache, and they still lag behind the frontier of autoregressive and discrete diffusion quality. In this work, we address these limitations. We do so by introducing a model parameterization that uses position-dependent noise schedules to define semi-autoregressive (SAR) continuous diffusion language models (DLMs). Together with efficient training and sampling algorithms, we call this framework Clock Diffusion, and we present two special cases of our method: block and sliding window generation. We then define ClockDLMs, a family of Gaussian DLMs based on sliding window Clock Diffusion that attain state-of-the-art diffusion likelihood bounds on OpenWebText, even beating the performant block SAR discrete diffusion models. ClockDLMs trained on TinyGSM also substantially outperform continuous baselines on the GSM8K benchmark and match and exceed comparable SAR discrete diffusion models. Finally, building on our parameterization, we propose more efficient samplers that we dub Cache Grab, which adapt techniques from accelerated inference in discrete diffusion, such as committing tokens whose probabilities exceed a confidence threshold and self-speculative decoding, further improving our models' quality and efficiency.",
+      "authors": [
+        "Yair Schiff",
+        "Omer Belhasin",
+        "Roy Uziel",
+        "Matan Rusanovsky",
+        "Ran Zilberstein",
+        "Marianne Arriola",
+        "Gilad Turok",
+        "Guanghan Wang",
+        "Volodymyr Kuleshov",
+        "Michael Elad"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-10-01T01:17:31+00:00",
+      "link": "https://arxiv.org/pdf/2610.00894v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "semi-autoregressive continuous diffusion language models with position-dependent noise schedules",
+      "llm_evidence_cn": "具有位置相关噪声调度的半自回归连续扩散语言模型",
+      "llm_evidence": "具有位置相关噪声调度的半自回归连续扩散语言模型",
+      "canonical_evidence": "具有位置相关噪声调度的半自回归连续扩散语言模型",
+      "llm_tldr_en": "Introduces Clock Diffusion, a semi-autoregressive framework for continuous diffusion language modeling.",
+      "llm_tldr_cn": "引入Clock Diffusion，一种用于连续扩散语言建模的半自回归框架。",
+      "llm_tldr": "引入Clock Diffusion，一种用于连续扩散语言建模的半自回归框架。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.32540v2",
+      "title": "In-Flight KV Cache with Clean Anchors for Faster Autoregressive Video Diffusion",
+      "abstract": "Few-step autoregressive video diffusion generates a long video by splitting the video into temporal chunks and generating chunk-by-chunk, each through a short sequence of denoising stages. To memorize chunks that are already generated, previous methods reconstruct a clean or less-noisy key--value (KV) cache by additional forwards to build the cache without advancing an output latent. However, every denoising forward itself already computes the in-flight KV of the current chunk. We introduce FlashForward, which directly reuses this cache to avoid the heavy cache-update-only model forwards. After the current chunk completes one denoising stage, its stage-specific cache is already available for the next chunk. Assigning one GPU to each stage therefore lets different chunks occupy different stages concurrently. This early availability has a quality cost: the resulting stage-matched history is noisy, causing appearance and motion drift among chunks. To complement it, FlashForward produces sparse auxiliary clean anchor latents before the corresponding region is generated so the generation trajectories can be stabilized by this two-sided conditioning. The two memories operate at different temporal scales: sparse clean anchor KV supplies coarse, long-range two-sided structural guidance, while dense stage-matched history preserves fine, recent evolution. With up to four GPUs, FlashForward runs $1.16$--$1.69\\times$ faster than HiAR and $1.42$--$2.92\\times$ faster than Self-Forcing for 16 FPS videos of 20 seconds or longer across 1.3B and 14B backbone scales at 480p and 720p. On VBench, for the 1.3B model at 480p, it achieves higher scores and remains stable at longer durations, demonstrating that FlashForward generates high-quality and temporally consistent videos across durations of 20s, 35s and 65s at a much faster generation speed.",
+      "authors": [
+        "Yikai Wang",
+        "Xiao Han",
+        "Mengmeng Xu",
+        "Juan Camilo Perez",
+        "Yiannis Douratsos",
+        "Sen He",
+        "Zijian Zhou",
+        "Fei Zhang",
+        "Zhaochong An",
+        "Juan-Manuel Perez-Rua",
+        "Chen Change Loy",
+        "Tao Xiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG",
+        "cs.MM"
+      ],
+      "published": "2026-09-26T12:19:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.32540v2",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "KV cache optimization for faster autoregressive video diffusion generation",
+      "llm_evidence_cn": "针对更快的自回归视频扩散生成的KV缓存优化",
+      "llm_evidence": "针对更快的自回归视频扩散生成的KV缓存优化",
+      "canonical_evidence": "针对更快的自回归视频扩散生成的KV缓存优化",
+      "llm_tldr_en": "Proposes FlashForward to speed up autoregressive video diffusion by reusing in-flight KV caches.",
+      "llm_tldr_cn": "提出FlashForward，通过重用在途KV缓存来加速自回归视频扩散生成。",
+      "llm_tldr": "提出FlashForward，通过重用在途KV缓存来加速自回归视频扩散生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.37924v1",
+      "title": "Time-Anchored Diffusion Language Models: Latent-Space Caching for Fast Generation",
+      "abstract": "Recent work on anchored diffusion language models improves denoising by shaping an intermediate latent space with supervised important-token targets. In this work, we introduce time-based (self-supervised) anchoring, which learns and reuses latent anchors without requiring such targets. Our key observation is that anchors encode persistent properties of the clean sequence, such as its semantic intent, global structure, or intermediate plan. Although their hidden representations become stale as the token canvas evolves, their semantic content remains useful across nearby diffusion times. This is implemented through a two-stage architecture consisting of a relatively expensive anchor network that generates the latent cache state and a lightweight denoising network that intelligently combines the cached latent state with the current state at each reverse step using a fusion module. This gives anchoring a latent-space caching interpretation: the anchor network is evaluated periodically, while its cached representation is reused across multiple reverse steps. We instantiate this framework as TADM:Post-train, which time-anchorizes pretrained DLMs, and TADM:Pretraining, which learns time-based anchors during pretraining. Applied to DiffusionGemma-26B, TADM:Post-train improves throughput by approximately 49% to 79% on several math, code, and STEM benchmarks (GSM8K, AIME26, GPQA-Diamond, LiveCodeBench-v6, HumanEval, MMLU-Pro). TADM:Pretraining reduces Transformer-layer computation by up to 38% relative to a standard single-stage DLM, achieves up to 73% higher measured throughput than ADLM.",
+      "authors": [
+        "Joel Anto Paul",
+        "Litu Rout",
+        "Aditya Akella",
+        "Sanjay Shakkottai"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-09-29T16:16:26+00:00",
+      "link": "https://arxiv.org/pdf/2609.37924v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "latent-space caching for diffusion language models",
+      "llm_evidence_cn": "扩散语言模型的潜空间缓存",
+      "llm_evidence": "扩散语言模型的潜空间缓存",
+      "canonical_evidence": "扩散语言模型的潜空间缓存",
+      "llm_tldr_en": "Introduces time-anchored diffusion for fast generation in language models via latent-space caching.",
+      "llm_tldr_cn": "引入时间锚定扩散，通过潜空间缓存实现语言模型的快速生成。",
+      "llm_tldr": "引入时间锚定扩散，通过潜空间缓存实现语言模型的快速生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.37974v1",
+      "title": "On Trajectory-Aware Training for Masked Diffusion Language Models",
+      "abstract": "Masked diffusion models (MDMs) generate text by unmasking several tokens per step, but they are trained and sampled under different conditions. The model is trained on randomly masked sequences, whereas inference follows a trajectory shaped by the model's own predictions. Additionally, each step has no access to what the previous one computed. Recent methods narrow these limitations from separate angles, leaving open how these choices interact. We introduce PUMBA, a unified framework for trajectory-aware training that trains the denoiser on consecutive steps of policy-induced trajectories, passes information between steps, and optimizes them jointly by backpropagation through time. A controlled study of this design space shows that i) exact train--inference alignment fails due to local overfitting, whereas a looser alignment still brings training masks closer to those seen at inference; ii) passing continuous information outperforms discrete gradient estimators through the commitment at each step; and iii) performance improves as backpropagation through time spans more steps, which we support theoretically. Combined, these components match the best checkpoint of a same-size autoregressive model. Building on these findings, we scale PUMBA to supervised fine-tuning of LLaDA-8B, where it improves the trade-off between performance and number of function evaluations (NFEs) in both full-canvas and block diffusion generation. At matched performance, it needs up to 22% fewer NFEs than standard fine-tuning with twice the budget in full-canvas generation, and up to 26% fewer than standard fine-tuning for the same number of steps in block diffusion.",
+      "authors": [
+        "Manuel Madeira",
+        "Amitis Shidani",
+        "Alice Bizeul",
+        "Victor Turrisi",
+        "Louis Béthune",
+        "Bhavika Devnani",
+        "Dan Busbridge",
+        "Pierre Ablin",
+        "João Monteiro"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-09-29T16:40:34+00:00",
+      "link": "https://arxiv.org/pdf/2609.37974v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "trajectory-aware training for masked diffusion language models",
+      "llm_evidence_cn": "掩码扩散语言模型的轨迹感知训练",
+      "llm_evidence": "掩码扩散语言模型的轨迹感知训练",
+      "canonical_evidence": "掩码扩散语言模型的轨迹感知训练",
+      "llm_tldr_en": "Introduces PUMBA for trajectory-aware training of masked diffusion models to bridge train-inference gaps.",
+      "llm_tldr_cn": "引入 PUMBA 框架进行轨迹感知训练，缩小掩码扩散模型训练与推理之间的差距。",
+      "llm_tldr": "引入 PUMBA 框架进行轨迹感知训练，缩小掩码扩散模型训练与推理之间的差距。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.38066v1",
+      "title": "Alpha Diffusion Language Models: Factorization Alone Is Not the Problem",
+      "abstract": "Discrete diffusion language models can generate multiple tokens in parallel, but reducing the number of denoising steps can lead to inconsistent predictions. Standard cross-entropy training fits conditional token marginals, whereas parallel generation requires consistent joint predictions. We introduce Alpha Diffusion Language Models (AlphaDLM), trained with a sequence-level alpha loss that recovers cross-entropy in the limit of vanishing alpha and has a joint-mode optimum at alpha one. Our analysis characterizes how the objective and factorization jointly determine the fitted distribution. We identify conditions under which intermediate alpha preserves multiple valid completions while excluding invalid token combinations. Trained on TinyGSM, our method achieves 34.6% accuracy on GSM8K with only four model evaluations. We further scale the method to SDAR-1.7B and evaluate it on code and mathematics benchmarks. These results show that changing the training objective can improve the accuracy-computation trade-off of factorized diffusion language models.",
+      "authors": [
+        "Nikita Gushchin",
+        "Dmitry Baranchuk",
+        "Alexander Korotin"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-29T17:31:02+00:00",
+      "link": "https://arxiv.org/pdf/2609.38066v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Alpha Diffusion Language Models for parallel generation",
+      "llm_evidence_cn": "用于并行生成的 Alpha 扩散语言模型",
+      "llm_evidence": "用于并行生成的 Alpha 扩散语言模型",
+      "canonical_evidence": "用于并行生成的 Alpha 扩散语言模型",
+      "llm_tldr_en": "Introduces AlphaDLM with a sequence-level loss to improve joint prediction consistency in parallel diffusion.",
+      "llm_tldr_cn": "提出 AlphaDLM 及其序列级损失函数，以提高并行扩散生成中的联合预测一致性。",
+      "llm_tldr": "提出 AlphaDLM 及其序列级损失函数，以提高并行扩散生成中的联合预测一致性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.38114v1",
+      "title": "Self-Aligned Forcing: Streaming Video Diffusion with Differentiable Noisy History",
+      "abstract": "Autoregressive video diffusion enables interactive streaming generation, but suffers from error accumulation over long rollouts. Self-rollout training reduces exposure bias, yet finite rollouts leave long-range drift unresolved. We observe that the noise level of the history key-value (K/V) representations trades visual quality against motion, and that restoring gradients through the history aligns causal training far more closely with bidirectional training. Motivated by these observations, we introduce Self-Aligned Forcing (SAF), a training scheme that aligns the history of each block with the noise level of the block being denoised. Specifically, the history is the K/V produced by preceding blocks at the same denoising stage, so all blocks at a stage can be denoised in a single forward pass under a causal mask. This keeps the noisy history differentiable, allowing future losses to optimize how it is encoded. SAF therefore avoids a separate no-gradient rollout and per-block timestep-zero recaching, training up to 1.8x faster than prior methods with lower memory. At inference, SAF achieves the highest single-GPU throughput among existing methods and keeps one history bank per stage for a multi-GPU pipeline, reaching 49.1 FPS on 4 GPUs. Experiments show superior long-horizon generation with a better balance between visual quality and motion. Project page: https://anonymous.4open.science/w/self-aligned-forcing/.",
+      "authors": [
+        "Weiqiang Wang",
+        "Zhuokun Chen",
+        "Yusheng Dai",
+        "Boying Li",
+        "Yi Zhang",
+        "Hossein Rahmani",
+        "Qiuhong Ke",
+        "Jianfei Cai"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-29T17:49:31+00:00",
+      "link": "https://arxiv.org/pdf/2609.38114v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "autoregressive video diffusion with streaming generation",
+      "llm_evidence_cn": "具有流式生成的自回归视频扩散",
+      "llm_evidence": "具有流式生成的自回归视频扩散",
+      "canonical_evidence": "具有流式生成的自回归视频扩散",
+      "llm_tldr_en": "Proposes Self-Aligned Forcing to reduce error accumulation in autoregressive streaming video diffusion.",
+      "llm_tldr_cn": "提出自对齐强制（SAF）方案，旨在减少自回归流式视频扩散生成中的误差累积。",
+      "llm_tldr": "提出自对齐强制（SAF）方案，旨在减少自回归流式视频扩散生成中的误差累积。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.38364v1",
+      "title": "Acceleration of Diffusion Language Model through Discrete Average Generator",
+      "abstract": "Discrete diffusion models and flow matching have emerged as powerful frameworks for generative modeling over discrete state spaces, yet efficient few-step generation remains a fundamental challenge. In this work, we introduce the Discrete Average Generator, a principled extension of MeanFlow to Continuous-Time Markov Chains (CTMCs). Analogously to how MeanFlow defines an average velocity field over a time interval in continuous spaces, we define an average generator as the normalized increment of the transition kernel over a time interval. We show that this average generator satisfies a self-consistency identity, which provides the foundation for our training objective. We further develop training strategies that align with the standard training paradigm of diffusion language models while keeping the resulting objective tractable. When projected onto per-coordinate marginals, the self-consistency identity admits a closed-form expression, enabling efficient training and inference. In Potts model simulations, our objective reduces the total variation distance of the $K$-step sampler by up to 67%. On OpenWebText, our method achieves the lowest generative perplexity among the evaluated methods for 8 to 64 sampling steps while enabling a $16\\times$ acceleration, and achieves comparable performance to existing methods on ImageNet.",
+      "authors": [
+        "Yidong Ouyang",
+        "Zhengyan Wan",
+        "Themis Haris",
+        "Tian Tan",
+        "Liqian Peng",
+        "Henry Li",
+        "Ziqian Lin",
+        "Jianhang Chen",
+        "Maryam Karimzadehgan",
+        "Alec Go",
+        "George Michailidis"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-09-29T18:27:23+00:00",
+      "link": "https://arxiv.org/pdf/2609.38364v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "acceleration of discrete diffusion language models",
+      "llm_evidence_cn": "离散扩散语言模型的加速",
+      "llm_evidence": "离散扩散语言模型的加速",
+      "canonical_evidence": "离散扩散语言模型的加速",
+      "llm_tldr_en": "Develops Discrete Average Generator to accelerate few-step generation in diffusion language models.",
+      "llm_tldr_cn": "开发离散平均生成器，以加速扩散语言模型的少步生成。",
+      "llm_tldr": "开发离散平均生成器，以加速扩散语言模型的少步生成。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.39859v1",
+      "title": "Fork-dLLM: Avoiding the Flexibility Trap in Diffusion Language Models",
+      "abstract": "Masked diffusion language models (dLLMs) have shown strong potential for faster inference through parallel token generation when combined with confidence-based samplers. However, recent work has shown that such methods can defer unmasking high-entropy fork positions at which multiple plausible continuations exist. This results in reduced generation diversity, as shown by worse pass@k scaling, and limits gains obtainable from RL post-training. To avoid this flexibility trap, prior work advocated for autoregressive (AR) sampling. Here, we show that discarding confidence-based sampling is unnecessary and, once inference cost is taken into account, wasteful. We first propose Fork-dLLM, a simple hybrid sampler that uses AR-style ordering only at uncertain fallback steps while retaining parallel generation otherwise. We then extend the same principle to post-training with ForkGRPO, which uses Fork-dLLM rollouts and applies the GRPO objective only at fallback steps, preserving exact policy-likelihood ratios while substantially reducing rollout and optimization cost. In our experiments, Fork-dLLM matches the strong pass@k scaling of AR sampling while being 2-3x more efficient, and ForkGRPO achieves downstream performance comparable to or better than AR-based GRPO baselines at a substantially lower training cost.",
+      "authors": [
+        "Stipe Frković",
+        "Metod Jazbec",
+        "Christian A. Naesseth"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-30T14:43:49+00:00",
+      "link": "https://arxiv.org/pdf/2609.39859v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "hybrid sampler using autoregressive ordering for diffusion language models",
+      "llm_evidence_cn": "扩散语言模型中结合自回归顺序的混合采样器",
+      "llm_evidence": "扩散语言模型中结合自回归顺序的混合采样器",
+      "canonical_evidence": "扩散语言模型中结合自回归顺序的混合采样器",
+      "llm_tldr_en": "Proposes Fork-dLLM, a hybrid sampler combining parallel generation with AR-style ordering for diffusion models.",
+      "llm_tldr_cn": "提出Fork-dLLM，一种在扩散语言模型中结合并行生成与自回归顺序的混合采样器。",
+      "llm_tldr": "提出Fork-dLLM，一种在扩散语言模型中结合并行生成与自回归顺序的混合采样器。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.30977v1",
+      "title": "Does Uniform Discrete Diffusion Need Time?",
+      "abstract": "Uniform discrete diffusion models (UDMs) commonly use explicit time conditioning, but we find that it can often be unnecessary in practice. In this paper, we first show that the population-optimal UDM predictor generally depends on time: time controls how much the model should trust the observed context. We then show that this dependence can become negligible in finite-data settings relevant to language. When a corrupted training sequence remains much closer to its original clean sequence than to competing training sequences, the empirical-optimal predictor is nearly insensitive to time over most of the diffusion trajectory, where the guarantee weakens toward the high-noise endpoint. Empirically, trained language UDMs exhibit limited time sensitivity over most of the trajectory, while time-agnostic predictors remain competitive with, and often outperform, time-conditioned models across datasets and training objectives. These results challenge the use of explicit time conditioning in UDMs: although the population optimum depends on time, explicitly conditioning on it may often be unnecessary in practice.",
+      "authors": [
+        "Chunsan Hong",
+        "Chieh-Hsin Lai",
+        "Satoshi Hayakawa",
+        "Yuhta Takida",
+        "Jong Chul Ye",
+        "Yuki Mitsufuji"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-09-25T08:24:35+00:00",
+      "link": "https://arxiv.org/pdf/2609.30977v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "uniform discrete diffusion models for language",
+      "llm_evidence_cn": "用于语言的均匀离散扩散模型",
+      "llm_evidence": "用于语言的均匀离散扩散模型",
+      "canonical_evidence": "用于语言的均匀离散扩散模型",
+      "llm_tldr_en": "Investigates time conditioning in discrete diffusion models, finding it often unnecessary for language data.",
+      "llm_tldr_cn": "研究离散扩散模型中的时间调节，发现在语言数据设置下显式时间条件往往并非必要。",
+      "llm_tldr": "研究离散扩散模型中的时间调节，发现在语言数据设置下显式时间条件往往并非必要。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.29180v1",
+      "title": "X-Rec Technical Report",
+      "abstract": "Recent advances in generative modeling have reshaped recommender systems by formulating recommendation as a next-item generation problem. Existing retrieval approaches primarily follow two paradigms: user-to-item (U2I) methods represent user context using one or a few deterministic embeddings, which limits the ability to capture diverse and multi-mode interests, while semantic-ID-based autoregressive (SID-AR) methods model more expressive distributions but suffer from quantization errors and the low throughput of sequential decoding. To address these limitations, we propose X-Rec to directly learn the recommendation distribution in the continuous item embedding space through flow matching and generate embedding triggers for approximate nearest neighbor retrieval. X-Rec incorporates three key designs to make this formulation effective and efficient. First, we introduce anchor conditioning to decompose generation into coarse semantic-region selection and fine-grained refinement. Second, we adopt Riemannian flow matching to align generative trajectories with the hyperspherical geometry of item embeddings. Third, we design a late-interaction diffusion Transformer that restricts repeated velocity-field estimation to the final Transformer layer. On a streaming benchmark, X-Rec substantially outperforms U2I baselines, matches the retrieval quality of SID-AR methods, and delivers 3.46x higher inference throughput than SID-AR. X-Rec has also been deployed as a new retrieval source for a specific vertical content on TikTok, where two consecutive launches have yielded significant improvements in both vertical engagement (+4.1484%) and general engagement (+0.0111%).",
+      "authors": [
+        "Chenglei Shen",
+        "Chenzhe Huang",
+        "Dong Jiang",
+        "Hongjie Gao",
+        "Jue Zhang",
+        "Kun Xú",
+        "Lincan Cai",
+        "Nan Zhuang",
+        "Pan Zhang",
+        "Shi Chen",
+        "Shunchi Zhang",
+        "Xiaoyu Ye",
+        "Yang Jin",
+        "Yu Zhang",
+        "Zhenwei An",
+        "Zhongtao Jiang",
+        "Zhiwei Wang",
+        "Kun Xǔ"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-09-24T07:53:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.29180v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "combining autoregressive methods with flow matching for recommendation",
+      "llm_evidence_cn": "将自回归方法与流匹配结合用于推荐系统",
+      "llm_evidence": "将自回归方法与流匹配结合用于推荐系统",
+      "canonical_evidence": "将自回归方法与流匹配结合用于推荐系统",
+      "llm_tldr_en": "Combines autoregressive expressive distributions with flow matching in continuous space for item recommendation.",
+      "llm_tldr_cn": "在连续空间中结合自回归分布与流匹配，解决推荐系统中的量化误差和吞吐量问题。",
+      "llm_tldr": "在连续空间中结合自回归分布与流匹配，解决推荐系统中的量化误差和吞吐量问题。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "combining autoregressive models and diffusion models",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.35944v1",
+      "title": "EnJoi: Ensemble Joint Score Filter for Generative Data Assimilation",
+      "abstract": "Data Assimilation (DA) aims to recover the full state of a dynamical system that is only partially observed. A solution is to use Score-based models to generate physically consistent trajectories that agree with the observations. These Autoregressive Diffusion models are trained by conditioning on the previous state; however, they do not take into account the uncertainty of their past predictions. We propose a new diffusion-based assimilation algorithm that dynamically balances the confidence in the current state and the new observations. Crucially, we choose to learn the distribution of the joint state containing both the past and future. This allows us to use a modified version of En4DVar, a classical DA algorithm that relies on the covariance of an ensemble of particles. Experiments on fluid and traffic flow simulations show improved reconstruction performance, especially in situations where observations are sparse and non-homogeneous.",
+      "authors": [
+        "Julien Moreau",
+        "Marc Lelarge"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-28T16:28:26+00:00",
+      "link": "https://arxiv.org/pdf/2609.35944v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "autoregressive diffusion models for trajectory generation",
+      "llm_evidence_cn": "用于轨迹生成的自回归扩散模型",
+      "llm_evidence": "用于轨迹生成的自回归扩散模型",
+      "canonical_evidence": "用于轨迹生成的自回归扩散模型",
+      "llm_tldr_en": "Proposes a diffusion-based assimilation algorithm using autoregressive diffusion for dynamical systems.",
+      "llm_tldr_cn": "提出一种基于自回归扩散模型的同化算法，用于动力系统的物理一致轨迹生成。",
+      "llm_tldr": "提出一种基于自回归扩散模型的同化算法，用于动力系统的物理一致轨迹生成。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "autoregressive diffusion models research progress",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.35947v1",
+      "title": "FluxLite: Inference-Time Proposal Control for Discrete Diffusion Models",
+      "abstract": "Many inference-time tasks for pretrained discrete diffusion models and diffusion language models reduce to drawing samples from a tilted version of the pretrained distribution. Feynman-Kac sequential Monte Carlo (SMC) makes this correction exact in principle, but its prescribed weights routinely degenerate when the proposal dynamics are misaligned with the tilt, capping the practical gains from additional particles. We introduce FluxLite, a lightweight, training-free proposal-control framework for discrete diffusion. On the sparse directed graph of pretrained reverse rates, any sparse jump-rate perturbation can be exactly compensated by a $q_t$-weighted graph-divergence term in the Feynman-Kac potential; the target path is therefore preserved while the residual reweighting variance becomes a local convex objective. We instantiate this principle as two practical samplers: a one-hop local reallocation rule (HEU) and a small nonnegative quadratic program over pretrained-rate bases (D-VCG). We further prove population stability under the standard score-entropy training loss, identifying a tilted-path coverage factor that governs robustness to score error, together with finite-particle convergence for a fixed controlled Feynman-Kac recursion. Empirically, FluxLite improves over standard Feynman-Kac SMC baselines by up to two orders of magnitude in terminal KL on an analytically tractable finite-state CTMC benchmark, and reduces row-correlation MSE on 2D Ising sampling by 5-7x in geometric mean and up to 55x at peak.",
+      "authors": [
+        "Yinuo Ren",
+        "Haoxuan Chen",
+        "Grant M. Rotskoff",
+        "Jiequn Han",
+        "Lexing Ying"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.CO",
+        "stat.ML"
+      ],
+      "published": "2026-09-28T17:02:48+00:00",
+      "link": "https://arxiv.org/pdf/2609.35947v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "inference-time control for discrete diffusion language models",
+      "llm_evidence_cn": "离散扩散语言模型的推理时控制",
+      "llm_evidence": "离散扩散语言模型的推理时控制",
+      "canonical_evidence": "离散扩散语言模型的推理时控制",
+      "llm_tldr_en": "Presents FluxLite, a training-free framework for proposal control in discrete diffusion language models.",
+      "llm_tldr_cn": "提出FluxLite，一种用于离散扩散语言模型推理时提议控制的轻量级免训练框架。",
+      "llm_tldr": "提出FluxLite，一种用于离散扩散语言模型推理时提议控制的轻量级免训练框架。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.36202v1",
+      "title": "FastGuide: Accelerating Reward Guidance for Diffusion Large Language Models",
+      "abstract": "Gradient-based reward guidance provides a flexible way to use downstream reward models to control masked diffusion language models at inference time. However, its computational cost remains high as each decoding iteration incurs expensive diffusion model forward passes and reward model backpropagation steps. To address this, we introduce FastGuide, an adaptive hybrid of parallel and autoregressive decoding to accelerate reward guidance for diffusion language models. In analogy to parallel decoding, FastGuide amortizes the cost of reward model backpropagation by computing guidance once per decoding step and reusing it to generate multiple tokens. Within each decoding step, FastGuide makes diffusion forward passes autoregressive by unmasking tokens one at a time while efficiently recomputing token distributions after each unmasking by utilizing KV caching techniques and sparse recomputation of attention. Lastly, to adapt hybrid decoding to the model's confidence, FastGuide defers any token that the model is unconfident about under its recomputed distribution. Experiments on three reward benchmarks demonstrate that FastGuide is up to $4.4\\times$ faster than sequential reward-guided decoding while retaining similar generation quality.",
+      "authors": [
+        "Darshan Thaker",
+        "Lachlan Ewen MacDonald",
+        "René Vidal"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-09-28T20:01:44+00:00",
+      "link": "https://arxiv.org/pdf/2609.36202v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "hybrid of parallel and autoregressive decoding for diffusion models",
+      "llm_evidence_cn": "扩散模型的并行与自回归混合解码",
+      "llm_evidence": "扩散模型的并行与自回归混合解码",
+      "canonical_evidence": "扩散模型的并行与自回归混合解码",
+      "llm_tldr_en": "Accelerates reward guidance for diffusion language models using a hybrid parallel and autoregressive decoding strategy.",
+      "llm_tldr_cn": "通过并行与自回归混合解码策略，加速扩散语言模型的奖励引导计算。",
+      "llm_tldr": "通过并行与自回归混合解码策略，加速扩散语言模型的奖励引导计算。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.36522v1",
+      "title": "ParaAnya: Accelerating Parallel Diffusion Sampling with Plug-and-Play Output Caching",
+      "abstract": "Diffusion models have achieved remarkable success in generative tasks, but their inherently sequential sampling process introduces a severe computational bottleneck. Recent Parallel-in-Time (PinT) solvers attempt to mitigate this by parallelizing generation across a sliding window of timesteps, advancing the window only when step-wise changes stabilize. However, this overlapping window mechanism forces the network to repeatedly evaluate the same timesteps. When the input variations between iterations are minimal, these redundant evaluations lead to significant computational waste. To address this inefficiency, we propose ParaAnya, an output cache mechanism agnostic to the parallel sampling algorithm that can reduce the number of function evaluations (NFE). ParaAnya caches input-output pairs of diffusion models and reuses the cached output at overlapping timesteps. By dispatching only cache-miss timesteps to GPU workers, our approach eliminates redundant computation while preserving the structure of the underlying algorithms' update rules. We integrate ParaAnya into four representative parallel sampling algorithms and evaluate its performance on Stable Diffusion v1.5. Across four parallel samplers evaluated with DDIM on eight GPUs, ParaAnya provides $1.30$--$2.43\\times$ speedups over their uncached counterparts and reduces NFE by up to 70.1\\%, reaching up to a $5.62\\times$ speedup over single-GPU serial sampling while maintaining comparable CLIP scores.",
+      "authors": [
+        "Chee-En Yu",
+        "Xiao-Xi Tan",
+        "Yi-Cheng Lin",
+        "Yun-Shao Tsai",
+        "Chee-An Yu",
+        "Hung-yi Lee"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-09-29T02:13:41+00:00",
+      "link": "https://arxiv.org/pdf/2609.36522v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "accelerating parallel diffusion sampling",
+      "llm_evidence_cn": "加速并行扩散采样",
+      "llm_evidence": "加速并行扩散采样",
+      "canonical_evidence": "加速并行扩散采样",
+      "llm_tldr_en": "Proposes ParaAnya, an output caching mechanism to reduce redundant evaluations in parallel diffusion sampling.",
+      "llm_tldr_cn": "提出 ParaAnya 输出缓存机制，减少并行扩散采样中的冗余计算以提升效率。",
+      "llm_tldr": "提出 ParaAnya 输出缓存机制，减少并行扩散采样中的冗余计算以提升效率。",
+      "llm_tags": [
+        "query:ardm"
+      ],
+      "matched_query_tag": "query:ardm",
+      "matched_query_text": "recent advances in autoregressive diffusion models",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.39560v1",
+      "title": "Self-Repulsive Sampling for Diffusion Language Models",
+      "abstract": "Sampling several responses and voting over their answers can improve a language model's accuracy, but repeated answers limit the benefit of additional samples. Raising temperature increases diversity at a potential cost to per-sample accuracy. We introduce Self-Repulsion (SR), a sampler for masked diffusion language models that uses peer commitments to diversify the pool. At each penalized denoising step, each path lowers a token's logit according to how many peers have committed that token at the same position. Paths share a batched forward pass and then commit in sequence, so later paths observe choices made earlier in the same step. This coupling requires no training or additional forward or backward pass and can produce distinct paths even at temperature zero. When all paths commit a position together from identical logits, the update exactly maximizes total logit minus a convex duplication cost. On LLaDA-8B-Instruct with ten paths and 128 denoising steps, deterministic SR reaches 80.38% plurality accuracy on GSM8K, compared with 70.17% for the unpenalized greedy decoder. At temperature 0.6 and matched model-evaluation budgets, the count penalty improves over self-consistency by 2.06 percentage points in blocks of 32 and 14.50 under pure diffusion. Experiments on GSM8K, MATH and TruthfulQA show that voting gains arise mainly from higher coverage of correct answers, with gains that vary by benchmark and decoding regime.",
+      "authors": [
+        "Michael Helcig",
+        "Martin Jaggi"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-30T11:58:40+00:00",
+      "link": "https://arxiv.org/pdf/2609.39560v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "sampling for masked diffusion language models",
+      "llm_evidence_cn": "掩码扩散语言模型的采样方法",
+      "llm_evidence": "掩码扩散语言模型的采样方法",
+      "canonical_evidence": "掩码扩散语言模型的采样方法",
+      "llm_tldr_en": "Introduces Self-Repulsion to diversify sampling in masked diffusion language models without extra training.",
+      "llm_tldr_cn": "引入自排斥采样方法，在不增加训练的情况下提高掩码扩散语言模型采样的多样性。",
+      "llm_tldr": "引入自排斥采样方法，在不增加训练的情况下提高掩码扩散语言模型采样的多样性。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2609.37533v1",
+      "title": "E-MoE: Enhanced Mixture-of-Experts for Non-Factorized Diffusion Language Models",
+      "abstract": "Masked diffusion models (MDMs) generate sequences by progressively unmasking several tokens per denoising step, but their reverse process is typically factorized over positions, limiting sample quality in the few-step regime where diffusion's speed advantage over autoregressive decoding matters most. A recent line of work introduces a continuous Gaussian latent, trained as a variational autoencoder, to capture correlations across positions, but such approaches are prone to posterior collapse, where the latent is silently ignored. We propose Enhanced Mixture-of-Experts (E-MoE), which builds the reverse process as a mixture of factorized distributions over a discrete shared latent given by the expert-routing decisions of a Mixture-of-Experts (MoE) backbone, without increasing active parameters over the factorized baseline. Across synthetic multi-modal benchmarks, binarized MNIST, and LM1B, E-MoE improves few-step generation over factorized baselines.",
+      "authors": [
+        "Arseny Ivanov",
+        "Alexander Kolesov",
+        "Alexander Korotin",
+        "Ivan Oseledets",
+        "Mikhail Goncharov"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-29T13:18:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.37533v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "non-factorized diffusion language models vs autoregressive decoding",
+      "llm_evidence_cn": "非分解扩散语言模型与自回归解码的对比",
+      "llm_evidence": "非分解扩散语言模型与自回归解码的对比",
+      "canonical_evidence": "非分解扩散语言模型与自回归解码的对比",
+      "llm_tldr_en": "Proposes E-MoE to improve sample quality in non-factorized diffusion language models using discrete shared latents.",
+      "llm_tldr_cn": "提出E-MoE，通过离散共享隐变量改进非分解扩散语言模型在少步采样下的质量。",
+      "llm_tldr": "提出E-MoE，通过离散共享隐变量改进非分解扩散语言模型在少步采样下的质量。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.01016v1",
+      "title": "Scaling and Distilling Text Embeddings for Better Diffusibility",
+      "abstract": "Diffusion language models (DLMs) offer a promising alternative to autoregressive (AR) language generation. Recent advances in continuous DLMs, which apply latent diffusion to continuous text embeddings, raise a practical question: which embedding makes the best latent space, i.e., the most diffusible? To answer this, we search through different embeddings and find that scaling the embedding model to stronger ones within the same family (T5 to T5Gemma-1 to T5Gemma-2) greatly improves generative performance. But the raw T5Gemma-2 embeddings are still not optimal. They are so discriminative that even the embeddings of plausible alternative words are separated, which makes the generation vulnerable to imperfect sampling. Consequently, continuous diffusion often fails to reach any of them and ends up at an invalid embedding instead. To address this, we distill T5Gemma-2 into a student encoder that learns the teacher's decoded probabilities as soft labels. Learning from such soft labels makes the student pull the alternative embeddings closer while maintaining the encoding-decoding mechanism. The distilled embeddings form a more connected and diffusible latent space, improving over the vanilla T5Gemma-2 embeddings. As a result, our medium-sized DLM achieves Gen. PPL 17.8 (against real-text PPL 15.4) at real-text entropy on OpenWebText, outperforming GPT-2-M on Gen. PPL.",
+      "authors": [
+        "Zekai Zhang",
+        "Yunjie Tian",
+        "Yanjin He",
+        "Xiaoyan Zhang",
+        "Dongdi Zhao",
+        "Qing Qu",
+        "Di Fu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-10-01T03:59:36+00:00",
+      "link": "https://arxiv.org/pdf/2610.01016v1",
+      "tags": [
+        "keyword:ARDM",
+        "query:ARDM"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "diffusion language models as alternative to autoregressive generation",
+      "llm_evidence_cn": "扩散语言模型作为自回归生成的替代方案",
+      "llm_evidence": "扩散语言模型作为自回归生成的替代方案",
+      "canonical_evidence": "扩散语言模型作为自回归生成的替代方案",
+      "llm_tldr_en": "Explores optimal text embeddings to improve the diffusibility and performance of continuous diffusion language models.",
+      "llm_tldr_cn": "探索最佳文本嵌入空间，以提高连续扩散语言模型的扩散能力和生成性能。",
+      "llm_tldr": "探索最佳文本嵌入空间，以提高连续扩散语言模型的扩散能力和生成性能。",
+      "llm_tags": [
+        "query:ardm:composite"
+      ],
+      "matched_query_tag": "query:ardm:composite",
+      "matched_query_text": "Papers central to 帮我检索自回归扩散模型的研究进展, especially work that connects or combines: autoregressive diffusion models research progress; AR-Diffusion model architecture and performance; autoregressive sequence generation with diffusion; combining autoregressive models and diffusion models; recent advances in autoregressive diffusion models; state of the art autoregressive diffusion architectures.",
+      "matched_requirement_id": "req-composite-ardm",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    }
+  ]
+}

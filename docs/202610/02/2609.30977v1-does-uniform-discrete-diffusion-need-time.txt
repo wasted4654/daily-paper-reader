@@ -1,0 +1,2245 @@
+Title: Does Uniform Discrete Diffusion Need Time?
+
+URL Source: https://arxiv.org/pdf/2609.30977v1
+
+Published Time: Mon, 28 Sep 2026 00:45:49 GMT
+
+Number of Pages: 32
+
+Markdown Content:
+Preprint. 
+
+# DOES UNIFORM DISCRETE DIFFUSION NEED TIME ?
+
+Chunsan Hong 1,2 Chieh-Hsin Lai 2 Satoshi Hayakawa 3
+
+Yuhta Takida 2 Jong Chul Ye 1, † Yuki Mitsufuji 2, †
+
+> 1
+
+KAIST 2Sony Group Corporation 3The University of Tokyo 
+
+## ABSTRACT 
+
+Uniform discrete diffusion models (UDMs) commonly use explicit time condition-ing, but we find that it can often be unnecessary in practice. In this paper, we first show that the population-optimal UDM predictor generally depends on time: time controls how much the model should trust the observed context. We then show that this dependence can become negligible in finite-data settings relevant to language. When a corrupted training sequence remains much closer to its original clean sequence than to competing training sequences, the empirical-optimal predictor is nearly insensitive to time over most of the diffusion trajectory, where the guarantee weakens toward the high-noise endpoint. Empirically, trained language UDMs exhibit limited time sensitivity over most of the trajectory, while time-agnostic predictors remain competitive with, and often outperform, time-conditioned models across datasets and training objectives. These results challenge the use of explicit time conditioning in UDMs: although the population optimum depends on time, explicitly conditioning on it may often be unnecessary in practice. 
+
+## 1 INTRODUCTION 
+
+Diffusion models usually tell the neural network how noisy its input is (Ho et al., 2020; Song et al., 2021; Lai et al., 2025). This information, commonly provided through time conditioning , allows the same model to make different predictions at different stages of denoising. But does the model actually need to be told the time? Recent work on continuous diffusion suggests that explicit time conditioning may not always be essential. Sun et al. (2025) show that removing time conditioning causes only a small performance degradation in several settings. Separately, Wang & Du (2025) develop a generative formulation whose neural model is time-independent, further showing that generation need not always be built around an explicitly time-conditioned predictor. For discrete diffusion models, however, the answer depends strongly on the corruption mechanism. In masked diffusion models (MDMs), corrupted tokens are replaced by a special [MASK] symbol. The corrupted sequence therefore reveals which positions have been corrupted, and the population-optimal clean-token predictor does not need the diffusion time explicitly (Zheng et al., 2025). Consistent with this property, time-agnostic MDMs achieve comparable empirical performance (Sahoo et al., 2024) and have been adopted in large language diffusion models (Nie et al., 2025; Ye et al., 2025). Uniform diffusion models (UDMs) are fundamentally different. A corrupted token is replaced by an ordinary vocabulary token sampled from the uniform distribution, so the model cannot directly tell whether an observed token was preserved from the clean sequence or produced by noise (Liu et al., 2025; Amin et al., 2025). The diffusion time can therefore carry information that is absent from the corrupted sequence itself, by indicating how much the observed context should be trusted. This makes it unclear whether the time-agnostic property of MDMs can extend to UDMs. This question has become increasingly important as UDMs scale to large language modeling. Recent studies show that scaled UDMs can outperform MDMs in several settings (Sahoo et al., 2026b; von R¨ utte et al., 2026), followed by the development of large language UDMs (DiffusionGemma Team, 2026; Sahoo et al., 2026a). Some of these models already use time-agnostic predictors, yet it remains unclear why this works, when time actually changes the optimal prediction, and how much explicit time conditioning helps in practice. 
+
+> †Corresponding authors.
+
+1arXiv:2609.30977v1 [cs.LG] 25 Sep 2026 Preprint. Throughout this work, we call a UDM time-agnostic when its neural predictor does not receive diffusion time as an explicit input. The forward corruption process, noise schedule, and other analytic time-dependent quantities remain unchanged. We ask: 
+
+What role does time play in UDMs, and when do UDMs need explicit time conditioning? 
+
+First, we characterize why and how the population-optimal UDM predictor depends on time. 
+
+Uniform corruption creates uncertainty about which observed tokens are reliable. Consequently, every subset of observed tokens constitutes a possible hypothesis about the reliable context. We show that time only controls the relative weights assigned to these hypotheses. Thus, unlike MDMs where corrupted positions are explicitly identified, the population-optimal UDM predictor is generally time-dependent, but its dependence on time has a simple and structured form. 
+
+Second, we show that finite training data can strongly suppress this dependence. Population-level time dependence arises from reweighting competing hypotheses about which observed tokens are reliable. In finite language data, however, the enormous discrete sequence space leaves training examples highly separated. A corrupted sequence therefore remains much closer to its originating clean sequence than to competing sequences, causing the posterior to collapse onto few hypotheses and weaken time-dependent reweighting. Only near the high-noise endpoint, where multiple hypotheses become plausible, can time affect the prediction. We make this intuition quantitative, deriving a bound that links the time sensitivity of the empirical oracle to the post-corruption separation margin. We empirically verify that language data exhibit large separation over most noise levels. 
+
+Finally, we find that learned language UDMs make limited use of explicit time over most of the diffusion trajectory. The above finite-data result concerns the empirical oracle, not a learned neural network. A learned model may recover additional time dependence through generalization or architectural inductive bias; we therefore separately analyze trained UDMs. Their measured time sensitivity is weak over much of the trajectory and becomes substantially larger in the high-noise regime. The predictive benefit of time conditioning is similarly concentrated near high noise. A hybrid model that enables time conditioning only in this regime performs nearly the same as a fully time-conditioned model, while fully time-agnostic UDMs remain competitive with, and in several settings outperform, their time-conditioned counterparts across datasets and training objectives. In summary, our results shift the question from whether time matters in UDMs to where it matters enough to justify explicit conditioning . This helps explain why time-agnostic UDMs can work well despite a time-dependent population optimum, and suggests a broader design space for simpler architectures, training methods, and samplers that use time only where it is useful. 
+
+## 2 BACKGROUND 
+
+We briefly introduce the UDM formulation and the recent variants used in this work. See Appendix A for more details and related work. 
+
+Notation. Let X = {e1, . . . , eK } ⊂ ∆K be a finite token space, where each token is represented as a one-hot vector and ∆K is the K-category probability simplex. The vocabulary size is K = |X | , and the uniform prior is K−11K . A sequence is x = ( x1, . . . , xL) ∈ X L, and zt denotes its corrupted version at time t ∈ [0 , 1] , where t = 0 is data and t = 1 is the uniform prior. αt denotes a decreasing noise schedule with α0 ≈ 1 and α1 ≈ 0, and ρt := Kα t/(1 −αt). For simplicity, we use the standard 
+
+αt = 1 − t hereafter; formal theoretical results for general schedules are provided in Appendix where the distinction matters. Unless stated otherwise, expectations are over x ∼ pdata and zt ∼ qt(· | x).
+
+⟨· , ·⟩ , ⊙, and 1{·} denote the dot product, Hadamard product, and indicator function, respectively. 
+
+Uniform diffusion models. A UDM independently corrupts each token toward the uniform prior: 
+
+qt(zit | xi) = Cat  zit ; αtxi + (1 − αt)K−11K
+
+ . (1) For s < t , the single token posterior qs|0,t follows from Bayes’ rule using the s → t transition and the s-marginal (Eq. (10)). Schiff et al. (2025) parameterize the reverse process by plugging xiθ (zt, t )
+
+into this posterior, 
+
+pθs|t(zis | zt) := qs|0,t 
+
+ zis | xi = xiθ (zt, t ), zt
+
+ ,
+
+2Preprint. as detailed in Eq. (3). The standard UDM is trained with the continuous-time NELBO: 
+
+LUDM (θ) = 
+
+Z 10
+
+Ex,zt
+
+> L
+
+X
+
+> i=1
+
+−α′
+
+> t
+
+Kα t
+
+ K
+
+¯xiθ,ℓ i
+
+− K
+
+¯xiℓi
+
++ X 
+
+> j̸=ℓi
+
+¯xij
+
+¯xiℓi
+
+log ¯xiθ,ℓ i ¯xij
+
+¯xiθ,j ¯xiℓi
+
+ dt, (2) where ¯νi := Kα tνi + (1 − αt)1K and ℓi denotes the non-zero index of zit .
+
+Recent UDM formulations. Among several recent UDM formulations, we focus on two repre-sentative frameworks: Diffusion Duality (Sahoo et al., 2025) and the leave-one-out formulation of Gourevitch et al. (2026). Diffusion Duality retains the same uniform forward process and UDM NELBO, but represents the uniform-state marginal through the arg max of a Gaussian corruption and uses a curriculum from continuous relaxations to discrete inputs. In contrast, Gourevitch et al. (2026) show that the neural predictor in the UDM bridge has the leave-one-out (LOO) posterior as its population optimum: each clean token is predicted from the corrupted context excluding the observation at that same position, see Eq. (4). They further derive an analytic local-token correction that converts the LOO predictor into the full denoising posterior, allowing the underlying predictor to be trained with a simple cross-entropy loss. We refer to this CE-trained formulation as LOO+CE. 
+
+## 3 THE ROLE OF TIME AT THE POPULATION OPTIMUM IN UDM S
+
+The corruption mechanism determines whether time needs to enter the clean-token predictor. In MDMs, the special mask symbol reveals which positions have been corrupted, so the population-optimal predictor can rely directly on the visible tokens and is time-agnostic (Zheng et al., 2025). UDMs are different. Because uniform corruption replaces a token by another ordinary vocabulary token, the model cannot directly tell whether an observed token was copied from the clean sequence or produced by noise. Time can therefore be informative because it changes how likely the observed context is to have been preserved from the clean sequence. This motivates two questions: 1. Is the population-optimal UDM predictor inherently time-dependent? 2. If so, through what structure does time affect its prediction? The first determines whether removing explicit time conditioning changes the population optimum; the second reveals what information time actually contributes. 3.1 THE POPULATION TARGET OF THE UNIFORM CHANNEL 
+
+The UDM reverse kernel has a seemingly complicated plug-in form (Gourevitch et al., 2026; Sahoo et al., 2025; Schiff et al., 2025): 
+
+pθs|t
+
+ zis | zt
+
+ = qs|0,t (zis | xi = xiθ (zt, t ), zt) = Cat zis; ρtzit ⊙xiθ (·,t )+ ρtρs zit +(1− ρtρs ) ρs xiθ (·,t )+ 1KK+ρs 
+
+> ρt
+
+⟨zit ,xiθ (zt,t )⟩+1 
+
+!
+
+.
+
+(3) Importantly, all neural-model dependence enters through the clean-token prediction xθ (zt, t ). Thus, rather than analyzing the reverse kernel directly, we ask what this predictor should output at the population optimum and how that prediction depends on time. Gourevitch et al. (2026) show that the neural prediction used by the UDM bridge has a leave-one-out 
+
+(LOO) posterior as its population target. Fix a target position i ∈ [L]. Let X ∼ pdata denote a random clean sequence, T ∼ Unif([0 , 1]) the corruption time, and Z | (X = x, T = t) ∼ qt(· | x) its corrupted version. We write Z−i for the corrupted sequence with position i removed, and analogously for z−i. Thus, Z−i = z−i means that all corrupted tokens except the target position are observed. The LOO target predicts the clean token at position i from this remaining corrupted context: 
+
+xi⋆(z, t ) := E Xi Z−i = z−i, T = t . (4) Since Xi is one-hot, xi⋆,k (z, t ) is the probability that the clean token is ek given the other corrupted tokens. The local observation zi can then be incorporated exactly through the known uniform 3Preprint. corruption likelihood: Pr  Xi = ek | Z = z, T = t ∝ qt
+
+ zi | Xi = ek
+
+ xi⋆,k (z, t ). That is, xi⋆
+
+summarizes what the surrounding corrupted tokens imply about the clean token, while the bridge uses the known corruption process to account for the token observed at position i itself. Importantly, this LOO posterior is exactly the population minimizer of the UDM NELBO in Eq. (2): 
+
+xθ⋆ (z, t ) = x⋆(z, t ), for PT,Z -almost every (t, z).
+
+Substituting x⋆ into Eq. (3) gives the corresponding population-optimal reverse kernel: 
+
+pθ⋆
+
+> s|t
+
+ zis | zt
+
+ = qs|0,t (zis | xi = xi⋆(zt, t ), zt).
+
+Eq. (4) tells us what the optimal predictor is, but it does not yet reveal how time changes its prediction: time appears only inside the conditioning distribution. To make this dependence explicit, recall that each token under uniform corruption can be viewed as arising either from the copy branch or from the uniform-noise branch. We therefore decompose the prediction over hypotheses about which context positions were copied from the clean sequence, which leads to the following property. 
+
+Proposition 1 (Explicit time decomposition of the population-optimal UDM predictor) . Fix i ∈ [L]
+
+and a corrupted observation z. For any index set S ⊆ [L] \ { i}, write 
+
+z[S] :=  zj  
+
+> j∈S
+
+, X[S] :=  Xj 
+
+> j∈S
+
+Then the population-optimal predictor satisfies 
+
+xi⋆(z, t ) = X
+
+> S⊆[L]\{ i}
+
+Pr( S | Z−i = z−i, T = t)E Xi X[S] = z[S] , (5) 
+
+Pr( S | Z−i = z−i, T = t) ∝ ρ|S| 
+
+> t
+
+Pr( X[S] = z[S]) .
+
+Here, Pr( X[S] = z[S]) = P  
+
+> x:x[S]= z[S]
+
+pdata (x) is the data probability mass of the partial observation z[S] under the hypothesis index set S.
+
+Proposition 1 makes the role of time explicit: time controls how much of the hypothesis z[S] should be trusted . Given a corrupted context z−i, the model does not know which observed tokens were from the clean sequence or from uniform noise. It therefore considers every subset S ⊆ [L] \ { i} as a possible set of copied positions. If the positions in S were indeed copied, then EXi X[S] = z[S]
+
+is the corresponding prediction of the target token from that clean context. The final prediction averages over all such possibilities according to their posterior weights. We now interpret this time-weighted posterior in more detail. Using ρt = Kα t/(1 − αt),
+
+Pr( S | Z−i = z−i, T = t) ∝ ρ|S| 
+
+> t
+
+Pr( X[S] = z[S]) = Pr( X[S] = z[S]) 
+
+| {z }
+
+> Data dependent
+
+K|S|
+
+|{z} 
+
+> Fixed vocabulary factor
+
+ αt
+
+> 1−αt
+
+|S|
+
+| {z }
+
+> Time dependent
+
+.
+
+This factorization cleanly separates the sources of the posterior weighting. The data-dependent term measures how compatible the observed values on S are with the data distribution. The time-dependent term changes the relative preference for subsets of different sizes as the corruption level varies, while 
+
+K|S| is a fixed channel factor that amplifies this size dependence. Near the clean endpoint, ρt is large, so the model places more weight on explanations in which many observed tokens were copied from the clean sequence. As noise increases, ρt decreases and explanations with fewer copied positions receive relatively more weight. Thus, unlike in MDMs, the population-optimal UDM predictor is generally time-dependent: xi⋆(z, ·)̸ ≡ const .3.2 TIME ACTS THROUGH THE AMOUNT OF MATCHED CONTEXT 
+
+Proposition 1 expresses the optimal prediction through all 2L−1 possible hypotheses of copied context positions. We can further simplify this optimum using the symmetry of the uniform channel (Eq. (1)): every position at which a candidate clean sequence matches the corrupted observation contributes the same factor 1 + ρt. Hence, the likelihood depends on a matching set M ⊆ [L] only through its size, via (1 + ρt)|M |, regardless of the token identities, the locations of the matches, or whether a matching token was copied from clean sequence or independently produced by uniform corruption. Thus, time acts only through how many context positions match. This motivates the following statistic. 4Preprint. 
+
+Definition 1 (Match count random variable) . For random variables X and Z, and a fixed target position i, define 
+
+M i(X, Z ) := X
+
+> j∈[L]\{ i}
+
+1{Xj = Zj }.
+
+Thus, M i counts how many context tokens of a candidate clean sequence agree with the corrupted observation, excluding the target position i, without recording which particular positions match. 
+
+Theorem 1 (Time dependence through the matched-context count) . For every target position i,
+
+Xi ⊥ T | Z−i, M i,
+
+i.e., Xi and T are conditionally independent given Z−i and M i. Moreover, Eq. (4) admits the exact decomposition 
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him(z),wim(z, t ) := Pr  M i = m Z−i = z−i, T = t ∝ (1 + ρt)m Pr  M i(X, z) = m ,
+
+him(z) := E Xi M i = m, Z −i = z−i ,
+
+where Pr( M i(X, z) = m) = P  
+
+> Mi(x,z)= m
+
+pdata (x) is the data probability mass of clean sequences that match z in exactly m context positions. 
+
+Theorem 1 gives a compact description of the entire time dependence. Once the corrupted context and its match count M i are fixed, the distribution of the clean token Xi no longer depends on time. The component prediction him(z) is therefore time-independent; time only changes how strongly different match counts m are weighted through (1 + ρt)m. In other words, the population-optimal UDM does not learn an unrelated clean-token prediction at every noise level. Time acts through a single scalar ρt that reweights predictions associated with different amounts of matched context. 3.3 CHARACTERIZING THE INFLUENCE OF TIME IN UNIFORM DIFFUSION 
+
+Theorem 1 shows where time enters the population-optimal prediction: it changes the weights over the match count M i. We next quantify how strongly this reweighting changes the prediction. 
+
+Proposition 2 (Exact temporal sensitivity) . Let ηt = log(1 + ρt) and let ek denote the k-th one-hot vector. Then the temporal derivative of the context posterior is 
+
+∂∂η t
+
+xi⋆(z, t ) = Cov t, z
+
+ hiM i (z), M i ,
+
+where the covariance is taken componentwise. Equivalently, for any candidate category k with 
+
+xi⋆,k (z, t ) > 0,
+
+∂∂η t
+
+log xi⋆,k (z, t ) = Et, z
+
+M i Xi = ek
+
+ − Et, z [M i], (6) 
+
+where the subscript (t, z) denotes the posterior distribution Pr( · | Z−i = z−i, T = t).
+
+Proposition 2 makes the effect of time particularly transparent. Larger ηt corresponds to a cleaner channel. Eq. (6) therefore says that a candidate token ek gains probability toward the clean endpoint when clean sequences predicting ek have more average matches with the observed context than the posterior average. If they have fewer matches, its probability decreases. Thus, the strength of time dependence is governed by differences in matched-context support across candidate tokens. 
+
+Population-level takeaway. The population-optimal UDM predictor is generally time-dependent, but time only reweights predictions across different match counts. Its effect is strongest when competing clean candidates are supported by different amounts of matched context. 5Preprint. 
+
+## 4 TIME SENSITIVITY OF THE FINITE -D ATA ORACLE 
+
+At the population level, a rich data distribution can assign substantial probability to multiple clean sequences that plausibly explain the same corrupted context. In this regime, changing t can meaning-fully reweight these competing explanations and thereby change the optimal prediction. The situation can be very different under finite training data. An empirical distribution places probability mass on only finitely many sequences in the enormous discrete space X L. If these sequences are sufficiently separated, a corrupted training sample z can remain much more compatible with its originating sequence x than with any competing sequence that predicts a different token at position i. The posterior may then already be strongly concentrated, leaving little room for the time-dependent reweighting to change the resulting prediction. This motivates the central question: 
+
+When does finite training data suppress the time sensitivity of the oracle UDM predictor? 
+
+We show that the answer is governed by the geometry of the finite training set: how well separated training sequences are in the enormous discrete sequence space. Our theoretical analysis proceeds in two steps: 1) when training sequences are sufficiently far apart, the originating sequence is likely to remain separated from competing sequences after corruption, and 2) whenever this separation is sufficiently large, the oracle Fisher sensitivity for corrupted sequence is strongly suppressed over a broad range of diffusion times, with the guarantee weakening toward the high-noise endpoint. 4.1 WHEN FINITE HIGH -D IMENSIONAL DATA SUPPRESS TIME SENSITIVITY 
+
+We now make the finite-data mechanism precise. Given N training sequences x1, . . . , xN ∈ X L,define their empirical distribution as ˆpN := 1
+
+> N
+
+PNn=1 δxn . This is the finite-data counterpart of pdata 
+
+considered in the previous section, with the oracle supported only on the observed training sequences. 
+
+The first key question is how much of the separation between distant training sequences survives even after corruption. Consider a corrupted z generated from a training sequence x. For prediction at position i, only training sequences with x′i̸ = xi can support a different target token. What matters is therefore whether the originating sequence x retains a match-count advantage over every such competitor after corruption. We quantify this advantage through the following separation margin. 
+
+Definition 2 (Hamming separation and ∆-separability) . For x ∈ supp(ˆ pN ), define its minimum Hamming distance to the remaining training sequences as 
+
+d(x) := min  
+
+> x′∈supp( ˆ pN)\{ x}
+> L
+
+X
+
+> j=1
+
+1x′j̸ = xj .
+
+For an integer ∆ ≥ 1, we say that a corrupted sequence z is ∆-separable with respect to x at coordinate i if 
+
+M i(x, z) − M i(x′, z) ≥ ∆ ∀ x′ ∈ supp(ˆ pN ) with x′i̸ = xi. (7) Thus, ∆ is exactly the match-count advantage retained by the originating sequence over every training sequence that would predict a different token at position i. The following result shows that such an advantage survives when the training sequences are sufficiently separated. 
+
+Proposition 3 (∆-separation under UDM corruption (informal)) . Given a training sequence x, let 
+
+T ∼ Unif([0 , 1]) and Z ∼ qT (· | x). For any integer ∆ ≥ 1 and i ∈ [L], when K ≫ L and d(x) is large, 
+
+Pr( Z is ∆-separable w.r.t. x at i) ≳ 1 − log N + ∆ (1 − e−1)d(x) .
+
+This simplified bound exposes the tradeoff directly. If training sequences are sufficiently separated, i.e .Hamming separation d(x) is large, the source x remains distinguishable after corruption. Conversely, more competing sequences or a larger required margin ∆ make the event harder. Importantly, the dependence on dataset size is only logarithmic in N . If d(x) is too small relative to log N + ∆ , the bound can become uninformative. The formal finite-K statement is in Appendix B.4. 6Preprint. 
+
+The second key question is how separation suppresses the time sensitivity of the oracle prediction. For fixed z, coordinate i, and time t, define the Fisher time sensitivity 
+
+Iit (z) := X  
+
+> k:xi⋆,k (z,t )>0
+
+xi⋆,k (z, t )
+
+ ∂∂t log xi⋆,k (z, t )
+
+2
+
+= X  
+
+> k:xi⋆,k (z,t )>0
+
+ ∂∂t xi⋆,k (z, t )
+
+2
+
+xi⋆,k (z, t ) . (8) It measures how quickly the optimal categorical prediction changes when only the diffusion time is varied. Indeed, for infinitesimal δ, we have DKL 
+
+xi⋆(z, t ) xi⋆(z, t + δ) = δ2 
+
+> 2
+
+Iit (z) + o(δ2).Hence, small Iit (z) means that nearby times produce nearly indistinguishable oracle predictions. The next result provides the key link: a large match-count advantage directly limits this time sensitivity. 
+
+Theorem 2 (Fisher sensitivity with finite data (informal)) . For ∆-separable z with respect to x at coordinate i,
+
+Iit (z) ≤ N L 2 K2t∆−2
+
+ K − (K − 1) t∆+2 .
+
+Moreover, for ∆ ≥ 2, the right-hand side is strictly increasing in t ∈ (0 , 1) .
+
+The bound becomes weaker toward the high-noise endpoint, where corruption makes the originating sequence harder to distinguish from competing sequences. At lower noise levels, a larger separation margin ∆ keeps these competitors much less plausible, leaving less room for changes in time to alter the oracle prediction. If ∆ ≥ 2, a convenient consequence is: 
+
+sup 
+
+> 0<t ≤1−K−1/4
+
+Iit (z) ≤ N L 2K−(3∆ −2) /4. (9) For practical LLM vocabulary sizes, the interval (0 , 1 − K−1/4] already covers most of the diffusion trajectory. More importantly, Eq. (9) can be inverted to ask how much separation is sufficient for a desired sensitivity level. To guarantee sup 0<t ≤1−K−1/4 Iit (z) ≤ ζ, it is sufficient that ∆ ≥
+
+max 
+
+n
+
+2, 23 + 43 log K N L 2
+
+> ζ
+
+o
+
+. Thus, although the Fisher bound contains N and L2, the required match-count advantage grows only logarithmically with dataset size and sequence length. Each additional unit of ∆ further suppresses the bound by a factor of K−3/4.
+
+The bounds remain meaningful at LLM scale. Consider a K2-Horizon-375B-scale pretraining configuration (IFM Team, 2026) with N ≈ 1.9 × 10 9, L = 8192 , and K = 250 ,624 . Here, by Eq. (9), only an integer margin ∆ ≥ 7 guarantees sup 0<t ≤0.955 Iit (z) ≤ 10 −5. In other words, even with billions of training sequences, the originating sequence only needs to retain a seven-token match-count advantage over every competitor predicting a different target token. By the formal bound in Proposition 3 (Appendix B.4), d(x) ≥ 900 , about 11% of the sequence length, already gives a 0.95 lower bound on 7-separability, while d(x) ≥ 451 gives a 0.9. Finally, small Fisher sensitivity controls finite changes in the oracle prediction. If sup 0<u ≤1−ϵ Iiu(z) ≤ ζ, then for any 
+
+t, s ∈ (0 , 1 − ϵ), pxi⋆(z, t ) − pxi⋆(z, s ) 2
+
+≤ |t−s|
+
+> 2
+
+√ζ. 
+
+Thus, once separation makes the Fisher bound small, the finite-data oracle is nearly invariant to time. 4.2 ORACLE HAS NEAR -Z ERO TIME SENSITIVITY ON REAL LANGUAGE DATA 
+
+We now examine whether the finite-data regime predicted by Proposition 3 and Eq. (9) actually occurs 
+
+in real language data. We consider OWT (Gokaslan et al., 2019), a standard benchmark in discrete diffusion language modeling, with K = 50 ,258 , L = 1024 , and N = 8 .7 × 10 6. For these values, 
+
+sup 0<t ≤0.933 Iit (z) ≤ ζ with ζ = 10 −5 only requires ∆ ≥ 6. The formal bound in Appendix B.4 further shows that d(x) ≥ 698 is sufficient for at least a 0.95 lower bound on 6-separability. We now compute d(x) and the post-corruption separation margin ∆ directly on OWT. Before diffusion corruption, clean OWT is highly separated in Hamming space. As shown in Figure 1 ( Left ), the distribution of d(x) is concentrated near the maximum sequence length L = 1024 , with median 7Preprint. 0 256 512 768 1024 
+
+Min. Hamming distance d(x)
+
+> 00.1M 0.2M 0.3M 0.4M 0.5M 0.6M 0.7M 0.8M
+> # of clean sequences
+
+Median=988    
+
+> 0256 512 768
+> 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 0.99
+> Sampling time t
+
+## = 6 10 3  
+
+> 10 2
+> 10 1
+> Probability mass of
+
+Figure 1: Empirical separation of OWT training data. Left : distribution of the minimum Hamming distance d(x) from each training sequence to the remaining data, with median d(x) = 988 . Right :distribution of the largest post-corruption separation margin ∆ across diffusion times. The dashed line marks ∆ = 6 , which implies an oracle Fisher-sensitivity bound below 10 −5 for t ≤ 0.933 . Small separation occurs primarily when z is sampled near the extreme high-noise endpoint. 
+
+d(x) = 988 , well above the sufficient value 698 . We next test whether this separation survives UDM corruption. For each t ∈ { 0.05 , 0.1, . . . , 0.95 , 0.99 }, we sample 2000 pairs x ∼ ˆpN and 
+
+zt ∼ qt(· | x) and measure the largest ∆ for which zt is ∆-separable. Figure 1 ( Right ) shows that the observed margin remains above 6 over almost the entire diffusion trajectory, becoming small primarily when z is sampled near the extreme high-noise endpoint. These measurements confirm that OWT lies in the separation regime predicted by our theory: most of the training pairs (x, z) satisfies 6-separability, and whenever the observed margin satisfies ∆ ≥ 6,Eq. (9) gives sup 0<t ≤0.933 Iit (z) ≤ 10 −5, implying negligible oracle time sensitivity over most of the diffusion trajectory. Near the extreme high-noise endpoint, smaller separation margins weaken this guarantee and leave more room for time to influence the oracle prediction. 
+
+Finite-data takeaway. When finite training sequences remain well separated after corruption, the originating sequence retains a clear match-count advantage and the oracle becomes nearly insensitive to time over most of the diffusion trajectory. This regime is empirically observed in practical language data, with the separation weakening mainly near the high-noise endpoint. 
+
+## 5 YOU MIGHT NOT NEED TIME IN UDM S FOR TEXT GENERATION 
+
+Sections 3 and 4 reveal a tension: the population-optimal UDM predictor generally depends on time, while the finite-data oracle can be nearly time-insensitive over most of the time. The remaining question is whether a learned UDM actually benefits from time conditioning. Two possibilities arise: • Time-variant UDMs may benefit from recovering useful time dependence through generaliza-tion or inductive bias beyond the finite-data oracle. • Time-agnostic UDMs may benefit from removing largely unnecessary time dependence. If time dependence remains weak over most of the trajectory, removing explicit time conditioning may simplify the model and improve learning. We test these directly by measuring the time sensitivity of learned UDMs and comparing time-conditioned and time-agnostic models. Throughout this section, D UALITY denotes the framework of Sahoo et al. (2025), while LOO+CE denotes the LOO denoiser trained with cross-entropy (Gourevitch et al., 2026). See Appendix A.2 for framework details and C.2 for experimental settings. 5.1 LEARNED UDM S EXHIBIT LIMITED TIME DEPENDENCE IN LANGUAGE 
+
+Learned time sensitivity follows the finite-data prediction. We first examine whether the time sensitivity of learned UDMs exhibits the qualitative behavior predicted by our finite-data analysis. Using the official OWT checkpoints of D UALITY and LOO+CE, we sample corrupted sequences z
+
+at tcorruption ∈ { 0.01 , 0.50 , 0.99 }. For each fixed z, we then vary the time input used for prediction and measure its Fisher sensitivity across the entire diffusion trajectory. 8Preprint. 0.0 0.2 0.4 0.6 0.8 1.0 10 0                        
+
+> 10 1
+> 10 2
+> 10 3
+> 10 4
+> 10 5
+> 10 6
+> Fisher sensitivity  Duality tCorruption = 0.99
+> tCorruption = 0.50
+> tCorruption = 0.01
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> LOO+CE
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 −0.06 −0.04 −0.02 0.00 0.02 0.04
+> NLL diff. w.r.t. time-agnostic
+> log t
+> logit( t)−log(1 − t)
+> Linear t
+> Fisher sensitivity evaluation time tDiffusion time t
+
+Figure 2: Left : Fisher sensitivity of D UALITY and LOO+CE, varying z sampling time tcorruption ∈{0.01 , 0.50 , 0.99 } and evaluating Fisher sensitivity on every time coordinate. Right : Per-time NLL difference between time-agnostic and time-variant UDMs. Table 1: Validation perplexity (PPL) across several configurations. Lower is better. Hybrid uses the time-modulation layer only for t > 0.8. PPLs lower than the time-variant baseline are underlined. Dataset Objective Variant (139M) Hybrid (139M) Agnostic (131M) Agnostic (139M) LM1B DUALITY 29.99 29.92 30.32 29.76 LOO+CE 30.15 29.67 29.18 28.93 LM1B (Packed) DUALITY 33.48 33.17 33.69 33.35 LOO+CE 33.94 33.37 33.24 32.75 As shown in Figure 2 ( left ), the learned models qualitatively match our finite-data analysis: First, Fisher sensitivity increases with tcorruption . Stronger corruption tends to reduce the separation margin 
+
+∆, weakening the finite-data suppression guarantee in Eq. (9). Second, for a fixed corrupted input, Fisher sensitivity generally increases with the evaluation time and rises sharply near the high-noise endpoint, where the bound in Theorem 2 becomes weaker. Finally, we use held-out test sequences for this analysis, although our finite-data theory is stated for the empirical training distribution. The similar qualitative behavior on held-out data suggests that limited time sensitivity can extend beyond training examples, while our theory does not directly establish this behavior off the empirical support. 
+
+The localized time sensitivity is robust and provides limited practical benefit. We next ask whether this concentration of time sensitivity can be resolved by how time is parameterized to the model. We train conventional UDMs (Schiff et al., 2025) on LM1B. We keep the forward process unchanged and reparameterize only the scalar passed to the time embedding as ˆt = f (t),where f (t) ∈ {− log(1 − t), log t, logit( t), t }. These parameterizations allocate different resolution across diffusion times. Nevertheless, Figure 4 in Appendix shows a consistent pattern across all parameterizations: learned UDMs exhibit weak time sensitivity except near the high-noise endpoint. We next compare the time-conditioned model with its time-agnostic counterpart. Figure 2 ( Right )shows that time conditioning improves per-time NLL mainly near t = 1 , precisely where the learned Fisher sensitivity becomes substantial. Over most of the diffusion trajectory, however, the time-agnostic model achieves lower NLL and also performs better overall. Together, these results suggest that learned UDMs make substantial use of explicit time conditioning only in a limited high-noise region, and that modeling this localized dependence provides limited practical benefit. 5.2 TIME -AGNOSTIC UDM VERSUS TIME -VARIANT UDM We next compare time-agnostic and time-variant UDMs across broader settings, including different datasets, tokenizers, and training objectives. Beyond the conventional UDM studied in Section 5.1, we now evaluate D UALITY and LOO+CE. We follow widely adopted experimental settings in discrete diffusion language modeling (Sahoo et al., 2025; Arriola et al., 2025; Schiff et al., 2025), evaluating models on LM1B (Chelba et al., 2014), both with and without sentence packing, and OWT, all trained for 1M steps, with the same backbone. See Appendix C.2 for more detailed settings. 
+
+Results on LM1B. We compare four setttings for time conditioning: 1) Time-variant model, 2) Time-agnostic model where we remove the time-modulation layers, reducing the parameter count from 139M to 131M, 3) Time-agnostic model with 139M parameters obtained by adding one Transformer block to 2), and 4) Hybrid model that only activates time-modulation layer when t > 0.8. Table 1 9Preprint. shows that the hybrid model that only learns time-sensitivity on high-noise regime is almost equivalent to the time-variant model, and moreover, time-agnostic UDMs remain consistently competitive with their time-dependent counterparts across training frameworks. Table 2: Validation PPL on OWT.      
+
+> Agnostic Variant DUALITY 24.33 25.54 LOO+CE 25.29 25.29
+
+Results on OWT. We compare time-variant and time-agnostic models with the same parameter size. As shown in Table 2, time-agnostic UDMs are comparable to time-variant UDMs. Gener-ative PPL was comparable for D UALITY , while the time-agnostic model performed better for LOO+CE; see Appendix C.1. 
+
+Learned-model takeaway. Time matters mainly near the high-noise endpoint. Consistently, time-agnostic UDMs remain competitive across datasets and objectives, suggesting that explicit time conditioning may offer limited benefit over most of the trajectory. 
+
+## 6 CONCLUSION 
+
+We studied the role of time in population optimal UDMs, and why it weakens under finite training data. Consistently, learned UDMs exhibit limited time dependence over most of the trajectory, while time-agnostic models remain competitive across datasets and frameworks. We expect this view opens a door to future research that allows a simpler foundation for architectures, training, and samplers. 
+
+## REFERENCES 
+
+Alan Nawzad Amin, Nate Gruver, and Andrew Gordon Wilson. Why masking diffusion works: Condition on the jump schedule for improved discrete diffusion. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. Marianne Arriola, Aaron Gokaslan, Justin T. Chiu, Zhihan Yang, Zhixuan Qi, Jiaqi Han, Sub-ham Sekhar Sahoo, and Volodymyr Kuleshov. Block diffusion: Interpolating between autoregres-sive and diffusion language models. In International Conference on Learning Representations (ICLR) , 2025. Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel Tarlow, and Rianne Van Den Berg. Structured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems (NeurIPS) , 2021. Andrew Campbell, Joe Benton, Valentin De Bortoli, Thomas Rainforth, George Deligiannidis, and Arnaud Doucet. A continuous time framework for discrete denoising models. In Advances in Neural Information Processing Systems (NeurIPS) , 2022. Ciprian Chelba, Tomas Mikolov, Mike Schuster, Qi Ge, Thorsten Brants, Phillipp Koehn, and Tony Robinson. One billion word benchmark for measuring progress in statistical language modeling. In Interspeech 2014 , pp. 2635–2639, 2014. doi: 10.21437/Interspeech.2014-564. DiffusionGemma Team. DiffusionGemma technical report, 2026. URL https://arxiv.org/ abs/2608.00146 .Aaron Gokaslan, Vanya Cohen, Ellie Pavlick, and Stefanie Tellex. Openwebtext corpus. http: //Skylion007.github.io/OpenWebTextCorpus , 2019. Samson Gourevitch, Yazid Janati, Dario Shariatian, Umut Simsekli, Eric Moulines, Eric P. Xing, and Alain Durmus. Uniform diffusion models revisited: Leave-one-out denoiser and absorbing state reformulation, 2026. URL https://arxiv.org/abs/2605.22765 .Zhengfu He, Tianxiang Sun, Qiong Tang, Kuanning Wang, Xuanjing Huang, and Xipeng Qiu. DiffusionBERT: Improving generative masked language models with diffusion models. In Annual Meeting of the Association for Computational Linguistics (ACL) , 2023. Alec Helbling, Sebastian Gutierrez Hernandez, Benjamin Hoover, Duen Horng Chau, and Parikshit Ram. What time is it? how data geometry makes time conditioning optional for flow matching, 2026. URL https://arxiv.org/abs/2605.08344 .10 Preprint. Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In Advances in Neural Information Processing Systems (NeurIPS) , 2020. Chunsan Hong, Seonho An, Min-Soo Kim, and Jong Chul Ye. Improving discrete diffusion un-masking policies beyond explicit reference policies. In International Conference on Learning Representations (ICLR) , 2026. Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forr´ e, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. In Advances in Neural Information Processing Systems (NeurIPS) , 2021. IFM Team. Introducing k2 horizon: Frontier performance, radically open, 2026. URL https: //ifm.ai/blog/k2/ .Chieh-Hsin Lai, Yang Song, Dongjun Kim, Yuki Mitsufuji, and Stefano Ermon. The principles of diffusion models, 2025. URL https://arxiv.org/abs/2510.21890 .Sanghyun Lee, Sunwoo Kim, Seungryong Kim, Jongho Park, and Dongmin Park. Effective test-time scaling of discrete diffusion through iterative refinement, 2025. URL https://arxiv.org/ abs/2511.05562 .Sulin Liu, Juno Nam, Andrew Campbell, Hannes Stark, Yilun Xu, Tommi Jaakkola, and Rafael Gomez-Bombarelli. Think while you generate: Discrete diffusion with planned denoising. In 
+
+International Conference on Learning Representations (ICLR) , 2025. Aaron Lou, Chenlin Meng, and Stefano Ermon. Discrete diffusion modeling by estimating the ratios of the data distribution. In International Conference on Machine Learning (ICML) , 2024. Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. In Advances in Neural Information Processing Systems (NeurIPS) , 2025. Jingyang Ou, Shen Nie, Kaiwen Xue, Fengqi Zhu, Jiacheng Sun, Zhenguo Li, and Chongxuan Li. Your absorbing discrete diffusion secretly models the conditional distributions of clean data. In 
+
+International Conference on Learning Representations (ICLR) , 2025. William Peebles and Saining Xie. Scalable diffusion models with transformers. In IEEE International Conference on Computer Vision (ICCV) , 2023. Colin Raffel, Noam Shazeer, Adam Roberts, Katherine Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei Li, and Peter J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of Machine Learning Research (JMLR) , 21(140):1–67, 2020. Subham Sekhar Sahoo, Marianne Arriola, Yair Schiff, Aaron Gokaslan, Edgar Marroquin, Justin T Chiu, Alexander Rush, and Volodymyr Kuleshov. Simple and effective masked diffusion language models. In Advances in Neural Information Processing Systems (NeurIPS) , 2024. Subham Sekhar Sahoo, Justin Deschenaux, Aaron Gokaslan, Guanghan Wang, Justin Chiu, and Volodymyr Kuleshov. The diffusion duality. In International Conference on Machine Learning (ICML) , 2025. Subham Sekhar Sahoo, Lingjie Chen, Khiem Pham, Jonathan Geuter, Chaitanya Dwivedi, Varad Pimpalkhute, Yash Akhauri, Alexander Moreno, Mikhail Yurochkin, Zhenting Wang, Mostafa Elhoushi, Nolan Dey, Shane Bergsma, Joel Hestness, John Thickstun, Eric Xing, and Zhengzhong Liu. Unlocking lossless speedups in llms via discrete diffusion, 2026a. URL https://arxiv. org/abs/2609.04010 .Subham Sekhar Sahoo, Jean-Marie Lemercier, Zhihan Yang, Justin Deschenaux, Jingyu Liu, John Thickstun, and Ante Juki´ c. Scaling beyond masked diffusion language models. In International Conference on Machine Learning (ICML) , 2026b. Mojtaba Sahraee-Ardakan, Mauricio Delbracio, and Peyman Milanfar. The geometry of noise: Why diffusion models don’t need noise conditioning, 2026. URL https://arxiv.org/abs/ 2602.18428 .11 Preprint. Yair Schiff, Subham Sekhar Sahoo, Hao Phung, Guanghan Wang, Sam Boshar, Hugo Dalla-torre, Bernardo P de Almeida, Alexander M Rush, Thomas Pierrot, and Volodymyr Kuleshov. Simple guidance mechanisms for discrete diffusion models. In International Conference on Learning Representations (ICLR) , 2025. Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and generalized masked diffusion for discrete data. In Advances in Neural Information Processing Systems (NeurIPS) , 2024. Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli. Deep unsupervised learning using nonequilibrium thermodynamics. In International Conference on Machine Learning (ICML) , 2015. Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equations. In International Conference on Learning Representations (ICLR) , 2021. Qiao Sun, Zhicheng Jiang, Hanhong Zhao, and Kaiming He. Is noise conditioning necessary for denoising generative models? In International Conference on Machine Learning (ICML) , 2025. Dimitri von R¨ utte, Janis Fluri, Omead Pooladzandi, Bernhard Sch¨ olkopf, Thomas Hofmann, and Antonio Orvieto. Scaling behavior of discrete diffusion language models. In International Conference on Learning Representations (ICLR) , 2026. Runqian Wang and Yilun Du. Equilibrium matching: Generative modeling with implicit energy-based models, 2025. URL https://arxiv.org/abs/2510.02300 .Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7b: Diffusion large language models, 2025. URL https://arxiv.org/abs/ 2508.15487 .Kaiwen Zheng, Yongxin Chen, Hanzi Mao, Ming-Yu Liu, Jun Zhu, and Qinsheng Zhang. Masked diffusion models are secretly time-agnostic masked models and exploit inaccurate categorical sampling. In International Conference on Learning Representations (ICLR) , 2025. 12 Preprint. 
+
+## CONTENTS 
+
+1 Introduction 12 Background 23 The Role of Time at the Population Optimum in UDMs 3
+
+3.1 The Population Target of the Uniform Channel . . . . . . . . . . . . . . . . . . . 33.2 Time Acts Through the Amount of Matched Context . . . . . . . . . . . . . . . . 43.3 Characterizing the Influence of Time in Uniform Diffusion . . . . . . . . . . . . . 5
+
+4 Time Sensitivity of the Finite-Data Oracle 6
+
+4.1 When Finite High-Dimensional Data Suppress Time Sensitivity . . . . . . . . . . . 64.2 Oracle Has Near-Zero Time Sensitivity on Real Language Data . . . . . . . . . . . 7
+
+5 You Might Not Need Time in UDMs for Text Generation 8
+
+5.1 Learned UDMs Exhibit Limited Time Dependence in Language . . . . . . . . . . 85.2 Time-agnostic UDM versus Time-variant UDM . . . . . . . . . . . . . . . . . . . 9
+
+6 Conclusion 10 A Background 14 
+
+A.1 Related Work . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 A.2 Various Uniform Discrete Diffusion Frameworks . . . . . . . . . . . . . . . . . . 15 
+
+B Omitted Proofs 18 
+
+B.1 Proof of Proposition 1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18 B.2 Proof of Theorem 1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 B.3 Proof of Proposition 2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 B.4 Proof of Proposition 3 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22 B.5 Proof of Theorem 2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 B.6 Proof of Eq. (9) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27 B.7 Discussion on the Finite Data Setting . . . . . . . . . . . . . . . . . . . . . . . . . 27 
+
+C Experimental Details 29 
+
+C.1 Additional Experimental Results . . . . . . . . . . . . . . . . . . . . . . . . . . . 29 C.2 Experimental Settings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 C.3 Details on Time-agnostic Models . . . . . . . . . . . . . . . . . . . . . . . . . . . 30 13 Preprint. 
+
+## A BACKGROUND 
+
+A.1 RELATED WORK 
+
+Discrete diffusion models. Diffusion generative modeling was originally introduced by Sohl-Dickstein et al. (2015), and has become a dominant approach for continuous domains such as images (Ho et al., 2020; Song et al., 2021). By defining a time-variant stochastic differential equation (Song et al., 2021), diffusion models establish a continuous path between the data and noise distributions. This success has motivated extensions to discrete domains, leading to discrete diffusion models (Austin et al., 2021; Hoogeboom et al., 2021; Campbell et al., 2022). The forward corruption process is typically designed in one of two ways: (i) uniform corruption, which replaces tokens with random vocabulary elements (Lou et al., 2024; Sahoo et al., 2025), or (ii) masking -based corruption, which maps tokens to an absorbing [MASK] state (Sahoo et al., 2024; Shi et al., 2024). 
+
+Uniform discrete diffusion models and plug-in parametrization. Early uniform diffusion models (UDMs), together with masked diffusion models (MDMs), were formulated as discrete diffusion models by specifying particular forward corruption kernels (Austin et al., 2021; Campbell et al., 2022; Lou et al., 2024; Hoogeboom et al., 2021). Among those, the uniform bridge plug-in parameterization was first introduced in multinomial diffusion by Hoogeboom et al. (2021). Using uniform bridge plug-in parameterization, Schiff et al. (2025) developed a continuous-time formulation and derived its NELBO, reporting improved performance over earlier uniform-diffusion baselines. Building on this, Sahoo et al. (2025) reinterpreted the uniform kernel as the arg max pushforward of a Gaussian corruption kernel and proposed a curriculum that initially uses a biased continuous-input relaxation before returning to discrete-input UDM training. More recently, Gourevitch et al. (2026) characterized the unrestricted population optimum of the bridge plug-in predictor as a leave-one-out posterior, which enables training with a simple cross-entropy objective under a leave-one-out parametrization. Notably, recent studies have shown that UDMs can outperform MDMs when scaled up in the language domain (Sahoo et al., 2026b; von R¨ utte et al., 2026), and large UDMs such as DiffusionGemma (Dif-fusionGemma Team, 2026) and Uno (Sahoo et al., 2026a) have recently been released. Despite growing attention to the application of UDMs in the language domain, it remains unclear whether time conditioning is actually necessary for UDMs. In this regard, our work takes the population-optimum characterization as a starting point and analyzes its dependence on time in detail, showing that, in the language domain, the time sensitivity of UDMs can be largely confined to the endpoint region of t.
+
+Time-agnostic masked diffusion models. Earlier continuous-time formulations for mask corruption kernels commonly used time-conditioned networks to parameterize the reverse process (Campbell et al., 2022; Lou et al., 2024). However, Zheng et al. (2025); Ou et al. (2025) showed that MDMs do not inherently require time conditioning in the model, and Sahoo et al. (2024) demonstrated empiri-cally that time-agnostic MDMs can slightly outperform their time-variant counterparts. Consequently, recent large-scale MDMs (Ye et al., 2025; Nie et al., 2025) have largely adopted time-agnostic architectures. Consequently, time-agnostic MDMs provide a simpler foundation, leading to subse-quent developments in inference (Lee et al., 2025) and reinforcement learning (Hong et al., 2026). Accordingly, if time-agnostic modeling is also viable for UDMs, it would provide a simpler and more extensible framework. Unlike MDMs, however, where time-agnostic and time-variant models share the same population optimum, we show that the two optima generally differ for UDMs. Nevertheless, under a finite-data setting, we find that time-agnostic UDMs can still be practically viable. 
+
+Time-agnostic continuous diffusion models. Recent studies have investigated when continuous diffusion models can dispense with explicit time conditioning (Sahraee-Ardakan et al., 2026; Sun et al., 2025; Helbling et al., 2026). In continuous diffusion, the state evolves in a differentiable continuous space, and the reverse process is described locally by a score ∇z log pt(z) or, equivalently in the ODE view, by a vector field over the continuous state space. The current state can therefore encode where the sample lies along the generative trajectory , allowing even a time-independent vector field to evolve according to its state. This continuous dynamics of particles enables geometric explanations for time-agnosticity. For example, Sahraee-Ardakan et al. (2026) study a time-independent vector field and relate the resulting dynamics to a marginal energy landscape and gradient flow. A complementary explanation is that the corrupted observation itself can reveal the noise level. Sun et al. (2025) relate concentration of T | Z = z to the gap between time-agnostic and time-conditioned predictors, and further extend their analysis to multiple data points under an i.i.d. Gaussian data model. Similarly, 14 Preprint. Helbling et al. (2026) construct a time estimator ˆt(z) under a spiked-covariance Gaussian model and show that the error from hiding time becomes small in high dimensions. In contrast, our analysis first reveals the distinct role of time in uniform discrete diffusion: time tells which subsets of observed tokens are plausibly inherited from the clean sequence . A key structural distinction from continuous diffusion lies in the corruption kernel. In continuous diffusion, Gaussian noise continuously perturbs every coordinate, so each corrupted coordinate generally retains a partial contribution from the clean state. In discrete diffusion, by contrast, the state evolves through tokenwise jumps, so only a subset of tokens may change. Consequently, a corrupted sequence contains tokens directly inherited from the clean sequence alongside tokens generated independently by noise, with the latter carrying no information about their original tokens. This distinction enables us to clearly understand the specific role of time in uniform discrete diffusion. Consequently, our analysis reveals a different mechanism through which explicit time conditioning can become unnecessary in uniform discrete diffusion. The key distinction is that the role of time itself can be limited for the prediction of z, rather than time being inferred from z: for a finite training set, sufficiently separated clean sequences concentrate the empirical posterior onto a small set of compatible hypotheses, making the empirical-optimal predictor nearly invariant to time. We quantify this through the post-corruption separation margin and directly bound the oracle time sensitivity. 
+
+Other related works. Liu et al. (2025) decomposes uniform discrete diffusion into a planner that infers latent corruption identities and a denoiser that predicts clean tokens, highlighting the role of corruption-state uncertainty. Relatedly, Amin et al. (2025) conditions discrete diffusion on the jump schedule and connects uniform diffusion to masking diffusion when corruption-event information is revealed. While these works motivate reasoning about latent corruption states, we instead characterize how such ambiguity induces time dependence in the population-optimal UDM predictor and when this dependence becomes negligible. A.2 VARIOUS UNIFORM DISCRETE DIFFUSION FRAMEWORKS 
+
+We briefly review several representative formulations of uniform discrete diffusion. We first describe the general CTMC view and its posterior- (Campbell et al., 2022) and score-based parameteriza-tions (Lou et al., 2024). We then introduce the work of Schiff et al. (2025), which uses a plug-in UDM parameterization improving empirical performance over these earlier posterior- and score-based parameterizations, and forms the basis of the modern UDM family studied in this work. Finally, we review two recent developments built on this formulation, Diffusion Duality (Sahoo et al., 2025) and the leave-one-out parameterization of Gourevitch et al. (2026). 
+
+Posterior and score parameterizations in continuous-time Markov chains. Discrete diffusion can be formulated as a continuous-time Markov chain (CTMC) (Campbell et al., 2022; Lou et al., 2024). We describe here only the single-token process on X = {e1, . . . , eK }, where x, z ∈ X 
+
+are categorical states represented as one-hot vectors. For sequence-level extensions, we refer to the original works for these constructions. With a slight abuse of notation, write qt(z | x) for the forward transition kernel qt|0(z | x) and define its marginal by 
+
+pt(z) = X
+
+> x∈X
+
+pdata (x)qt(z | x).
+
+Using the row-vector convention, let 
+
+pt =  pt(z) 
+
+> z∈X
+
+∈ R1×K ,
+
+and let Qt ∈ RK×K denote the forward transition-rate matrix. The forward dynamics satisfy 
+
+dpt
+
+dt = ptQt,
+
+where the off-diagonal entries of Qt are nonnegative and each row sums to zero. We use this row-vector convention throughout. This is the transpose of the column-vector convention used by Lou et al. (2024), where dpt/dt = Qtpt and the columns of Qt sum to zero. For uniform diffusion, the transition kernel and its corresponding rate matrix are 
+
+Pt|0 = αtI + (1 − αt)K−11K 1⊤ 
+
+> K
+
+, Qt = − α′
+
+> t
+
+αt
+
+ K−11K 1⊤ 
+
+> K
+
+− I .
+
+15 Preprint. Thus, for two distinct states, the instantaneous transition rate is −α′
+
+> t
+
+/(Kα t). Equivalently, one may use the unnormalized uniform generator 1K 1⊤ 
+
+> K
+
+− KI, as in Lou et al. (2024), with its scale absorbed into the scalar noise schedule. Since the uniform generator is symmetric, the row- and column-vector conventions yield the same numerical generator matrix in this particular case. The time reversal is again a CTMC. Under our row-vector convention, its exact reverse transition rate from z to z′̸ = z is 
+
+¯Qt(z, z′) = Qt(z′, z) pt(z′)
+
+pt(z) .
+
+The diagonal entries are determined by requiring each row of ¯Qt to sum to zero. Hence, constructing the reverse process amounts to estimating the marginal ratio pt(z′)/p t(z).The CTMC denoising formulation of Campbell et al. (2022) obtains this ratio indirectly through the clean posterior. By Bayes’ rule, 
+
+pt(z′)
+
+pt(z) = X
+
+> x∈X
+
+qt(z′ | x)
+
+qt(z | x) q0|t(x | z).
+
+Since the clean posterior q0|t(x | z) is generally intractable, it is replaced by a denoising model 
+
+μPosterior  
+
+> θ
+
+(x | z, t ), yielding 
+
+¯Qθt (z, z′) = Qt(z′, z) X
+
+> x∈X
+
+qt(z′ | x)
+
+qt(z | x) μPosterior  
+
+> θ
+
+(x | z, t ), z′̸ = z.
+
+Thus, this formulation parameterizes the reverse dynamics through a model of the clean posterior and trains the resulting reverse process using the continuous-time NELBO derived from the forward and reverse CTMCs. SEDD (Lou et al., 2024), in contrast, directly parameterizes the concrete score , i.e., the collection of marginal ratios 
+
+st(z)z′ := pt(z′)
+
+pt(z) , z′̸ = z.
+
+Replacing the intractable score by a model μScore  
+
+> θ
+
+gives, in our row-vector convention, 
+
+¯Qθt (z, z′) = Qt(z′, z)μScore  
+
+> θ
+
+(z, t )z′ , z′̸ = z.
+
+SEDD trains these marginal ratios directly using diffusion-weighted denoising score entropy. Thus, both approaches target the same reverse CTMC but differ in how it is parameterized: the CTMC denoising formulation models the clean posterior and obtains the marginal ratio indirectly, whereas SEDD models the marginal ratio itself as a discrete score. 
+
+Plug-in parametrized uniform diffusion models. Recent uniform diffusion models largely follow the plug-in parameterization adopted by Schiff et al. (2025), which yields empirical improvements over the score- and posterior-based parameterizations of the CTMC formulations described above. A UDM independently corrupts each token toward the uniform prior: 
+
+qt(zit | xi) = Cat  zit ; αtxi + (1 − αt)K−11K
+
+ .
+
+For s < t , the single token posterior qs|0,t follows from Bayes’ rule using the s → t transition and the s-marginal: 
+
+qs|0,t (zis | xi, zit ) = Cat 
+
+zis; ρtzit ⊙ xi + ρt 
+
+> ρs
+
+zit + (1 − ρt 
+
+> ρs
+
+)( ρsxi+1K 
+
+> K+ρs
+
+)
+
+ρt⟨zit , xi⟩ + 1 
+
+ . (10) To mimic the true posterior, Schiff et al. (2025) design reverse process with plug-in parametrization: 
+
+pθs|t
+
+ zis | zt
+
+ = qs|0,t (zis | xi = xiθ (zt, t ), zt)= Cat 
+
+zis;
+
+ρtzit ⊙ xiθ (zt, t ) + ρt 
+
+> ρs
+
+zit +
+
+
+
+1 − ρt
+
+> ρs
+
+ ρsxiθ (zt,t )+ 1K
+
+> K+ρs
+
+ρt zit , xiθ (zt, t ) + 1 
+
+ .
+
+16 Preprint. The training of UDM uses the variational upper bound (NELBO), and the discrete-time NELBO is: 
+
+− log pθ (x)
+
+≤ E
+
+
+
+− log pθ (x | zt(0) ) + X
+
+> i
+
+DKL [qs(i)|0,t (i)(·)∥pθ (zs(i) | zt(i))] + DKL [qt(T )(·)∥pθ (zt(T ))] 
+
+
+
+The prior and reconstruction loss vanish for the continuous-time, and only the diffusion loss remains: 
+
+LUDM (θ) = 
+
+Z 10
+
+Ex,zt
+
+> L
+
+X
+
+> i=1
+
+−α′
+
+> t
+
+Kα t
+
+ K
+
+¯xiθ,ℓ i
+
+− K
+
+¯xiℓi
+
++ X 
+
+> j̸=ℓi
+
+¯xij
+
+¯xiℓi
+
+log ¯xiθ,ℓ i ¯xij
+
+¯xiθ,j ¯xiℓi
+
+ dt. 
+
+where ¯νi := Kα tνi + (1 − αt)1K and ℓi denotes non-zero dimension index of zit .
+
+Diffusion duality. Diffusion Duality (Sahoo et al., 2025) retains the plug-in parameterization of Schiff et al. (2025), but provides an underlying Gaussian view of the uniform forward process. For each token, consider the Gaussian diffusion 
+
+˜qt(wit | xi; ˜ αt) = N  wit; ˜ αtxi, (1 − ˜α2 
+
+> t
+
+)I .
+
+Diffusion Duality shows that applying arg max to this Gaussian latent recovers the marginal of uniform discrete diffusion: 
+
+qt
+
+ zit | xi; T (˜ αt) = [arg max] ⋆ ˜qt
+
+ wit | xi; ˜ αt
+
+ , αt = T (˜ αt),
+
+where [arg max] ⋆ denotes the pushforward under the arg max mapping and T is the diffusion transformation relating the Gaussian and uniform noise schedules. Thus, the uniform diffusion marginal can be viewed as the discrete projection of an underlying Gaussian diffusion. This duality is further used to construct a low-variance curriculum for training the same plug-in UDM. Diffusion Duality first rewrites the discrete NELBO exactly using Gaussian latents and a hard argmax projection. Its curriculum then replaces the hard input with a tempered softmax, introducing a lower-variance but biased relaxation that approaches the original discrete-input objective as the temperature decreases. More specifially, Diffusion Duality relaxes this input using the identity 
+
+arg max( wit) = lim   
+
+> τ→0+
+
+softmax 
+
+ wit
+
+τ
+
+
+
+.
+
+During the curriculum, the denoising model therefore receives softmax( wt/τ ) instead of the hard 
+
+arg max( wt) input. A positive temperature preserves more information from the Gaussian latent, making the denoising problem easier and reducing training variance; as τ is annealed toward zero, the model progressively approaches the original discrete UDM training problem. In particular, in their actual experiments, they use the hard arg max for last half of training, thereby retaining the original UDM’s discrete input and NELBO exactly. The final model retains the same plug-in parameterization and is evaluated as a standard uniform diffusion model. 
+
+Leave-one-out parameterization. Gourevitch et al. (2026) characterize the target implicit in the UDM bridge plug-in parameterization. For each position i ∈ [L], the population-optimal network prediction is the leave-one-out (LOO) posterior 
+
+xi⋆(z, t ) = E Xi Z−i = z−i, T = t ,
+
+rather than the full denoising posterior conditioned on the local observation Zi = zi. In particular, they show that the UDM NELBO is minimized when the plug-in predictor satisfies 
+
+xiθ⋆ (z, t ) = xi⋆(z, t )
+
+for PT,Z -almost every (t, z). The local observation zi can then be incorporated analytically using the known uniform corruption likelihood. By Bayes’ rule, 
+
+E Xi Z = z, T = t = xi⋆(z, t ) ⊙  αtzi + 1−αt 
+
+> K
+
+1K
+
+
+
+xi⋆(z, t ), α tzi + 1−αt 
+
+> K
+
+1K
+
+.
+
+Thus, the LOO posterior summarizes the information contained in the remaining corrupted context 
+
+Z−i, while the observation at the target position is inserted exactly through the known forward 17 Preprint. corruption process. Replacing the population-optimal LOO posterior xi⋆ by the model prediction 
+
+xiθ gives the corrected posterior denoiser μPosterior ,i θ . Equivalently, using ρt = Kα t/(1 − αt), this correction can be written in logit form as 
+
+μPosterior ,i θ (z, t ) = softmax 
+
+
+
+log xiθ (z, t ) + log 
+
+
+
+αtzi + 1 − αt
+
+K 1K
+
+ 
+
+= softmax  log xiθ (z, t ) + log(1 + ρt)zi . (11) The second equality follows because the uniform-channel likelihood differs between the observed token and all other tokens only by the multiplicative factor 1 + ρt, while any common additive logit term vanishes under softmax . This corrected posterior can be trained using the usual denoising cross-entropy, 
+
+LLOO+CE (θ) = −
+
+Z 10
+
+Ex,zt
+
+> L
+
+X
+
+> i=1
+
+log 
+
+D
+
+xi, μPosterior ,i θ (zt, t )
+
+E
+
+dt. 
+
+At the unrestricted population optimum, the corrected posterior satisfies μPosterior ,i θ⋆ (z, t ) = E[Xi |
+
+Z = z, T = t], and, crucially, the underlying predictor satisfies 
+
+xiθ⋆ (z, t ) = xi⋆(z, t ) = E Xi Z−i = z−i, T = t .
+
+Thus, the corrected cross-entropy objective provides a convenient way to train the same LOO predictor required by the UDM plug-in parameterization. Once trained, xθ is plugged into the original UDM bridge pθs|t to define the reverse transitions used for generation. 
+
+## B OMITTED PROOFS 
+
+In this section, we provide omitted proofs in the main paper. Throughout the proofs, we consider 
+
+0 < t < 1 with 0 < α t < 1. Conditional expectations on events of zero data probability are assigned arbitrary, time-independent probability vectors, since their corresponding mixture weights are zero. B.1 PROOF OF PROPOSITION 1
+
+Proposition 1 (Explicit time decomposition of the population-optimal UDM predictor) . Fix i ∈ [L]
+
+and a corrupted observation z. For any index set S ⊆ [L] \ { i}, write 
+
+z[S] :=  zj  
+
+> j∈S
+
+, X[S] :=  Xj 
+
+> j∈S
+
+Then the population-optimal predictor satisfies 
+
+xi⋆(z, t ) = X
+
+> S⊆[L]\{ i}
+
+Pr( S | Z−i = z−i, T = t)E Xi X[S] = z[S] , (5) 
+
+Pr( S | Z−i = z−i, T = t) ∝ ρ|S| 
+
+> t
+
+Pr( X[S] = z[S]) .
+
+Here, Pr( X[S] = z[S]) = P  
+
+> x:x[S]= z[S]
+
+pdata (x) is the data probability mass of the partial observation z[S] under the hypothesis index set S.Proof. Gourevitch et al. (2026) showed that the unrestricted population minimizer of the bridge plug-in UDM NELBO is the leave-one-out posterior. Therefore, 
+
+xiθ⋆ (z, t ) = xi⋆(z, t ) = E Xi Z−i = z−i, T = t .
+
+By Bayes’ rule and marginalization, 
+
+xi⋆(z, t ) = Epdata 
+
+Xiqt
+
+ z−i | X−i 
+
+Epdata [qt(z−i | X−i)] . (12) 18 Preprint. Since the uniform forward process factorizes across positions, 
+
+qt
+
+ z−i | X−i = Y
+
+> j∈[L]\{ i}
+
+
+
+αt1Xj = zj + 1 − αt
+
+K
+
+
+
+=
+
+ 1 − αt
+
+K
+
+L−1 Y
+
+> j∈[L]\{ i}
+
+ 1 + ρt1Xj = zj 
+
+=
+
+ 1 − αt
+
+K
+
+L−1 X
+
+> S⊆[L]\{ i}
+
+ρ|S| 
+
+> t
+
+1{X[S] = z[S]} , (13) where the last equality follows by expanding the product over all subsets of [L] \ { i}.Substituting Eq. (13) into Eq. (12) and canceling the common factor  (1 − αt)/K L−1 gives 
+
+xi⋆(z, t ) = 
+
+X
+
+> S⊆[L]\{ i}
+
+ρ|S| 
+
+> t
+
+Epdata 
+
+Xi1{X[S] = z[S]}X
+
+> S⊆[L]\{ i}
+
+ρ|S| 
+
+> t
+
+Pr ( X[S] = z[S]) .
+
+Using 
+
+Epdata 
+
+Xi1{X[S] = z[S]} = Pr ( X[S] = z[S]) E Xi X[S] = z[S] ,
+
+we obtain 
+
+xi⋆(z, t ) = X
+
+> S⊆[L]\{ i}
+
+ρ|S| 
+
+> t
+
+Pr ( X[S] = z[S]) 
+
+X
+
+> S′⊆[L]\{ i}
+
+ρ|S′| 
+
+> t
+
+Pr ( X[S′] = z[S′]) E Xi X[S] = z[S] . (14) It remains to identify the normalized coefficient in Eq. (14). Interpret S as the set of context positions generated through the copy branch of the uniform forward channel. For a fixed S, the joint probability of this copy-set hypothesis and the observation Z−i = z−i is 
+
+Pr  S, Z −i = z−i T = t = α|S|
+
+> t
+
+ 1 − αt
+
+K
+
+L−1−| S|
+
+Pr ( X[S] = z[S]) =
+
+ 1 − αt
+
+K
+
+L−1
+
+ρ|S| 
+
+> t
+
+Pr ( X[S] = z[S]) .
+
+Therefore, normalizing over all S ⊆ [L] \ { i} gives 
+
+Pr  S Z−i = z−i, T = t = ρ|S| 
+
+> t
+
+Pr ( X[S] = z[S]) 
+
+X
+
+> S′⊆[L]\{ i}
+
+ρ|S′| 
+
+> t
+
+Pr ( X[S′] = z[S′]) . (15) Hence, 
+
+Pr  S Z−i = z−i, T = t ∝ ρ|S| 
+
+> t
+
+Pr ( X[S] = z[S]) ,
+
+and substituting Eq. (15) into Eq. (14) yields 
+
+xiθ⋆ (z, t ) = X
+
+> S⊆[L]\{ i}
+
+Pr  S Z−i = z−i, T = t E Xi X[S] = z[S] ,
+
+which proves the claim. 19 Preprint. B.2 PROOF OF THEOREM 1
+
+Theorem 1 (Time dependence through the matched-context count) . For every target position i,
+
+Xi ⊥ T | Z−i, M i,
+
+i.e., Xi and T are conditionally independent given Z−i and M i. Moreover, Eq. (4) admits the exact decomposition 
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him(z),wim(z, t ) := Pr  M i = m Z−i = z−i, T = t ∝ (1 + ρt)m Pr  M i(X, z) = m ,
+
+him(z) := E Xi M i = m, Z −i = z−i ,
+
+where Pr( M i(X, z) = m) = P  
+
+> Mi(x,z)= m
+
+pdata (x) is the data probability mass of clean sequences that match z in exactly m context positions. Proof. By the law of total expectation, 
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+Pr  M i = m Z−i = z−i, T = t × E Xi Z−i = z−i, M i = m, T = t .
+
+(16) Therefore, it remains to show that 
+
+Pr  M i = m Z−i = z−i, T = t ∝ (1 + ρt)m Pr( M i(X, z) = m),
+
+and 
+
+E Xi Z−i = z−i, M i = m, T = t = E Xi Z−i = z−i, M i = m .
+
+Posterior weighting. For any clean sequence x′, the uniform forward channel gives 
+
+qt
+
+ z−i x′− i = Y
+
+> j∈[L]\{ i}
+
+
+
+αt1 x′j = zj + 1 − αt
+
+K
+
+
+
+=
+
+ 1 − αt
+
+K
+
+L−1
+
+(1 + ρt)M i(x′,z).
+
+(17) Hence, 
+
+Pr  M i = m, Z −i = z−i T = t = X  
+
+> x′∈X L
+> Mi(x′,z)= m
+
+pdata (x′)qt
+
+ z−i x′− i
+
+=
+
+ 1 − αt
+
+K
+
+L−1
+
+(1 + ρt)m X  
+
+> x′∈X L
+> Mi(x′,z)= m
+
+pdata (x′)=
+
+ 1 − αt
+
+K
+
+L−1
+
+Pr( M i(X, z) = m)(1 + ρt)m.
+
+Therefore, 
+
+Pr  M i = m Z−i = z−i, T = t = Pr  M i = m, Z −i = z−i T = tPL−1 
+
+> r=0
+
+Pr ( M i = r, Z −i = z−i | T = t)= Pr( M i(X, z) = m)(1 + ρt)mL−1X
+
+> r=0
+
+Pr( M i(X, z) = r)(1 + ρt)r
+
+.
+
+and hence 
+
+Pr  M i = m Z−i = z−i, T = t ∝ Pr( M i(X, z) = m)(1 + ρt)m.
+
+20 Preprint. 
+
+Time-independence of the conditional prediction. For any x′ satisfying M i(x′, z) = m, Bayes’ rule and Eq. (17) give 
+
+Pr  X = x′ Z−i = z−i, M i = m, T = t = pdata (x′)qt
+
+ z−i x′− iX  
+
+> x′′ ∈X L
+> Mi(x′′ ,z)= m
+
+pdata (x′′ )qt
+
+ z−i x′′− i
+
+= pdata (x′)
+
+X  
+
+> x′′ ∈X L
+> Mi(x′′ ,z)= m
+
+pdata (x′′ ) = pdata (x′)Pr( M i(X, z) = m) ,
+
+where the second equality follows because all sequences satisfying M i(x′, z) = m have the same uniform-channel likelihood, so the common factor cancels under normalization. The right-hand side is independent of t. Therefore, 
+
+Xi ⊥ T | Z−i, M i,
+
+and consequently 
+
+E Xi Z−i = z−i, M i = m, T = t = E Xi Z−i = z−i, M i = m = him(z).
+
+Substituting the two results into Eq. (16) gives 
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him(z),
+
+with 
+
+wim(z, t ) ∝ Pr( M i(X, z) = m)(1 + ρt)m,
+
+which proves the claim. B.3 PROOF OF PROPOSITION 2
+
+Proposition 2 (Exact temporal sensitivity) . Let ηt = log(1 + ρt) and let ek denote the k-th one-hot vector. Then the temporal derivative of the context posterior is 
+
+∂∂η t
+
+xi⋆(z, t ) = Cov t, z
+
+ hiM i (z), M i ,
+
+where the covariance is taken componentwise. Equivalently, for any candidate category k with 
+
+xi⋆,k (z, t ) > 0,
+
+∂∂η t
+
+log xi⋆,k (z, t ) = Et, z
+
+M i Xi = ek
+
+ − Et, z [M i], (6) 
+
+where the subscript (t, z) denotes the posterior distribution Pr( · | Z−i = z−i, T = t).Proof. By Theorem 1, 
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him(z),
+
+where, writing ηt = log(1 + ρt),
+
+wim(z, t ) = Pr( M i(X, z) = m)emη t
+
+> L−1
+
+X
+
+> r=0
+
+Pr( M i(X, z) = r)erη t
+
+. (18) 21 Preprint. Since him(z) is independent of t, all dependence on ηt is contained in wim(z, t ). Differentiating Eq. (18) gives 
+
+∂∂η t
+
+wim(z, t ) = wim(z, t ) m −
+
+> L−1
+
+X
+
+> r=0
+
+r w ir (z, t )
+
+!
+
+= wim(z, t )  m − Et, z [M i] .
+
+Therefore, 
+
+∂∂η t
+
+xi⋆(z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+him(z)wim(z, t )  m − Et, z [M i]
+
+= Et, z
+
+hiM i (z)M i − Et, z
+
+hiM i (z) Et, z [M i]= Cov t, z
+
+ hiM i (z), M i ,
+
+which proves the claim. Now fix a candidate token ek such that xi⋆,k (z, t ) > 0. Taking the k-th component of the previous expression, 
+
+∂∂η t
+
+log xi⋆,k (z, t ) = 
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him,k (z)m
+
+> L−1
+
+X
+
+> m=0
+
+wim(z, t )him,k (z)
+
+− Et, z [M i], (19) where him,k (z) denotes the k-th component of him(z).By Theorem 1, Xi ⊥ T | Z−i, M i, and hence we can include t into the distribution: 
+
+him,k (z) = Pr  Xi = ek M i = m, Z −i = z−i, T = t .
+
+Together with 
+
+wim(z, t ) = Pr  M i = m Z−i = z−i, T = t ,
+
+Bayes’ rule gives 
+
+wim(z, t )him,k (z)
+
+xi⋆,k (z, t ) = Pr  M i = m Xi = ek, Z −i = z−i, T = t .
+
+Consequently, the first term in Eq. (19) is precisely 
+
+Et, z
+
+M i Xi = ek
+
+ ,
+
+and therefore 
+
+∂∂η t
+
+log xi⋆,k (z, t ) = Et, z
+
+M i Xi = ek
+
+ − Et, z [M i].
+
+This proves Eq. (6). B.4 PROOF OF PROPOSITION 3We here provide a formal version of Proposition 3 in the main paper and the proof under the empirical data distribution setting. 
+
+Assumption 1 (Finite-data setting) . The data distribution is the uniform empirical distribution 0
+
+ˆpN = 1
+
+> N
+
+PNn=1 δxn over N sequences x1, . . . , xN ∈ X L where |X | = K.
+
+> 0
+
+Note that every theoretical result in our paper holds within Assumption 1; see Appendix B.7 for why. 
+
+22 Preprint. 
+
+Proposition 3 (∆-separable event under UDM training) . Under Assumption 1, fix x ∈ supp(ˆ pN ) and 
+
+i ∈ [L], and suppose d(x) ≥ 2. Let T ∼ Unif([0 , 1]) and, conditioned on T = t, let Z ∼ qt(· | x)
+
+under the linear schedule αt = 1 − t. Then, for any integer ∆ ≥ 1,
+
+Pr( Z is ∆-separable w.r.t. x at i) ≥ max 
+
+(
+
+0, 1 − log( N − 1) + ∆ + ( e + e−1 − 2) L−1
+
+> K
+
+(1 − e−1)( d(x) − 1) 
+
+)
+
+.
+
+(20) Thus, as given in the informal statement of the main paper, if K ≫ L and d(x) is sufficiently large, the approximate bound 
+
+Pr( Z is ∆-separable w.r.t. x at i) ≳ 1 − log N + ∆ (1 − e−1)d(x)
+
+holds. Note that we used Eq. (20) to measure quantitative bound in Section 4.2. We now provide the proof of formal statement: 
+
+Proof. Fix any x′ ∈ supp(ˆ pN ) satisfying x′i̸ = xi, and let 
+
+Hi(x, x′) := j ∈ [L] \ { i} : x′j̸ = xj .
+
+Since x′i̸ = xi and the Hamming distance between x and x′ is at least d(x),
+
+|H i(x, x′)| = X
+
+> j∈[L]\{ i}
+
+1 x′j̸ = xj ≥ d(x) − 1. (21) Condition on T = t. For each j ∈ H i(x, x′), define 
+
+Yj := 1 Zj = xj − 1 Zj = x′j .
+
+For j / ∈ H i(x, x′), x and x′ contribute equally to the match count. Therefore, 
+
+M i(x, Z ) − M i(x′, Z ) = X
+
+> j∈H i(x,x′)
+
+Yj . (22) Under the linear schedule αt = 1 − t, the uniform forward kernel gives, for every j ∈ H i(x, x′),
+
+Pr( Yj = 1 | T = t) = 1 − t + tK ,
+
+Pr( Yj = 0 | T = t) = t(K − 2) 
+
+K ,
+
+Pr( Yj = −1 | T = t) = tK .
+
+Moreover, the variables {Yj }j∈H i(x,x′) are independent conditioned on T = t. Hence, 
+
+E e−Yj | T = t =
+
+
+
+1 − t + tK
+
+
+
+e−1 + t(K − 2) 
+
+K + tK e
+
+= 1 − (1 − e−1)(1 − t) + ( e + e−1 − 2) tK
+
+≤ exp 
+
+
+
+−(1 − e−1)(1 − t) + ( e + e−1 − 2) tK
+
+
+
+, (23) where the last inequality comes from 1 + u ≤ eu.The sequence Z fails to be ∆-separable from this particular x′ whenever 
+
+M i(x′, Z ) > M i(x, Z ) − ∆.
+
+Since the match counts are integer-valued, this is equivalent to 
+
+M i(x, Z ) − M i(x′, Z ) ≤ ∆ − 1.
+
+23 Preprint. Therefore, by Markov’s inequality and Eq. (22), 
+
+Pr  M i(x, Z ) − M i(x′, Z ) ≤ ∆ − 1 T = t
+
+= Pr 
+
+
+
+exp  − M i(x, Z ) − M i(x′, Z ) ≥ e−(∆ −1) T = t
+
+
+
+≤ e∆−1E exp  − M i(x, Z ) − M i(x′, Z ) T = t
+
+= e∆−1E
+
+exp 
+
+− X
+
+> j∈H i(x,x′)
+
+Yj
+
+ T = t
+
+
+
+= e∆−1 Y
+
+> j∈H i(x,x′)
+
+E e−Yj | T = t ,
+
+Plugging Eq. (23) into the above inequality gives: 
+
+Pr  M i(x, Z ) − M i(x′, Z ) ≤ ∆ − 1 T = t
+
+≤ e∆−1 Y
+
+> j∈H i(x,x′)
+
+exp 
+
+
+
+−(1 − e−1)(1 − t) + ( e + e−1 − 2) tK
+
+
+
+= exp ∆ − 1 − (1 − e−1)(1 − t) |H i(x, x′)| + ( e + e−1 − 2) t |H i(x, x′)|
+
+K
+
+!
+
+≤ exp ∆ − 1 − (1 − e−1)(1 − t)( d(x) − 1) + ( e + e−1 − 2) L − 1
+
+K
+
+!
+
+.
+
+where the last inequality uses Eq. (21), t ≤ 1, and |H i(x, x′)| ≤ L − 1.There are at most N − 1 empirical sequences distinct from x. Thus, by a union bound over all 
+
+x′ ∈ supp(ˆ pN ) satisfying x′i̸ = xi,
+
+Pr ( Z is not ∆-separable w.r.t. x at i | T = t)
+
+≤ min 
+
+(
+
+1, (N − 1) exp ∆ − 1 − (1 − e−1)(1 − t)( d(x) − 1) + ( e + e−1 − 2) L − 1
+
+K
+
+!) 
+
+.
+
+(24) It remains to average over the training time T ∼ Unif([0 , 1]) . For any A ≥ 1 and B > 0,
+
+Z 10
+
+min 
+
+n
+
+1, Ae −B(1 −t)o
+
+dt ≤ min 
+
+
+
+1, log A + 1 
+
+B
+
+
+
+. (25) Indeed, if log A ≥ B, the bound follows immediately since the integral is at most one. Otherwise, splitting the integral at t = 1 − log A/B gives 
+
+Z 10
+
+min 
+
+n
+
+1, Ae −B(1 −t)o
+
+dt = log AB + 1 − Ae −B
+
+B ≤ log A + 1 
+
+B .
+
+Applying Eq. (25) to Eq. (24) with 
+
+A = ( N − 1) exp 
+
+
+
+∆ − 1 + ( e + e−1 − 2) L − 1
+
+K
+
+
+
+and 
+
+B = (1 − e−1)( d(x) − 1) ,
+
+we obtain 
+
+Pr ( Z is not ∆-separable w.r.t. x at i) ≤ min 
+
+(
+
+1, log( N − 1) + ∆ + ( e + e−1 − 2) L−1
+
+> K
+
+(1 − e−1)( d(x) − 1) 
+
+)
+
+.
+
+Taking the complement yields 
+
+Pr ( Z is ∆-separable w.r.t. x at i) ≥ max 
+
+(
+
+0, 1 − log( N − 1) + ∆ + ( e + e−1 − 2) L−1
+
+> K
+
+(1 − e−1)( d(x) − 1) 
+
+)
+
+,
+
+which proves the claim. 24 Preprint. B.5 PROOF OF THEOREM 2We here provide a formal version of Theorem 2 in the main paper under the empirical data distribution setting. We first define the Fisher sensitivity with respect to the noise-schedule parameter αt:
+
+Iiαt (z) := X  
+
+> k:xi⋆,k (z,t )>0
+
+xi⋆,k (z, t )
+
+ ∂∂α t
+
+log xi⋆,k (z, t )
+
+2
+
+.
+
+Theorem 2 (Fisher sensitivity with finite data) . Suppose that αt is strictly decreasing in t. Under the finite data assumption 1, for ∆-separable z with respect to x at coordinate i,
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K2 (1 − αt)∆−2
+
+(1 + ( K − 1) αt)∆+2 .
+
+Moreover, for ∆ ≥ 2, the right-hand side is strictly increasing in t ∈ (0 , 1) .
+
+The bound admits the same interpretation as its time-based counterpart. What matters for denoising is how much the oracle prediction changes per unit change in the corruption level, which is measured directly by Iiαt (z). The theorem shows that as the corruption level increases (i.e., as αt decreases), the upper bound on this sensitivity becomes progressively weaker. Thus, time dependence is most weakly controlled in the high-noise regime. For ease of interpretation, the main text specializes this result to the linear schedule αt = 1 − t and expresses the Fisher sensitivity with respect to t. Under this schedule, the theorem reduces to 
+
+Iit (z) ≤ (N − 1)( L − 1) 2 K2t∆−2
+
+ K − (K − 1) t∆+2 .
+
+Using (N − 1)( L − 1) 2 < N L 2 gives the simpler bound stated in the main paper: 
+
+Iit (z) ≤ N L 2 K2t∆−2
+
+ K − (K − 1) t∆+2 .
+
+We now prove the formal version of Theorem 2. 
+
+Proof. By Proposition 2, with ηt = log(1 + ρt), for every k such that xi⋆,k (z, t ) > 0,
+
+∂∂α t
+
+log xi⋆,k (z, t ) = dηt
+
+dαt
+
+ Et, z
+
+M i Xi = ek
+
+ − Et, z [M i] .
+
+Therefore, by the definition of Iiαt (z),
+
+Iiαt (z) = 
+
+ dηt
+
+dαt
+
+2 X  
+
+> k:xi⋆,k (z,t )>0
+
+xi⋆,k (z, t )  Et, z
+
+M i Xi = ek
+
+ − Et, z [M i]2
+
+=
+
+ dηt
+
+dαt
+
+2
+
+Et, z
+
+h Et, z
+
+M i Xi − Et, z [M i]2i
+
+=
+
+ dηt
+
+dαt
+
+2
+
+Var t, z
+
+ Et, z
+
+M i Xi . (26) For any choice of center, the variance is upper bounded by the corresponding mean squared deviation. We therefore choose the conditional mean associated with the source token xi, Et, z [M i | Xi = xi],where x is the clean sequence from which z was sampled. This choice is convenient because the deviation vanishes whenever Xi = xi. Moreover, since 0 ≤ M i ≤ L−1, all conditional expectations below lie in [0 , L − 1] . Hence, 
+
+Var t, z
+
+ Et, z
+
+M i Xi ≤ Et, z
+
+h Et, z
+
+M i Xi − Et, z
+
+M i Xi = xi 2i
+
+≤ (L − 1) 2 Pr  Xi̸ = xi Z−i = z−i, T = t . (27) 25 Preprint. It remains to bound the posterior probability of a different target token. Under Assumption 1, 
+
+ˆpN = 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+δxn .
+
+From Eq. (17), 
+
+qt
+
+ z−i x−in
+
+ =
+
+ 1 − αt
+
+K
+
+L−1
+
+(1 + ρt)M i(xn,z).
+
+Hence, since the empirical prior is uniform, 
+
+Pr  Xi̸ = xi Z−i = z−i, T = t =
+
+X  
+
+> n:xin̸=xi
+
+(1 + ρt)M i(xn,z)
+
+> N
+
+X
+
+> r=1
+
+(1 + ρt)M i(xr ,z)
+
+. (28) By ∆-separability, every sequence satisfying xin̸ = xi obeys 
+
+M i(xn, z) ≤ M i(x, z) − ∆.
+
+Moreover, the denominator of Eq. (28) contains the contribution of the sampled sequence x. Thus, 
+
+Pr  Xi̸ = xi Z−i = z−i, T = t ≤ (N − 1)(1 + ρt)M i(x,z)−∆
+
+(1 + ρt)M i(x,z)
+
+= ( N − 1)(1 + ρt)−∆. (29) Combining Eq. (26), Eq. (27), and Eq. (29) yields 
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2
+
+ ddαt
+
+log(1 + ρt)
+
+2
+
+(1 + ρt)−∆. (30) Using 
+
+ρt = Kα t
+
+1 − αt
+
+,
+
+we have 
+
+1 + ρt = 1 + ( K − 1) αt
+
+1 − αt
+
+, (31) 
+
+ddαt
+
+log(1 + ρt) = K
+
+(1 − αt) (1 + ( K − 1) αt) . (32) Substituting Eq. (31) and Eq. (32) into Eq. (30) gives 
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K2 (1 − αt)∆−2
+
+(1 + ( K − 1) αt)∆+2 . (33) It remains to establish the monotonicity of the bound. Define 
+
+g(α) := (1 − α)∆−2
+
+(1 + ( K − 1) α)∆+2 .
+
+For ∆ ≥ 2 and α ∈ (0 , 1) ,
+
+ddα log g(α) = − ∆ − 21 − α − (∆ + 2)( K − 1) 1 + ( K − 1) α < 0.
+
+Hence, g(α) is strictly decreasing in α. Since αt is strictly decreasing in t, g(αt) is strictly increasing in t. Therefore, the right-hand side of Eq. (33) is strictly increasing in t ∈ (0 , 1) for ∆ ≥ 2, which proves the claim. 26 Preprint. B.6 PROOF OF EQ. (9) 
+
+Proof. By Theorem 2, 
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K2 (1 − αt)∆−2
+
+(1 + ( K − 1) αt)∆+2 .
+
+For ∆ ≥ 2, we have 
+
+(1 − αt)∆−2 ≤ 1
+
+for every αt ∈ (0 , 1) . Moreover, suppose 
+
+αt ≥ K−β .
+
+Then 
+
+1 + ( K − 1) αt ≥ 1 + ( K − 1) K−β
+
+= K1−β + 1 − K−β
+
+≥ K1−β .
+
+Consequently, 
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K2−(1 −β)(∆+2) 
+
+= ( N − 1)( L − 1) 2K−∆+ β(∆+2) .
+
+Taking the supremum over all t satisfying αt ≥ K−β gives 
+
+sup  
+
+> t:αt≥K−β
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K−∆+ β(∆+2) .
+
+The exponent is negative whenever 
+
+0 < β < ∆∆ + 2 .
+
+Thus, for any 0 < β < ∆∆+2 and ∆ ≥ 2, the Fisher sensitivity is polynomially suppressed throughout the region αt ≥ K−β .Choosing β = 1 /4, which is valid for every ∆ ≥ 2, gives 
+
+sup  
+
+> t:αt≥K−1/4
+
+Iiαt (z) ≤ (N − 1)( L − 1) 2K−(3∆ −2) /4.
+
+This provides a useful intuition for a general schedule αt. If z is ∆-separable with ∆ ≥ 2, its Fisher sensitivity is suppressed by a negative power of K whenever the expected clean-token fraction exceeds K−1/4. Thus, irrespective of the particular scheduler, a ∆-separable z has low empirical-optimal Fisher sensitivity with respect to the noise coordinate throughout this regime. Finally, under the linear schedule αt = 1 − t, the condition αt ≥ K−β is equivalent to 
+
+0 < t ≤ 1 − K−β ,
+
+and Iiαt (z) = Iit (z). Therefore, 
+
+sup 
+
+> 0<t ≤1−K−1/4
+
+Iit (z) ≤ N L 2K−(3∆ −2) /4,
+
+where we intentionally upper-bound (N − 1)( L − 1) 2 < N L 2 to give a simpler and more intuitive bound in the main paper. B.7 DISCUSSION ON THE FINITE DATA SETTING 
+
+In Section 4, we specialize the data distribution to the finite empirical distribution ˆpN under Assump-tion 1. Here, we verify that this finite-data formulation is fully consistent with the theoretical results in previous works and in Section 3. For example, deriving the continuous-time UDM NELBO from its discrete-time counterpart could in principle rely on assumptions on the data distribution, such as 27 Preprint. full support; here, we explicitly verify that the finite empirical distribution does not invalidate these results. Specifically, we show that (i) the UDM NELBO remains a valid variational objective under 
+
+ˆpN , (ii) its unrestricted optimum remains the uniform-channel leave-one-out posterior characterized in Proposition 1, and consequently, (iii) Theorem 1 and Proposition 2 continue to hold under the finite empirical distribution. 
+
+Validity of the UDM NELBO under finite data. We first verify that the UDM NELBO remains a valid variational objective under the finite empirical distribution in Assumption 1. The derivation of the UDM NELBO (Schiff et al., 2025) is pointwise in the clean sequence x and does not require any particular form of the outer data distribution. In particular, for a finite discretization with T diffusion steps, define t(i) = i+1   
+
+> T+1
+
+, s(i) = iT +1 , for i = 0 , . . . , T . Then, for every x ∈ X L,
+
+− log pθ (x) ≤ Eq
+
+"
+
+− log pθ
+
+ x | zt(0) 
+
+ +
+
+> T
+
+X
+
+> i=1
+
+DKL 
+
+q zs(i) | zt(i), x pθ
+
+ zs(i) | zt(i)
+
+ #
+
++ DKL 
+
+q zt(T ) | x pθ
+
+ zt(T )
+
+ .
+
+Crucially, this bound holds pointwise for every clean sequence x ∈ X L. Its derivation does not depend on the support, cardinality, or any other property of the data distribution from which x is drawn. Therefore, the discrete-time NELBO remains valid when the data distribution is replaced by the finite empirical distribution ˆpN in Assumption 1. We now analyze whether the continuous-time limit of the discrete-time NELBO derived by Schiff et al. (2025) holds in finite-data setting. Their derivation takes T → ∞ for each fixed clean sequence x. In particular, the prior loss vanishes because αt(T ) = 0 implies 
+
+q
+
+
+
+zit(T ) | x
+
+
+
+= Cat( ·; K−11K ),
+
+independently of x, so that setting pθ (zit(T )) = K−11K gives zero prior KL. Likewise, as t(0) = 1/(T + 1) → 0 and αt(0) → 1,
+
+q
+
+
+
+zit(0) | x
+
+
+
+−→ Cat( ·; xi),
+
+and the endpoint denoising parameterization copies its input, making the reconstruction loss vanish. Neither argument depends on the support of the data distribution. Thus, the remaining diffusion term converges pointwise in x to 
+
+LUDM (x; θ) = 
+
+Z 10
+
+Ezt∼qt(·| x)
+
+> L
+
+X
+
+> i=1
+
+α′
+
+> t
+
+Kα t
+
+"
+
+K
+
+¯xiℓi
+
+− K
+
+¯xiθ,ℓ i
+
+− X 
+
+> j̸=ℓi
+
+¯xij
+
+¯xiℓi
+
+log ¯xiθ,ℓ i ¯xij
+
+¯xiθ,j ¯xiℓi
+
+#
+
+dt, 
+
+where ¯νi = Kα tνi + (1 − αt)1K and ℓi denotes the non-zero dimension of zit . Taking expectation of x then gives: 
+
+LUDM (θ) = 
+
+Z 10
+
+Ex,zt
+
+> L
+
+X
+
+> i=1
+
+α′
+
+> t
+
+Kα t
+
+ K
+
+¯xiℓi
+
+− K
+
+¯xiθ,ℓ i
+
+− X 
+
+> j̸=ℓi
+
+¯xij
+
+¯xiℓi
+
+log ¯xiθ,ℓ i ¯xij
+
+¯xiθ,j ¯xiℓi
+
+ dt, 
+
+where x comes from pdata or ˆpN .Hence, the continuous-time UDM NELBO is likewise well defined for each individual clean sequence, irrespective of the support of the data distribution. 
+
+Validity of the leave-one-out optimum under finite data. We next verify that the leave-one-out characterization of the UDM NELBO optimum remains valid under Assumption 1. We refer the readers to Appendix A.1 of Gourevitch et al. (2026) for a full understanding. The proof of their optimum results applies directly when pdata is replaced by ˆpN . Their argument relies only on Bayes’ rule, the Chapman–Kolmogorov identity, factorization of the bridge across coordinates, and the Bayes-compatible simplex extension of the plug-in bridge. None of these steps imposes any assumption on the cardinality or support structure of the clean-data distribution. 
+
+Validity of the theoretical results in Section 3. Having established that the UDM NELBO and its leave-one-out optimum remain valid under Assumption 1, the remaining results in Section 3 follow without any additional assumption on the data distribution. Proposition 1 is obtained from the 28 Preprint. 8 16 32 64 128 256 512 1024 2048           
+
+> NFE
+> 80 100 120 140 160 180 200 220
+> Gen. PPL
+> 5.59 5.57 5.59 5.57 5.57 5.54 5.53 5.54 5.54 5.53 5.54 5.55 5.54 5.53 5.54 5.52 5.49 5.52
+> Time-Variant Time-Agnostic
+
+(a) D UALITY 8 16 32 64 128 256 512 1024 2048            
+
+> NFE
+> 75 100 125 150 175 200 225 250 275
+> Gen. PPL
+> 5.59 5.57 5.60 5.56 5.56 5.56 5.55 5.54 5.53 5.54 5.54 5.56 5.54 5.52 5.54 5.53 5.52 5.51
+> Time-Variant Time-Agnostic
+
+(b) LOO+CE 
+
+Figure 3: Sampling performance of time-variant and time-agnostic UDMs across different numbers of function evaluations (NFEs). We compare generative perplexity as the sampling budget varies under (a) DUALITY and (b) LOO+CE; the annotated values report the entropy of generated samples. 0.0 0.2 0.4 0.6 0.8 1.0 10 0                           
+
+> 10 1
+> 10 2
+> 10 3
+> 10 4
+> Fisher Sensitivity
+> t=log(1 t)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> t= log t
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> t= log tlog(1 t)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> t=t
+> 10 0
+> 10 1
+> Sequence density (log count)
+> Diffusion time t
+
+Figure 4: Fisher sensitivity under different time-input reparameterizations, where z sampling time and Fisher sensitivity evaluation time are equal. All sensitivities are measured with respect to the original diffusion time t, not reparametrized time ˆt for model input. leave-one-out posterior using only Bayes’ rule, factorization of the uniform forward channel across coordinates, and a finite subset expansion. These arguments apply identically after replacing pdata by 
+
+ˆpN .Likewise, Theorem 1 only groups the probability mass of the data distribution according to the matched-context count M i and uses the fact that sequences with the same match count have the same uniform-channel likelihood. Proposition 2 then follows by differentiating the resulting finite normalized mixture weights. None of these derivations requires any assumption on the cardinality or support structure of pdata . Therefore, Proposition 1, Theorem 1, and Proposition 2 all remain valid under the finite empirical distribution in Assumption 1. 
+
+## C EXPERIMENTAL DETAILS 
+
+C.1 ADDITIONAL EXPERIMENTAL RESULTS 
+
+We provide generative perplexity results for D UALITY and LOO+CE trained on OWT, which were omitted from the main paper. For each NFE, we generate 256 samples. Following Zheng et al. (2025) and D UALITY (Sahoo et al., 2025), we use float64 precision for sampling, as low-precision sampling can lead to reduced diversity and misleading generative perplexity in discrete diffusion models. As shown in Figure 3 ( Left ), time-agnostic and time-variant D UALITY achieve nearly identical generative perplexity across a wide range of NFEs. Their sample entropies are also closely matched, indicating similar sampling quality and diversity. On the other hand, as shown in Figure 3 ( Right ), LOO+CE exhibits similar sample entropy for the time-agnostic and time-variant models, while the time-agnostic model achieves lower generative perplexity. 29 Preprint. C.2 EXPERIMENTAL SETTINGS 
+
+Settings on training experiments. We use exactly the same experimental settings as the original UDM (Schiff et al., 2025) and Diffusion Duality (Sahoo et al., 2025). We detokenize the One Billion Words dataset following Lou et al. (2024); Sahoo et al. (2024), whose official code can be found. We tokenize LM1B using the BERT -BASE -UNCASED tokenizer, consistent with He et al. (2023). We then concatenate and pack the sequences to a fixed length of 128 (Raffel et al., 2020). For OWT, we use the GPT-2 tokenizer and similarly concatenate and pack sequences to length 1,024; during packing, we insert an eos token between consecutive documents. As OWT does not provide an official validation split, we reserve the last 100k documents for validation. We parameterize the diffusion backbone of all models with the modified diffusion transformer architecture (Peebles & Xie, 2023) from Lou et al. (2024); Sahoo et al. (2024). For time-variant models, we use 12 layers, a hidden dimension of 768, 12 attention heads. For the diffusion backbone, we use the AdamW optimizer with a batch size of 512, constant learning rate warmup from 0 to a learning rate of 3e-4 for 2,500 steps, following prior works (Sahoo et al., 2024; Lou et al., 2024; Sahoo et al., 2025). We use a dropout rate of 0.1. See Appendix C.3 for time-agnostic and hybrid models. 
+
+Experimental setting for the Hamming-distance and ∆ analyses (Figure 1) The minimum hamming distance histogram is obtained by exhaustively comparing all 8,730 ,966 OWT training rows of length L = 1024 . For each row, we compute its exact minimum Hamming distance as L
+
+minus the maximum position-wise match count over all other rows, excluding its own row index. Special tokens are treated like ordinary tokens throughout. For each t ∈ { 0.05 , 0.10 , . . . , 0.95 , 0.99 }, we independently sample 2,000 source rows uniformly with replacement and corrupt each token by copying it with probability 1−t or drawing uniformly from the full 50 ,258 -token vocabulary, including the added padding token, with probability t. For each pair, we independently sample i ∼ Unif([ L]) and compute ∆i = M i(x, zt) − max x′: x′i̸ =xi M i(x′, zt)
+
+by scanning the entire training set, where M i counts matches only outside i. The probability mass at each time is estimated from the empirical frequencies of these 2,000 margins. Both measurements use exact exhaustive GPU scans, without approximate nearest-neighbor search. We store the entire token matrix losslessly in 16-bit integers (approximately 17 .9 GB) on each H100 GPU and compute integer match counts across training rows. 
+
+Experimental setting for the learned time-sensitivity analysis (Figure 2 ( left )). We use the public checkpoint both for D UALITY and LOO+CE trained on OWT. We uniformly sample 1000 held-out OWT sequences of length L = 1024 without replacement. For each tcorruption ∈ { 0.01 , 0.50 , 0.99 },we independently draw one corrupted sequence per clean sequence from qtcorruption and reuse identical inputs for both models. Each corrupted input z is then held fixed while the evaluation time varies over 
+
+t ∈ { 0.01 , 0.02 , . . . , 0.99 }. We apply Eq. (8) to the raw network softmax prediction xiθ (z, t ) in place of the oracle, before any analytic local-token correction. Derivatives are computed using automatic differentiation with respect to raw t. Each curve reports the arithmetic mean over all valid token positions, including unchanged tokens, followed by the mean over the 1000 sequences. In particular, for LOO+CE, we measure Fisher sensitivity with respect to xθ , the LOO denoiser actually used for generation and in the plug-in reverse kernel, rather than μPosterior  
+
+> θ
+
+, which is introduced through the LOO reparameterization in Eq. (11). 
+
+Perplexity measure. In all experiments, we estimate validation/test perplexity by exponentiating the UDM NELBO. That is, we report perplexity that corresponds to an upper bound on the true perplexity, following the standard convention in most discrete diffusion language modeling works (Sahoo et al., 2024; 2025; Schiff et al., 2025; Gourevitch et al., 2026; Shi et al., 2024). Likewise, the time-resolved NLL plots report the expected token-normalized NELBO integrand at time t.C.3 DETAILS ON TIME -AGNOSTIC MODELS 
+
+Time-agnostic UDMs. Across all frameworks—including the conventional UDM (Schiff et al., 2025), Diffusion Duality (Sahoo et al., 2025), and the leave-one-out denoiser trained with cross-entropy (Gourevitch et al., 2026)—the only modification we make is to render the model time-agnostic. All other framework-specific components, including the loss function, forward process, noise sched-ule, and curriculum learning procedure, are kept exactly as originally proposed. More specifically, we directly build upon the original codebases and leave their framework-specific implementations 30 Preprint. unchanged, except for removing time conditioning from the model. We refer the reader to Ap-pendix A.2 for a detailed description of these frameworks. For experiments on LM1B, we compared 1) time-variant model with 12 Transformer layers, 2) time-agnostic model with 12 Transformer layers, 3) time-agnostic model with 13 Transformer layers that matches parameter count of 1), and 4) hybrid model. For experiments on OWT, we compared the time-variant model with 12 Transformer layers and the time-agnostic model with 13 Transformer layers that matches the parameter count of the time-variant counterpart. All architectures are explained in detail below. 
+
+Time-agnostic architecture. We use the same Transformer backbone for the time-conditioned and time-agnostic models, differing only in how the normalization and residual modulation parameters are specified. For the time-conditioned model, we follow the backbone of Sahoo et al. (2025); Schiff et al. (2025), where each Transformer block uses the adaLN-Zero parameterization: a timestep embedding produces time-dependent scale, shift, and residual-gating parameters. For time-agnostic models, we simply replaced time-dependent parameters with single learnable parameters. More precisely, let c(t) ∈ Rdc denote the timestep embedding, where dc is the conditioning di-mension, and let d denote the Transformer hidden dimension. For the ℓ-th Transformer block, the modulation parameters are generated as 
+
+ βℓ, attn (t), sℓ, attn (t), gℓ, attn (t), βℓ, mlp (t), sℓ, mlp (t), gℓ, mlp (t) = Wℓc(t) + bℓ,
+
+where Wℓ ∈ R6d×dc , bℓ ∈ R6d, and each modulation vector lies in Rd. Here, β and s denote the channel-wise shift and scale modulation of LayerNorm, respectively, while g denotes the channel-wise residual gate. Let hℓ ∈ RL×d denote the sequence of hidden representations entering the ℓ-th block. Ignoring dropout for notational simplicity, the block is 
+
+ehℓ = hℓ + gℓ, attn (t) ⊙ Attn ℓ
+
+   1d + sℓ, attn (t) ⊙ LN wℓ, attn (hℓ) + βℓ, attn (t) ,
+
+hℓ+1 = ehℓ + gℓ, mlp (t) ⊙ MLP ℓ
+
+ 1d + sℓ, mlp (t) ⊙ LN wℓ, mlp (ehℓ) + βℓ, mlp (t)
+
+
+
+.
+
+Here, wℓ, attn , wℓ, mlp ∈ Rd are the learned channel-wise LayerNorm scales. All element-wise opera-tions above act along the hidden dimension, with the d-dimensional modulation vectors broadcast across sequence positions. Thus, time enters the Transformer backbone only through the scale, shift, and residual-gating parameters of each block. For the time-agnostic model, we remove the timestep embedding c(t) entirely and directly learn a time-independent set of modulation parameters for each block: 
+
+ βℓ, attn , sℓ, attn , gℓ, attn , βℓ, mlp , sℓ, mlp , gℓ, mlp 
+
+ ∈ R6d,
+
+where each of the six vectors belongs to Rd.The resulting static normalization modulation is equivalent to a standard affine LayerNorm. More precisely, for a token representation h ∈ Rd, define 
+
+LN 0(h) = h − μ(h)1d
+
+pVar( h) + ϵ , LN w(h) = w ⊙ LN 0(h).
+
+Then, for time-independent s, β ∈ Rd,
+
+(1d + s) ⊙ LN w(h) + β =  w ⊙ (1d + s) ⊙ LN 0(h) + β = γ ⊙ LN 0(h) + β,
+
+where γ = w ⊙ (1d + s) ∈ Rd. The last expression is precisely standard affine LayerNorm with learned channel-wise scale γ and shift β. Thus, the time-agnostic block is equivalent to 
+
+ehℓ = hℓ + gℓ, attn ⊙ Attn ℓ
+
+ LN attn  
+
+> ℓ
+
+(hℓ) ,
+
+hℓ+1 = ehℓ + gℓ, mlp ⊙ MLP ℓ
+
+
+
+LN mlp  
+
+> ℓ
+
+(ehℓ)
+
+
+
+,
+
+where LN attn  
+
+> ℓ
+
+and LN mlp  
+
+> ℓ
+
+are standard learned affine LayerNorms with channel-wise scale and shift in Rd, and gℓ, attn , gℓ, mlp ∈ Rd are learned, time-independent residual gates initialized to zero. We apply the same replacement to the time-conditioned modulation in the final output layer. 
+
+Hybrid architecture. The hybrid model combines the time-conditioned and time-agnostic parameter-izations above, using explicit time conditioning only in the high-noise regime. Specifically, for each 31 Preprint. Transformer block, we retain both the original time-modulation layer and a separate set of directly learned, time-independent modulation parameters. The six modulation vectors are given by 
+
+ βℓ,r , sℓ,r , gℓ,r 
+
+ 
+
+> r∈{ attn ,mlp }
+
+=
+
+(Wℓc(t) + bℓ, t > 0.8,
+
+ β0 
+
+> ℓ,r
+
+, s0 
+
+> ℓ,r
+
+, g0
+
+> ℓ,r
+
+
+
+> r∈{ attn ,mlp }
+
+, t ≤ 0.8.
+
+where the six vectors in the second branch are learned directly and do not depend on time. Thus, the model is identical to the time-conditioned architecture for t > 0.8 and to the time-agnostic architecture for t ≤ 0.8, with all other components left unchanged. 32
