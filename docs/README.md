@@ -6,37 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-10-03
-- 运行时间：2026-10-03 22:15:48 UTC
+- 最新运行日期：2026-10-04
+- 运行时间：2026-10-04 22:02:47 UTC
 - 运行状态：成功
-- 本次总论文数：5
-- 精读区：1
-- 速读区：4
+- 本次总论文数：2
+- 精读区：0
+- 速读区：2
 
 ### 今日简报（AI）
-今日精选 5 篇扩散模型前沿进展，重点解析分层连续扩散语言模型。
-核心推荐关注《Hierarchical Continuous Diffusion Language Models》，其在语言建模任务中展现了高效的层级生成潜力。
-建议优先研读精读论文以掌握核心架构，其余时间可按需浏览时间序列预测相关的扩散应用。
-- 详情：[/202610/03/README](/202610/03/README)
+今日聚焦扩散模型生成质量优化，两篇论文分别探索了多模态引导搜索与端到端调度策略。
+核心看点在于通过引入外部引导或学习型调度，有效提升了扩散模型在潜空间中的生成精准度。
+建议关注扩散模型控制技术的演进，普通读者可重点了解这些方法如何让 AI 生成更符合预期的图像。
+- 详情：[/202610/04/README](/202610/04/README)
 
 ### 精读区论文标签
-1. [Hierarchical Continuous Diffusion Language Models](/202610/03/2610.02193v1-hierarchical-continuous-diffusion-language-models)  
-   标签：评分：8.0/10、query:ardm
-   evidence：作为自回归生成替代方案的连续扩散语言模型
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Diffusion-Based Rollouts as a Stabilization Mechanism for Long-Horizon Environmental Forecasting](/202610/03/2609.33930v1-diffusion-based-rollouts-as-a-stabilization-mechanism-for-long-horizon-environmental-forecasting)  
+1. [PreviewDiff: Multimodal Critic-Guided Search over Diffusion Latents](/202610/04/2609.36199v1-previewdiff-multimodal-critic-guided-search-over-diffusion-latents)  
    标签：评分：6.0/10、query:genad
-   evidence：基于扩散的展开机制用于长时程预测与稳定
-2. [Improved Distributional Diffusion Models](/202610/03/2609.37147v1-improved-distributional-diffusion-models)  
-   标签：评分：6.0/10、query:ardm
-   evidence：分布扩散模型的改进进展
-3. [GARDiff: Graph-Aligned Residual Diffusion for Probabilistic Multivariate Time-Series Forecasting](/202610/03/2609.37694v1-gardiff-graph-aligned-residual-diffusion-for-probabilistic-multivariate-time-series-forecasting)  
+   evidence：在扩散潜空间中搜索时间接地的动作
+2. [Learned End-to-End Guidance Schedules for Diffusion Models](/202610/04/2610.01502v1-learned-end-to-end-guidance-schedules-for-diffusion-models)  
    标签：评分：6.0/10、query:genad
-   evidence：用于概率多变量时间序列预测的扩散模型
-4. [Error-Corrected Inference-Time Scaling for Imperfect Diffusion Models](/202610/03/2610.01933v1-error-corrected-inference-time-scaling-for-imperfect-diffusion-models)  
-   标签：评分：6.0/10、query:ardm
-   evidence：扩散模型的推理时缩放
+   evidence：扩散模型的端到端学习引导
 
 
 <div class="dpr-home-promo-card">
