@@ -1,0 +1,550 @@
+Title: LS-AR: Future-Predictive Latent Steering in Autoregressive LLMs
+
+URL Source: https://arxiv.org/pdf/2610.03093v1
+
+Published Time: Mon, 05 Oct 2026 00:59:47 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+# LS-AR: Future-Predictive Latent Steering in Autoregressive LLMs 
+
+Anubha Gupta 
+
+Electronic & Electrical Engineering University College London London, UK 
+
+anubha.dce@gmail.com 
+
+Eduardo Pignatelli 
+
+Electronic & Electrical Engineering University College London London, UK 
+
+e.pignatelli@ucl.ac.uk 
+
+## Abstract 
+
+Standard autoregressive (AR) models process high-level task instructions, state his-tory, and transient tokens within a single shared sequence of tokens. Consequently, they lack the architectural mechanisms needed to isolate macro-objectives from context noise. To overcome this single-channel limitation, we introduce Latent-Steered Autoregressive (LS-AR) , a dual-channel architecture that decouples continuous goal steering from discrete token decoding via FiLM conditioning. We evaluate a Static Goal Encoder (P0) for persistent macro-objective retention across long rollouts and a Dynamic State Tracker (Pt) for recurrent latent updates dur-ing generation. On long-horizon retrieval past context limits ( H=1024 , W =500 ), LS-AR (Static) achieves 100% target recall where parameter-matched baselines collapse ( 0% ), while increasing throughput by ∼ 35% and cutting peak VRAM by 52 .8% . In Blocksworld planning under forced perturbations ( k=1 ), LS-AR (Dynamic) sustains an 89 .0% completion rate vs. 71 .0% for the baseline, though zero-shot entity scaling ( N → N + 1 ) exposes single-vector capacity limits (0% ). Finally, dual-channel authority analysis shows that text goal dropout es-tablishes latent-dominant control, offering structural defence against text prompt injection while introducing a latent vector attack surface. Code is available at github.com/agupta1024/future-conditional-llms. 
+
+## 1 Introduction 
+
+While autoregressive language models excel at open-ended sequence completion, they face a funda-mental structural mismatch when applied to goal-directed planning. Because these models condition decoding exclusively on context window, they are forced to process macro-objectives within the exact same token stream used for local, step-by-step token generation. As sequence lengths expand during multi-step execution, this single-channel paradigm suffers from severe attention dilution and context eviction [Liu et al., 2024b, Xiao et al., 2024]: overarching task instructions are either pushed beyond the active context window or diluted across long attention spans. Consequently, models gradually lose sight of primary goals, prioritising immediate local predicates at the expense of overall plan coherence [Valmeekam et al., 2023b]. Existing mitigations, such as context window scaling [Chen et al., 2023, Child et al., 2019] or external memory architectures [Chhikara et al., 2025, Ho et al., 2025], incur substantial computational overhead and retrieval latency without resolving the underlying single-channel constraint. To overcome this structural bottleneck, we introduce the Latent-Steered Autoregressive (LS-AR) architecture, a framework that introduces a dedicated continuous channel to causal decoders to evaluate macro-objective retention over extended generation horizons. Inspired by Joint Embedding Predictive Architectures (JEPA) [Dawid and LeCun, 2024], we adopt a non-generative, latent-predictive objective to model macro-intent. Rather than predicting future trajectory steps in token space, LS-AR trains a goal predictor to forecast target state representations directly in latent space 
+
+> 40th Conference on Neural Information Processing Systems (NeurIPS 2026). Workshop: Long-Context Foundation Models. arXiv:2610.03093v1 [cs.LG] 2 Oct 2026
+
+(Rd). By injecting these latent vectors into the decoder’s residual stream via Feature-wise Linear Modulation (FiLM) layers [Perez et al., 2018], we architecturally decouple continuous macro-objective steering from discrete token decoding. We evaluate two operational paradigms: a Static Goal Encoder (P0) designed to bypass context eviction across extended sequence horizons, and a 
+
+Dynamic State Tracker (Pt) that recurrently updates the latent steering vector to absorb intermediate trajectory perturbations. 
+
+Experimental scope. To isolate the architectural impacts of latent steering from confounding variables such as Byte-Pair Encoding (BPE) fragmentation or opaque pre-training priors our empirical evaluation is strictly bounded to synthetic, domain-tokenised environments (procedural Treasure Hunt and interactive Blocksworld ). We benchmark LS-AR against parameter-matched autoregressive baselines across controlled 32M and 85M parameter scales. 
+
+Summary of contributions. 
+
+• Latent-Steered Autoregressive (LS-AR) framework: We present a JEPA-inspired architecture that routes latent vectors into autoregressive decoders via FiLM layers, establishing a fixed-dimensional alternative to temporal context scaling. • Context expiration mitigation ( P0): On procedural retrieval tasks, the Static variant main-tains 100% target recall over extended horizons ( H = 1024 , context window W = 500 ) where parameter-matched standard AR baselines collapse to 0% , while reducing peak VRAM by up to 
+
+52 .8% and increasing throughput by ∼ 35% .• Dynamic resilience and error recovery ( Pt): In interactive Blocksworld environments, the Dy-namic variant continuously updates latent predictions to absorb trajectory perturbations, achieving an 89 .0% task completion rate compared to 71 .0% for the baseline under forced single-error recovery ( k = 1 ). • Capacity limits of latent steering: We demonstrate that scaling out-of-distribution entity counts (N → N + 1 ) causes complete task failure ( 0.0% success), exposing the fundamental capacity bounds of single-vector steering. • Security implications of channel dominance: Through goal-swapping and blank-goal ablations, we analyse the control hierarchy between textual and latent channels. We reveal a new attack surface: training curricula featuring textual goal dropout grant dominant authority to the steering channel, allowing latent vectors to covertly override explicit text instructions. 
+
+## 2 Related work 
+
+2.1 Context extensions and recurrent architectures 
+
+Long-horizon degradation in autoregressive models is typically framed as a context capacity constraint [Mohtashami and Jaggi, 2023]. Mitigation strategies rely on scaling causal attention windows [Chen et al., 2023, Child et al., 2019, Liu et al., 2024a] or augmenting decoders with external memory and KV-cache eviction policies [Lewis et al., 2020, Xiao et al., 2024]. However, these approaches incur quadratic O(N 2) compute costs or rely on precise local retrieval queries without providing structural goal isolation. Selective State Space Models (SSMs) like Mamba [Gu et al., 2021, Gu and Dao, 2023] avoid quadratic costs but suffer from signal dilution, mixing macro-instructions and microscopic syntax within a single recurrent state. In contrast, LS-AR decouples macro-objectives into a dedicated steering channel, preventing target intent from being overwritten during local token generation. 
+
+2.2 Explicit planning and agentic reasoning 
+
+Autoregressive planning on multi-step benchmarks [Valmeekam et al., 2023a] often fails due to causal myopia, repeatedly trapping models in local optima such as the Sussman Anomaly [Sussman, 1973]. Reasoning frameworks like Chain-of-Thought [Wei et al., 2022], Tree-of-Thoughts [Yao et al., 2023], and ReAct [Yao et al., 2022] force models to verbalise plans in token space. Over extended rollouts, these text scratchpads consume context window capacity and remain susceptible to context eviction and task amnesia. LS-AR removes macro-goal steering from the token stream entirely: target states are projected into continuous latent vectors, freeing textual generation to focus strictly on local step execution while preserving global goal alignment. 
+
+2.3 Predictive architectures (JEPA) and latent conditioning 
+
+Our methodology builds on Joint Embedding Predictive Architectures (JEPA) [Dawid and LeCun, 2024, Assran et al., 2023, 2025], which predict abstract representations rather than exact future tokens. While LLM-JEPA [Huang et al., 2025] restricts latent prediction to an auxiliary training objective, 2and Agentic-JEPA [Rodrigo-Ginés, 2026] isolates latent representations for offline state simulation, LS-AR actively integrates these predictions into the decoding loop. By injecting the predictions directly into the decoder’s residual stream via FiLM layers [Perez et al., 2018], LS-AR converts latent representations into dynamic steering vectors for autoregressive generation. 
+
+## 3 Methodology 
+
+3.1 Problem formulation: asymmetric modalities and context limits 
+
+Goal-directed planning requires mapping two temporally asymmetric modalities into a joint latent space ( Rd): (1) a discrete prompt g ∈ Vk specifying initial constraints and target states ( [GOAL] ), and (2) a discrete execution trajectory xfuture ∈ Vm satisfying g. Standard autoregressive models factorise trajectory generation over a sliding context window of size W :
+
+P (x) = 
+
+> |x|
+
+Y
+
+> i=1
+
+P  xi xmax(1 ,i −W ): i−1
+
+ (1) When rollout length exceeds W , prompt tokens g fall outside active causal attention ( i − W > k ), inducing context eviction and plan drift. LS-AR bypasses window constraints by maintaining a steering vector P ∈ Rd that persists across the decoding horizon without consuming context slots. 
+
+3.2 Static goal encoding ( P0)        
+
+> Figure 1: Static predictor alignment (Phase 2). Predictor Epred maps mean-pooled prompt representations to target trajectory embeddings Zfuture =MeanPool (Ebase (xfuture )) via VICReg loss while keeping base encoder
+> Ebase frozen.
+
+Given a discrete prompt g, a frozen base encoder Ebase extracts sequence representations that are mean-pooled into an order-invariant embedding. Predictor network Epred projects this embedding into the latent space Rd:
+
+P0 = Epred 
+
+
+
+MeanPool  Ebase (g)
+
+(2) During Phase 2 alignment training (Figure 1), Epred is optimised to match the target representation of the ground-truth execution rollout: 
+
+Zfuture = MeanPool  Ebase (xfuture ) ∈ Rd (3) 
+
+3.3 Dynamic state tracker ( Pt)
+
+To preserve alignment under environmental perturbations, the Dynamic State Tracker (Figure 2) updates the latent steering vector at discrete state transitions. See Appendix A for the architectural rationale behind trigger boundary and pooling choices. When token xi matches a pre-defined trigger token, execution history x1: i is processed through frozen Ebase to extract trigger-position state 
+
+si = Ebase (x1: i)i ∈ Rd.A Multi-Head Attention (MHA) block computes state context Ai = MHA (Q = Pi−1, K = si, V =
+
+si). Although softmax over a single key collapses to 1.0, retaining MHA preserves multi-subspace projections and supports multi-token state histories. Ai is passed through a Multi-Layer Perceptron (MLP) scaled by a learnable scalar α ∈ R. The active prediction vector Pi updates conditionally at step i:
+
+Pi =
+
+(
+
+Pi−1 + α ·
+
+h
+
+Ai + MLP  LayerNorm (Pi−1 + Ai)i
+
+, if xi = Trigger Token 
+
+Pi−1, otherwise (4) 3Figure 2: Dynamic state tracker. At trigger steps i, the tracker updates the latent Pi−1 using hidden state 
+
+si = Ebase (x1: i)i to form step-aligned prior Pi.
+
+Initialised at α = 0 [Bachlechner et al., 2021], the tracker acts as an identity function at step zero, learning corrective updates only when observed trajectory states diverge from expectations. Across all sub-modules ( Epred , Ebase , FiLM, and MHA), we fix d = 512 to avoid intermediate projection layers. Consequently, while standard token generation retains O(1) complexity, state tracking incurs a sparse O(i) encoding step exclusively at trigger boundaries. 
+
+3.4 Latent steering via FiLM 
+
+Figure 3: Conditioned decoding. At step i, steering vector Pi modulates decoder layer normalisations via FiLM scale γ and shift β parameters to condition token prediction xi+1 .
+
+LS-AR injects the steering vector Pi (P0 for Static; P1: |x| for Dynamic) directly into the causal decoder, Dbase , using layer-wise Feature-wise Linear Modulation (FiLM) (Figure 3). For decoder layer l and position i, affine parameters are linearly projected from Pi:
+
+γl,i = Wγ,l Pi + bγ,l and βl,i = Wβ,l Pi + bβ,l (5) FiLM modulates the pre-MLP normalisation of post-attention hidden state hl,i :
+
+˜hl,i = LayerNorm 2(hl,i ) ⊙ (1 + γl,i ) + βl,i (6) Zero-initialisation of Wγ,β and bγ,β ensures FiLM acts as an identity transform at initialisation, preserving pre-trained model stability. 
+
+3.5 Phased training curriculum 
+
+LS-AR is trained across three distinct phases: • Phase 1. Base domain adaptation: Causal fine-tuning on domain syntax to establish base vocabulary and transition dynamics. • Phase 2 (Predictor alignment, Lalign ): Frozen Ebase provides targets for Epred , optimised via non-contrastive VICReg loss [Bardes et al., 2021]: 
+
+Lalign = λs s(P0, Z future ) + λv
+
+v(P0) + v(Zfuture ) + λc
+
+c(P0) + c(Zfuture ) (7) where s denotes mean squared error, v maintains variance across batch dimensions, and c decorre-lates features (see Appendix B.3.2 for full mathematical definitions). 4• Phase 3 (Conditioned generation, LAR ): Decoder Dbase , FiLM layers, and Dynamic State Tracker are trained end-to-end on next-token prediction: 
+
+LAR = −
+
+> |x|
+
+X
+
+> i=1
+
+log P (xi | x<i , P i−1) (8) • Phase 3b (Textual goal dropout): In 30% of Phase 3 steps, textual prompt g is replaced with padding tokens. This forces Dbase to rely entirely on Pi, transferring primary steering authority to the latent channel. Complete training configurations and hyperparameter schedules are provided in Appendix B.3.3. 
+
+## 4 Experiments 
+
+To evaluate latent steering independently of orthogonal prompting or retrieval mechanisms (e.g., Chain-of-Thought or RAG), we compare LS-AR directly against parameter-matched autoregressive causal decoders across strictly controlled parameter footprints, tokeniser vocabularies, and training corpora. 
+
+4.1 Mitigating context expiration (Treasure Hunt) Experimental setup & baselines We benchmark LS-AR (Static) on fixed-target procedural retrieval using the Treasure Hunt dataset ( 50 k training trajectories, 500 evaluation instances; Ap-pendix B.1), which combines elements of Needle in a Haystack [Nelson et al., 2024] and Passkey retrieval [Mohtashami and Jaggi, 2023]. Using standard BPE tokenisation ( |V | = 50 , 257 ), the parameter-matched AR baseline employs a 20-layer causal decoder ( ∼ 89 M parameters). LS-AR (Static) matches this capacity ( ∼ 85 M parameters) using a 4-layer base encoder ( Ebase ), a 4-layer causal decoder ( Dbase ), weight-tied embeddings, and per-layer FiLM projection heads. In each test instance, a prompt specifying a target item (e.g., Ruby Amulet ) and a 4-digit passkey (e.g., 4892 ) is followed by an irrelevant distractor sequence of length H. We enforce prefix forcing – injecting distractor tokens before terminal retrieval – and set the context window W = 500 across expanding horizons H ∈ { 64 , 128 , 256 , 512 , 1024 }. When H > W , prompt tokens slide out of active causal attention, testing recall beyond the context boundary. Performance is measured via exact match on Semantic Target Retrieval (macro-goal routing) and Numeric Passkey Retrieval 
+
+(4-digit sub-word BPE accuracy).                                        
+
+> Table 1: Semantic and numeric memory retrieval ( W= 500 )across in-context ( H= 128 ) and out-of-context ( H= 1024 ) generation horizons. Values represent Mean ±SEM across 5 random seeds.
+> Horizon ( H)Architecture Target Retrieval (Semantic) ↑Passkey Retrieval (Numeric) ↑
+> H= 128
+> (In-Context) Baseline (AR GPT-2) 100 .0±0.0% 39 .8±4.44%
+> LS-AR (Static) 100 .0±0.0%92 .8±1.48 %
+> H= 1024
+> (Out-of-Context) Baseline (AR GPT-2) 0.0±0.0% 0.0±0.0%
+> LS-AR (Static) 100 .0±0.0%84 .4±4.51 %
+
+Results and representational analysis As shown in Table 1 and Figure 4a, the AR baseline achieves 100 .0% semantic target retrieval within context ( H = 128 ), but struggles with exact numeric passkey extraction ( 39 .8% ) due to sub-word token fragmentation across distractor text. At 
+
+H = 1024 , it suffers complete amnesia ( 0.0% ). Conversely, LS-AR (Static) maintains 100 .0% 
+
+semantic recall across all horizons, proving that continuous steering insulates macro-objectives from context eviction. Passkey retrieval shows minor degradation at H = 1024 (84 .4% ), reflecting slight loss when compressing discrete digit sequences into continuous embeddings. t-SNE visualisation (Figure 4b) confirms that baseline hidden states collapse into local distractor noise at H = 1024 ,whereas LS-AR preserves tightly organised clusters by target identity. 
+
+4.2 Computational efficiency of static conditioning 
+
+We benchmark autoregressive KV-cached decoding efficiency across expanding context limits ( W ∈{128 , 256 , 500 }) against two bounds: a parameter-matched Baseline-Large (20-layer decoder, 89 M) and a decoder-matched Baseline-Small (4-layer unconditioned decoder, 38 M). 
+
+Efficiency analysis As detailed in Table 2, LS-AR yields a +34 .23% to +40 .82% throughput gain over Baseline-Large. Because Baseline-Large evaluates all 20 decoder layers at every token step, 5(a) (b) 
+
+Figure 4: Performance and representational analysis across context boundary ( W = 500 ). (a) Semantic target retrieval across expanding horizons ( H). The baseline collapses when H > W , while LS-AR maintains 
+
+100% retrieval regardless of sequence length. (b) t-SNE of decoder hidden states immediately preceding terminal retrieval at H = 1024 (N = 100 ). Baseline states collapse into distractor noise, whereas LS-AR forms tightly separated clusters by target identity. 
+
+Table 2: Decoding efficiency of LS-AR (Static) across context windows ( W ). ∆ values are anchored strictly against the parameter-matched Baseline-Large. Values represent Mean ± SEM across 5 random seeds.                                                                                      
+
+> Context Size Architecture Throughput ( ↑)∆Speed Peak VRAM ( ↓)∆Memory
+> W= 128
+> Baseline-Small ∗(38M) 6030 .46 ±316 .21 –1056 .00 ±0.00 –Baseline-Large (89M Anchor) 2381 .51 ±56 .59 Anchor 1538 .74 ±0.00 Anchor
+> LS-AR (Static 85M) 3196 .66 ±164 .55 +34.23% 1039 .28 ±0.00 -32.46%
+> W= 256
+> Baseline-Small ∗(38M) 5934 .56 ±306 .78 –1103 .05 ±0.00 –Baseline-Large (89M Anchor) 2190 .98 ±35 .06 Anchor 1858 .41 ±0.00 Anchor
+> LS-AR (Static 85M) 3085 .42 ±125 .18 +40.82% 1059 .43 ±0.00 -42.99%
+> W= 500
+> Baseline-Small ∗(38M) 5824 .46 ±271 .55 –1202 .81 ±0.00 –Baseline-Large (89M Anchor) 2075 .58 ±26 .61 Anchor 2389 .06 ±0.00 Anchor
+> LS-AR (Static 85M) 2821 .27 ±99 .79 +35.93% 1127 .38 ±0.00 -52.81%
+> ∗Baseline-Small represents the unconditioned 4-layer decoding throughput upper bound.
+
+compute overhead accumulates rapidly ( 2381 .51 → 2075 .58 tok/s). By contrast, LS-AR offloads prompt extraction to a single run-once pass through Ebase and decodes via a 4-layer backbone, reducing peak VRAM by up to −52 .81% (1127 .38 MB vs. 2389 .06 MB at W = 500 ). 
+
+4.3 Blocksworld: logical planning and dynamic resilience Experimental setup & baselines Agentic planning demands deterministic execution, resistance to search traps (e.g., Sussman Anomaly), and error recovery under environmental perturbations. To evaluate these properties we benchmark LS-AR (Dynamic) on interactive logical planning using the Blocksworld domain [Valmeekam et al., 2023a] ( 100 k training trajectories, 500 evaluation instances; Appendix B.2). To remain unburdened by large vocabulary embeddings, this experiment uses domain-specific tokenisation ( |V | = 100 ; Appendix B.3.1). The parameter-matched AR baseline employs a 10-layer decoder ( ∼ 32 M parameters), while LS-AR (Dynamic) matches this capacity ( ∼ 32 Mparameters) using a 4-layer encoder and a 4-layer decoder. Models are fine-tuned on trajectories with N = 5 blocks, where training data includes single forced sub-optimal actions ( K = 1 ) followed by trajectory corrections. Evaluation spans three regimes: (1) 
+
+Optimal execution ( N = 5 , K = 0 ), (2) Dynamic resilience ( K ∈ { 1, 2}) via injected sub-optimal steps, and (3) OOD generalisation ( N = 6 ) on unseen block counts. Performance is evaluated via binary Goal success .
+
+Results & analysis Under unperturbed execution ( K = 0 ), all models achieve high accuracy (95 .0% –98 .0% ). Substituting the steering vectors with Gaussian noise ( Random FiLM ) reduces per-formance to 0.0% , confirming that generation is strictly driven by latent steering. Under off-trajectory perturbations ( K = 1 ), LS-AR (Dynamic) achieves 89 .0% recovery, significantly outperforming the AR baseline ( 71 .0% ) and LS-AR Static ( 66 .0% ). Recalculating latent representations at action boundaries enables the Dynamic Tracker to absorb environmental perturbations. Multi-step errors (K = 2 ) induce compounding vector drift ( 5.0% –7.0% Goal success), and zero-shot scaling ( N = 6 )yields 0.0% success, showing that single-vector latent steering does not grant zero-shot extrapolation to unseen object spaces. 6Table 3: Blocksworld planning, resilience, and OOD generalisation. Goal success rates across optimal trajectories ( K = 0 ), forced perturbation steps ( K ∈ { 1, 2}), and zero-shot entity scaling ( N = 6 ). Values represent Mean ± SEM across 5 random seeds. 
+
+Architecture In-Distribution ( N = 5 ) OOD generalisation 
+
+K = 0 (Optimal) K = 1 (1 Mistake) K = 2 (Zero-Shot) N = 6 (Zero-Shot) 
+
+Baseline (AR GPT-2) 96 .0% ± 0.0 71 .0% ± 0.0 6.0% ± 0.0 0.0% ± 0.0
+
+LS-AR (Static) 95 .0% ± 0.0 66 .0% ± 0.0 5.0% ± 0.0 0.0% ± 0.0
+
+LS-AR (Dynamic) 98 .0% ± 0.0 89 .0% ± 0.0 7.0% ± 0.0 0.0% ± 0.0
+
+Random FiLM Ablation 0.0% – – –
+
+4.4 Dynamic state-tracking overhead 
+
+We profile the per-step tracking overhead of LS-AR (Dynamic) on a 32 M parameter model at W = 32 ,where metric overhead remains representative across context scales ( W ∈ { 8, 16 , 32 , 64 }). 
+
+Table 4: Inference efficiency of LS-AR (Dynamic) (W = 32 , 32 M parameters). ∆ metrics are anchored strictly against the parameter-matched Baseline-Large ( 32 M). Sparsely executing Epred yields +33 .56% higher throughput while preserving peak memory footprint. Values represent Mean ± SEM across 5 random seeds.                                     
+
+> Context Size Architecture Decoder Depth Throughput ( ↑)∆Speed Peak VRAM ( ↓)∆Memory
+> W= 32
+> Baseline-Small (13M) 4 Layers 277 .5±31 .7–431 .6±0.0–
+> (Decoder-Matched)
+> Baseline-Large (32M) 10 Layers 180 .0±2.7Anchor 432 .1±0.0Anchor (Parameter-Matched)
+> LS-AR (Dynamic 32M) 4 Layers (Dec) 240 .0±23 .0+33.56% 433 .8±0.00.41%
+> + 4 Layers ( Ebase )
+
+Efficiency analysis As shown in Table 4, LS-AR (Dynamic) achieves +33 .56% higher throughput than the 32 M baseline with a negligible +0 .41% VRAM increase. Standard AR models evaluate all 10 decoder layers at every step, whereas LS-AR executes the deep predictor ( Epred ) only at sparse trigger boundaries, keeping per-step generation bound to a lightweight 4-layer backbone. 
+
+4.5 Dual-channel control and security trade-offs 
+
+To map channel authority under potential attack vectors [Greshake et al., 2023, Qi et al., 2024], we evaluate an adversarial override regime: the decoder receives prompt text specifying Goal A , while FiLM layers are conditioned on a latent vector encoding Goal B (Adversarial Swap). We evaluate two training curricula: (1) Standard curriculum (joint text and latent training), and (2) Latent-forced curriculum (prompt text randomly masked with 30% probability during Phase 3). 
+
+Table 5: Latent controllability and modality authority . Under Standard training, LS-AR prioritises textual authority; under Latent-Forced training, steering vectors act as high-authority control overrides. Values represent Mean ± SEM across 5 random seeds.                                                                                  
+
+> Condition Architecture Standard Curriculum Latent-Forced Curriculum Textual Goal, Injected Latent Goal Goal A Success Goal B Success Goal A Success Goal B Success
+> Control ∗(GA,GA)Baseline 63 .6% ±0.94 0.0% ––LS-AR (Dynamic) 60 .4% ±1.07 0.0% 72 .2% ±0.85 0.0% Control ∗(GB,GB)Baseline 0.0% 62 .2% ±0.85 ––LS-AR (Dynamic) 0.0% 61 .4% ±1.12 0.0% 73 .2% ±0.72
+> Adversarial †(GA,GB)LS-AR (Dynamic) 56 .2%±1.39 0.4% ±0.36 1.4% ±0.54 67 .2%±1.65
+> Blank Goal Text (None, GB)†LS-AR (Dynamic) 0.0% 0.2% ±0.18 0.0% 71 .0%±1.16
+> Blank Goal Latent ( GA, None) †LS-AR (Dynamic) 30 .4% ±2.33 0.0% 1.8% ±0.58 0.0%
+> ∗Control conditions where the Textual Goal and the Latent Goal perfectly align.
+> †Standard AR baselines lack a continuous channel; latent swaps and blank ablations do not apply.
+
+Authority analysis & security trade-offs As detailed in Table 5, under the Standard Curriculum ,the model prioritises text instructions, executing Goal A ( 56 .2% ) while suppressing injected Goal B (0.4% ). Under the Latent-Forced Curriculum , steering vectors become primary control channels, overriding prompt text to execute Goal B ( 67 .2% ) while suppressing Goal A ( 1.4% ). This reveals a key security trade-off: enforcing strong latent steering via textual dropout creates vulnerability to covert steering vector injection, whereas standard joint training anchors decoding authority to human-auditable text prompts, offering structural defence against latent manipulation. 75 Discussion 
+
+The empirical results across our benchmarks demonstrate that LS-AR maintains semantic objective retention over extended generation horizons by leveraging continuous global conditioning. By analysing the context expiration failures of the AR baseline and the recovery mechanics of our framework, we identify broader implications for goal-directed sequence modelling. 
+
+5.1 Latent steering vs. temporal context scaling 
+
+Standard context window expansion ( W ) remains vulnerable to attention dilution and prompt eviction. By projecting macro-objectives into a persistent latent vector Pt, LS-AR isolates high-level goal steering from local token generation. This decoupling maintains global steering authority past active context boundaries while delivering ∼ 35% throughput gains by offloading compute to a shallow 4-layer decoder backbone. 
+
+5.2 Limits of out-of-distribution structural generalisation 
+
+Single-vector conditioning exhibits clear structural capacity bounds under out-of-distribution (OOD) shift ( N = 6 block scaling yields 0% success across all variants). A single fixed-dimensional latent vector lacks the relational capacity required for zero-shot combinatorial binding over unobserved object configurations. 
+
+5.3 Modality authority and security dynamics 
+
+Adversarial evaluations reveal that channel dominance – prioritising prompt text or latent vectors – is an engineered artifact of the training curriculum: • Latent-dominant regime (goal dropout): Textual goal dropout establishes latent vectors as the primary steering channel ( 67 .2% injected goal execution). This provides structural defence against text-based prompt injections [Greshake et al., 2023], but creates vulnerability to gradient-based vector perturbations [Zou et al., 2023, Qi et al., 2024]. • Text-dominant regime (standard training): Standard joint training grounds authority in prompt text ( 56 .2% primary goal execution), suppressing unsanctioned vector swaps ( 0.4% ) and ensuring auditability. Rather than enforcing a fixed trust model, LS-AR allows developers to tune modality authority based on deployment constraints – selecting latent dominance when processing untrusted text, or text dominance when auditability and latent robustness are paramount. 
+
+5.4 Limitations 
+
+LS-AR exhibits four primary operational boundaries: (1) evaluation is restricted to synthetic symbolic environments, leaving continuous language transfer for future work; (2) compressing macro-intent into a single vector causes minor sub-word BPE digit scrambling during numeric passkey extraction; (3) single-vector bottlenecking bounds combinatorial resolution on OOD tasks; and (4) comparisons against unaugmented AR models serve as a preliminary bounds check, necessitating future evaluation against memory-augmented baselines (e.g., continuous KV-caches) to isolate architectural gains. 
+
+## 6 Conclusion and future work 
+
+We introduced LS-AR , an architecture that modulates autoregressive token generation with latent goal vectors via FiLM conditioning. LS-AR (Static) achieves 100% semantic goal recall well beyond context limits ( H = 1024 , W = 500 ) with a +35% speedup over parameter-matched baselines, while LS-AR (Dynamic) yields 89 .0% recovery under off-trajectory perturbations. 
+
+Future Directions. To address single-vector compression bounds, we outline three key extensions: (1) Multi-slot latent memory: expanding single vectors into k-slot matrices ( Pt ∈ Rk×d) to enable N → N + 1 combinatorial scaling; (2) Adaptive updating: replacing fixed step triggers with entropy-guided dynamic state updates; and (3) Open-vocabulary scaling: evaluating latent steering on multi-billion parameter backbones across complex agentic benchmarks (e.g., ALFWorld, WebArena). 
+
+## References 
+
+Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding 8predictive architecture. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15619–15629, 2023. Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985 , 2025. Thomas Bachlechner, Bodhisattwa Prasad Majumder, Henry Mao, Gary Cottrell, and Julian McAuley. Rezero is all you need: Fast convergence at large depth. In Uncertainty in artificial intelligence ,pages 1352–1361. PMLR, 2021. Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regularization for self-supervised learning. arXiv preprint arXiv:2105.04906 , 2021. Yekun Chai, Yewei Fang, Qiwei Peng, and Xuhong Li. Tokenization falling short: On subword robustness in large language models. In Findings of the Association for Computational Linguistics: EMNLP 2024 , pages 1582–1599, 2024. Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595 , 2023. Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav. Mem0: Building production-ready ai agents with scalable long-term memory. arXiv preprint arXiv:2504.19413 ,2025. Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers. arXiv preprint arXiv:1904.10509 , 2019. Anna Dawid and Yann LeCun. Introduction to latent variable energy-based models: a path toward autonomous machine intelligence. Journal of Statistical Mechanics: Theory and Experiment , 2024 (10):104011, 2024. Kai Greshake, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. Not what you’ve signed up for: Compromising real-world llm-integrated applications with indirect prompt injection. In Proceedings of the 16th ACM workshop on artificial intelligence and security ,pages 79–90, 2023. Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752 , 2023. Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured state spaces. arXiv preprint arXiv:2111.00396 , 2021. Matthew Ho, Chen Si, Zhaoxiang Feng, Fangxu Yu, Yichi Yang, Zhijian Liu, Zhiting Hu, and Lianhui Qin. Arcmemo: Abstract reasoning composition with lifelong llm memory. arXiv preprint arXiv:2509.04439 , 2025. Hai Huang, Yann LeCun, and Randall Balestriero. Llm-jepa: Large language models meet joint embedding predictive architectures. arXiv preprint arXiv:2509.14252 , 2025. Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al. Retrieval-augmented genera-tion for knowledge-intensive nlp tasks. Advances in neural information processing systems , 33: 9459–9474, 2020. Hao Liu, Matei Zaharia, and Pieter Abbeel. Ringattention with blockwise transformers for near-infinite context. In International Conference on Learning Representations , volume 2024, pages 3992–4008, 2024a. Nelson F Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, and Percy Liang. Lost in the middle: How language models use long contexts. Transactions of the association for computational linguistics , 12:157–173, 2024b. Amirkeivan Mohtashami and Martin Jaggi. Landmark attention: Random-access infinite context length for transformers. arXiv preprint arXiv:2305.16300 , 2023. 9Elliot Nelson, Georgios Kollias, Payel Das, Subhajit Chaudhury, and Soham Dan. Needle in the haystack for memory based large language models. arXiv preprint arXiv:2407.01437 , 2024. Ethan Perez, Florian Strub, Harm De Vries, Vincent Dumoulin, and Aaron Courville. Film: Visual reasoning with a general conditioning layer. In Proceedings of the AAAI conference on artificial intelligence , volume 32, 2018. Xiangyu Qi, Kaixuan Huang, Ashwinee Panda, Peter Henderson, Mengdi Wang, and Prateek Mittal. Visual adversarial examples jailbreak aligned large language models. In Proceedings of the AAAI conference on artificial intelligence , volume 38, pages 21527–21536, 2024. Francisco-Javier Rodrigo-Ginés. Agentic-jepa: A self-supervised world model for planning in text-based agent environments. HAL preprint https://hal.science/hal-05546567v1 , 2026. Gerald Jay Sussman. A Computational Model of Skill Acquisition . PhD thesis, Massachusetts Institute of Technology, Cambridge, MA, USA, 1973. Karthik Valmeekam, Matthew Marquez, Alberto Olmo, Sarath Sreedharan, and Subbarao Kambham-pati. Planbench: An extensible benchmark for evaluating large language models on planning and reasoning about change. Advances in Neural Information Processing Systems , 36:38975–38987, 2023a. Karthik Valmeekam, Matthew Marquez, Sarath Sreedharan, and Subbarao Kambhampati. On the planning abilities of large language models: A critical investigation. In A. Oh, T. Neumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine, editors, Advances in Neural Information Processing Systems 36 - 37th Conference on Neural Information Processing Systems, NeurIPS 2023 , Advances in Neural Information Processing Systems. Neural information processing systems foundation, 2023b. Publisher Copyright: © 2023 Neural information processing systems founda-tion. All rights reserved.; 37th Conference on Neural Information Processing Systems, NeurIPS 2023 ; Conference date: 10-12-2023 Through 16-12-2023. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. Advances in neural information processing systems , 35:24824–24837, 2022. Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis. Efficient streaming language models with attention sinks. In International Conference on Learning Representations ,volume 2024, pages 21875–21895, 2024. Shunyu Yao, Jeffrey Zhao, Dian Yu, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. In NeurIPS 2022 Foundation Models for Decision Making Workshop , 2022. Shunyu Yao, Dian Yu, Jeffrey Zhao, Izhak Shafran, Tom Griffiths, Yuan Cao, and Karthik Narasimhan. Tree of thoughts: Deliberate problem solving with large language models. Advances in neural information processing systems , 36:11809–11822, 2023. Xiang Zhang, Juntai Cao, and Chenyu You. Counting ability of large language models and impact of tokenization. arXiv preprint arXiv:2410.19730 , 2024. Andy Zou, Zifan Wang, Nicholas Carlini, Milad Nasr, J Zico Kolter, and Matt Fredrikson. Universal and transferable adversarial attacks on aligned language models. arXiv preprint arXiv:2307.15043 ,2023. 
+
+## A Appendix A: Architectural rationale for dynamic state tracking 
+
+A.1 Context aggregation: trigger-position vs. explicit pooling 
+
+To construct the historical context summary si from generated sequence x1: i, we extract the hidden state at the trigger boundary: 
+
+si = Ebase (x1: i)i ∈ Rd
+
+We opted for this single-position summary over explicit mean- or max-pooling across the sub-action tokens for two main reasons: 10 • Implicit Causal Aggregation: Because Ebase employs causal self-attention, the token representa-tion at the terminal position i naturally attends to and integrates contextual information from all preceding tokens in the prefix x1: i.• Computational Efficiency: Utilising si directly avoids storing intermediate activation matri-ces across token spans for auxiliary pooling, reducing memory overhead during long-trajectory generation. 
+
+A.2 Event-driven vs. fixed-interval triggers 
+
+Instead of invoking the Dynamic State Tracker at fixed token intervals (e.g., every N tokens), updates are triggered strictly upon encountering domain-specific event boundary tokens (e.g., comma ‘,’ separators in BlocksWorld). This design choice is grounded in the structure of sequential decision-making tasks: • Semantic Alignment: Plan execution consists of variable-length sub-actions. Fixed-interval triggering risks updating the target latent prior Pi mid-action, forcing the model to re-steer before a sub-goal is completed. • Variable-Length Robustness: Event-driven triggers ensure that state updates naturally adapt to actions of varying token lengths without requiring artificial padding or manual segment alignment. 
+
+## B Appendix B: dataset formalisation and generation algorithms 
+
+To isolate sequence length, local search traps, and dynamic error recovery, our evaluation datasets were procedurally generated. Below, we formalise the generation logic and algorithms for the Treasure Hunt and Blocksworld domains. 
+
+B.1 Procedural Treasure Hunt (semantic & numeric memory) 
+
+The Treasure Hunt benchmark evaluates long-horizon retrieval of a semantic target ( titem ) and a 4-digit numeric passkey ( cpass ) across a distractor sequence of token length H.Let I be the set of 12 distinct semantic items (e.g., Ruby Amulet , Sapphire Ring ) and Cpass ∈
+
+[1000 , 9999] be the numeric passkey space. Distractor sentences s ∈ D (e.g., “I walked down the long, dusty hallway.” ) are sampled without immediate consecutive repetition to construct a filler trajectory of length H.At sequence end, a fixed local trigger w prompts the model to generate the terminal action y, requiring exact retrieval of both cpass and titem .
+
+Algorithm 1 Treasure Hunt trajectory generation 
+
+Require: Target horizon H, Item set I, Passcode bounds [1000 , 9999] , Distractors D
+
+Ensure: Prompt g, Trajectory X, Target label y 
+
+> 1:
+
+titem ← RANDOM SAMPLE (I) 
+
+> 2:
+
+cpass ← RANDOM INTEGER (1000 , 9999)  
+
+> 3:
+
+g ← “[GOAL] Target: ” ∥ titem ∥ “ | Code: ” ∥ cpass  
+
+> 4:
+
+X ← ∅ , Available ← SHUFFLE (D) 
+
+> 5:
+
+while TOKEN LENGTH (X) < H do  
+
+> 6:
+
+if Available is empty then  
+
+> 7:
+
+Available ← SHUFFLE (D) 
+
+> 8:
+
+end if  
+
+> 9:
+
+s ← POP (Available ) 
+
+> 10:
+
+if X̸ = ∅ and s = LAST (X) then  
+
+> 11:
+
+PUSH TOBOTTOM (Available , s ) 
+
+> 12:
+
+s ← POP (Available ) 
+
+> 13:
+
+end if  
+
+> 14:
+
+X ← X ∥ s 
+
+> 15:
+
+end while  
+
+> 16:
+
+w ← “I checked my map and realized the vault was hidden in the Library.”  
+
+> 17:
+
+y ← “I entered ” ∥ cpass ∥ “ and retrieved the ” ∥ titem  
+
+> 18:
+
+return g, X ∥ w, y 
+
+11 Trajectory Structure Example ( H = 1024 ): 
+
+• Goal Prompt ( g): [GOAL] Target: Ruby Amulet | Code: 4892 
+
+• Distractor Trajectory ( X): "I walked down the dusty hallway... [Repeated for H tokens]" 
+
+• Local Trigger ( w): "I checked my map and realized the vault was hidden in the Library." 
+
+• Terminal Action ( y): "I entered 4892 and retrieved the Ruby Amulet." 
+
+B.2 Deterministic planning and perturbations (Blocksworld) 
+
+We model Blocksworld as a deterministic transition system Σ = ( S, A, γ ), where S represents configurations of N blocks, A is the action space ( pickup , putdown , stack , unstack ), and γ :
+
+S × A → S is the transition function. Initial state sinit and goal predicates g are generated via random walks from a ground state (all blocks on table). Optimal paths τopt are solved via Breadth-First Search (BFS). To train and evaluate dynamic error recovery, Algorithm 2 programmatically injects up to K legal sub-optimal actions into the execution sequence, recalculating optimal recovery paths on the fly. 
+
+Algorithm 2 Blocksworld K-perturbation trajectory generation 
+
+Require: Initial state sinit , Goal conditions g, Max perturbations K
+
+Ensure: Formatted trajectory τ , Boolean flag is_perturbed  
+
+> 1:
+
+τopt ← BFS (sinit , g ) 
+
+> 2:
+
+if τopt = ∅ or K = 0 then  
+
+> 3:
+
+return τopt , False  
+
+> 4:
+
+end if  
+
+> 5:
+
+scurr ← sinit , τ ← ∅ , m ← 0 
+
+> 6:
+
+while scurr ̸ |= g do  
+
+> 7:
+
+τrem ← BFS (scurr , g ) 
+
+> 8:
+
+aopt ← FIRST (τrem ) 
+
+> 9:
+
+if m < K and RANDOM (0 , 1) < 0.3 then ▷ Inject perturbation  
+
+> 10:
+
+Vvalid ← GET VALID ACTIONS (scurr ) 
+
+> 11:
+
+Verr ← V valid \ { aopt } 
+
+> 12:
+
+if Verr ̸ = ∅ then  
+
+> 13:
+
+a ← RANDOM SAMPLE (Verr ) 
+
+> 14:
+
+m ← m + 1  
+
+> 15:
+
+else  
+
+> 16:
+
+a ← aopt  
+
+> 17:
+
+end if  
+
+> 18:
+
+else  
+
+> 19:
+
+a ← aopt  
+
+> 20:
+
+end if  
+
+> 21:
+
+τ ← τ ∥ { a} 
+
+> 22:
+
+scurr ← γ(scurr , a ) ▷ Transition to new state  
+
+> 23:
+
+end while  
+
+> 24:
+
+return τ, (m > 0) 
+
+B.3 Implementation and reproducibility details B.3.1 Domain-specific tokenisation 
+
+A known confounding factor when evaluating logical reasoning in language models is Byte-Pair Encoding (BPE) fragmentation [Chai et al., 2024, Zhang et al., 2024]. Standard tokenisers frequently split single-character identifiers (e.g., blocks A through F) or fuse structural delimiters with adjacent action verbs, artificially complicating state tracking. To isolate architectural capacity from lexical artifacts, we adopt a clean word-level tokenisation scheme for the Blocksworld domain. We map environmental entities, action primitives ( pickup , putdown , stack , unstack ), and rela-tional predicates directly to individual vocabulary IDs. Key structural delimiters, including [INIT] ,12 [GOAL] , [DONE] , and the update trigger comma ( ,), are registered as immutable special tokens. This 1:1 mapping ensures that the latent steering vector Pi interacts with clean, unfragmented physical semantics. 
+
+B.3.2 VICReg formulation and hyperparameters 
+
+The Latent Predictor Epred is implemented as a 3-layer Multi-Layer Perceptron (MLP) with GELU activations matching the base model hidden dimension ( d = 512 ). During Phase 2 alignment, Epred 
+
+is trained using the Variance-Invariance-Covariance Regularisation (VICReg) objective [Bardes et al., 2021] over batch size B = 32 across representation matrices P0, Z future ∈ RB×d:
+
+Lalign = λss(P0, Z future ) + λv
+
+h
+
+v(P0) + v(Zfuture )
+
+i
+
++ λc
+
+h
+
+c(P0) + c(Zfuture )
+
+i
+
+where the individual objective terms are defined as: • Invariance ( s): Mean squared error between batch predictions and target representations: 
+
+s(P0, Z future ) = 1
+
+> B
+
+PBi=1 ∥P0,i − Zfuture ,i ∥22.• Variance ( v): Hinge loss maintaining the standard deviation of each feature dimension above target margin γ = 1 .0: v(Z) = 1
+
+> d
+
+Pdj=1 max  0, γ − std j (Z).• Covariance ( c): Sum of squared off-diagonal terms of the feature covariance matrix to decorrelate latent channels: c(Z) = 1
+
+> d
+
+P 
+
+> i̸=j
+
+[C(Z)] 2 
+
+> i,j
+
+.We adopt standard VICReg weighting parameters: λs = 25 .0, λv = 25 .0, and λc = 1 .0, with standard deviation numerical stability constant ϵ = 10 −4.
+
+B.3.3 Training hyperparameters: Hardware and computational budget All models were implemented in PyTorch. Experiments were conducted on an internal cluster using NVIDIA A100 (80GB VRAM) GPUs (utilising PyTorch Distributed Data Parallel for multi-GPU runs). Individual training runs required approximately 3–5 wall-clock hours for 32M parameter models and 5–8 wall-clock hours for 85M parameter models. Accounting for preliminary hyperparameter tuning, loss stability testing, and exploratory/failed iterations, the total computational budget for the entire project is estimated at approximately 350 A100 GPU hours. Models were trained using the AdamW optimizer ( β1 = 0 .9, β 2 = 0 .999 , weight decay = 1 × 10 −4)with a global gradient clipping norm of 1.0. The detailed training schedules across experimental runs are as follows: • Phase 1 (Base Domain Adaptation): The base model ( d = 512 , L = 4 layers) is fine-tuned for 30 epochs at a peak learning rate of 1 × 10 −4 with a 10% linear warmup and linear decay. • Phase 2 (Predictor Alignment): Epred is trained for 30 epochs at a peak learning rate of 2 × 10 −4
+
+with batch size B = 32 , keeping base encoder Ebase frozen. • Phase 3 (Conditioned Generation): The causal decoder Dbase , zero-initialised FiLM projections (Wγ , W β , b γ , b β ), and the Dynamic State Tracker are trained end-to-end for 30 epochs at a uniform learning rate of 1 × 10 −4. Textual goal dropout is applied with probability pdrop = 0 .30 . The Tracker gate scalar is initialised to α = 0 .0.All sequence generation during evaluation uses deterministic greedy decoding ( τ = 0 .0). 13
