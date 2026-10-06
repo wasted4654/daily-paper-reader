@@ -6,29 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-10-04
-- 运行时间：2026-10-04 22:02:47 UTC
+- 最新运行日期：2026-10-06
+- 运行时间：2026-10-06 01:03:34 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：0
-- 速读区：2
+- 本次总论文数：5
+- 精读区：1
+- 速读区：4
 
 ### 今日简报（AI）
-今日聚焦扩散模型生成质量优化，两篇论文分别探索了多模态引导搜索与端到端调度策略。
-核心看点在于通过引入外部引导或学习型调度，有效提升了扩散模型在潜空间中的生成精准度。
-建议关注扩散模型控制技术的演进，普通读者可重点了解这些方法如何让 AI 生成更符合预期的图像。
-- 详情：[/202610/04/README](/202610/04/README)
+今日聚焦扩散语言模型生成加速与时间序列预测，共精选 5 篇前沿论文。
+重点关注通过位置风险优化提升扩散模型生成效率，以及原型引导流匹配在多变量预测中的应用。
+建议优先研读《From Position Risks to Block Survival》，深入理解如何通过优化生成策略突破模型推理瓶颈。
+- 详情：[/202610/06/README](/202610/06/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [From Position Risks to Block Survival: Faster Generation for Diffusion Language Models](/202610/06/2609.33390v1-from-position-risks-to-block-survival-faster-generation-for-diffusion-language-models)  
+   标签：评分：8.0/10、query:ardm
+   evidence：扩散语言模型 (DLM) 与并行标记预测
 
 ### 速读区论文标签
-1. [PreviewDiff: Multimodal Critic-Guided Search over Diffusion Latents](/202610/04/2609.36199v1-previewdiff-multimodal-critic-guided-search-over-diffusion-latents)  
-   标签：评分：6.0/10、query:genad
-   evidence：在扩散潜空间中搜索时间接地的动作
-2. [Learned End-to-End Guidance Schedules for Diffusion Models](/202610/04/2610.01502v1-learned-end-to-end-guidance-schedules-for-diffusion-models)  
-   标签：评分：6.0/10、query:genad
-   evidence：扩散模型的端到端学习引导
+1. [Distribution Matching Distillation for Continuous Diffusion Language Models](/202610/06/2609.40235v1-distribution-matching-distillation-for-continuous-diffusion-language-models)  
+   标签：评分：7.0/10、query:ardm
+   evidence：连续扩散语言模型作为自回归生成的替代方案
+2. [ProtoFlow: Prototype-Guided Flow Matching for Multivariate Time Series Forecasting](/202610/06/2610.01320v1-protoflow-prototype-guided-flow-matching-for-multivariate-time-series-forecasting)  
+   标签：评分：7.0/10、query:ardm
+   evidence：基于VQ的预测通常依赖于自回归 (AR) 标记生成
+3. [IDRF: Inverse-Distilled Reward Fine-tuning of Masked Discrete Diffusion Models](/202610/06/2610.03641v1-idrf-inverse-distilled-reward-fine-tuning-of-masked-discrete-diffusion-models)  
+   标签：评分：7.0/10、query:ardm
+   evidence：掩码离散扩散模型作为自回归生成的替代方案
+4. [Pivot-SD: Efficient Self-Distillation for Masked Diffusion Language Models](/202610/06/2610.03665v1-pivot-sd-efficient-self-distillation-for-masked-diffusion-language-models)  
+   标签：评分：7.0/10、query:ardm
+   evidence：掩码扩散语言模型作为自回归模型的并行替代方案
 
 
 <div class="dpr-home-promo-card">

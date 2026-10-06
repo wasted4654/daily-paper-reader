@@ -1,0 +1,2394 @@
+Pivot-SD: Efficient Self-Distillation for
+Masked Diffusion Language Models
+Seo Hyun Kim1,2,*‡
+Sunwoo Hong1,2,*‡
+Younwoo Choi2
+Chen-Hao Chao2
+Se-Young Yun1,†
+Rahul G. Krishnan2,†
+1KAIST AI
+2University of Toronto & Vector Institute
+{shkimsally, sunwoo}@kaist.ac.kr
+sunwoohong.github.io/pivot-sd
+Abstract
+Masked diffusion language models (dLMs) of-
+fer a promising parallel alternative to autore-
+gressive models for complex reasoning. How-
+ever, they face a distinct credit-assignment chal-
+lenge, since a few commitments during denois-
+ing sharply reduce the uncertainty over the re-
+maining masked positions and shape much of
+the response. Most post-training recipes for
+dLMs do not use this signal to decide which
+tokens to train on: they typically train on the
+final text or assign rewards to whole denoising
+steps, rather than selecting the individual com-
+mitments that shape the response. We introduce
+Pivot-SD, an efficient offline self-distillation
+framework that supervises only these high-
+impact commitments (pivots). Pivot-SD selects
+pivots using an information-gain metric mea-
+suring uncertainty reduction over the remaining
+masked positions. Pivots from successful tra-
+jectories are trained with cross-entropy, and
+pivots from failed trajectories with targeted un-
+likelihood, leaving the rest of the failed trajec-
+tory untouched. Using only 200 questions and
+four rollouts each, Pivot-SD improves LLaDA-
+8B-Instruct over full-sequence SFT and budget-
+matched diffusion RL baselines across math
+and code benchmarks.
+1
+Introduction
+Post-training with supervised fine-tuning (SFT) and
+reinforcement learning (RL) has driven much of the
+recent progress of large language models on rea-
+soning (Ouyang et al., 2022; Shao et al., 2024; Guo
+et al., 2025). Not every token in a model’s output
+is equally informative for training. A few choices
+constrain much of what follows, while most to-
+kens are largely determined by the context around
+them. Which tokens a model should learn from is
+therefore a central question for post-training.
+*Equal contribution. †Corresponding authors. ‡Work done
+as visiting researchers at the University of Toronto and the
+Vector Institute.
+For autoregressive models, prior work selects to-
+kens with token-level statistics (Wang et al., 2025b;
+Lin et al., 2025), and training on the selected to-
+kens improves reasoning. These statistics are com-
+puted on the final text, which loses nothing in an
+autoregressive model because the generation order
+is fixed by position. Masked diffusion language
+models (dLMs) are different. They start from a
+fully masked response and, under the confidence-
+based samplers used in practice, fill in positions
+in the order the model becomes confident about
+them (Sahoo et al., 2024; Ye et al., 2025; Nie et al.,
+2025). A dLM trajectory therefore records which
+token was written at which position and at which
+step. We call each of these events a commitment.
+Most post-training recipes for dLMs do not use
+this record to decide which tokens to train on.
+Many are borrowed from autoregressive modeling
+and train on the final text (Zhao et al., 2025; Wang
+et al., 2025a; Rojas et al., 2026). As a result, a
+token that fixes much of the response while most
+positions are still masked gets the same weight as a
+token filled in at the very end. In a failed trajectory,
+correct intermediate steps are penalized along with
+the error. Others operate on intermediate denoising
+steps (Chen et al., 2025; Zhan, 2025; Tang et al.,
+2026; Xie et al., 2026; Oba et al., 2026), but they
+use them to guide online RL updates.
+In these trajectories, the entropy over the masked
+positions drops markedly at a few denoising steps
+and changes little at the others (Figure 1). We call
+the tokens committed at these steps pivots. We
+score each step by its information gain, the nor-
+malized drop in entropy over the masked positions
+caused by the step’s commitment. Related signals
+have been used at inference time to choose which
+positions to unmask (Kim et al., 2025; Yang et al.,
+2026). We use information gain to choose which to-
+kens to train on. In a correct trajectory, pivots most
+shaped its path and are the tokens to learn from. In
+an incorrect trajectory, they most constrained the
+arXiv:2610.03665v1  [cs.LG]  2 Oct 2026
+
+
+failed path, which makes them the natural targets
+for a negative update.
+We introduce Pivot-SD, a self-distillation
+method that trains a dLM only on its pivots. Pivot-
+SD samples trajectories once from the base model,
+extracts their pivots, and stores the partially masked
+state in which each pivot was committed. Train-
+ing replays these states, so the model predicts each
+pivot token in the exact state where it was originally
+committed. Whether the final answer is correct sets
+the direction of each update. Pivots from correct
+trajectories are trained with cross-entropy to raise
+their probability, and pivots from incorrect ones
+with unlikelihood to lower it (Welleck et al., 2019;
+Ni et al., 2025).
+Pivot-SD computes its loss on only 10 tokens per
+trajectory, under 4% of the 256-token response bud-
+get. With 200 training questions, it gives LLaDA-
+8B-Instruct (Nie et al., 2025) the highest mean
+accuracy on four math and code benchmarks. It
+outperforms full-sequence SFT and diffusion RL,
+including RL runs trained on ten times as many
+questions for five times as many steps, while using
+one-sixth to one-eighth of their wall-clock time.
+It also improves a second backbone, Dream-7B
+(Ye et al., 2025), and has the best average out-of-
+domain accuracy. Ablations confirm that the gains
+depend on which tokens are selected, since super-
+vising random steps or every masked token lowers
+accuracy.
+Our contributions are as follows:
+• We identify pivots with a signal specific to
+dLMs that autoregressive generation does not
+provide, namely how much each denoising
+step reduces the uncertainty over the masked
+positions. Pivots are the tokens committed at
+the steps where this reduction is largest.
+• We introduce Pivot-SD, a self-distillation
+method that replays the partially masked states
+in which the pivots were committed. It applies
+cross-entropy to the pivots of successful tra-
+jectories and unlikelihood to those of failed
+ones.
+• We show that supervising under 4% of the re-
+sponse budget is enough. With only 200 train-
+ing questions, Pivot-SD achieves the highest
+mean accuracy among the compared methods
+on math and code benchmarks. It outperforms
+online RL baselines, including runs with ten
+times as many questions and five times as
+many training steps, while using about 40%
+fewer FLOPs than budget-matched RL.
+2
+Related Work
+Diffusion language models.
+Diffusion models
+have been studied as alternatives to autoregres-
+sive language modeling.
+Early work explored
+continuous diffusion over word embeddings (Li
+et al., 2022), and D3PMs extended denoising diffu-
+sion to discrete state spaces (Austin et al., 2021a).
+Later work improved discrete and masked diffusion
+with score-entropy objectives and masked training
+recipes (Lou et al., 2024; Sahoo et al., 2024), and
+LLaDA scaled the paradigm to an 8B instruction-
+following model trained with forward masking and
+reverse masked-token prediction (Nie et al., 2025).
+In these models generation passes through a se-
+quence of partially masked states instead of a fixed
+left-to-right order, and Pivot-SD takes its supervi-
+sion from this sequence of states.
+Reasoning with masked diffusion language mod-
+els.
+Several recent methods adapt these models
+for reasoning.
+d1 combines masked SFT with
+diffu-GRPO, an RL algorithm for masked diffu-
+sion (Zhao et al., 2025). DCoLT treats intermedi-
+ate reverse-diffusion steps as latent thinking actions
+and optimizes trajectories with outcome-based RL
+(Huang et al., 2025). d2 proposes policy-gradient
+techniques that improve reasoning without super-
+vised fine-tuning (Wang et al., 2025a), and GDPO
+revisits likelihood estimation and uses variance-
+reduced ELBO-based policy optimization (Rojas
+et al., 2026). AGRPO treats each unmasking step
+as an action and estimates the policy gradient from
+sampled steps (Zhan, 2025). These methods rely on
+online RL. Pivot-SD instead samples trajectories
+once from a frozen model and converts trajectory
+outcomes into localized supervision over selected
+denoising commitments. This gives a stable offline
+alternative that can use both successful and failed
+trajectories.
+Process supervision and reasoning credit as-
+signment.
+A common approach to improving
+mathematical reasoning is to supervise interme-
+diate steps. Lightman et al. (2024) show that step-
+level feedback can outperform outcome supervi-
+sion on MATH, and Math-Shepherd automatically
+constructs process labels and trains process reward
+models (Wang et al., 2024). These methods score
+textual reasoning steps in autoregressive solutions.
+
+
+Pivot-SD shares the goal of fine-grained credit
+assignment but changes the unit of supervision. In-
+stead of scoring a sentence or derivation step, it
+supervises a denoising commitment (t, p, yp) in-
+side a masked diffusion trajectory. This matters
+because masked diffusion models commit tokens
+out of order, and a single commitment can reshape
+the distribution over many remaining positions.
+Token importance and weighted fine-tuning.
+A
+related direction selects or reweights tokens during
+training. For autoregressive models, Wang et al.
+(2025b) restrict policy-gradient updates to high-
+entropy tokens, and Lin et al. (2025) penalize the
+critical tokens of incorrect trajectories. For diffu-
+sion language models, GIFT assigns entropy-based
+importance weights to tokens (Xu et al., 2025),
+showing that emphasizing some tokens helps fine-
+tuning. These methods score positions of the fi-
+nal sequence. Pivot-SD scores a commitment at
+the step where it was made, by its effect on the
+positions that are still masked, which the final se-
+quence does not record. Our ablations compare
+pivot-only supervision, selected-step uniform su-
+pervision, entropy-selected pivots, and random piv-
+ots.
+Positioning of our work.
+Table 6 in Appendix A
+compares these methods by the unit they supervise
+and the signal that localizes it. Process supervi-
+sion scores textual steps (Lightman et al., 2024;
+Wang et al., 2024), GIFT reweights final-sequence
+positions (Xu et al., 2025), step-aware diffusion
+RL assigns rewards over denoising intervals (Chen
+et al., 2025; Xie et al., 2026; Oba et al., 2026), and
+answer-aware selection targets the terminal answer
+block (Horvitz et al., 2025). Pivot-SD trains only
+on selected commitments inside the trajectory and
+takes both positive and negative targets from veri-
+fier outcomes, without a process reward model or
+step-level labels.
+3
+Methodology
+This section introduces notation and the SFT base-
+line (§3.1), the pivot selection rule and training ob-
+jective of Pivot-SD (§3.2), the full algorithm (§3.3),
+and its relation to SFT and online RL (§3.4).
+3.1
+Preliminaries and Problem Setup
+Setup
+Let x represent a conditioning prompt, and
+let y = (y1, . . . , yL) denote a target response se-
+quence of length L. A masked diffusion language
+0
+14
+28
+42
+56
+70
+84
+98
+112
+127
+token position
+1
+19
+37
+55
+73
+91
+109
+128
+step
+0
+1
+2
+3
+entropy
+Figure 1: Predictive Entropy and Pivot Selection.
+An entropy heatmap of a masked denoising trajectory
+for a MATH problem (showing the first 128 tokens).
+The x-axis represents the token position, and the y-axis
+denotes the denoising step progressing downward. The
+color scale indicates the predictive entropy of the active
+masked positions. Red dashed lines and stars denote
+the critical denoising steps and the specific pivot tokens
+selected by our Information Gain metric, respectively.
+model generates y conditioned on x by iteratively
+denoising an initially fully masked response se-
+quence over T steps. Let Mt represent the com-
+plete sequence state at denoising step t (consisting
+of the unmasked prompt x concatenated with the
+partially masked response), indexed in the sam-
+pler’s reverse chronological order. To formalize the
+active response positions, let Iresp denote the set
+of coordinate indices corresponding exclusively to
+the response tokens. The active response positions
+that remain masked at step t are defined as
+Bt = {i ∈Iresp : Mt,i = [MASK]}.
+(1)
+At each denoising step, the model parameterizes
+a distribution over the clean token for each active
+masked position:
+Pθ(x(i)
+0
+| Mt),
+i ∈Bt,
+(2)
+where x(i)
+0
+is the clean-token random variable at
+response position i, and its final sampled value in
+the finalized trajectory is yi.
+Standard SFT
+Standard masked SFT trains the
+parameters θ by minimizing the uniform per-
+position cross-entropy loss:
+LSFT(θ) = −E((x,y),t,Mt)
+"X
+i∈Bt
+log Pθ(yi | Mt)
+#
+.
+(3)
+
+
+(a) Select pivots by information gain
+denoising step  t
+token position
+1
+3
+2
+3
+×
+3
+3
+×
+↓
+=
+↓
+↓
+↓
+↓
+4
+3
+×
+4
+=
+5
+3
+×
+4
+=
+12
+6
+3
+×
+4
+=
+12
+↓
+Ans
+↓
+7
+3
+×
+4
+=
+12
+Ans
+12
+8
+3
+×
+4
+=
+12
+.
+Ans
+12
+Information Gain
+avg. entropy ↓of [M]
+0.11
+0.97
+0.05
+0.16
+0.92
+0.09
+0.37
+entropy of a masked position:
+low
+high
+unmasked at step t
+pivot: top-K steps by information gain
+(b) Outcome-conditioned self-distillation on pivots
+final answer
+verifier
+3
+×
+4
+=
+12
+.
+Ans
+12
+✓correct: +1
+▼training: replay the pivot step as input
+3
+M
+M
+M
+M
+M
+M
+M
+Diffusion LM
+×
+4
+=
+12
+.
+Ans
+12
+CE on the pivot
+−log pθ(× | Mt)
+pθ ↑
+3
++
+4
+=
+7
+.
+Ans
+7
+✗incorrect: −1
+▼training: replay the pivot step as input
+3
+M
+M
+M
+M
+M
+M
+M
+Diffusion LM
++
+4
+=
+7
+.
+Ans
+7
+UL on the pivot
+−λ log(1 − pθ(+ | Mt))
+pθ ↓
+✓
+✗
+Figure 2: Illustrative Overview of Pivot-SD. (a) In a trajectory sampled from θ0, steps whose commitment most
+reduces the average entropy of the remaining masked positions are selected as pivots (yellow). (b) The final answer
+determines the sign: for each pivot, its masked state Mt is replayed and only the pivot token is trained, with
+cross-entropy if the answer is correct and unlikelihood if it is wrong. All other positions receive no loss.
+Eq. (3) weights every masked position equally,
+whether it is a trivial fill or a commitment that de-
+termines the rest of the response. Pivot-SD instead
+supervises a small set of selected commitments
+and sets the sign of each update by whether the
+trajectory succeeded.
+3.2
+The Pivot-SD Framework
+Pivot-SD has three parts: extracting candidate com-
+mitments from sampled trajectories (§3.2.1), se-
+lecting pivots by information gain (§3.2.2), and
+the training objective (§3.2.3). Figure 2 gives an
+illustrative overview.
+3.2.1
+Trajectory Generation and Candidate
+Pivots
+Sampling a complete response from the frozen base
+model θ0 yields a discrete denoising trajectory:
+τ = {(Mt, Bt, Ut)}T
+t=1,
+(4)
+where Ut ⊆Bt is the specific subset of positions
+selected for unmasking and commitment by the
+sampler at step t. A position p is committed at step
+t when the sampler selects p ∈Ut and writes the
+sampled token value yp into the sequence state. For
+every committed position p ∈Ut, the trajectory
+generates a candidate pivot c, which we group into
+a trajectory-wide candidate set:
+C(τ) = {(t, p, yp) : p ∈Ut}.
+(5)
+The triple in Eq. (5) records which token was com-
+mitted, at which position, and at which step, so
+the supervised object is the event of committing
+yp at p under state Mt. The same token at the
+same position can matter little late in denoising
+and a great deal earlier, when many neighboring
+positions are still masked. Token-level SFT super-
+vises only (p, yp), and trajectory-level RL super-
+vises only the outcome.
+3.2.2
+Information-Gain Pivot Selection
+A pivot is a commitment after which the frozen
+model becomes much more certain about the posi-
+tions that are still masked. We therefore score each
+denoising step by how much the entropy of those
+positions drops across the step. For a masked state
+M and position i, the per-position entropy is
+hθ0(i | M) = H
+
+Pθ0(x(i)
+0
+| M)
+
+.
+(6)
+Let At ⊆Bt be the positions the sampler can un-
+mask at step t, and let M[Ut]
+t
+denote Mt with the
+tokens committed at step t written in. M[Ut]
+t
+is the
+state the sampler evaluates at the next step. Over
+the positions that remain masked after step t, we
+compare the entropy before and after the commit-
+ment:
+Hpre(t) =
+X
+i∈At\Ut
+hθ0(i | Mt),
+(7)
+Hpost(t) =
+X
+i∈At\Ut
+hθ0
+
+i | M[Ut]
+t
+
+.
+(8)
+Both sums exclude the committed positions, so
+their difference measures how much the commit-
+ment constrains the rest of the block. The number
+of positions in the sum shrinks as decoding pro-
+ceeds, so a raw difference would favor early steps
+
+
+simply because more positions are still masked. We
+therefore divide by that count:
+g(t) = Hpre(t) −Hpost(t)
+|At \ Ut|
+,
+(9)
+so that g(t) is the average entropy reduction per
+remaining masked position, which is comparable
+across steps. Steps at which At changes are ex-
+cluded, since Hpre and Hpost would then be mea-
+sured over different sets of positions.
+For each trajectory we keep the K highest-
+scoring steps and supervise every token committed
+at those steps; the sampler commits one token per
+step in our setting (Appendix C), so this yields
+K pivots per trajectory. We set K = 10 before
+running experiments, and results change little for
+5 ≤K ≤20 (Appendix F). The score only selects
+pivots and does not weight the loss.
+Both entropy terms come from forward passes
+that the sampler already runs at step t and at the
+following step, so scoring adds no model calls to
+generation.
+Figure 1 shows a real trajectory of the base
+model on a MATH problem, where the selected
+steps (red dashed lines) coincide with sharp drops
+in the entropy of the remaining positions.
+3.2.3
+Training objective
+Each selected pivot is mapped to a trajectory out-
+come score s(τ) ∈{+1, −1}, which evaluates the
+correctness of the final response sequence y gener-
+ated by trajectory τ:
+s(τ) =
+(
++1,
+if y is correct,
+−1,
+otherwise.
+(10)
+Every chosen pivot yields a training tuple z =
+(Mt, y, p, yp, s(τ)). For a selected pivot token yp,
+we define the positive cross-entropy loss as
+ℓ+
+p (θ; Mt, yp) = −log Pθ(yp | Mt),
+(11)
+and the token-level unlikelihood penalty as
+ℓ−
+p (θ; Mt, yp) = −log (1 −Pθ(yp | Mt)) . (12)
+During training, the predicted probability Pθ(yp |
+Mt) in Eq. (12) is clipped away from 1 to maintain
+numerical stability. Failed trajectories often con-
+tain valid syntax or correct intermediate algebra.
+Applying unlikelihood only at the selected pivots
+leaves these parts of a failed trajectory untouched
+(Figure 2(b)). The loss for a single tuple z is
+Algorithm 1: Pivot-SD: Offline Outcome-
+Conditioned Pivot Self-Distillation
+Input: Training prompts X, frozen base model θ0,
+trajectories per prompt G, pivots per trajectory
+K
+Output: Fine-tuned model θ
+1 Initialize pivot dataset Dpivot ←∅
+2 foreach prompt x ∈X do
+3
+for j ←1 to G do
+4
+Sample a denoising trajectory
+τ = {(Mt, Bt, Ut)}T
+t=1 and response y
+from θ0
+5
+Assign trajectory outcome s(τ) using
+Eq. (10)
+6
+Construct candidate pivots
+C(τ) = {(t, p, yp) : p ∈Ut}
+7
+foreach denoising step t of τ do
+8
+Compute g(t) using Eq. (9)
+9
+Select the top-K steps by g(t)
+10
+foreach (t, p, yp) ∈C(τ) with t among the
+selected steps do
+11
+Add (Mt, y, p, yp, s(τ)) to Dpivot
+12 Fine-tune θ on Dpivot using Eq. (14)
+13 return θ
+Lpivot(z) = 1[s(τ) = +1] ℓ+
+p (θ; Mt, yp)
++ λneg 1[s(τ) = −1] ℓ−
+p (θ; Mt, yp),
+(13)
+where λneg is a hyperparameter scaling the un-
+likelihood penalty. Collecting the selected pivots
+over all training prompts X and their trajectories
+gives the offline dataset Dpivot, and we minimize
+min
+θ
+1
+|Dpivot|
+X
+z∈Dpivot
+Lpivot(z).
+(14)
+We initialize θ from the base model θ0 and optimize
+Eq. (14) using standard gradient-based optimiza-
+tion.
+3.3
+Algorithmic Implementation
+Algorithm 1 summarizes the pipeline from trajec-
+tory sampling to fine-tuning.
+3.4
+Relation to SFT and Online RL
+Like SFT, Pivot-SD trains offline with supervised
+losses. Like RL, it uses outcome labels from both
+successful and failed trajectories. It differs from
+both in where the update is applied. Each trajectory
+outcome is converted into K state-conditioned tar-
+gets: information gain chooses the commitments,
+the verifier chooses the direction of the update, and
+cross-entropy or unlikelihood is applied only at
+those commitments. This is what lets Pivot-SD
+
+
+Table 1: Accuracy of LLaDA-8B-Instruct on math and code benchmarks at generation lengths of 256 and 512.
+Budget-matched RL variants use the same 200 questions and 1,000 optimizer steps as Pivot-SD. Methods marked
+with ‡ are averaged over three fully re-randomized runs at 256 tokens. Standard deviations are in Appendix D.
+Method
+MATH
+GSM8K
+HumanEval+
+MBPP+
+256
+512
+256
+512
+256
+512
+256
+512
+Base
+31.40
+38.8
+75.13
+83.40
+32.32
+42.07
+43.12
+44.44
+SFT-GT‡
+35.47
+38.6
+76.94
+83.17
+33.94
+36.59
+46.32
+42.86
+SFT-SD‡
+31.73
+38.6
+73.90
+81.96
+35.78
+40.85
+45.92
+44.97
+diffu-GRPO (budget-matched)‡
+33.47
+38.2
+76.04
+82.11
+32.52
+42.07
+43.39
+45.24
+diffu-GRPO
+35.20
+40.6
+77.63
+83.62
+34.15
+40.85
+42.59
+43.65
+wd1++ (budget-matched)‡
+33.27
+39.2
+76.93
+82.71
+33.54
+40.24
+43.12
+43.92
+wd1++
+35.40
+39.4
+76.65
+82.71
+34.15
+38.41
+44.97
+44.44
+Pivot-SD (ours)‡
+37.47
+42.6
+79.51
+84.38
+40.43
+41.46
+47.12
+48.15
+Table 2: Ablation study of pivot selection and credit assignment. “IG” denotes denoising states selected by our
+information-gain criterion. “All” applies the loss to all supervised masked tokens in the selected state, while “Pivot”
+applies the loss only to the selected pivot token. CE denotes cross-entropy and UL denotes unlikelihood. Methods
+marked with ‡ are averaged over three fully re-randomized runs. Standard deviations are in Appendix D.
+Method
+State
+Target
+Pos.
+Neg.
+MATH
+GSM8K
+HumanEval+
+MBPP+
+Positive All-token
+IG
+All
+CE
+-
+31.60
+74.37
+36.59
+39.68
+Positive Pivot
+IG
+Pivot
+CE
+-
+32.20
+72.48
+35.37
+43.65
+Entropy pivot‡
+Entropy
+Pivot
+CE
+-
+32.27
+74.75
+35.57
+44.80
+Pos+Neg All-token‡
+IG
+All
+CE
+State-UL
+35.00
+74.44
+36.80
+44.54
+Random-Step Pivot‡
+Random
+Pivot
+CE
+Pivot-UL
+29.93
+76.51
+39.00
+44.80
+Random-Token Pivot‡
+IG
+Random
+CE
+Pivot-UL
+34.87
+76.47
+34.78
+45.24
+Pivot-SD (ours)‡
+IG
+Pivot
+CE
+Pivot-UL
+37.47
+79.51
+40.43
+47.12
+learn from failed trajectories without penalizing
+their valid parts.
+Because Dpivot is sampled once from θ0 and
+stays fixed during training, hyperparameters can
+be tuned offline on the same dataset, and training
+cannot stall on zero-reward batches, which we ob-
+served for online RL at this budget (Appendix I).
+4
+Experiments
+We test whether pivot self-distillation improves
+masked diffusion language models under a small
+post-training budget, using LLaDA-8B-Instruct as
+the main backbone.
+Training data.
+For each math reasoning dataset,
+we sample 200 training questions from the cor-
+responding training split: GSM8K for GSM8K
+evaluation (Cobbe et al., 2021) and MATH for
+MATH500 (Hendrycks et al., 2021; Lightman et al.,
+2024) evaluation.
+For code tasks, we sample
+200 training questions from AceCode (Zeng et al.,
+2025) and evaluate on HumanEval+ and MBPP+
+(Chen et al., 2021; Liu et al., 2023; Austin et al.,
+2021b). For each training question, we generate
+four denoising trajectories from the frozen base
+model, for 800 trajectories per dataset. Each tra-
+jectory is labeled as successful or failed using the
+task verifier: exact-answer matching for math and
+unit-test execution for code.
+Baselines.
+We compare against two offline SFT
+baselines and two online RL baselines. SFT-GT
+trains on ground-truth solutions with standard ran-
+dom masking. SFT-SD trains on the successful
+solutions from the same rollout pool as Pivot-SD,
+with ordinary masked SFT. The RL baselines are
+diffu-GRPO (Zhao et al., 2025) and wd1++ (Tang
+et al., 2026). wd1++ is the step-wise variant of wd1
+proposed by Tang et al. (2026), which also trains
+on the intermediate clean completions produced at
+each denoising step. We use it because it is the
+stronger of their two variants. For both RL meth-
+ods, the budget-matched variant uses the same 200
+questions, four rollouts per question, and 1,000 op-
+timizer steps as Pivot-SD, and the extended variant
+uses 2,000 questions and 5,000 steps.
+Evaluation.
+All rollout-based methods collect
+training trajectories with a maximum generation
+length of 256 tokens, and SFT-GT trains on ground-
+
+
+Table 3: Compute accounting. Wall-clock hours on
+two GPUs. Pivot-SD generates its trajectories once
+before training. The RL baselines generate rollouts
+during training. RL times are averaged across training
+domains.
+Method
+Steps
+Gen. (h)
+Train (h)
+Total (h)
+diffu-GRPO (matched)
+1000
+0
+5.4
+5.4
+diffu-GRPO
+5000
+0
+22.9
+22.9
+wd1++ (matched)
+1000
+0
+3.6
+3.6
+wd1++
+5000
+0
+17.3
+17.3
+Pivot-SD (ours)
+1000
+2.5
+0.3
+2.8
+truth solutions that fit the same budget. We eval-
+uate on MATH500, GSM8K, HumanEval+, and
+MBPP+ with a shared decoding configuration and
+answer-extraction or unit-test pipeline. The 256-
+token setting matches training and is our main set-
+ting. The 512-token setting measures length trans-
+fer. Methods trained under the controlled budget
+are run three times with full re-randomization at
+256 tokens. The main tables report means, and
+Appendix D gives standard deviations and the full
+protocol. Detailed experimental configurations and
+hyperparameters are provided in Appendix C.
+4.1
+Main Results
+Table 1 reports the main comparison. At the 256-
+token budget used to collect pivot supervision,
+Pivot-SD has the best mean on all four bench-
+marks, including against the 5,000-step RL runs.
+Over the strongest baseline on each benchmark,
+it gains 2.0 points on MATH (over SFT-GT), 1.9
+on GSM8K (over 5,000-step diffu-GRPO), and 4.7
+on HumanEval+ (over SFT-SD). On MBPP+ the
+margin over SFT-GT is 0.8 points, within one stan-
+dard deviation (Appendix D). SFT-SD trains on
+the same rollout pool with ordinary masked SFT,
+so its gap to Pivot-SD reflects pivot selection and
+negative supervision on identical data. Across train-
+ing budgets from 50 to 2,000 questions, Pivot-SD
+stays best on HumanEval+ and is best on all four
+benchmarks at 2,000 questions (Appendix E).
+At 512 tokens, Pivot-SD is best on MATH,
+GSM8K, and MBPP+. On HumanEval+ it scores
+41.46, below the base model and budget-matched
+diffu-GRPO (both 42.07).
+4.2
+What Makes Pivot-SD Work?
+Ablation setup.
+Table 2 isolates two design
+choices: the denoising state used for training and
+the token locations that receive credit (via cross-
+entropy, CE) or blame (via unlikelihood, UL). Pos-
+~ 8 x faster
+> + 3.0 pts
+Figure 3: Accuracy vs. compute cost. Average accu-
+racy versus total wall-clock hours on two GPUs. Pivot-
+SD is more than 3 points above the 5,000-step RL runs
+while using about one-eighth of the training time of
+5,000-step diffu-GRPO.
+Table 4: Dream generalization results. We keep the
+same baseline categories as in the LLaDA experiments
+and report the same evaluation metrics.
+Method
+MATH GSM
+HE
+MBPP
+Base (Dream-Instruct-7B)
+37.97
+79.55 54.27
+60.58
+SFT-GT
+35.40
+61.49 54.27
+59.26
+SFT-SD
+40.80
+70.74 48.78
+61.38
+Pivot-SD (ours)
+42.20
+81.88 58.54
+61.64
+itive All-token applies CE to all supervised tokens
+in IG-selected states from successful trajectories.
+Positive Pivot applies CE only to the IG pivot from
+successful trajectories. Entropy pivot replaces the
+IG criterion with local uncertainty, selecting the
+top-K highest-entropy committed tokens within
+successful trajectories and applying CE to them.
+Pos+Neg All-token applies full-state CE/UL on
+IG-selected states. Random-Step Pivot applies the
+same pivot-local CE/UL objective to a token de-
+coded at a random denoising step. Random-Token
+Pivot keeps the IG-selected state but replaces the
+IG pivot with a randomly selected decoded token.
+Pivot-SD (ours) applies pivot-local CE/UL to the
+selected high-information pivot.
+Pivot-local credit assignment matters.
+With
+both positive and negative updates, restricting the
+loss to the pivot token (Pivot-SD) beats apply-
+ing it to every masked token of the selected state
+(Pos+Neg All-token) on all four benchmarks, by
+2.5 to 5.1 points. With positive updates alone, nei-
+ther target is consistently better (Positive Pivot vs.
+Positive All-token). The gain from localization
+
+
+Table 5: Average out-of-domain (OOD) performance.
+Each column reports the mean accuracy over the bench-
+marks not used for training: MATH- and GSM8K-
+trained models are evaluated on the other three bench-
+marks, AceCode-trained models on MATH and GSM8K.
+Column composition therefore differs, and “Overall” is
+the micro-average over all source-target pairs rather than
+the mean of the three columns.
+Method
+Training domain
+Overall
+MATH
+GSM8K
+AceCode
+Base
+50.19
+35.61
+53.27
+45.49
+SFT-GT
+53.57
+39.46
+51.80
+47.83
+SFT-SD
+51.13
+35.44
+51.21
+45.27
+diffu-GRPO (matched)
+50.89
+36.45
+55.49
+46.62
+diffu-GRPO
+53.02
+37.99
+54.66
+47.79
+wd1++ (matched)
+50.71
+38.06
+53.76
+46.73
+wd1++
+52.55
+37.60
+53.81
+47.25
+Pivot-SD (ours)
+52.87
+39.82
+55.42
+48.61
+therefore appears with the negative branch, con-
+sistent with state-wide unlikelihood also pushing
+down the correct tokens of a failed state.
+Pivot selection matters once unlikelihood is ap-
+plied.
+The two random controls keep the pivot-
+local CE/UL objective and change only which com-
+mitments are selected. Pivot-SD beats both on all
+four benchmarks, and Random-Step Pivot falls be-
+low the untrained base model on MATH (29.93 vs.
+31.40). Entropy pivot changes the selection crite-
+rion in the positive-only setting, and it stays within
+2.3 points of Positive Pivot on every benchmark.
+With positive updates alone, the choice of criterion
+makes little difference. With unlikelihood, apply-
+ing it to random steps or random tokens costs 7.5
+and 2.6 points on MATH relative to Pivot-SD.
+4.3
+Compute Efficiency
+Offline pivot distillation avoids online rollouts.
+Table 3 reports wall-clock training time on two
+GPUs. The RL baselines generate rollouts during
+training, which takes 3.6 to 5.4 hours at 1,000 steps
+and 17.3 to 22.9 hours at 5,000 steps. Pivot-SD
+samples its 800 trajectories once in 2.5 hours and
+fine-tunes on the cached pivots in 0.3 hours, for
+2.8 hours in total. In FLOPs, which do not de-
+pend on hardware, Pivot-SD uses about 1.65× less
+total compute than the budget-matched RL runs
+(Appendix G).
+Compute–performance
+trade-off.
+Figure
+3
+plots average accuracy against total training time.
+Pivot-SD has the highest average accuracy while
+using about 8× less time than the 5,000-step diffu-
+GRPO run and 1.3 to 1.9× less than the budget-
+matched RL runs.
+4.4
+Backbone Generalization
+Pivot-SD transfers to another diffusion back-
+bone.
+Table 4 applies the same recipe to Dream-
+v0-Instruct-7B (Ye et al., 2025).
+Pivot-SD im-
+proves over the Dream base model and both SFT
+baselines on all four benchmarks, so the gains carry
+over to a second masked diffusion model.
+4.5
+Out-of-Domain Transfer
+Table 5 reports accuracy on benchmarks outside
+the training domain. Models trained on MATH
+or GSM8K are evaluated on the other three bench-
+marks, and AceCode-trained models on MATH and
+GSM8K. The Overall score is the micro-average
+over all source-target pairs.
+Pivot-SD transfers most consistently.
+With the
+same 200-question budget, Pivot-SD has the best
+overall average (48.61).
+It ranks first among
+the GSM8K-trained models, second among the
+AceCode-trained models, and third among the
+MATH-trained models, which gives it the best av-
+erage rank across training domains. Appendix H
+lists every source-target pair.
+5
+Conclusion
+We introduced Pivot-SD, a data-efficient offline
+self-distillation method for masked diffusion LMs
+that supervises only the commitments at which
+the model’s uncertainty over the remaining posi-
+tions drops most. Information gain locates these
+commitments, and the verifier sets the direction
+of the update: pivots from successful trajectories
+are reinforced with cross-entropy, and pivots from
+failed ones are penalized with unlikelihood, which
+leaves the valid steps around them intact. With
+only 200 training prompts, Pivot-SD outperforms
+full-sequence SFT and online RL baselines while
+using a fraction of their compute.
+6
+Limitations
+While Pivot-SD demonstrates strong data effi-
+ciency, several aspects of the design remain open.
+Our objective includes a few hyperparameters that
+are set per configuration rather than learned, and
+some adjustment across domains and backbones
+is expected. An adaptive rule based on step-wise
+entropy collapse would let supervision follow task
+complexity without this step. Our formulation also
+
+
+operates within a denoising block, so extending
+step-conditioned credit assignment across block
+boundaries would be needed for long-context rea-
+soning. Finally, our experiments span two masked
+diffusion backbones at a comparable scale, and ap-
+plying pivot-local supervision as dLMs grow is a
+natural next step.
+Acknowledgements
+RGK gratefully acknowledges support from the
+Canada Research Chairs Program (CRC-2022-
+00049) and the Canada CIFAR AI Chairs Program.
+This research was funded in part by an NFRF Spe-
+cial Call Award (NFRFR-2022-00526) and NSERC
+Discovery Grant (RGPIN-2022-04546). This work
+was also partly supported by the “Advanced GPU
+Utilization Support Program” funded by the Gov-
+ernment of the Republic of Korea (Ministry of Sci-
+ence and ICT) (05-26-04-0100), and by Institute
+for Information & Communications Technology
+Planning & Evaluation (IITP) grants funded by the
+Korea government (MSIT) (RS-2022-00143911,
+AI Excellence Global Innovative Leader Educa-
+tion Program; RS-2026-25522672, Development of
+Unified Reasoning Technology Mimicking Human
+Cognition for Hierarchical Understanding and Un-
+bounded Problem Solving; RS-2019-II190075, Ar-
+tificial Intelligence Graduate School Support Pro-
+gram (KAIST)).
+References
+Jacob Austin, Daniel D. Johnson, Jonathan Ho, Daniel
+Tarlow, and Rianne van den Berg. 2021a. Structured
+denoising diffusion models in discrete state-spaces.
+In Advances in Neural Information Processing Sys-
+tems.
+Jacob Austin, Augustus Odena, Maxwell Nye, Maarten
+Bosma, Henryk Michalewski, David Dohan, Ellen
+Jiang, Carrie Cai, Michael Terry, Quoc Le, and
+Charles Sutton. 2021b. Program synthesis with large
+language models. Preprint, arXiv:2108.07732.
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan,
+Henrique Ponde de Oliveira Pinto, Jared Kaplan,
+Harri Edwards, Yuri Burda, Nicholas Joseph, Greg
+Brockman, Alex Ray, Raul Puri, Gretchen Krueger,
+Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela
+Mishkin, Brooke Chan, Scott Gray, and 39 others.
+2021. Evaluating large language models trained on
+code. Preprint, arXiv:2107.03374.
+Ranfei Chen, Ming Chen, and Kaifei Wang. 2025. Rea-
+soning in diffusion large language models is con-
+centrated in dynamic confusion zones.
+Preprint,
+arXiv:2511.15208.
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian,
+Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias
+Plappert, Jerry Tworek, Jacob Hilton, Reiichiro
+Nakano, Christopher Hesse, and John Schulman.
+2021. Training verifiers to solve math word prob-
+lems. Preprint, arXiv:2110.14168.
+Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song,
+Peiyi Wang, Qihao Zhu, Runxin Xu, Ruoyu Zhang,
+Shirong Ma, Xiao Bi, Xiaokang Zhang, Xingkai Yu,
+Yu Wu, Z. F. Wu, Zhibin Gou, Zhihong Shao, Zhu-
+oshu Li, Ziyi Gao, Aixin Liu, and 175 others. 2025.
+Deepseek-r1 incentivizes reasoning in llms through
+reinforcement learning. Nature, 645(8081):633–638.
+Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul
+Arora, Steven Basart, Eric Tang, Dawn Song, and
+Jacob Steinhardt. 2021. Measuring mathematical
+problem solving with the MATH dataset. In Thirty-
+fifth Conference on Neural Information Processing
+Systems Datasets and Benchmarks Track (Round 2).
+Zachary Horvitz, Raghav Singhal, Hao Zou, Carles
+Domingo-Enrich, Zhou Yu, Rajesh Ranganath, and
+Kathleen McKeown. 2025. Rethinking reasoning
+with mdlms: Early exits, post-hoc reasoning, and
+beyond. Preprint, arXiv:2510.19990.
+Zemin Huang, Zhiyang Chen, Zijun Wang, Tiancheng
+Li, and Guo-Jun Qi. 2025. Reinforcing the diffu-
+sion chain of lateral thought with diffusion language
+models. In The Thirty-ninth Annual Conference on
+Neural Information Processing Systems.
+Seo Hyun Kim, Sunwoo Hong, Hojung Jung, Youngrok
+Park, and Se-Young Yun. 2025. Klass: Kl-guided fast
+inference in masked diffusion models. In Advances
+in Neural Information Processing Systems, volume
+38, Main Conference, pages 92267–92301. Curran
+Associates, Inc.
+Xiang Lisa Li, John Thickstun, Ishaan Gulrajani, Percy
+Liang, and Tatsunori Hashimoto. 2022. Diffusion-
+LM improves controllable text generation. In Ad-
+vances in Neural Information Processing Systems.
+Hunter Lightman, Vineet Kosaraju, Yuri Burda, Harri-
+son Edwards, Bowen Baker, Teddy Lee, Jan Leike,
+John Schulman, Ilya Sutskever, and Karl Cobbe.
+2024. Let’s verify step by step. In The Twelfth Inter-
+national Conference on Learning Representations.
+Zicheng Lin, Tian Liang, Jiahao Xu, Qiuzhi Lin, Xing
+Wang, Ruilin Luo, Chufan Shi, Siheng Li, Yujiu
+Yang, and Zhaopeng Tu. 2025. Critical tokens matter:
+Token-level contrastive estimation enhances llm’s rea-
+soning capability. Preprint, arXiv:2411.19943.
+Jiawei Liu, Chunqiu Steven Xia, Yuyao Wang, and Ling-
+ming Zhang. 2023. Is your code generated by chat-
+GPT really correct? rigorous evaluation of large lan-
+guage models for code generation. In Thirty-seventh
+Conference on Neural Information Processing Sys-
+tems.
+
+
+Aaron Lou, Chenlin Meng, and Stefano Ermon. 2024.
+Discrete diffusion modeling by estimating the ra-
+tios of the data distribution. In Proceedings of the
+41st International Conference on Machine Learning,
+ICML’24. JMLR.org.
+Tianwei Ni, Allen Nie, Sapana Chaudhary, Yao Liu,
+Huzefa Rangwala, and Rasool Fakoor. 2025. Of-
+fline learning and forgetting for reasoning with large
+language models. Preprint, arXiv:2504.11364.
+Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang,
+Jingyang Ou, Jun Hu, JUN ZHOU, Yankai Lin, Ji-
+Rong Wen, and Chongxuan Li. 2025. Large language
+diffusion models. In The Thirty-ninth Annual Con-
+ference on Neural Information Processing Systems.
+Daisuke Oba, Hiroki Furuta, and Naoaki Okazaki. 2026.
+Diffusion-state policy optimization for masked diffu-
+sion language models. Preprint, arXiv:2602.06462.
+Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida,
+Carroll Wainwright, Pamela Mishkin, Chong Zhang,
+Sandhini Agarwal, Katarina Slama, Alex Gray, John
+Schulman, Jacob Hilton, Fraser Kelton, Luke Miller,
+Maddie Simens, Amanda Askell, Peter Welinder,
+Paul Christiano, Jan Leike, and Ryan Lowe. 2022.
+Training language models to follow instructions with
+human feedback. In Advances in Neural Information
+Processing Systems.
+Kevin Rojas, Jiahe Lin, Kashif Rasul, Anderson Schnei-
+der, Yuriy Nevmyvaka, Molei Tao, and Wei Deng.
+2026. Improving reasoning for diffusion language
+models via group diffusion policy optimization. In
+The Fourteenth International Conference on Learn-
+ing Representations.
+Subham Sekhar Sahoo, Marianne Arriola, Aaron
+Gokaslan, Edgar Mariano Marroquin, Alexander M
+Rush, Yair Schiff, Justin T Chiu, and Volodymyr
+Kuleshov. 2024. Simple and effective masked diffu-
+sion language models. In The Thirty-eighth Annual
+Conference on Neural Information Processing Sys-
+tems.
+Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu,
+Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan
+Zhang, Y. K. Li, Y. Wu, and Daya Guo. 2024.
+Deepseekmath: Pushing the limits of mathemati-
+cal reasoning in open language models. Preprint,
+arXiv:2402.03300.
+Xiaohang Tang, Rares Dolga, Sangwoong Yoon, and
+Ilija Bogunovic. 2026. wd1: Weighted policy opti-
+mization for reasoning in diffusion language mod-
+els. In The Fourteenth International Conference on
+Learning Representations.
+Guanghan Wang, Gilad Turok, Yair Schiff, Marianne
+Arriola, and Volodymyr Kuleshov. 2025a. d2: Im-
+proved techniques for training reasoning diffusion
+language models. Preprint, arXiv:2509.21474.
+Peiyi Wang, Lei Li, Zhihong Shao, Runxin Xu, Damai
+Dai, Yifei Li, Deli Chen, Yu Wu, and Zhifang Sui.
+2024. Math-shepherd: Verify and reinforce LLMs
+step-by-step without human annotations. In Proceed-
+ings of the 62nd Annual Meeting of the Association
+for Computational Linguistics (Volume 1: Long Pa-
+pers), pages 9426–9439, Bangkok, Thailand. Associ-
+ation for Computational Linguistics.
+Shenzhi Wang, Le Yu, Chang Gao, Chujie Zheng, Shix-
+uan Liu, Rui Lu, Kai Dang, Xionghui Chen, Jianxin
+Yang, Zhenru Zhang, Yuqiong Liu, An Yang, An-
+drew Zhao, Yang Yue, Shiji Song, Bowen Yu, Gao
+Huang, and Junyang Lin. 2025b. Beyond the 80/20
+rule: High-entropy minority tokens drive effective
+reinforcement learning for llm reasoning. Preprint,
+arXiv:2506.01939.
+Sean Welleck, Ilia Kulikov, Stephen Roller, Emily
+Dinan, Kyunghyun Cho, and Jason Weston. 2019.
+Neural text generation with unlikelihood training.
+Preprint, arXiv:1908.04319.
+Shaoan Xie, Lingjing Kong, Xiangchen Song, Xinshuai
+Dong, Guangyi Chen, Eric P. Xing, and Kun Zhang.
+2026. Advancing reasoning in diffusion language
+models with denoising process rewards. In Proceed-
+ings of the 64th Annual Meeting of the Association for
+Computational Linguistics (Volume 1: Long Papers),
+pages 42703–42720, San Diego, California, United
+States. Association for Computational Linguistics.
+Guowei Xu, Wenxin Xu, Jiawang Zhao, and Kaisheng
+Ma. 2025.
+Gift: Guided importance-aware fine-
+tuning for diffusion language models.
+Preprint,
+arXiv:2509.20863.
+Kaisen Yang, Jayden Teoh, Kaicheng Yang, Yitong
+Zhang, and Alex Lamb. 2026. Improving sampling
+for masked diffusion models via information gain.
+Preprint, arXiv:2602.18176.
+Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui
+Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong.
+2025. Dream 7b: Diffusion large language models.
+Preprint, arXiv:2508.15487.
+Eric Zelikman, Yuhuai Wu, Jesse Mu, and Noah Good-
+man. 2022. STaR: Bootstrapping reasoning with
+reasoning. In Advances in Neural Information Pro-
+cessing Systems, volume 35, pages 15476–15488.
+Curran Associates, Inc.
+Huaye Zeng, Dongfu Jiang, Haozhe Wang, Ping Nie,
+Xiaotong Chen, and Wenhu Chen. 2025. Acecoder:
+Acing coder rl via automated test-case synthesis.
+Preprint, arXiv:2502.01718.
+Anthony Zhan. 2025. Simple policy gradients for rea-
+soning with diffusion language models. Preprint,
+arXiv:2510.04019.
+Siyan Zhao, Devaansh Gupta, Qinqing Zheng, and
+Aditya Grover. 2025. d1: Scaling reasoning in diffu-
+sion large language models via reinforcement learn-
+ing. In The Thirty-ninth Annual Conference on Neu-
+ral Information Processing Systems.
+
+
+A
+Credit-Assignment Landscape
+Table 6 compares Pivot-SD with related methods,
+including process reward models, the training-free
+Info-Gain Sampler, and answer-aware selection
+(Horvitz et al., 2025; Yang et al., 2026).
+Two
+properties distinguish Pivot-SD in this comparison.
+It trains only on selected realized commitments
+(t, p, yp) under the partially denoised state Mt, and
+it builds localized negative targets from failed tra-
+jectories. None of the other methods in the table
+combines the two.
+B
+Illustration of Information-Gain Pivot
+Selection
+Figure 2 illustrates pivot selection. For each denois-
+ing step, Pivot-SD measures how much the entropy
+of the positions that remain masked drops once
+the step’s commitments are written. The commit-
+ments at the highest-scoring steps become pivots
+(t, p, yp), and the CE or UL update is applied only
+at those positions.
+C
+Experimental Details and
+Configurations
+This section lists the training and evaluation con-
+figurations.
+Hardware Infrastructure.
+All training, trajec-
+tory generation, and evaluation ran on two NVIDIA
+L40 GPUs.
+Generation and Rollout Limits.
+All training-
+time generation uses a maximum length of 256
+tokens. This covers the offline trajectory sampling
+for Pivot-SD, the success-only sampling for SFT-
+SD, and the online rollouts of diffu-GRPO and
+wd1++, so every method trains under the same re-
+sponse budget. Generation uses the model’s default
+confidence-based sampler with a block length of
+64 and one denoising step per token, so exactly one
+position is committed at each step. Information
+gain is therefore scored once per step and inherited
+by the single token committed there. Two classes
+of commitments are excluded from the pivot pool
+before ranking: steps at a block boundary, where
+Hpost would span a different set of positions, and
+end-of-sequence or turn-end tokens, which carry
+no reasoning content.
+Optimization and Hyperparameters.
+All of-
+fline methods (SFT-GT, SFT-SD, and Pivot-SD)
+are trained for 1,000 optimizer steps with a batch
+size of 8. The baseline RL methods are trained un-
+der both a budget-matched setting (1,000 steps) and
+an extended setting (5,000 steps) to observe conver-
+gence scaling. For Pivot-SD, rather than tuning the
+negative unlikelihood weight λneg, we set it from
+the positive-to-negative trajectory ratio of the of-
+fline pool so that the two branches contribute com-
+parably. We set λneg = 1 for MATH, and λneg = 5
+for GSM8K to account for an approximate 5:1 ratio
+of positive to negative trajectories. Coding is the
+one exception: since models are trained on Ace-
+Code but evaluated on HumanEval+ and MBPP+,
+the ratio-matched value risks over-suppression un-
+der distribution shift, so we lower the penalty to
+λneg = 0.02 along a log scale on a held-out split
+of roughly 100 examples.
+Evaluation Protocol and Decoding Strategy.
+We evaluate on MATH500, GSM8K, HumanEval+,
+and MBPP+ with maximum generation lengths
+of 256 tokens, which matches training, and 512
+tokens, which tests length transfer. We evaluate
+checkpoints at 500 and 1,000 optimizer steps. All
+LLaDA-8B-Instruct evaluations use top-1 confi-
+dence decoding at temperature 0, so evaluation is
+deterministic.
+D
+Multi-Seed Evaluation Protocol
+Scope.
+We repeat every method trained under our
+controlled budget (200 questions, 1,000 optimizer
+steps) three times and report means in the main
+tables. The base model is not trained and is eval-
+uated with deterministic decoding (temperature 0,
+top-1), so seed variance is undefined for it. The
+extended-budget RL baselines are too slow to re-
+peat three times and are reported as single runs.
+The 512-token columns are likewise single runs,
+since they measure length transfer rather than the
+training-matched setting.
+What is re-randomized.
+Each run independently
+re-samples (i) the 200-question training set, (ii)
+the trajectory pool, re-generated from the frozen
+base model at temperature 0.9, and (iii) the train-
+ing seed. The reported variance therefore covers
+the whole offline pipeline that produces Dpivot, in-
+cluding question selection and trajectory sampling.
+Evaluation is deterministic, so all of it comes from
+training.
+Reading the standard deviations.
+The code
+benchmarks are small, so their scores are coarse.
+
+
+Table 6: Credit-assignment landscape. Among the methods listed, Pivot-SD is the only one that trains on selected
+realized commitments (t, p, yp) alone and builds a localized negative target from failed trajectories.
+Method
+Local unit
+Localization signal
+Training
+regime
+Localized Failure
+Target
+STaR
+/
+rejection
+SD (Zelikman et al.,
+2022)
+Full successful rationale
+Final correctness
+Offline SFT
+No (failed traces are
+filtered or retried)
+Process supervision
+(PRMs)
+(Lightman
+et al., 2024; Wang
+et al., 2024)
+Textual reasoning step
+Human or separately con-
+structed process label
+PRM / SFT / RL
+Possible,
+but
+re-
+quires process-label
+construction
+GIFT
+(Xu
+et
+al.,
+2025)
+Final-response token po-
+sition
+Local predictive entropy
+Offline weighted
+SFT
+No
+Denoising
+Process
+Reward / ATPO (Xie
+et al., 2026; Chen
+et al., 2025)
+Denoising interval or
+step
+Outcome-progress reward or
+trajectory uncertainty
+Online RL
+No explicit token-
+level UL target
+AGRPO (Zhan, 2025)
+Sampled
+unmasking
+step
+Trajectory-level advantage;
+steps sampled uniformly or
+by entropy
+Online RL
+No (trajectory-level
+advantage on every
+sampled step)
+DiSPO (Oba et al.,
+2026)
+State-conditioned mask
+filling / newly filled to-
+kens
+Branched terminal rewards
+Policy optimiza-
+tion
+No cached realized-
+pivot UL target
+Info-Gain Sampler /
+KLASS (Yang et al.,
+2026;
+Kim
+et
+al.,
+2025)
+Candidate inference ac-
+tion
+Effect on future-mask uncer-
+tainty
+Inference only
+N/A
+Horvitz
+et
+al.
+(Horvitz
+et
+al.,
+2025)
+Answer block / reason-
+ing trace
+Answer entropy or gold-
+answer probability
+Inference / trace
+self-distillation
+No localized failed-
+pivot UL
+Pivot-SD (ours)
+Selected realized com-
+mitment (t, p, yp) under
+Mt
+Entropy drop over the still-
+masked positions across the
+realized step
+Cached
+offline
+CE / UL
+Yes
+HumanEval+ contains 164 problems, and one prob-
+lem corresponds to 0.61 points. A standard devi-
+ation of 2.75 points on HumanEval+ therefore re-
+flects a difference of four to five problems between
+runs. With three runs per method, the standard
+deviations are themselves rough estimates.
+Separation between methods.
+We report means
+and standard deviations and do not claim statisti-
+cal significance. On MATH, GSM8K, and Hu-
+manEval+, the gap between Pivot-SD and the
+strongest competing method (2.0, 2.6, and 4.7
+points) exceeds the standard deviation of either
+method.
+On MBPP+, the 0.8-point advantage
+over SFT-GT is small relative to run-to-run vari-
+ability (47.12 ± 1.20 vs. 46.32 ± 0.45). Table 8
+also shows that the random-selection controls vary
+widely across runs. Random-Step Pivot has a stan-
+dard deviation of 3.13 on MATH, where its mean
+is below the untrained base model, and 5.51 on
+HumanEval+.
+Separation
+between
+methods.
+On
+MATH,
+GSM8K, and HumanEval+, the one-standard-
+deviation intervals of Pivot-SD and of the strongest
+competing method do not overlap. On MBPP+
+they overlap (47.12 ± 1.20 vs. 46.32 ± 0.45 for
+SFT-GT), so we count MBPP+ as a tie. Table 8
+also shows that the random-selection controls vary
+widely across runs. Random-Step Pivot has a stan-
+dard deviation of 3.13 on MATH, where its mean
+is below the untrained base model, and 5.51 on
+HumanEval+.
+E
+Training Budget Sweep
+Our main experiments fix the training budget at
+q = 200 questions. To verify that the compar-
+ison is not specific to that choice, we vary q ∈
+{50, 200, 400, 2000} and retrain every method un-
+der the same protocol in Table 9.
+The advantage holds at the largest budget.
+diffu-GRPO and wd1++ keep generating rollouts
+during training, so the largest budget gives online
+
+
+Table 7: Main comparison with per-run standard deviations. Mean ± standard deviation over three fully
+re-randomized runs, 256-token evaluation. Rows correspond to the ‡-marked entries of Table 1. RL baselines are
+the budget-matched variants.
+Method
+MATH
+GSM8K
+HumanEval+
+MBPP+
+SFT-GT
+35.47 ±0.23
+76.94 ±1.05
+33.94 ±2.32
+46.32 ±0.45
+SFT-SD
+31.73 ±0.58
+73.90 ±0.89
+35.78 ±1.54
+45.92 ±1.46
+diffu-GRPO
+33.47 ±1.03
+76.04 ±0.80
+32.52 ±1.27
+43.39 ±0.27
+wd1++
+33.27 ±0.50
+76.93 ±0.59
+33.54 ±2.80
+43.12 ±0.27
+Pivot-SD (ours)
+37.47 ±1.21
+79.51 ±1.30
+40.43 ±2.75
+47.12 ±1.20
+Table 8: Ablation with per-run standard deviations. Mean ± standard deviation over three fully re-randomized
+runs, 256-token evaluation.
+Method
+MATH
+GSM8K
+HumanEval+
+MBPP+
+Pos+Neg All-token
+35.00 ±1.25
+74.44 ±0.70
+36.80 ±0.35
+44.54 ±2.37
+Random-Step Pivot
+29.93 ±3.13
+76.51 ±0.74
+39.00 ±5.51
+44.80 ±0.85
+Random-Token Pivot
+34.87 ±1.94
+76.47 ±1.68
+34.78 ±1.07
+45.24 ±0.70
+Entropy pivot
+32.27 ±1.10
+74.75 ±0.82
+35.57 ±1.76
+44.80 ±1.10
+Pivot-SD (ours)
+37.47 ±1.21
+79.51 ±1.30
+40.43 ±2.75
+47.12 ±1.20
+exploration the most room to help. At q = 2000,
+where they train for 5,000 steps, Pivot-SD is still
+best on all four benchmarks.
+Small budgets already beat large ones.
+With
+200 questions, Pivot-SD matches or exceeds ev-
+ery baseline at every budget on GSM8K and Hu-
+manEval+, including baselines trained on ten times
+the data.
+Exceptions.
+Baselines lead in four cases. In three
+of them the margin is at most 1.7 points: GSM8K
+at q = 50 and MBPP+ at q = 50 and q = 200.
+The one larger gap is a wd1++ spike on MATH at
+q = 400 (39.2). wd1++ does not reach this value
+at q = 2000 (35.4) or in the multi-seed runs at
+q = 200 (33.27, Table 7).
+F
+Pivot Budget K
+The pivot budget K is the only quantity in Pivot-
+SD that controls how much of a trajectory receives
+supervision. We fixed K = 10 before running
+experiments. Table 10 reports the sweep K ∈
+{5, 10, 20, 40, 80} for Pivot-SD and for the two
+random-selection controls, all trained on the same
+trajectory pool.
+K = 10 sits inside a flat plateau.
+Pivot-SD is
+best or tied for best at every K ∈{5, 10, 20} on all
+four benchmarks.
+Large K removes selectivity.
+At K
+= 40,
+MATH falls to 22.8 and both code benchmarks
+drop, while GSM8K is unchanged. A large K ad-
+mits steps that barely change the remaining entropy,
+so unlikelihood reaches positions that did not shape
+the trajectory.
+Sparsity alone does not explain the gain.
+Random-Step Pivot supervises exactly as many po-
+sitions as Pivot-SD but collapses on MATH for
+5 ≤K ≤20 (17.6 to 26.6, against 37.8 to 38.6 for
+Pivot-SD).
+G
+Compute and FLOPs Accounting
+Table 3 and Figure 3 report wall-clock time, which
+depends on hardware and implementation. Table 11
+adds forward-and-backward FLOPs, model calls,
+and the number of supervised tokens.
+Setup.
+All quantities use a common sequence
+length L = 512 (maximum prompt length plus a
+256-token generation budget). Generation FLOPs
+are estimated as NFE × 2NL for a model with
+N = 8×109 parameters, where NFE is the number
+of function evaluations (forward passes). Pivot-SD
+samples 800 = 200 × 4 offline trajectories with
+256 sampler steps each, for 800 × 256 = 204,800
+NFE. The information-gain scores reuse these for-
+ward passes (§3.2.2), so pivot selection adds no
+NFE. The budget-matched RL runs train for 1,000
+optimizer steps and refresh their completions ev-
+ery 12 steps (num_iterations=12), which gives
+84 = ⌊(1000−1)/12⌋+ 1 generation rounds at
+steps 0, 12, . . . , 996. Each round produces 16 =
+2 × 2 × 4 rollouts (2 GPUs, 2 prompts per device,
+
+
+Table 9: Accuracy across training budgets (256-token evaluation). Column headers give the number of training
+questions q. Step budgets are fixed within each group (q = 50/200: 1,000 steps; q = 400: 2,000; q = 2000: 5,000),
+matching the extended RL baselines. All entries are single runs. Multi-seed means for q = 200 are in Table 7.
+MATH
+GSM8K
+HumanEval+
+MBPP+
+Method
+50
+200
+400
+2000
+50
+200
+400
+2000
+50
+200
+400
+2000
+50
+200
+400
+2000
+SFT-GT
+36.0
+35.6
+34.2
+35.0
+76.7
+75.8
+77.9
+75.1
+32.9
+32.9
+32.9
+33.5
+46.6
+46.6
+45.8
+46.8
+SFT-SD
+31.6
+31.4
+33.0
+31.6
+72.4
+74.9
+72.7
+73.2
+37.8
+35.4
+37.2
+37.8
+45.5
+45.8
+44.7
+45.5
+diffu-GRPO
+34.0
+34.6
+34.6
+35.2
+76.4
+75.7
+76.4
+77.6
+31.7
+31.1
+32.9
+34.2
+42.3
+43.7
+43.9
+42.6
+wd1++
+32.4
+33.8
+39.2
+35.4
+75.9
+77.1
+79.0
+76.7
+32.3
+32.9
+31.1
+34.2
+44.7
+43.1
+45.8
+45.0
+Pivot-SD (ours)
+36.2
+38.6
+36.0
+37.2
+75.0
+79.5
+80.1
+78.9
+42.1
+40.9
+40.2
+38.4
+46.0
+46.0
+46.6
+47.1
+Table 10: Effect of the pivot budget K (q = 200, 256-token evaluation). K is the number of pivots supervised per
+trajectory. Random-Step and Random-Token are the two random-selection controls of Table 2. We use K = 10.
+K = 40 and 80 show what happens when selection is no longer selective. Entries are single runs on a shared
+trajectory pool. The multi-seed mean for K = 10 is in Table 7.
+MATH
+GSM8K
+HumanEval+
+MBPP+
+K
+Random
+Step
+Random
+Token
+Ours
+Random
+Step
+Random
+Token
+Ours
+Random
+Step
+Random
+Token
+Ours
+Random
+Step
+Random
+Token
+Ours
+5
+22.8
+34.2
+37.8
+74.3
+75.1
+79.6
+39.0
+34.8
+39.0
+42.6
+44.2
+45.0
+10
+26.6
+33.2
+38.6
+76.9
+75.7
+79.5
+35.4
+37.8
+40.9
+46.0
+45.8
+46.0
+20
+17.6
+36.4
+38.2
+73.8
+76.0
+76.8
+39.6
+37.2
+41.5
+41.5
+45.5
+45.5
+40
+22.0
+34.6
+22.8
+73.0
+77.0
+79.5
+39.0
+43.3
+39.6
+41.0
+44.4
+39.7
+80
+20.4
+33.0
+17.6
+69.8
+77.6
+76.7
+37.2
+42.7
+30.5
+34.7
+41.8
+37.6
+4 generations per prompt), for 84 × 16 = 1,344
+rollouts and 1,344 × 256 = 344,064 rollout NFE.
+Adding the policy and scoring passes gives 358,080
+online NFE. The 200-question set is the pool of
+unique prompts that these rounds resample from.
+RL numbers are averaged over the three training do-
+mains. The supervised-token count includes only
+positions that receive a loss.
+FLOPs.
+Total compute is 1,875 PFLOPs for
+Pivot-SD and 3,093 PFLOPs for each budget-
+matched RL run, a ratio of about 1.65×. Most
+of the difference comes from generation (1,678 vs.
+2,819 PFLOPs). Pivot-SD supervises 10 tokens
+per trajectory, 3.9% of the response. Its trajectories
+do not depend on each other, so generation paral-
+lelizes across prompts and devices, whereas the RL
+generation rounds must run in sequence.
+Hyperparameter search.
+The learning rate and
+adapter settings are taken from the RL baselines.
+K
+=
+10 was fixed before experiments (Ap-
+pendix F), and λneg is set from the positive-to-
+negative trajectory ratio for MATH and GSM8K
+without search. The only search is for code. Mod-
+els are trained on AceCode and evaluated on Hu-
+manEval+ and MBPP+, and under this distribution
+shift the ratio-matched value can over-suppress.
+We therefore screened λneg on a logarithmic scale
+using a held-out split of about 100 examples, a
+one-time search of about 2 hours that can run in
+parallel.
+H
+Out-of-Domain Generalization
+Table 12 evaluates models trained on one domain
+on the benchmarks of the other domains.
+Pivot-SD has the best average among the
+GSM8K-trained models and the best overall micro-
+average (Table 5). For the MATH- and AceCode-
+trained models, its average is within 0.7 points of
+the best.
+I
+Reward Sparsity in wd1++ and the
+Bootstrap Reward
+On the 200-prompt AceCode subset (s200), the
+wd1++ baseline stopped learning.
+The base model often failed every unit test for all
+samples in a batch, so the group reward, and with
+it the advantage, was zero. wd1++ combines a posi-
+tively weighted likelihood term with a negatively
+weighted unlikelihood term. With zero advantage
+the weights become uniform and the two gradients
+cancel. The checkpoints at steps 500 and 1000 are
+identical (“w/o bootstrap” in Table 13).
+To give wd1++ a learning signal in this setting,
+we added a bootstrap reward to the s200 runs.
+
+
+Table 11: Compute accounting at L = 512 and N = 8 × 109. Pivot-SD uses about 1.65× fewer total FLOPs
+than the budget-matched RL runs. Its generation happens once before training, while the RL runs generate rollouts
+throughout training.
+Metric
+Pivot-SD (ours)
+diffu-GRPO
+wd1++
+Generation (PFLOPs)
+1,678 (offline)
+2,819 (1.68×)
+2,819
+Training fwd+bwd (PFLOPs)
+197
+274
+274
+Total Compute (PFLOPs)
+1,875
+3,093 (∼1.65×)
+3,093
+Model Calls (NFE)
+204,800 (offline)
+358,080 (online)
+358,080 (online)
+Supervised Tokens / Trajectory
+10 (3.9%)
+256 (100%)
+256 (100%)
+Wall-Clock Time (2×L40)
+2.8 h
+5.4 h
+3.6 h
+Table 12: Out-of-Domain (OOD) generalization results. Models are trained on one domain and evaluated on
+others. “budget-matched” denotes models trained with the 1,000-step budget configuration matching Pivot-SD.
+Method
+MATH Trained
+GSM8K Trained
+AceCode Trained
+GSM8K
+HumanEval+
+MBPP+
+Avg.
+MATH
+HumanEval+
+MBPP+
+Avg.
+MATH
+GSM8K
+Avg.
+SFT-GT
+76.35
+37.80
+46.56
+53.57
+35.40
+37.20
+45.77
+39.46
+30.20
+73.39
+51.80
+SFT-SD
+75.74
+32.93
+44.71
+51.13
+30.60
+30.49
+45.24
+35.44
+29.40
+73.01
+51.21
+diffu-GRPO (budget-matched)
+75.21
+33.54
+43.92
+50.89
+33.80
+31.10
+44.44
+36.45
+34.40
+76.57
+55.49
+diffu-GRPO
+76.35
+37.20
+45.50
+53.02
+35.80
+32.93
+45.24
+37.99
+33.80
+75.51
+54.66
+wd1++ (budget-matched)
+76.42
+32.32
+43.39
+50.71
+35.00
+36.59
+42.59
+38.06
+32.60
+74.91
+53.76
+wd1++
+78.09
+35.37
+44.18
+52.55
+35.60
+33.54
+43.65
+37.60
+32.40
+75.21
+53.81
+Pivot-SD (ours)
+78.09
+36.59
+43.92
+52.87
+36.60
+38.41
+44.44
+39.82
+34.80
+76.04
+55.42
+Ablation Variants (Budget-matched)
+Positive Pivot
+73.46
+33.54
+41.27
+49.42
+31.40
+36.59
+41.01
+36.33
+30.80
+73.92
+52.36
+Positive All-token
+75.36
+34.76
+42.86
+50.99
+29.60
+36.59
+43.92
+36.70
+32.60
+73.77
+53.19
+Pos+Neg All-token
+75.44
+38.41
+43.39
+52.41
+33.00
+34.76
+44.44
+37.40
+33.60
+75.44
+54.52
+Random-Token Pivot
+77.10
+36.59
+46.03
+53.24
+31.80
+37.80
+45.77
+38.46
+34.60
+74.07
+54.34
+Random-Step Pivot
+75.06
+32.93
+37.57
+48.52
+33.40
+29.27
+41.27
+34.65
+35.00
+76.42
+55.71
+When the unit-test pass rate was zero, a completion
+received a small structural reward (up to +0.05)
+if it met basic syntactic requirements, such as a
+proper def header, a valid return statement, and
+overall syntactic validity.
+Table 13: Effect of the bootstrap reward on wd1++
+trained on 200 AceCode prompts. GSM and HE+
+denote GSM8K and HumanEval+. Without bootstrap,
+training stalls between steps 500 and 1000 because the
+zero-advantage gradients cancel. With the bootstrap
+reward, training resumes on code and MBPP+ gains
+3.97 points by step 1000, while MATH does not improve.
+The wd1++ numbers in the main tables (Tables 1 and 7)
+come from the standard runs without bootstrap shaping.
+The 47.09 here is the single-run peak after bootstrap
+shaping and is outside the multi-seed protocol.
+Math
+Code (256)
+Code (512)
+Variant
+MATH GSM MBPP+ HE+ MBPP+ HE+
+w/o bootstrap
+Step 500
+32.60
+74.91
+43.12
+32.93
+43.92
+40.24
+Step 1000
+-
+-
+43.12
+32.93
+-
+-
+w/ bootstrap
+Step 500
+33.20
+74.53
+44.71
+31.10
+46.56
+39.63
+Step 1000
+31.20
+74.45
+47.09
+33.54
+46.03
+40.85
+With the bootstrap reward, wd1++ resumes learn-
+ing on code and gains 3.97 points on MBPP+ at
+256 tokens by step 1000 (Table 13). At 512 to-
+kens it gains 2.1 points on MBPP+ and 0.6 on
+HumanEval+..
+Even with this reward, wd1++ does not surpass
+Pivot-SD. On MBPP+ the shaped run reaches
+47.09, close to Pivot-SD (47.12 ± 1.20). On Hu-
+manEval+, Pivot-SD leads by 6.9 points (40.43 vs.
+33.54). This wd1++ run is trained on AceCode, so
+its MATH and GSM8K scores are out-of-domain.
+Against Pivot-SD trained on the same AceCode
+subset, Pivot-SD is higher on both (34.80 vs. 31.20
+on MATH and 76.04 vs. 74.45 on GSM8K, Ta-
+ble 12). Pivot-SD reaches these results without any
+reward shaping.
+J
+Artifact Licenses and Intended Use
+In our experiments, we utilize publicly available
+mathematical and code generation benchmarks, in-
+cluding GSM8K (MIT License), MATH (MIT Li-
+cense), HumanEval (MIT License), and MBPP
+(CC-BY-4.0). We also use two pre-trained masked
+diffusion language models: LLaDA-8B-Instruct
+
+
+(Nie et al., 2025), released under the MIT License,
+and Dream-v0-Instruct-7B (Ye et al., 2025), re-
+leased under the Apache 2.0 License.
+Our use of these artifacts is consistent with their
+intended use as standard structural reasoning and
+evaluation benchmarks for language modeling re-
+search. These datasets do not contain personally
+identifying information or offensive content. Fur-
+thermore, the trajectories and evaluation scripts
+generated during the development of Pivot-SD will
+be open-sourced under the MIT License to facili-
+tate reproducibility and future research in masked
+diffusion language models.
+K
+Potential Risks
+Pivot-SD carries the following risks:
+• Bias and Hallucination Amplification: As an
+offline self-distillation framework, Pivot-SD re-
+lies on trajectories generated by the frozen base
+model. Filtering by outcome does not remove bi-
+ases or hallucinations present in the base model,
+and training on its own trajectories can amplify
+them.
+• Dependence on Automated Verifiers: Our tra-
+jectory labeling currently relies on exact-match
+checking for mathematics and unit-test execution
+for code. Applying this framework to open-ended
+generation tasks without clear objective verifiers
+may lead to reward hacking or optimization to-
+ward superficial proxies of quality.
+L
+Broader Impacts
+Pivot-SD lowers the compute needed to improve
+reasoning in masked diffusion language models.
+In our setting it trained in about one-eighth of the
+wall-clock time of the 5,000-step diffu-GRPO run,
+using 200 prompts and a single offline sampling
+pass. This makes post-training research on diffu-
+sion language models feasible on modest academic
+hardware.
+Localized unlikelihood may also be useful for
+alignment. Rejection fine-tuning and full-sequence
+unlikelihood suppress valid fragments together
+with the undesired behavior, whereas Pivot-SD pe-
+nalizes only selected commitments. Stronger rea-
+soning and code generation carry dual-use risks,
+such as generating malicious code or persuasive
+misinformation. Because Pivot-SD relies on an ex-
+ternal verifier and trains offline on a fixed dataset,
+existing safety filters can be applied to that dataset
+before training.

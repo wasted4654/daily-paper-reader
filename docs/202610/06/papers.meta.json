@@ -1,0 +1,79 @@
+{
+  "label": "2026-10-06",
+  "date": "2026-10-06",
+  "generated_at": "2026-10-06T01:03:36",
+  "count": 5,
+  "papers": [
+    {
+      "paper_id": "202610/06/2609.33390v1-from-position-risks-to-block-survival-faster-generation-for-diffusion-language-models",
+      "section": "deep",
+      "title_en": "From Position Risks to Block Survival: Faster Generation for Diffusion Language Models",
+      "authors": "Siwei Chen, Yuxiang Wan, Yifan Yu, Fan Lai",
+      "date": "2026-09-27",
+      "pdf": "https://arxiv.org/pdf/2609.33390v1",
+      "score": "8.0",
+      "evidence": "扩散语言模型 (DLM) 与并行标记预测",
+      "tldr": "扩散语言模型（DLM）通过并行预测加速生成，但存在预测与实际贡献不匹配的问题，导致早期错误引发后续失效。本文提出BRISK-DLM框架，通过优化提案学习与选择机制，并引入轻量级前缀条件校正器，在不增加主干评估开销的前提下，显著提升了生成效率与质量，确立了新的性能边界。",
+      "tags": "query:ardm",
+      "abstract_en": "Diffusion language models (DLMs) can accelerate generation by predicting multiple tokens in parallel, but there is a mismatch between how these tokens are predicted and how they ultimately contribute to generation. Parallel predictions can hardly condition on the tokens selected earlier within the same block, even though their validity depends on this realized prefix. Under the popular proposal-verification decoding, this mismatch makes errors highly asymmetric: an early rejection prevents all subsequent proposals from contributing decoding progress. We introduce BRISK-DLM, a framework that addresses both mismatches by optimizing proposal learning and selection for verified progress. BRISK-DLM trains on self-generated sequences, using risk-reward weighting to dynamically prioritize positions by their impact on verified progress and decoding cost. During inference, a lightweight prefix-conditioned corrector reranks existing candidates using previously selected tokens and preferences distilled from the model's own verifier. The corrector reuses the backbone's parallel representations and requires no additional backbone evaluation, while fused execution keeps its overhead small. BRISK-DLM improves end-to-end throughput by up to 37.4% while preserving task quality, establishing a new quality-throughput frontier for DLM generation.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/06/2609.40235v1-distribution-matching-distillation-for-continuous-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Distribution Matching Distillation for Continuous Diffusion Language Models",
+      "authors": "Paul Le Van Kiem, Dario Shariatian, Umut Simsekli, Alain Durmus",
+      "date": "2026-09-30",
+      "pdf": "https://arxiv.org/pdf/2609.40235v1",
+      "score": "7.0",
+      "evidence": "连续扩散语言模型作为自回归生成的替代方案",
+      "tldr": "本文针对连续扩散语言模型生成速度慢的问题，提出了分布匹配蒸馏（DMD）方法。通过利用学生模型的概率输出，研究者开发了Simplex-DMD和Reinforce-DMD两种蒸馏策略，在保持生成质量的同时显著减少了推理所需的函数评估次数（NFE），实现了高效的并行文本生成。",
+      "tags": "query:ardm",
+      "abstract_en": "Continuous diffusion language models generate all tokens in parallel, yet high-quality generation can still require hundreds of network evaluations (NFEs). We study how distributional distillation can reduce this cost by exploiting the student's probabilistic token outputs. Our unified formulation connects the student's output parameterization to the resulting gradient estimators and yields two methods with the same student architecture and reverse-KL matching objective: Simplex-DMD uses continuous token relaxations and pathwise gradients, while Reinforce-DMD uses categorical sampling and REINFORCE with a learned density ratio. We develop both methods for multi-step generation and investigate the training and sampling choices associated with each parameterization. On OpenWebText, for sequences of 1,024 tokens, Simplex-DMD achieves a generative perplexity of 45.6 at a unigram entropy of 5.44 nats in just 4 NFEs, a 49% reduction relative to the strongest evaluated diffusion baseline at matched entropy and sampling budget. Reinforce-DMD improves the frontier at larger budgets, reaching a generative perplexity of 14.9 at an entropy of 5.00 nats with 256 NFEs, a 20% reduction under the same comparison protocol.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/06/2610.01320v1-protoflow-prototype-guided-flow-matching-for-multivariate-time-series-forecasting",
+      "section": "quick",
+      "title_en": "ProtoFlow: Prototype-Guided Flow Matching for Multivariate Time Series Forecasting",
+      "authors": "Shibo Feng, Wanjin Feng, Yang Qiu, Deheng Ye, Peilin Zhao, Chunyan Miao",
+      "date": "2026-10-01",
+      "pdf": "https://arxiv.org/pdf/2610.01320v1",
+      "score": "7.0",
+      "evidence": "基于VQ的预测通常依赖于自回归 (AR) 标记生成",
+      "tldr": "ProtoFlow 是一种用于多元时间序列预测的生成式框架。针对现有自回归模型存在的暴露偏差问题及扩散模型推理速度慢的缺陷，该方法结合向量量化（VQ）与流匹配技术，利用学习到的码本原型作为先验，通过 DiT 架构实现高效的非自回归预测，在保证预测精度的同时显著提升了推理效率。",
+      "tags": "query:ardm",
+      "abstract_en": "Generative modeling has shown strong promise for multivariate time mseries (MTS) forecasting, especially scale to high-dimensional settings. Diffusion-based methods achieve competitive performance but typically require many sampling steps at inference. VAE-based non-iterative forecasting frameworks have therefore emerged as an efficient alternative. Within this line of work, vector quantization (VQ) enables controllable latent space modeling by mapping multivariate series into compact discrete representations. Existing VQ-based forecasting methods, however, typically rely on autoregressive (AR) token generation, which suffers from exposure bias and training-inference mismatch. Flow matching provides an efficient non-autoregressive alternative for latent forecasting, but existing formulations usually initialize transport from a generic Gaussian prior. We instead observe that the trained VQ codebook already captures representative latent prototypes and can thus serve as a more informative prior for flow matching. Based on this insight, we propose ProtoFlow, a forecasting framework that combines vector-quantized autoencoding with Prototype-prior Flow matching. Our method first maps multivariate sequences into a discrete latent space, then constructs a structured prior from the learned codebook, and finally learns a DiT-based rectified flow to transport samples from this prior to future latent representations conditioned on historical observations. By replacing generic noise initialization with a learned prototype prior, ProtoFlow avoids the rollout mismatch of AR token prediction and promotes faster training convergence. Extensive experiments on benchmark datasets show that it consistently achieves superior forecasting performance with efficient inference.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/06/2610.03641v1-idrf-inverse-distilled-reward-fine-tuning-of-masked-discrete-diffusion-models",
+      "section": "quick",
+      "title_en": "IDRF: Inverse-Distilled Reward Fine-tuning of Masked Discrete Diffusion Models",
+      "authors": "Vladislav Gromadskii, David Li, Samson Gourevitch, Yazid Janati, Eric Moulines, Maxim Panov, Alexander Korotin",
+      "date": "2026-10-02",
+      "pdf": "https://arxiv.org/pdf/2610.03641v1",
+      "score": "7.0",
+      "evidence": "掩码离散扩散模型作为自回归生成的替代方案",
+      "tldr": "本文提出IDRF框架，旨在解决掩码离散扩散模型在奖励微调中面临的序列似然难以计算及采样成本高的问题。通过引入逆蒸馏正则化替代KL散度，并结合截断策略梯度优化，IDRF实现了在极少采样步数下对生成质量的精准控制，在DNA、图像和文本生成任务中表现优异。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked discrete diffusion models offer a promising alternative to autoregressive generation, but iterative sampling can be costly, and intractable sequence likelihoods complicate reward fine-tuning. We introduce IDRF, a framework for reward fine-tuning of few-step masked discrete diffusion generators. Starting from a standard reverse-KL-regularized objective, IDRF replaces the intractable sequence-level KL penalty with inverse-distillation regularization. With an optimal auxiliary denoiser, we prove that the population inverse-distillation loss upper-bounds the sequence-level KL divergence to the reference distribution. IDRF optimizes a trajectory-based surrogate of this loss without reference-model rollouts, so the student keeps its own few-step sampler. We view few-step generation as a finite-horizon Markov decision process and optimize reward with a clipped policy-gradient objective over the student's trajectories. Across DNA, image, and text generation, IDRF achieves high reward with up to $32\\times$ fewer denoising steps than the reference while mitigating reward hacking and preserving sample quality.",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/06/2610.03665v1-pivot-sd-efficient-self-distillation-for-masked-diffusion-language-models",
+      "section": "quick",
+      "title_en": "Pivot-SD: Efficient Self-Distillation for Masked Diffusion Language Models",
+      "authors": "Seo Hyun Kim, Sunwoo Hong, Younwoo Choi, Chen-Hao Chao, Se-Young Yun, Rahul G. Krishnan",
+      "date": "2026-10-02",
+      "pdf": "https://arxiv.org/pdf/2610.03665v1",
+      "score": "7.0",
+      "evidence": "掩码扩散语言模型作为自回归模型的并行替代方案",
+      "tldr": "针对掩码扩散语言模型（dLMs）在去噪过程中存在关键决策点的问题，本文提出了Pivot-SD框架。该方法通过信息增益指标识别并监督这些高影响力的“枢轴”标记，而非对整个序列进行训练。实验表明，仅需少量数据，Pivot-SD即可显著提升模型在数学和代码任务上的推理性能。",
+      "tags": "query:ardm",
+      "abstract_en": "Masked diffusion language models (dLMs) offer a promising parallel alternative to autoregressive models for complex reasoning. However, they face a distinct credit-assignment challenge, since a few commitments during denoising sharply reduce the uncertainty over the remaining masked positions and shape much of the response. Most post-training recipes for dLMs do not use this signal to decide which tokens to train on: they typically train on the final text or assign rewards to whole denoising steps, rather than selecting the individual commitments that shape the response. We introduce Pivot-SD, an efficient offline self-distillation framework that supervises only these high-impact commitments (pivots). Pivot-SD selects pivots using an information-gain metric measuring uncertainty reduction over the remaining masked positions. Pivots from successful trajectories are trained with cross-entropy, and pivots from failed trajectories with targeted unlikelihood, leaving the rest of the failed trajectory untouched. Using only 200 questions and four rollouts each, Pivot-SD improves LLaDA-8B-Instruct over full-sequence SFT and budget-matched diffusion RL baselines across math and code benchmarks.",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
