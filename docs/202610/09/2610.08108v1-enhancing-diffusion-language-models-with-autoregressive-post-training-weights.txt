@@ -1,0 +1,849 @@
+Title: Enhancing Diffusion Language Models with Autoregressive Post-Training Weights
+
+URL Source: https://arxiv.org/pdf/2610.08108v1
+
+Published Time: Wed, 07 Oct 2026 01:16:02 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+Preprint 
+
+# ENHANCING DIFFUSION LANGUAGE MODELS WITH 
+
+# AUTOREGRESSIVE POST -T RAINING WEIGHTS 
+
+Yiming Qin ∗
+
+EPFL, Lausanne, Switzerland 
+
+yiming.qin@epfl.ch 
+
+Ke Wang ∗
+
+EPFL, Lausanne, Switzerland 
+
+k.wang@epfl.ch 
+
+Amel Abdelraheem 
+
+EPFL, Lausanne, Switzerland 
+
+amel.abdelraheem@epfl.ch 
+
+Adam Hazimeh 
+
+EPFL, Lausanne, Switzerland 
+
+adam.hazimeh@epfl.ch 
+
+Pascal Frossard 
+
+EPFL, Lausanne, Switzerland 
+
+pascal.frossard@epfl.ch 
+
+## ABSTRACT 
+
+Diffusion language models (dLLMs) have emerged as a promising alternative to autoregressive (AR) language models, offering flexible token-update orders and parallel decoding. Recent dLLMs are often initialized from pretrained AR models before diffusion conversion in order to inherit their learned representations. After the conversion, however, they typically ignore the extensive post-training ecosystem of their AR ancestors. In this work, we show that these existing AR post-training weight updates can instead be effectively recycled to enhance diffusion models. Despite the changes by AR-to-diffusion conversion, directly adding an AR post-training weight update to a diffusion base model remains effective, bringing its performance close to that achieved by direct diffusion post-training. Notably, AR and diffusion post-training updates are nearly orthogonal in weight space, yet induce substantially more aligned representation changes in the diffusion model. Their distinct updates are also complementary: composing their weights can retain gains from both regimes and further improve the post-trained diffusion model. Based on these findings, we propose A2D , a simple training-free framework for enhancing diffusion models with existing AR post-training re-sources. A2D can transfer capabilities from AR post-trained models to diffusion base models, and further improve already post-trained diffusion models by com-posing AR and diffusion post-training updates. Across various dLLMs, including Dream, DreamReasoner, DiffuCoder, Dream-Coder, Nemotron-Labs-Diffusion, and DiffusionGemma, A2D reliably improves instruction following, mathemat-ical reasoning, and coding with both supervised fine-tuning and reinforcement learning updates, without additional training, or inference-time computation. 
+
+## 1 INTRODUCTION 
+
+Diffusion large language models (dLLMs) have recently emerged as a competitive alternative to autoregressive (AR) models, achieving strong performance across instruction following, code gen-eration, and mathematical reasoning (Zhu et al., 2025; Ye et al., 2025; Gong et al., 2026; Fu et al., 2026; Team et al., 2026). By casting sequence generation as iterative denoising rather than fixed left-to-right factorization, dLLMs support bidirectional context and flexible token-update orders, as well as parallel decoding, making them naturally amenable to scalable generation. Recent dLLMs commonly initialize from pretrained AR models before diffusion conversion (Ye et al., 2025; Fu et al., 2026; Wu et al., 2026b; Team et al., 2026), reusing language representations 
+
+> ∗
+
+Equal contribution. 
+
+1arXiv:2610.08108v1 [cs.LG] 6 Oct 2026 Preprint Db  
+
+> τα A
+
+Dtransfer  
+
+> (1 Δ β)αD
+
+Db 
+
+> βαA
+
+Dmerge  
+
+> A2D Transfer A2D Merge
+> AR base
+> Ab
+> Diff. base
+> Db
+> AR post-trained
+> Ap
+> Diff. post-trained
+> Dp
+
+αA αD
+
+> Diffusion conversion
+
+(a) Illustration of notations. AR base 
+
+Ab
+
+> Diff base
+
+Db
+
+> AR post-trained
+
+Ap
+
+> Diff post-trained
+
+Dp
+
+τA  τD 
+
+> Diffusion training
+
+Db 
+
+> ατA
+
+Dtransfer  
+
+> (1 Δ β)τD
+
+Db
+
+> βτ A
+
+Dmerge   
+
+> A2D Transfer A2D Merge
+
+(b) Illustration of A2D .
+
+Figure 1: Illustration of notations and method . (a) Diffusion base models with weights Db are often adapted from AR base models with weights Ab. The two models often undergo separate post-training stages, leading to Dp and Ap, with the corresponding task vectors denoted by τD and τA,respectively. (b) A2D -Transfer directly adds the AR post-training vector to diffusion base Db to create a post-trained diffusion model. A2D -Merge interpolates this model and the diffusion model’s own post-trained checkpoint to further improve downstream capabilities. learned during large-scale AR pretraining and substantially improving training efficiency over training dLLMs from scratch. This pipeline, however, creates a notable asymmetry: dLLMs routinely inherit AR pretraining, yet largely discard the extensive AR post-training investment built upon it. This is especially notable as the AR ecosystem (Yang et al., 2025; Team, 2026; Liu et al., 2026) often provides a rich collection of post-trained checkpoints across diverse capabilities, which are often stronger than their diffusion counterparts. Diffusion models instead typically develop these capabilities through separate diffusion-specific post-training, where learning must span varying corruption levels and partially observed contexts, posing optimization challenges distinct from standard AR post-training (Parashar et al., 2026; Lin et al., 2026). This raises a natural question: can the knowledge acquired with AR post-training be incorporated into diffusion models? Such a transfer could reuse readily available, often stronger AR post-trained checkpoints while retaining the parallel-decoding benefits of diffusion. Since AR post-training and diffusion conversion originate from the same pretrained AR model, their shared initialization and architecture naturally motivate a weight-space approach, namely, model merging . Within the AR ecosystem, model merging has proven effective at integrating capabilities from independently fine-tuned checkpoints without requiring their training data (Wortsman et al., 2022; Yang et al., 2026). In particular, task arithmetic represents post-training weight updates as task vectors that can be transferred or composed across compatible models (Ilharco et al., 2022). Extending model merging across the AR–diffusion boundary, however, is nontrivial: diffusion conversion moves the model away from its AR initialization while changing generation from causal next-token prediction to bidirectional denoising. Base A2D transfer IFEval IFBench HumanEval+ MBPP+ GSM8K MATH-500 +9.5 +11.0 +6.1 +3.4 +15.2 +19.4 
+
+(a) Direct transfer Post-trained A2D merge IFEval IFBench HumanEval+ MBPP+ GSM8K MATH-500  
+
+> +9.8 +3.3 +8.0 +1.6 +0.7 +6.6
+
+(b) Update merge 
+
+Figure 2: A2D on Dream. A2D improves dif-fusion base and post-trained models without training through (a) direct AR update transfer and (b) AR–diffusion update merging. Nevertheless, we show that AR post-training ex-hibits cross-paradigm transferability : knowledge learned in the AR regime can remain effective to a diffusion model without further adaptation. In a controlled setting, directly transferring the AR post-training task vector brings the diffusion base close to the performance of direct diffusion post-training. This cross-paradigm transfer of AR task vector provides a practical way to improve diffusion models when no corresponding diffusion post-trained checkpoint is available. Moreover, we show that AR and diffusion post-training yield nearly orthogonal task vectors in parameter space, yet induce much more aligned representation changes, suggesting that related capabilities arise through distinct parameter directions. Motivated by prior findings that less-correlated fine-tuning directions can combine favorably through interpo-lation (Wortsman et al., 2022), we further interpolate the AR-transferred and diffusion-post-trained solutions, yielding performance beyond both endpoints by combining their partially complementary behavioral gains. We introduce A2D (AR-to-Diffusion Transfer and Composition ), a simple framework that exploits the cross-paradigm transferability of AR post-training updates. A2D operates in two regimes, as 2Preprint shown in Figure 1b: (a) in the absence of a diffusion post-training vector, it transfers an AR task vector directly to the diffusion base model; (b) when both AR and diffusion vectors are available, it interpolates the corresponding diffusion-space solutions to further improve the post-trained diffusion model. Both operations are training-free given the available checkpoints and incur no additional trainable parameters. Across multiple diffusion model families and diverse post-training settings, including instruction tuning, reasoning, mathematical reasoning, and coding, both modes of A2D 
+
+reliably improves downstream performance, as shown by the example in Figure 2. We summarize our contributions as follows: • We study cross-paradigm transferability : AR post-training vectors remain effective after diffusion conversion, inducing aligned representation changes despite near-orthogonal pa-rameter directions, which further motivates their composition with diffusion post-training. • Building on this observation, we introduce A2D , a simple weight-space framework for reusing AR post-training in diffusion models. A2D supports both direct transfer to diffusion base models and training-free composition with existing diffusion post-training updates. • Across recent dLLMs including Dream, Dream-Coder, DiffuCoder, Nemotron-Labs-Diffusion, DreamReasoner, and DiffusionGemma, we validate both modes of A2D and di-verse post-training scenarios, improving downstream performance without additional train-ing or inference-time computation. 
+
+## 2 CROSS -P ARADIGM POST -T RAINING TRANSFER AND COMPOSITION 
+
+2.1 BACKGROUND AND NOTATIONS 
+
+Autoregressive and diffusion language models. AR and diffusion models differ in both their training objectives and generation processes, yet modern dLLMs are often adapted from pretrained AR checkpoints to inherit the learned language representations (Ye et al., 2025; Fu et al., 2026; Wu et al., 2026b; Team et al., 2026). We denote the weights of this AR source model by Ab, which is trained with an autoregressive objective and generates tokens from left to right. Starting from Ab,further diffusion training adapts the model for diffusion generation to obtain Db. Depending on the model family, this adaptation uses either a diffusion objective alone (Ye et al., 2025) or a combination of AR and diffusion objectives (Fu et al., 2026), and may involve hundreds of billions of tokens of training. Consequently, despite sharing an initialization, Db can differ substantially from Ab in both parameters and generation behavior. At inference time, it generates through diffusion-style iterative denoising with flexible token-update orders. Starting from their respective base checkpoints, the AR and diffusion models can be post-trained independently for the same downstream capability, yielding Ap from Ab and Dp from Db, as illus-trated in Figure 1a. Although Ap and Dp target the same capability, their post-training updates are learned under different objectives and from different base checkpoints. This raises our central ques-tion: can an update learned on the AR branch remain effective when applied to the diffusion branch? 
+
+Model merging and task arithmetic. Since AR post-training and diffusion conversion originate from the same pretrained model, it naturally motivates weight-space transfer, such as model merging. Model merging combines knowledge from multiple trained models directly in weight space without additional training (Yang et al., 2026; Wortsman et al., 2022). Task arithmetic represents the effect of post-training as a task vector, defined as the parameter difference between a post-trained model and its base (Ilharco et al., 2022). These vectors can be scaled and composed in weight space to transfer or combine their learned capabilities. Accordingly, we define the AR and diffusion post-training vectors as τA = Ap − Ab and τD = Dp − Db, respectively. Notably, task arithmetic typically composes task vectors defined relative to a shared base model or initialization, whereas τA
+
+and τD originate from different base checkpoints. 2.2 CROSS -P ARADIGM TRANSFER OF AR P OST -T RAINING TO DIFFUSION 
+
+We first examine whether AR post-training can transfer across the AR and diffusion paradigms. We begin our analysis by testing whether post-training knowledge learned in the AR regime survives AR-to-diffusion conversion. In this case, τA is learned around Ab but applied to its diffusion 3Preprint 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4              
+
+> AR task-vector weight α
+> 55% 60% 65% 70%
+> Avg. accuracy
+> Math
+> 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4
+> AR task-vector weight α
+> 40% 50% 60%
+> Coding
+> Db+ατ ADiffusion Base Diffusion Fine-tuned
+
+(a) AR post-training updates transfer effectively to diffusion. Math Coding    
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7
+> Cosine similarity
+> 0.009 0.016
+> Parameter space
+> Math Coding
+> 0.395 0.541 0.042 0.068
+> Representation space
+> AR–Diffusion task vectors AR–Diffusion task vectors AR vs. diffusion feature changes Randomized AR vs. real diffusion
+
+(b) Distinct parameter updates induce aligned repre-sentation changes. 
+
+Figure 3: Cross-paradigm transfer of AR post-training. (a) AR task vectors remain effective on the diffusion base. (b) Despite weak parameter alignment, AR and diffusion post-training induce more aligned representation changes than randomized controls. descendant Db, whose parameters and generation mechanism have been substantially reshaped by diffusion conversion. To isolate the effect of this paradigm shift, we post-train the AR and diffusion base models on identical data for the same downstream capability in a controlled setting. 
+
+Experimental setting. We consider mathematical reasoning and coding tasks. For math, we use Qwen2.5-7B and its diffusion counterpart Dream-7B-Base, obtained from Qwen2.5-7B through AR-to-diffusion conversion, and fine-tune both on the same 100K NuminaMath examples (LI et al., 2024). For coding, we use Qwen2.5-Coder-7B and Dream-Coder-v0-Base-7B, its corresponding dif-fusion counterpart, and fine-tune both on the same 100K EpiCoder examples (Wang et al., 2025b). This construction yields matched AR and diffusion task vectors targeting the same capability, al-lowing us to isolate whether AR post-training transfers across the two generative paradigms. Full training and evaluation details are provided in Appendix A.3. 
+
+Cross-paradigm transfer. We test this directly by applying the scaled AR task vector τA to the diffusion base model: DTransfer = Db + ατA, α ≥ 0, where α controls the transfer strength. This modifies only the model parameters while preserving the diffusion inference procedure. We evaluate mathematical reasoning on GSM8K (Cobbe et al., 2021) and MATH-500 (Hendrycks et al., 2021) 1, and coding on HumanEval+ (Chen et al., 2021) and MBPP+ (Austin et al., 2021b), respectively for the models fine-tuned on math and coding datasets. As shown in Figure 3a, transferring τA substantially improves Db in both domains and recovers a large fraction of the gains obtained by direct diffusion post-training, or even surpasses them. This shows that an update learned under causal AR computation can remain effective after the model has been converted to iterative diffusion denoising. 
+
+Distinct parameters, aligned effects in representation space. The successful transfer raises a question: do AR and diffusion post-training simply learn similar parameter updates? Despite being trained toward the same capability, τA and τD are nearly orthogonal in parameter space with a cosine similarity of only 0.016 for Coding and 0.009 for Math. Parameter-space similarity, however, does not reflect similarity in the induced model behavior (Xu et al., 2024). We therefore compare the representation changes produced by the two task vectors within the diffusion model. We generate trajectories with Db and collect intermediate pre-commit masked states m. For each state, we evaluate Db, Db + τA, and Db + τD on the same input, and isolate the effect of each task vector by subtracting the representation of the diffusion base: 
+
+∆hA(m) = h(Db + τA; m) − h(Db; m), ∆hD (m) = h(Db + τD ; m) − h(Db; m),
+
+where h denotes the final-layer representation at the prediction position. We then measure the cosine similarity between ∆hA(m) and ∆hD (m). As shown in Figure 3b, the induced representation changes are substantially more aligned than the task vectors themselves and well above randomized-vector controls 2 Together, these results show that AR and diffusion post-training induce related representation changes, despite following substantially different directions in parameter space. 
+
+> 1
+
+We subsample first 200 samples for GSM8K and MATH-500 for the analysis in section 2 
+
+> 2
+
+The randomized vector is built to share the same norm, global mean and variance as the AR task vector. 
+
+4Preprint 0.0 0.2 0.4 0.6 0.8 1.0             
+
+> AR-vector weight α
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Diffusion-vector weight  β Math
+> Db
+> τA
+> τD
+> 57 .560 .062 .565 .067 .570 .073 .0
+> Score (%)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> AR-vector weight α
+> Coding
+> Db
+> τA
+> τD
+> ≤55 57 59 61 63 65
+> Score (%)
+
+(a) High-performing solutions lie between the AR and diffusion endpoints. Shared success Diffusion-only success AR-only success Neither succeeds  
+
+> 020 40 60 80 100 120
+> Number of examples
+> 35/36 24/31 8/18 12/85
+> Merged model success Merged model failure
+
+(b) Interpolation preserves shared gains and endpoint-specific successes. 
+
+Figure 4: Why AR and diffusion post-training can be composed. (a) Performance over 
+
+Db + ατA + βτD . The interpolation path between the AR-transferred and diffusion-post-trained endpoints passes through high-performing regions and contains solutions that outperform both end-points. (b) Among examples failed by Db, the two endpoints exhibit both shared and endpoint-specific successes. The best interpolated model preserves most shared successes while retaining gains unique to either endpoint, indicating limited functional interference under composition. 2.3 COMPOSING AUTOREGRESSIVE AND DIFFUSION POST -T RAINING 
+
+The preceding results reveal an interesting structure: AR and diffusion post-training induce re-lated representation changes through largely distinct parameter directions. Prior work has suggested that less-correlated fine-tuning directions can admit favorable linear interpolations (Wortsman et al., 2022), motivating the composition of these two post-training models. We therefore examine whether their composition can yield a stronger model than either alone. To analyze this composition in weight space, we consider the two-dimensional task-vector plane 
+
+D(α, β ) = Db + ατA + βτD , α, β ≥ 0, where α and β controls the contribution of the AR and diffusion task vector, respectively. The AR-transferred and diffusion-post-trained models correspond to DT = D(1 , 0) and Dp = D(0 , 1) , respectively, while α + β = 1 traces the linear interpolation between them. As shown in Figure 4a, both mathematical reasoning and coding exhibit high-performing regions along this interpolation path, and interior points along their interpolation path outperform either endpoint. This indicates that interpolating the AR and diffusion post-training directions captures complementary gains beyond either endpoint. 
+
+Complementarity between AR and diffusion post-training. Why can an intermediate model outperform both endpoints? To better understand these gains, we characterize the behavioral overlap and differences between the two endpoints and the merged model. Among examples failed by the base model Db in mathematical reasoning, we partition problems into four mutually exclusive subsets: those solved only by the AR-transfer model DT , only by the post-trained model Dp, by both, or by neither. We then evaluate the best merged model on each subset. As shown in Figure 4b, the two endpoints solve overlapping but also distinct subsets of problems. Importantly, the interpolated model preserves nearly all their shared successes while retaining large portions of the successes unique to either endpoint. Overall, we show that AR and diffusion post-training provide partially complementary behavioral gains that can be jointly retained through interpolation, explaining how an intermediate model can outperform both endpoints. This observation is also consistent with prior findings that task-vector composition can preserve distinct effects of different parameter-space directions (Ortiz-Jimenez et al., 2023). 2.4 A2D: C ROSS -P ARADIGM TRANSFER AND COMPOSITION 
+
+Motivated by the preceding observations, we propose A2D (AR-to-Diffusion Transfer and Composi-tion ), a simple weight-space framework for recycling AR post-training updates in diffusion models. 
+
+A2D addresses two practical settings. 5Preprint 
+
+A2D Transfer. For many downstream capabilities, strong AR post-trained checkpoints are readily available, while corresponding diffusion checkpoints may not yet exist. In this setting, A2D transfers the AR task vector directly to the diffusion base to equip it with the target capability: 
+
+DTransfer (α) = Db + ατA, α ≥ 0. (1) This directly reuses existing AR post-training knowledge, avoiding a separate round of diffusion-specific post-training. 
+
+A2D Merge. For scenarios where both AR and diffusion post-trained models are available, A2D 
+
+interpolates their post-training updates to exploit their complementary gains. We restrict the compo-sition to this one-dimensional path, which already traverses a high-performing region in Figure 4a: 
+
+DMerge (λ) = Db + (1 − λ)τD + λτA = Dp + λ(τA − τD ), λ ∈ [0 , 1] . (2) Both A2D variants preserve the diffusion architecture and require no additional training or inference-time hyperparameter tuning. 
+
+## 3 A2D A CROSS MODELS AND POST -T RAINING SETTINGS 
+
+Beyond the controlled setting, we now evaluate A2D on independently released checkpoints, where the AR and diffusion branches may differ substantially in their post-training data, objectives, and optimization pipelines. Our evaluation spans general instruction following, coding, mathematical reasoning, and medical question answering, and covers both supervised and reinforcement-learning-based post-training. We organize the experiments by post-training type and evaluate both A2D 
+
+regimes: A2D -Transfer improves upon the diffusion base by directly applying an AR post-training update, while A2D -Merge further improves the diffusion post-trained model by composing it with the corresponding AR update. For each model family, the A2D coefficient α and λ is selected on a single anchor benchmark and kept fixed across the evaluations of the remaining tasks. We decode each diffusion model with its native inference settings and evaluate all code models with the same prompts and scoring. Parent diffusion checkpoints follow their original evaluation setup, while AR donors use the generation budget of the corresponding diffusion models. Full evaluation, merging, and coefficient-selection details are provided in Appendix A. 3.1 INSTRUCTION -T UNED UPDATES FOR GENERAL AND CODE MODELS 
+
+We first evaluate whether instruction-tuning updates transfer from AR to diffusion across both general-purpose and code-specialized model families. For the general-purpose setting, we construct the AR instruction-tuning vector by subtracting Qwen2.5-7B-Base from Qwen2.5-7B-Instruct (Yang et al., 2024a), and transfer this update to Dream-7B-Base (Ye et al., 2025). We evaluate the resulting model on instruction following, mathematical reasoning, and coding. For the code-specialized setting, we similarly construct the instruction-tuning vector from Qwen2.5-Coder-7B-Base and Qwen2.5-Coder-7B-Instruct (Hui et al., 2024), and transfer it to two indepen-dently developed diffusion code models, Dream-Coder (Xie et al., 2025) and DiffuCoder (Gong et al., 2026). In all three settings, the diffusion models originate from the corresponding AR base family, while their instruction-tuned checkpoints are obtained through separate diffusion-specific post-training pipelines. As shown in Table 1a, A2D is broadly effective across different types of instruction-following post-training, exhibiting two complementary regimes. Direct transfer can recover substantial capability missing from the diffusion base, with particularly large gains on Dream-7B for MATH-500 ( +19 .4), and on Dream-Coder BCB-Full ( +6 .5). When diffusion instruction tuning is already available, A2D -Merge further provides consistent gains, improving all 9/9 benchmarks over the corresponding post-trained baselines. Moreover, scaling coefficients selected on a single anchor task generalize to the remaining benchmarks, yielding average non-anchor gains of 4.8 and 2.6 points for transfer and merge, respectively. 6Preprint Table 1: Evaluation of A2D across tasks and model families. Headers denote AR donor →diffusion recipient . A2D (transfer) applies the AR donor’s task vector to the diffusion recipient, while A2D (merge) composes it with diffusion post-training. Anchor tasks for scaling coefficient search are highlighted. All results are in percentages. 
+
+(a) Instruction following vectors. Qwen2.5-7B → Dream-7B Qwen2.5-Coder-7B → Dream-Coder Qwen2.5-Coder-7B → DiffuCoder IFEval MATH-500 MBPP+ HumanEval+ MBPP+ BCB-Full HumanEval+ MBPP+ BCB-Full AR donor 75.3 36.6 69.0 86.0 72.2 41.6 86.0 72.2 41.8 Base 49.7 20.8 59.3 57.9 62.4 25.2 61.6 52.9 33.9                              
+
+> A2D (transfer) 59.2 40.2 62.7 67.1 62.7 31.7 60.4 54.0 32.0 Instruct 63.0 38.4 57.1 77.4 68.5 36.2 65.9 65.9 34.8
+> A2D (merge) 72.8 45.0 58.7 79.3 69.3 38.2 74.4 66.4 38.9
+
+(b) Reasoning, SFT and RL post-training vectors. DR abbreviates DreamReasoner. Qwen3-8B → DR-8B, thinking on Gemma-4 → DiffusionGemma AceCoder-Rule → DiffuCoder, RL MATH-500 AIME24 AIME25 VQA-RAD SLAKE VQA-Med HumanEval+ MBPP+ BCB-Full AR donor 81.2 72.1 60.4 75.8 66.5 44.0 85.4 70.6 43.3 Base 68.0 5.8 12.1 57.4 63.2 43.2 65.9 65.9 34.8                              
+
+> A2D (transfer) 76.0 21.2 16.2 74.1 67.3 45.2 64.6 66.9 34.6 Post-trained 93.6 71.7 56.7 71.6 62.2 38.6 63.4 66.9 40.5
+> A2D (merge) 94.8 72.9 67.1 74.5 63.8 38.8 70.1 69.0 42.4
+
+(c) Ministral-3-3B → Nemotron-LD-3B, dual-mode AR-diffusion post-training vectors. The model supports both diffusion and AR decoding, and we report both results. The mean excludes the anchor task IFEval. Mode GSM8K MATH-500 HumanEval MBPP IFEval MMLU GPQA AIME24 AIME25 LCB-CPP Mean AR donor AR 91.3 83.0 80.5 75.9 65.1 67.9 40.9 30.0 13.3 27.1 56.7 Base DLM 59.1 40.0 64.6 70.9 23.2 62.0 35.4 0.0 0.0 9.9 38.0                                                                
+
+> A2D (transfer) DLM 88.1 52.6 72.6 74.3 60.6 62.8 33.3 3.3 3.3 14.1 44.9
+> Instruct DLM 89.2 76.8 73.2 73.0 68.0 72.1 35.4 10.0 13.3 16.3 51.0
+> A2D (merge) DLM 90.1 79.6 75.0 75.7 72.9 72.9 43.4 16.7 13.3 18.9 54.0
+> Instruct AR 87.6 76.0 73.8 69.8 68.8 71.9 41.9 23.3 13.3 17.6 52.8
+> A2D (merge) AR 89.3 81.0 79.9 75.1 72.8 72.5 38.4 20.0 13.3 18.7 54.2
+
+3.2 SPECIALIZED POST -T RAINING : R EASONING , M EDICAL VQA, AND CODE RL We next test whether A2D extends beyond general instruction tuning to more specialized capabil-ities and later-stage post-training updates. For mathematical reasoning, we use the post-training update from Qwen3-8B-Base to its reasoning checkpoint (Yang et al., 2025) and transfer it to DreamReasoner-8B (Wu et al., 2026b), evaluating on MATH and competition-level math bench-marks. For medical visual question answering (VQA), we use matched Gemma-4 (Team, 2026) and DiffusionGemma medical-SFT updates, obtained by fine-tuning their respective instruction-tuned checkpoints on VQA-RAD (Van Puyvelde et al., 2026), and evaluate on 3 medical VQA tasks. For code, we transfer and merge the RL updates from the instruction-tuned checkpoints of Ace-Coder (Zeng et al., 2025) and DiffuCoder (Gong et al., 2026). Together, these settings cover both specialization from a base model and continued SFT or RL applied after instruction tuning. As shown in Table 1b, A2D remains effective across reasoning, medical SFT, and code RL. A2D -Transfer yields substantial gains in the reasoning and medical settings, including +15 .4 on AIME24 and +16 .7 on VQA-RAD. A2D -Merge is consistently effective, improving all 9/9 post-trained base-lines, with gains of +10 .4 on AIME25 and +6 .7 on HumanEval+. These gains extend beyond the anchor tasks, averaging 4.0 and 3.7 points on non-anchor benchmarks for transfer and merge, re-spectively. Together, these results extend A2D to specialized domain adaptation and different stages of post-training, while showing robust performance across model scales, as demonstrated by results for DiffusionGemma with 26B parameters. 7Preprint Table 2: A2D improves both denoising scheduling and token prediction.       
+
+> Tokens from Schedule from Parent A2D Parent 38.4 42.8 A2D 42.2 45.0
+
+Table 3: The transfer is asym-metric: it transfers from AR to diffusion, but not in reverse.            
+
+> GSM8K MATH-500
+> Db66.5 20.8
+> Db+ A2D transfer 81.7 40.2
+> Ab62.5 17.4
+> Ab+ D2A transfer 56.0 16.2
+
+Table 4: A2D benefits from both adding the AR vector and down-scaling the diffusion vector.               
+
+> Method Avg. Acc. Avg. rank Diffusion parent Dp72.3 3.7
+> +τAonly 75.9 2.4
+> −τDonly 74.2 2.4
+> A2D merge 76.8 1.4
+
+3.3 A2D ON DUAL -M ODE AR-D IFFUSION MODELS 
+
+Finally, we evaluate A2D on Nemotron-Labs-Diffusion-3B (Nemotron-LD-3B) (Fu et al., 2026), a dual-mode model initialized from Ministral-3-3B (Liu et al., 2026) that supports diffusion, AR, and self-speculative decoding. We evaluate A2D -Transfer and A2D -Merge across ten benchmarks covering math, coding, instruction following, and general reasoning under diffusion decoding, and additionally test the merged model under AR decoding. This setting also probes transfer with imper-fect parameter correspondence, since Nemotron-LD contains diffusion-specific parameters with no AR counterpart. We keep these unmatched parameters from the diffusion recipient and apply the AR update only to aligned parameters. Full parameter-mapping details are provided in Appendix A.2. As shown in Table 1c, A2D -Transfer improves the diffusion base on 9/10 benchmarks, with large gains on GSM8K ( +29 .0), MATH-500 ( +12 .6), and IFEval ( +37 .4), with a performance improve-ment of 6.9 points averaged on the non-anchor tasks. A2D -Merge further improves or matches all 
+
+10 /10 benchmarks under diffusion decoding, increasing the non-anchor mean from 51 .0 to 54 .0.Notably, the same merged weights also remain effective under AR decoding, improving the mean from 52 .8 to 54 .2, with notable gains on MATH-500 (+ 5.0), HumanEval (+ 6.1), and MBPP (+ 5.3). Additionally, we also provide the A2D -Transfer’s performance on AR mode in Table 17, results with Nemotron-LD-8B in Appendix B.4, which shows A2D -Merge leads to notable gains when merging the reasoning post-training vector from Ministral-3-8B donor. Furthermore, we show that A2D -merge generally improves the decoding efficiency for self-speculative decoding with Nemotron-LD in Table 20. Together, these results show that A2D demonstrates reliable performance improvement across a broad task suite, tolerates imperfect parameter correspondence, and transfers its gains across both diffusion and autoregressive decoding modes. 
+
+## 4 ANALYSIS AND ABLATIONS 
+
+We further analyze the behavior and scope of cross-paradigm transfer and identify the sources of 
+
+A2D ’s gains. Unless otherwise stated, experiments use Dream-7B on MATH-500, where we transfer the instruction-tuned vector from Qwen2.5-7B, and all scores are reported in percentages. 4.1 UNDERSTANDING CROSS -P ARADIGM TRANSFER 
+
+How does A2D alter diffusion generation? We examine how A2D affects the diffusion generation process to decompose its gains. 
+
+A2D improves both denoising schedule and token prediction. As shown in Table 2, using A2D -merged model token predictions with the denoising schedule of Dream-7B-Instruct which we call here the diffusion parent , improves accuracy from 38 .4 to 42 .8, while using the merged model’s denoising schedule with diffusion parent’s predictions reaches 42 .2. Combining both yields the full 
+
+A2D performance of 45 .0, showing that prediction and scheduling provide complementary gains. These changes are nevertheless highly localized: when evaluated on the parent’s intermediate states, 
+
+A2D selects different positions at only 5.3% of steps and commits different tokens at only 3.4% of positions compared to the diffusion parent. 
+
+A2D does not systematically shift denoising toward causal generation. Despite modifying the de-noising schedule, A2D does not induce a systematic shift toward left-to-right decoding. Following Gong et al. (2026), we measure global and local AR-ness over the response up to the first EOS .Global@ k measures whether the selected position is among the k leftmost masked tokens, Local@ k
+
+measures whether the current update continues a left-to-right run over the previous k updates. Both 8Preprint equal 1 under strict autoregressive decoding. As shown in Figure 5(a) of the appendix, the merged model closely tracks the diffusion parent on both metrics. 
+
+A2D selectively revises uncertain predictions. The few changed tokens by A2D are not spread evenly. As shown in Figure 5(b), they concentrate at positions where the diffusion parent has relatively low confidence. Thus, A2D largely preserves the parent’s predictions while selectively revising uncertain decisions. 
+
+Directional asymmetry in cross-paradigm transfer. We test reversing the transfer direction and apply the diffusion task vector to the corresponding AR base. As summarized in Table 3 (full results in Table 13), while applying AR task vector to diffusion base model substantially improves it, applying the diffusion task vector to the AR base model can degrade its performance, revealing a clear directional asymmetry. This asymmetry provides insight into what enables A2D transfer. The AR update τA is learned around Ab, from which Db is subsequently derived through diffusion conversion. Thus, Db inherits much of the parameter and representation context on which τA acts. In contrast, τD is learned around the already converted model Db and may depend on changes introduced during diffusion pretraining that are absent from Ab. These results suggest that A2D works in part because the diffusion recipient shares the training lineage of the model on which the transferred AR update was learned, whereas this compatibility is absent in the reverse direction. 
+
+Scope of cross-paradigm transfer. Our main experiments consider task vectors induced by down-stream fine-tuning, for which A2D broadly enables cross-paradigm transfer. We additionally test vectors induced by continued pretraining, respectively from Qwen2.5-7B to Qwen2.5-Math-7B and Qwen2.5-Coder-7B, and find that neither transfers effectively to the corresponding diffusion model. These vectors have 70 –82 × larger norms than the post-training vectors used in our main experi-ments, reflecting substantially broader parameter changes that may reorganize the representations on which the updates rely. These results delineate A2D ’s scope to relatively local post-training updates, rather than pretraining-scale model transformations. 4.2 ABLATION STUDIES 
+
+Decomposition of the A2D gain. A2D -Merge can be written as Dp + λ(τA − τD ), combining two effects: adding the AR update and partially removing the diffusion update. We isolate these effects by retaining only +τA or −τD contribution with a corresponding scaling coefficient. As shown in Table 4 (full results in Table 12), both components individually improve over the diffusion parent, but neither matches A2D -Merge. Thus, the full gain benefits from jointly balancing the AR and diffusion post-training updates. 
+
+Module-wise contributions to A2D . We ablate the contribution of attention and MLP modules from τA. As shown in Table 14, while A2D -Transfer depends mostly on updates in MLP modules, 
+
+A2D -Merge requires both MLP and attention modules to achieve optimal merging performance. 
+
+## 5 RELATED WORK 
+
+Diffusion large language models Extending diffusion-based generative modeling to discrete se-quences has been widely studied (Austin et al., 2021a; Hoogeboom et al., 2021; Han et al., 2022; Gong et al., 2023), with masked diffusion emerging as a particularly effective formulation for lan-guage modeling (He et al., 2023; Sahoo et al., 2024; Shi et al., 2024). Subsequent scaling efforts established diffusion language models (dLLMs) as competitive alternatives to autoregressive (AR) models (Nie et al., 2025a;b; Ye et al., 2025; Song et al., 2025; Gong et al., 2026; Wu et al., 2026b). Rather than training from scratch, many recent dLLMs build on pretrained AR checkpoints and in-troduce diffusion objectives through continued training or adaptation (Gong et al., 2025; Ye et al., 2025; Xie et al., 2025; Wu et al., 2026a; Cheng et al., 2026; Fu et al., 2026; Team et al., 2026), reusing pretrained linguistic knowledge while substantially reducing the cost of learning diffusion-based generation. Post-training dLLMs, however, poses distinct optimization challenges as learning must span partially corrupted states across varying corruption levels (Parashar et al., 2026; Deng 9Preprint et al., 2026), with additional challenges in likelihood estimation for RL (Gong et al., 2026; Tang et al., 2026). Recent work further reveals shared structure between the two paradigms: AR models can guide diffusion adaptation (Peng et al., 2026; Su et al., 2026), while left-to-right biases can remain bene-ficial even with flexible generation orders (Xue et al., 2025; Ni et al., 2026). Together, these results suggest that AR and diffusion models share reusable knowledge while retaining distinct inductive biases. We study this connection in weight space , asking whether AR post-training updates remain effective after diffusion conversion and can be composed with diffusion updates. 
+
+Model merging. Model merging aims to combine the capabilities of independently trained mod-els directly in weight space, avoiding additional training (Yang et al., 2026). Early work showed that models fine-tuned from a common initialization often remain connected in weight space for parameter averaging to improve performance, motivating both simple averaging (Wortsman et al., 2022) and importance-weighted variants (Matena & Raffel, 2022; Tam et al., 2023). Task arithmetic formalized fine-tuning updates as task vectors that can be composed in weight space to manipulate model behavior (Ilharco et al., 2022). Its effectiveness has been linked to functional disentangle-ment among task vectors (Ortiz-Jimenez et al., 2023), with subsequent work mitigating interference through conflict resolution (Yadav et al., 2023), sparsification (Yu et al., 2024; Wang et al., 2024), and layer-wise rescaling (Wang et al., 2025a; Yang et al., 2024b). Prior work on LLMs primarily focused on model merging within the AR paradigm (Ren et al., 2026; Zhu et al., 2026), whereas we study cross-paradigm transfer from AR to diffusion. Closest to our setting, Lin et al. (2026) transfers AR preference-alignment updates as an alternative to diffusion-based alignment, while we study a broader post-training setting where AR knowledge is used to further improve already post-trained diffusion models across diverse objectives, capabilities, and model families. 
+
+## 6 CONCLUSION 
+
+We show that AR post-training knowledge exhibits cross-paradigm transfer : it remains effective after diffusion conversion and can be reused directly in diffusion models through weight-space transfer. Building on this cross-paradigm transferability, A2D transfers AR post-training updates to diffusion models and, when diffusion post-training is available, combines the two to exploit com-plementary gains. Across diverse model families, tasks, and post-training settings, A2D consistently improves diffusion models without additional training or inference-time computation. Practically, A2D provides a simple training-free framework for reusing existing AR post-trained checkpoints as resources for diffusion models, supporting both capability transfer to diffusion base models and further improvement of already post-trained diffusion models through composition. ACKNOWLEDGMENTS 
+
+Yiming Qin was supported by the Swiss National Science Foundation (SNSF grant 10001445). The authors thank Nikolaos Dimitriadis and Guillermo Ortiz-Jim´ enez for their constructive feedback on the project, and Zhengqing Wu and Keyue Jiang for insightful discussions. 
+
+## REFERENCES 
+
+Jacob Austin, Daniel D Johnson, Jonathan Ho, Daniel Tarlow, and Rianne Van Den Berg. Struc-tured denoising diffusion models in discrete state-spaces. In Advances in Neural Information Processing Systems (NeurIPS) , 2021a. 9 Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, et al. Program synthesis with large language models. arXiv , 2021b. 4 Asma Ben Abacha, Sadid A. Hasan, Vivek V. Datla, Joey Liu, Dina Demner-Fushman, and Henning Muller. VQA-Med: Overview of the Medical Visual Question Answering Task at ImageCLEF 2019. In Working Notes of CLEF 2019 , CEUR Workshop Proceedings, 2019. URL https: //ceur-ws.org/Vol-2380/paper_272.pdf . 18 10 Preprint Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fo-tios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating Large Language Models Trained on Code. 2021. 4 Shuang Cheng, Yihan Bian, Dawei Liu, Yuhua Jiang, Yihao Liu, Linfeng Zhang, Qian Yao, Zhongbo Tian, Wenhai Wang, Qipeng Guo, et al. Sdar: A synergistic diffusion-autoregression paradigm for scalable sequence generation. In Association for Computational Linguistics (ACL) , 2026. 9 Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. Training verifiers to solve math word problems. arXiv , 2021. 4 Jia Deng, Junyi Li, Wayne Xin Zhao, Jinpeng Wang, Hongyu Lu, and Ji-Rong Wen. Beyond Fully Random Masking: Attention-Guided Denoising and Optimization for Diffusion Language Mod-els. In Association for Computational Linguistics (ACL) , 2026. 9 Yonggan Fu, Lexington Whalen, Abhinav Garg, Chengyue Wu, Maksim Khadkevich, Nicolai Os-wald, Enze Xie, Daniel Egert, Sharath Turuvekere Sreenivas, Shizhe Diao, Chenhan Yu, Ye Yu, Weijia Chen, Sajad Norouzi, Jingyu Liu, Shiyi Lan, Ligeng Zhu, Jin Wang, Jindong Jiang, Morteza Mardani, Mehran Maghoumi, Song Han, Ante Jukic, Nima Tajbakhsh, Jan Kautz, and Pavlo Molchanov. Nemotron-Labs-Diffusion: A Tri-Mode Language Model Unifying Autore-gressive, Diffusion, and Self-Speculation Decoding. Technical report, NVIDIA, 2026. 1, 3, 8, 9, 18 Shansan Gong, Mukai Li, Jiangtao Feng, Zhiyong Wu, and Lingpeng Kong. DiffuSeq: Sequence to Sequence Text Generation with Diffusion Models. In International Conference on Learning Representations (ICLR) , 2023. 9 Shansan Gong, Shivam Agarwal, Yizhe Zhang, Jiacheng Ye, Lin Zheng, Mukai Li, Chenxin An, Peilin Zhao, Wei Bi, Jiawei Han, et al. Scaling diffusion language models via adaptation from autoregressive models. In International Conference on Learning Representations (ICLR) , 2025. 9Shansan Gong, Ruixiang Zhang, Huangjie Zheng, Jiatao Gu, Navdeep Jaitly, Lingpeng Kong, and Yizhe Zhang. Diffucoder: Understanding and improving masked diffusion models for code gen-eration. In International Conference on Learning Representations (ICLR) , 2026. 1, 6, 7, 8, 9, 10, 17 Xiaochuang Han, Sachin Kumar, and Yulia Tsvetkov. Ssd-lm: Semi-autoregressive simplex-based diffusion language model for text generation and modular control. arXiv , 2022. 9 Zhengfu He, Tianxiang Sun, Qiong Tang, Kuanning Wang, Xuan-Jing Huang, and Xipeng Qiu. Dif-fusionbert: Improving generative masked language models with diffusion models. In Association for Computational Linguistics (ACL) , 2023. 9 Dan Hendrycks, Collin Burns, Saurav Kadavath, Akul Arora, Steven Basart, Eric Tang, Dawn Song, and Jacob Steinhardt. Measuring mathematical problem solving with the math dataset. arXiv ,2021. 4 Emiel Hoogeboom, Didrik Nielsen, Priyank Jaini, Patrick Forr´ e, and Max Welling. Argmax flows and multinomial diffusion: Learning categorical distributions. In Advances in Neural Information Processing Systems (NeurIPS) , 2021. 9 Binyuan Hui, Jian Yang, Zeyu Cui, Jiaxi Yang, Dayiheng Liu, Lei Zhang, Tianyu Liu, Jiajun Zhang, Bowen Yu, Kai Dang, et al. Qwen2. 5-Coder Technical Report. arXiv , 2024. 6, 17 11 Preprint Gabriel Ilharco, Marco Tulio Ribeiro, Mitchell Wortsman, Suchin Gururangan, Ludwig Schmidt, Hannaneh Hajishirzi, and Ali Farhadi. Editing models with task arithmetic. arXiv , 2022. 2, 3, 10 Jason J. Lau, Soumya Gayen, Asma Ben Abacha, and Dina Demner-Fushman. A dataset of clinically generated visual questions and answers about radiology images. Scientific Data , 2018. URL 
+
+https://www.nature.com/articles/sdata2018251 . 18 Jia LI, Edward Beeching, Lewis Tunstall, Ben Lipkin, Roman Soletskyi, Shengyi Costa Huang, Kashif Rasul, Longhui Yu, Albert Jiang, Ziju Shen, Zihan Qin, Bin Dong, Li Zhou, Yann Fleureau, Guillaume Lample, and Stanislas Polu. NuminaMath, 2024. 4, 20 Liang Lin, Feng Xiong, Zengbin Wang, Kun Wang, Junhao Dong, Xuecai Hu, Yong Wang, and Xiangxiang Chu. AR-MAP: Are Autoregressive Large Language Models Implicit Teachers for Diffusion Large Language Models? arXiv , 2026. 2, 10 Alexander H. Liu, Kartik Khandelwal, Sandeep Subramanian, Victor Jouault, Abhinav Rastogi, Adrien Sad´ e, Alan Jeffares, Albert Jiang, Alexandre Cahill, Alexandre Gavaudan, Alexandre Sablayrolles, Am´ elie H´ eliou, Amos You, Andy Ehrenberg, Andy Lo, Anton Eliseev, Anto-nia Calvi, Avinash Sooriyarachchi, Baptiste Bout, Baptiste Rozi` ere, Baudouin De Monicault, Cl´ emence Lanfranchi, Corentin Barreau, Cyprien Courtot, Daniele Grattarola, Darius Dabert, Diego de las Casas, Elliot Chane-Sane, Faruk Ahmed, Gabrielle Berrada, Ga¨ etan Ecrepont, Gauthier Guinet, Georgii Novikov, Guillaume Kunsch, Guillaume Lample, Guillaume Martin, Gunshi Gupta, Jan Ludziejewski, Jason Rute, Joachim Studnia, Jonas Amar, Jos´ ephine Delas, Josselin Somerville Roberts, Karmesh Yadav, Khyathi Chandu, Kush Jain, Laurence Aitchi-son, Laurent Fainsin, L´ eonard Blier, Lingxiao Zhao, Louis Martin, Lucile Saulnier, Luyu Gao, Maarten Buyl, Margaret Jennings, Marie Pellat, Mark Prins, Mathieu Poir´ ee, Mathilde Guillau-min, Matthieu Dinot, Matthieu Futeral, Maxime Darrin, Maximilian Augustin, Mia Chiquier, Michel Schimpf, Nathan Grinsztajn, Neha Gupta, Nikhil Raghuraman, Olivier Bousquet, Olivier Duchenne, Patricia Wang, Patrick von Platen, Paul Jacob, Paul Wambergue, Paula Kurylowicz, Pavankumar Reddy Muddireddy, Philom` ene Chagniot, Pierre Stock, Pravesh Agrawal, Quentin Torroba, Romain Sauvestre, Roman Soletskyi, Rupert Menneer, Sagar Vaze, Samuel Barry, San-chit Gandhi, Siddhant Waghjale, Siddharth Gandhi, Soham Ghosh, Srijan Mishra, Sumukh Aithal, Szymon Antoniak, Teven Le Scao, Th´ eo Cachet, Theo Simon Sorg, Thibaut Lavril, Thiziri Nait Saada, Thomas Chabal, Thomas Foubert, Thomas Robert, Thomas Wang, Tim Lawson, Tom Bewley, Tom Edwards, Umar Jamil, Umberto Tomasini, Valeriia Nemychnikova, Van Phung, Vincent Maladi` ere, Virgile Richard, Wassim Bouaziz, Wen-Ding Li, William Marshall, Xinghui Li, Xinyu Yang, Yassine El Ouahidi, Yihan Wang, Yunhao Tang, and Zaccharie Ramzi. Ministral 3, 2026. URL https://arxiv.org/abs/2601.08584 . 2, 8, 18 Bo Liu, Li-Ming Zhan, Li Xu, Lin Ma, Yan Yang, and Xiao-Ming Wu. SLAKE: A Semantically-Labeled Knowledge-Enhanced Dataset for Medical Visual Question Answering. In 2021 IEEE 18th International Symposium on Biomedical Imaging (ISBI) , 2021. URL https://arxiv. org/abs/2102.09542 . 18 Jiawei Liu, Chunqiu Steven Xia, Yuyao Wang, and Lingming Zhang. Is your code generated by chatgpt really correct? rigorous evaluation of large language models for code generation. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) , 2023. 17 Michael S Matena and Colin Raffel. Merging models with fisher-weighted averaging. In Advances in Neural Information Processing Systems (NeurIPS) , 2022. 10 Zanlin Ni, Shenzhi Wang, Yang Yue, Tianyu Yu, Weilin Zhao, Yeguo Hua, Tianyi Chen, Jun Song, Cheng Yu, Bo Zheng, et al. The Flexibility Trap: Rethinking the Value of Arbitrary Order in Diffusion Language Models. arXiv , 2026. 10 Shen Nie, Fengqi Zhu, Chao Du, Tianyu Pang, Qian Liu, Guangtao Zeng, Min Lin, and Chongx-uan Li. Scaling up masked diffusion models on text. In International Conference on Learning Representations (ICLR) , 2025a. 9 Shen Nie, Fengqi Zhu, Zebin You, Xiaolu Zhang, Jingyang Ou, Jun Hu, Jun Zhou, Yankai Lin, Ji-Rong Wen, and Chongxuan Li. Large language diffusion models. arXiv , 2025b. 9 12 Preprint Guillermo Ortiz-Jimenez, Alessandro Favero, and Pascal Frossard. Task arithmetic in the tangent space: Improved editing of pre-trained models. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. 5, 10 Shubham Parashar, Atharv Chagi, Jacob Helwig, Lakshmi Jotsna, Sushil Vemuri, James Caverlee, Dileep Kalathil, and Shuiwang Ji. Learnability-Informed Fine-Tuning of Diffusion Language Models. arXiv , 2026. 2, 9 Fred Zhangzhi Peng, Alexis Fox, Anru R Zhang, and Alexander Tong. Don’t Retrain, Align: Adapt-ing Autoregressive LMs to Diffusion LMs via Representation Alignment. arXiv , 2026. 10 Valentina Pyatkin, Saumya Malik, Victoria Graf, Hamish Ivison, Shengyi Huang, Pradeep Dasigi, Nathan Lambert, and Hanna Hajishirzi. Generalizing verifiable instruction following. In Ad-vances in Neural Information Processing Systems (NeurIPS) , 2026. 17 Qwen Team. Qwen3.8-Max: A New Bar for Coding and Cowork, 2026. URL https://qwen. ai/blog?id=qwen3.8 . 18 Zixuan Ren, Jinliang Lu, Junhong Wu, Yang Zhao, Dai Dai, Haifeng Wang, Chengqing Zong, et al. Enough is as good as a feast: A comprehensive analysis of how reinforcement learning mitigates task conflicts in llms. In International Conference on Learning Representations (ICLR) , 2026. 10 Subham Sekhar Sahoo, Marianne Arriola, Aaron Gokaslan, Edgar Mariano Marroquin, Alexan-der M Rush, Yair Schiff, Justin T Chiu, and Volodymyr Kuleshov. Simple and Effective Masked Diffusion Language Models. In Advances in Neural Information Processing Systems (NeurIPS) ,2024. URL https://openreview.net/forum?id=L4uaAR4ArM . 9 Jiaxin Shi, Kehang Han, Zhe Wang, Arnaud Doucet, and Michalis Titsias. Simplified and general-ized masked diffusion for discrete data. In Advances in Neural Information Processing Systems (NeurIPS) , 2024. 9 Yuxuan Song, Zheng Zhang, Cheng Luo, Pengyang Gao, Fan Xia, Hao Luo, Zheng Li, Yuehang Yang, Hongli Yu, Xingwei Qu, et al. Seed diffusion: A large-scale diffusion language model with high-speed inference. arXiv , 2025. 9 Xingyu Su, Jacob Helwig, Shubham Parashar, Atharv Chagi, Lakshmi Jotsna, Degui Zhi, James Caverlee, Dileep Kalathil, and Shuiwang Ji. Data-Efficient Autoregressive-to-Diffusion Language Models via On-Policy Distillation. arXiv , 2026. 10 Derek Tam, Mohit Bansal, and Colin Raffel. Merging by matching models in task parameter sub-spaces. arXiv , 2023. 10 Xiaohang Tang, Keyue Jiang, Che Liu, Qifang Zhao, Xiaoxiao Xu, Sangwoong Yoon, and Ilija Bogunovic. GDSD: Reinforcement Learning as Guided Denoiser Self-Distillation for Diffusion Language Models. arXiv , 2026. 10 DiffusionGemma Team, Adrien Ali Ta¨ ıga, James Assiene, Daniele Calandriello, Rahma Chaabouni, Jo˜ ao Gante, Tamara von Glehn, Nate Keating, Chris Knutsen, Martin Kukla, Tianlin Liu, Ivan Lobov, Ofir Nabati, Jo˜ ao Gabriel Oliveira, Nicolas Perez-Nieves, Nastasia Prutianova, Bobak Shahriari, Jean Tarbouriech, Pavel Tyletski, C ¸ a˘ glar ¨ Unl¨ u, Cindy Wu, Glenn Cameron, Jerome Connor, Sertan Girgin, Maarten Grootendorst, Alon Levkovitch, Eliya Nachmani, Omar Sanse-viero, Piotr Stanczyk, Quentin Berthet, Andrew Campbell, Cl´ ement Crepy, Valentin De Bortoli, Arnaud Doucet, Romuald Elie, Alexandre Galashov, Klaus Greff, Alexis Jacq, David Ruhe, Yu-Han Wu, Sebastian Flennerhag, Brendan O’Donoghue, George Scrivener, and Shantanu Thakoor. DiffusionGemma Technical Report, 2026. URL https://arxiv.org/abs/2608.00146 .1, 3, 9, 18 Gemma Team. Gemma 4 Technical Report, 2026. URL https://arxiv.org/abs/2607. 02770 . 2, 7, 18 Max Van Puyvelde, Halil Ibrahim Gulluk, Wim Van Criekinge, and Olivier Gevaert. Discrete Dif-fusion Language Models for Interactive Radiology Report Drafting. arXiv , 2026. 7, 18 13 Preprint Ke Wang, Nikolaos Dimitriadis, Guillermo Ortiz-Jimenez, Franc ¸ois Fleuret, and Pascal Frossard. Localizing task information for improved model merging and compression. arXiv , 2024. 10 Ke Wang, Nikos Dimitriadis, Alessandro Favero, Guillermo Ortiz-Jimenez, Francois Fleuret, and Pascal Frossard. Lines: Post-training layer scaling prevents forgetting and enhances model merg-ing. In International Conference on Learning Representations (ICLR) , 2025a. 10 Yaoxiang Wang, Haoling Li, Xin Zhang, Jie Wu, Xiao Liu, Wenxiang Hu, Zhongxin Guo, Yangyu Huang, Ying Xin, Yujiu Yang, et al. Epicoder: Encompassing diversity and complexity in code generation. arXiv , 2025b. 4, 20 Mitchell Wortsman, Gabriel Ilharco, Samir Ya Gadre, Rebecca Roelofs, Raphael Gontijo-Lopes, Ari S Morcos, Hongseok Namkoong, Ali Farhadi, Yair Carmon, Simon Kornblith, et al. Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time. In International Conference on Machine Learning (ICML) , 2022. 2, 3, 5, 10 Chengyue Wu, Hao Zhang, Shuchen Xue, Shizhe Diao, Yonggan Fu, Zhijian Liu, Pavlo Molchanov, Ping Luo, Song Han, and Enze Xie. Fast-dllm v2: Efficient block-diffusion llm. In International Conference on Learning Representations (ICLR) , 2026a. 9 Zirui Wu, Lin Zheng, Jiacheng Ye, Shansan Gong, Xueliang Zhao, Yansong Feng, Wei Bi, and Lingpeng Kong. DreamReasoner-8B: Block-Size Curriculum Learning for Diffusion Reasoning Models, 2026b. URL https://arxiv.org/abs/2606.19257 . 1, 3, 7, 9, 17 Zhihui Xie, Jiacheng Ye, Lin Zheng, Jiahui Gao, Jingwei Dong, Zirui Wu, Xueliang Zhao, Shansan Gong, Xin Jiang, Zhenguo Li, et al. Dream-coder 7b: An open diffusion language model for code. arXiv , 2025. 6, 9, 17 Zhengqi Xu, Ke Yuan, Huiqiong Wang, Yong Wang, Mingli Song, and Jie Song. Training-free pretrained model merging. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2024. 4 Shuchen Xue, Tianyu Xie, Tianyang Hu, Zijin Feng, Jiacheng Sun, Kenji Kawaguchi, Zhenguo Li, and Zhi-Ming Ma. Any-order gpt as masked diffusion model: Decoupling formulation and architecture. arXiv , 2025. 10 Prateek Yadav, Derek Tam, Leshem Choshen, Colin A Raffel, and Mohit Bansal. Ties-merging: Resolving interference when merging models. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. 10 An Yang, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chengyuan Li, Dayiheng Liu, Fei Huang, Haoran Wei, Huan Lin, Jian Yang, Jianhong Tu, Jianwei Zhang, Jianxin Yang, Jiaxi Yang, Jingren Zhou, Junyang Lin, Kai Dang, Keming Lu, Keqin Bao, Kexin Yang, Le Yu, Mei Li, Mingfeng Xue, Pei Zhang, Qin Zhu, Rui Men, Runji Lin, Tianhao Li, Tingyu Xia, Xingzhang Ren, Xuancheng Ren, Yang Fan, Yang Su, Yichang Zhang, Yu Wan, Yuqiong Liu, Zeyu Cui, Zhenru Zhang, and Zihan Qiu. Qwen25 Technical Report. arXiv , 2024a. 6, 17 An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, Chujie Zheng, Dayiheng Liu, Fan Zhou, Fei Huang, Feng Hu, Hao Ge, Haoran Wei, Huan Lin, Jialong Tang, Jian Yang, Jianhong Tu, Jianwei Zhang, Jianxin Yang, Jiaxi Yang, Jing Zhou, Jingren Zhou, Junyang Lin, Kai Dang, Keqin Bao, Kexin Yang, Le Yu, Lianghao Deng, Mei Li, Mingfeng Xue, Mingze Li, Pei Zhang, Peng Wang, Qin Zhu, Rui Men, Ruize Gao, Shixuan Liu, Shuang Luo, Tianhao Li, Tianyi Tang, Wenbiao Yin, Xingzhang Ren, Xinyu Wang, Xinyu Zhang, Xuancheng Ren, Yang Fan, Yang Su, Yichang Zhang, Yinger Zhang, Yu Wan, Yuqiong Liu, Zekun Wang, Zeyu Cui, Zhenru Zhang, Zhipeng Zhou, and Zihan Qiu. Qwen3 Technical Report. arXiv , 2025. 2, 7, 17 Enneng Yang, Zhenyi Wang, Li Shen, Shiwei Liu, Guibing Guo, Xingwei Wang, and Dacheng Tao. Adamerging: Adaptive model merging for multi-task learning. In International Conference on Learning Representations (ICLR) , 2024b. 10 Enneng Yang, Li Shen, Guibing Guo, Xingwei Wang, Xiaochun Cao, Jie Zhang, and Dacheng Tao. Model merging in llms, mllms, and beyond: Methods, theories, applications, and opportunities. 
+
+ACM Computing Surveys , 58(8):1–41, 2026. 2, 3, 10 14 Preprint Jiacheng Ye, Zhihui Xie, Lin Zheng, Jiahui Gao, Zirui Wu, Xin Jiang, Zhenguo Li, and Lingpeng Kong. Dream 7B: Diffusion Large Language Models. arXiv , 2025. 1, 3, 6, 9, 17 Linyan Yu, Bowen Yu, Haiyang Yu, Fei Huang, and Yongbin Li. Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch. In International Conference on Machine Learning (ICML) , number 8, 2024. 10 Huaye Zeng, Dongfu Jiang, Haozhe Wang, Ping Nie, Xiaotong Chen, and Wenhu Chen. Acecoder: Acing coder rl via automated test-case synthesis. In Association for Computational Linguistics (ACL) , 2025. 7, 17 Fengqi Zhu, Rongzhen Wang, Shen Nie, Xiaolu Zhang, Chunwei Wu, Jun Hu, Jun Zhou, Jianfei Chen, Yankai Lin, Ji-Rong Wen, et al. Llada 1.5: Variance-reduced preference optimization for large language diffusion models. arXiv , 2025. 1 Kejian Zhu, Zhuoran Jin, Shangqing Tu, Hongbang Yuan, Yushi Bai, Kang Liu, Juanzi Li, and Jun Zhao. SFT Conflicts, RL Coexists: A Theoretical and Empirical Analysis of Multi-Task Learning for LLMs. arXiv , 2026. 10 15 Preprint 
+
+# Appendix 
+
+# Table of Contents 
+
+A Experimental Details 17 
+
+A.1 Models and the evaluation pipeline . . . . . . . . . . . . . . . . . . . . . . . . 17 A.2 Details for model merging . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19 A.3 Experimental details for section 2 . . . . . . . . . . . . . . . . . . . . . . . . . 20 A.4 GPU and training time . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 A.5 Hyperparameter search . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20 
+
+B Additional Results 23 
+
+B.1 Full results for analyses and ablations . . . . . . . . . . . . . . . . . . . . . . . 23 B.2 Full results of Dream-7B . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23 B.3 Full results of Nemotron-LD-3B . . . . . . . . . . . . . . . . . . . . . . . . . 24 B.4 Results of Nemotron-LD-8B . . . . . . . . . . . . . . . . . . . . . . . . . . . 24 B.5 DiffusionGemma with SLAKE Post-training . . . . . . . . . . . . . . . . . . . 25 B.6 Self-speculative decoding of Nemotron . . . . . . . . . . . . . . . . . . . . . . 25 B.7 Post-training types and norm ratios . . . . . . . . . . . . . . . . . . . . . . . . 25 
+
+C Analysis 29 
+
+C.1 Correction and error introduction along the A2D direction . . . . . . . . . . . . 29 C.2 Interpolation preserves complementary gains on released checkpoints . . . . . . 29 C.3 Aligned representation changes on released checkpoints . . . . . . . . . . . . . 29 
+
+D Limitations and Future Work 31 
+
+16 Preprint 
+
+## A EXPERIMENTAL DETAILS 
+
+This section describes how each model family is evaluated, how the merges are built, and how the coefficients are chosen. A.1 MODELS AND THE EVALUATION PIPELINE 
+
+Every diffusion model in this work is initialized from an AR model, as illustrated in Sec. 2. Each family has an AR base and its post-trained model, and a diffusion base Db and its post-trained model 
+
+Dp. We call the AR post-trained model the AR donor , because its task vector τA is the one we trans-fer, and we call Dp the diffusion parent , as in section 4, because it is the model A2D is built on and compared against. We take these relationships from each release’s paper and model card. Diffusion models and their A2D variants use the diffusion model’s official evaluation hyperparameters, and we reproduce each parent’s published numbers before evaluating any merge. Each family below gives its evaluation protocol and, specifically, every point at which we depart from the official description of the parent model. 
+
+Dream-7B (Ye et al., 2025) / Qwen2.5-7B (Yang et al., 2024a). Dream-7B adapts Qwen2.5-7B with a diffusion objective, and Dream-Instruct adds SFT on instruction pairs. IFEval, GSM8K, MATH-500 and HumanEval run in the Dream fork of lm-evaluation-harness at its released decoding settings and per-task budgets, with the chat template and one denoising step per generated token. IFEval is the mean of the four lm-eval metrics, and GSM8K and MATH-500 are 0-shot. MATH-500 replaces the release’s full MATH task at its 512 -token budget. HumanEval+ scores the generations of the fork’s humaneval instruct task with the EvalPlus (Liu et al., 2023) tests, and MBPP+ uses the Dream-Coder EvalPlus harness at Dream’s own 1,024 -token budget. IFBench is included to provide a more challenging instruction following benchmark (Pyatkin et al., 2026), generated with the same decoding settings at 1,280 tokens and scored with the official IFBench code at prompt-level loose accuracy. 
+
+GSM8K prompt. On GSM8K we add the system prompt “Solve the math problem with brief, direct reasoning. Do NOT restate the problem, do NOT use bullet points, and use as few steps as possible. On the final line, write the answer as ‘#### <number >’ and nothing else.” Without the prompt the model often runs out of the 256 -token budget before it reaches the final-answer format. The prompt helps the parent as well, and we use it for every Dream-7B GSM8K evaluation. The AR donor is evaluated with the same prompt for fairness. 
+
+Dream-Coder (Xie et al., 2025) / Qwen2.5-Coder (Hui et al., 2024). Dream-Coder-7B is built from Qwen2.5-Coder-7B, and Dream-Coder-Instruct applies SFT followed by GRPO, so its task vector carries both. HumanEval, MBPP and BigCodeBench(BCB) use the EvalPlus (Liu et al., 2023) fork released with Dream-Coder at its documented settings. We report HumanEval+ and MBPP+, and BCB runs on the Instruct split (full subset), following the default setting of the official release for DreamCoder. 
+
+DiffuCoder (Gong et al., 2026) / Qwen2.5-Coder (Hui et al., 2024) / AceCoder-Rule (Zeng et al., 2025). DiffuCoder-7B continues Qwen2.5-Coder-7B with diffusion pre-training on code, DiffuCoder-Instruct adds SFT, and DiffuCoder-cpGRPO adds coupled-GRPO. This gives two task vectors on one architecture: an SFT vector from Base to Instruct, paired with Qwen2.5-Coder-7B to Qwen2.5-Coder-7B-Instruct, and an RL vector from Instruct to cpGRPO, paired with Qwen2.5-Coder-7B-Instruct to AceCoder-Rule. We use the Dream-style EvalPlus harness with DiffuCoder’s own inference hyperparameters, such as temperature and denoising budget. DiffuCoder reports the best of T ∈ { 0.2, 0.3, 0.4} for the RL checkpoint, whereas we compare every variant at its default 
+
+T =0 .2. BCB runs on the Complete split, as reported in the main results of DiffuCoder, and we use Dream-Coder’s harness, with 512 steps and top-p 0.95 , as suggested in DiffuCoder. 
+
+DreamReasoner (Wu et al., 2026b) / Qwen3 (Yang et al., 2025). DreamReasoner-8B is initial-ized from Qwen3-8B-Base. We use the release’s block-diffusion decoder at its documented settings, with thinking enabled unless stated otherwise. AIME24/25 follow the paper, which averages eight runs at a 24 ,576 -token budget because the output varies between runs even at T =0 , and we report that mean as avg@ 8. MATH-500 uses a single greedy sample. 17 Preprint 
+
+Base evaluation. The DreamReasoner chat template wraps the answer in <think> markers that the base model has never seen, and it repeats them until the budget runs out. We therefore give the base model the plain problem with the same \boxed {} instruction. The transfer model reads the template normally, and we evaluate it in both modes. 
+
+Nemotron-Labs-Diffusion (Fu et al., 2026) / Ministral 3 (Liu et al., 2026). The 3B and 8B Nemotron-LD models are initialized from Ministral 3 Base. The four checkpoints are Nemotron-LD Base/Instruct and Ministral 3 Base-2512/Instruct-2512, and merges into the Instruct models retain the recipient’s tokenizer and chat template. Base-transfer models use the interface described below. We use NeMo-Skills for all evaluations. For the Ministral donor checkpoints, we sample one response per problem with temperature 0.7, top-p 0.95 , and a maximum of 8,192 output tokens. The donor evaluations use native Mistral chat formatting and benchmark-provided system instructions. 
+
+Base evaluation. Ideally the diffusion Base would use the same instruction-following interface as the post-trained models. Nemotron-LD-8B-Base does not have that interface yet. Its embedding rows for the chat markers <|im start|> and <|im end|> are exactly zero, because those ids sit on Ministral’s [IMG] and <pad> slots and are trained only at the Instruct stage. With no signal on the turn markers the Base cannot tell where the user turn ends, so it writes the role labels out as plain text and repeats them. It still answers math, but drops sharply on code, GPQA, IFEval and LiveCodeBench (Table 18). That score reflects a missing interface rather than the Base’s ability, and using it as a baseline would inflate the gains we report. We therefore use the raw prompt, which the Base can read, in the main results and give both settings in the appendix. We evaluate it on the raw problem text at its native positional setting, with EOS set to ID 2 ( </s> ) as in its generation configuration. 
+
+Transfer evaluation. The transfer model cannot use the Nemotron chat template either, for the same reason. Those two rows are among the mismatched rows frozen at Base (App. A.2), and the AR vector does not rewrite them. What the AR vector does bring is the donor’s own interface. 
+
+[INST] , [/INST] and </s> are IDs 3, 4 and 2, and these ids carry the same strings in both tokenizers, so they do receive the AR update. We therefore prompt the transfer rows in the donor’s format, <s>[INST] {problem }[/INST] , with no system prompt and no thinking marker. The difference is large. On the same 20 IFEval prompts at λ=1 .0, the Nemotron template leaves 12 of the 20 generations looping and scores 17 .9, while [INST] leaves 1 and scores 60 .8. The 3B transfer uses the same donor format, although its Base chat-marker embeddings are not zero. 
+
+Reasoner model for Nemotron-LD-8B For the 8B model we also consider the Ministral-3-8B-Reasoning donor, because the 8B diffusion model reasons on its own even when thinking is dis-abled. On LiveCodeBench (LCB) it emits </think> by itself in 15 .0% of non-thinking genera-tions, against 0% for the 3B model. A further 60 .8% of its generations carry a </think> that the server inserts at generated token 6,000 , a length artefact rather than a behaviour. The thinking-off comparison with an Instruct donor is therefore not fully matched at 8B. Unless otherwise stated, evaluations use 8,192 output tokens and the Instruct positional settings. 
+
+DiffusionGemma (Team et al., 2026) / Gemma 4 (Team, 2026). DiffusionGemma is initialized from Gemma 4-26B-A4B-Instruct and trained by supervised diffusion adaptation, sampler distilla-tion, and reinforcement learning. It has no public base checkpoint, so for this pair we study domain-specific fine-tuning instead of the Base/Instruct setup, using the Gemma 4 and DiffusionGemma fine-tunes released by Van Puyvelde et al. (2026) for SLAKE (Liu et al., 2021), VQA-RAD (Lau et al., 2018), and VQA-Med-2019 (Ben Abacha et al., 2019), with the two instruction-tuned check-points as the pre-task references. We use the Transformers implementation of the native block-diffusion decoder with block length 
+
+256 , at most 48 denoising steps per block, entropy bound 0.1, and temperature annealed from 0.8 to 
+
+0.4, stopping early once the predictions stop changing between steps. Thinking is disabled. All three datasets are evaluated 0-shot with the image followed by the question and a 256 -token budget, on all 
+
+1,061 English SLAKE test questions, all 451 public VQA-RAD test questions, and all 500 VQA-Med-2019 test questions. We report semantic answer accuracy judged by Qwen3.8-27B (Qwen Team, 2026) with greedy decoding and thinking disabled. Unlike Van Puyvelde et al. (2026), which evaluated 350 random questions per dataset with Claude Sonnet-4.6, we use all test questions and an open judge, so their results serve only as reference. 18 Preprint Table 5: Special-token mismatches across the four 3B checkpoints. All listed input-embedding rows are masked during task-vector composition.                                                                     
+
+> ID Ministral Base Ministral Instruct Nemotron Base Nemotron Instruct 10 [IMG] [IMG] <|im start|> <|im start|>
+> 11 <pad> <pad> <|im end|> <|im end|>
+> 12 [IMG BREAK] [IMG BREAK] <think> <think>
+> 13 [IMG END] [IMG END] </think> </think>
+> 14 [PREFIX] [PREFIX] <tool call> <tool call>
+> 15 [MIDDLE] [MIDDLE] </tool call> </tool call>
+> 16 [SUFFIX] [SUFFIX] <tool response> <tool response>
+> 17 [SYSTEM PROMPT] [SYSTEM PROMPT] </tool response> </tool response>
+> 18 [/SYSTEM PROMPT] [/SYSTEM PROMPT] <SPECIAL 18> <SPECIAL 18>
+> 19 [TOOL CONTENT] [TOOL CONTENT] <SPECIAL 19> <SPECIAL 19>
+> 24 [AUDIO] [AUDIO] <SPECIAL 24> <SPECIAL 24>
+> 25 [BEGIN AUDIO] [BEGIN AUDIO] <SPECIAL 25> <SPECIAL 25>
+> 32 [ARGS] [ARGS] <SPECIAL 32> <SPECIAL 32>
+> 33 [CALL ID] [CALL ID] <SPECIAL 33> <SPECIAL 33>
+> 34 [THINK] <SPECIAL 34> <SPECIAL 34> <SPECIAL 34>
+> 35 [/THINK] <SPECIAL 35> <SPECIAL 35> <SPECIAL 35>
+
+A.2 DETAILS FOR MODEL MERGING 
+
+Qwen-derived models. For Dream-7B, Dream-Coder, DiffuCoder, and DreamReasoner the dif-fusion model keeps its AR parent’s architecture, parameter names, and tensor shapes, so the merge is a direct element-wise combination of all parameters, with no remapping, freezing, or masking. Tokens that exist only in the diffusion tokenizer need no special treatment. The mask token and the other ids beyond the AR vocabulary never occur in the AR model’s training data, so τA is exactly zero on their input-embedding rows for the Qwen2.5-based vectors and small for Qwen3. We merge them with the same formula as every other row. 
+
+Nemotron / Ministral. Nemotron needs an explicit mapping from Ministral’s language-model pa-rameters to the diffusion backbone. The vocabulary sizes agree, but 14 token IDs denote different tokens in the two families, and IDs 34–35 additionally differ between Ministral Base and Instruct. Some of these are generation controls: ID 11 is padding in Ministral but end-of-turn in Nemotron, and IDs 12–13 are image delimiters in Ministral but thinking delimiters in Nemotron (Table 5). For protected Instruct merges, we keep these 16 input-embedding rows at their values in the Nemotron Instruct recipient, excluding them from both the AR-vector addition and the diffusion-vector sub-traction. For corrected Base-transfer experiments, we additionally freeze the diffusion mask-token embedding (ID 100), keeping all 17 protected rows at their Nemotron Base values. The diffusion output head is likewise kept at its value in the recipient checkpoint (Base for transfer into Base, Instruct for merges into Instruct), so donor updates enter through the mapped backbone and the compatible input embeddings without touching the diffusion readout. Instruct merges re-tain the Nemotron Instruct evaluation interface, whereas Base-transfer models use the donor-format 
+
+[INST] interface. Prompt formats, positional settings, and generation budgets for these models and their Base baselines are specified in App. A.1. 
+
+DiffusionGemma / Gemma 4. We map the AR updates to the corresponding DiffusionGemma language-model projections. The diffusion encoder and decoder share their base weights, so each AR update is applied once to the shared parameter and affects both branches. The diffusion fine-tuning adapters, which hold separate encoder and decoder updates, stay unmerged and are scaled according to the experimental formula. Diffusion-specific adapter updates such as the self-conditioning projections have no AR counterpart. The vision encoder, embeddings, normalization parameters, and output head are unchanged, and all merged models keep the diffusion recipient’s tokenizer and chat template. 19 Preprint A.3 EXPERIMENTAL DETAILS FOR SECTION 2
+
+Training. For mathematical reasoning we fine-tune Qwen2.5-7B and Dream-Base-7B on 100K NuminaMath-CoT (LI et al., 2024) examples; for coding we fine-tune Qwen2.5-Coder-7B and Dream-Coder-Base-7B on 100K EpiCoder-func (Wang et al., 2025b) examples. Training uses AdamW ( β1 = 0 .9, β2 = 0 .95 , weight decay 0.01 ), learning rates of 5 × 10 −6 for the AR models and 2 × 10 −6 for Dream, cosine decay with 10% warmup, batch size 256, and one epoch (390 up-dates), with sequences right-truncated to 2,048 tokens. Prompts use each model’s single-user chat template and the loss covers only the response tokens. AR models use causal next-token cross-entropy. Dream uses the bidirectional masked-denoising loss with CART time reweighting and a random per-batch sequence cutoff. 
+
+Evaluation. We evaluate 0-shot on GSM8K, MATH-500, HumanEval+, and MBPP+, reporting answer accuracy for math and pass@1 for code, including the extended EvalPlus tests. To isolate the effects of fine-tuning, we evaluate Dream using the same chat template as during training, without additional system instructions or assistant prefilling. Specifically, we apply Dream’s native chat tem-plate to a single user message, retaining its default system message (“You are a helpful assistant.”) and setting add generation prompt=True . We add no custom system message or assistant continuation beyond the template’s generation prefix. For MATH-500, the user message contains the original problem. For GSM8K, it contains the question and the additional instruction, formatted as 
+
+Q: {question }, followed by the instruction for concise reasoning as in Section A.1, and an A: 
+
+suffix. Because fine-tuning lengthens responses, the budget is 512 tokens for GSM8K and coding and 1,024 for MATH-500. Dream uses diffusion-step budgets equal to the generation-token budgets,, entropy-based unmasking, temperature 0.1, and top-p 0.9. For GSM8K, we extract a numeric answer from the final \boxed {} expression when parseable; otherwise, we use the harness’s flexible nu-meric extraction. For MATH-500, we first use the Minerva boxed-answer and final-answer-pattern extraction. If these fail, we apply a Math-Verify-based prose extraction fallback. Predictions for MATH-500 are then evaluated using the Minerva normalization and symbolic-equivalence routine; Math-Verify is used for fallback extraction. For coding, the user message contains the benchmark task prompt, without additional coding instructions or an assistant code prefill. We apply the same frozen scoring implementation to all compared models. We construct merged checkpoints using se-quential CPU FP32 arithmetic, followed by a single cast to BF16, retaining the Dream base model’s configuration and tokenizer. Math sweeps use first 200 examples in dataset order per benchmark unless stated otherwise, and coding evaluations use all 164 HumanEval and 378 MBPP problems. A.4 GPU AND TRAINING TIME 
+
+All evaluations run on a single H100, H200, or B300 node. Because these pools do not give identical numbers, every run in a hyperparameter sweep uses the same hardware, and so do directly compared variants (base and transfer, post-trained and merged) on each benchmark. The four fine-tuning runs of section 2 take 30.8 GPU-hours in total, 6.1–9.2 GPU-hours each on four H100/H200 GPUs. A.5 HYPERPARAMETER SEARCH 
+
+For each family and construction, we fix an anchor benchmark (Table 7). For example, for instruc-tion following the anchor is IFEval. The coefficient is searched on the anchor only and then kept fixed on every other benchmark, so the main table reports the anchor alongside tasks that played no role in the selection. For DiffuCoder, we use HumanEval+ as the anchor for instruction tuning, consistent with the other coding models, and MBPP+ for RL because we do not observe a gain from the instruction-tuned model to the RL model on HumanEval+ in our setup. Full sweeps for the main results and the key ablations are in Table 7, 9, 10 and 8. 
+
+Efficiency of hyperparameter search Evaluating the transfer hyperparameter sweeps for the Nemotron-LD variants in Table 8 on all 541 IFEval prompts with the full 8,192 -token generation budget was too expensive, so we used a 1,280 -token budget while retaining the full dataset for coefficient selection. This choice was motivated by a separate budget comparison on the Nemotron-LD-8B protected merge (Table 11): the shorter budget preserved the ranking and selected coefficient as well as median output lengths across the tested points. 20 Preprint Table 6: Coefficient selection for each transfer family. Each coefficient is selected on its anchor benchmark and kept fixed on all other benchmarks. For the Nemotron Reasoning-donor row, the anchors are listed in transfer / merge order: IFEval without thinking and MATH-500 with thinking, respectively. Full sweeps are reported in Tables 8 and 7. 
+
+AR → Diffusion vector type anchor transfer α merge λ
+
+Qwen2.5-7B → Dream-7B instruct (SFT) IFEval 0.9 0.6 Qwen2.5-Coder → Dream-Coder code (SFT) HumanEval+ 0.6 0.2 Qwen2.5-Coder → DiffuCoder code (SFT) HumanEval+ 0.1 0.2 AceCoder-Rule → DiffuCoder code (RL) MBPP+ 0.2 0.5 Qwen3-8B → DreamReasoner reasoning MATH-500 0.5 0.2 Ministral-3-3B → Nemotron-LD-3B instruct (SFT) IFEval 0.9 0.3 Ministral-3-8B → Nemotron-LD-8B instruct (SFT) IFEval 1.4 0.4 Ministral-3-8B-Reasoning → Nemotron-LD-8B reasoning IFEval / MATH-500 0.8 0.2 Gemma 4 → DiffusionGemma SLAKE (SFT) SLAKE 1.0 0.1 Gemma 4 → DiffusionGemma VQA-RAD (SFT) VQA-RAD 0.7 0.3 
+
+Table 7: Merge , Db + (1 − λ)τD + λτ A, swept on each family’s anchor benchmark. For Diffu-sionGemma, Db denotes the instruction-tuned reference checkpoint. Shaded = selected λ, bold =best score. All results are in percentages. 
+
+AR → Diffusion Anchor λ
+
+0 (parent) 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 1.0
+
+Qwen2.5-7B → Dream-7B IFEval 63.0 65.0 67.6 — 69.8 70.3 72.8 72.6 71.5 56.7 Qwen2.5-Coder → Dream-Coder HumanEval+ 77.4 76.2 79.3 76.2 77.4 — — — — —Qwen2.5-Coder → DiffuCoder HumanEval+ 65.9 70.7 74.4 72.6 71.3 — — — — —AceCoder-Rule → DiffuCoder (RL) MBPP+ 66.9 — 66.4 69.0 68.3 69.0 66.9 — — —Qwen3-8B → DreamReasoner MATH-500 93.6 93.2 94.8 94.0 94.2 — — — — —Ministral-3-3B-Instruct → Nemotron-LD-3B IFEval 68.0 — 71.5 72.9 71.9 72.5 69.1 — 51.2 —Ministral-3-8B-Instruct → Nemotron-LD-8B IFEval 69.8 — 74.4 74.1 78.8 76.2 — — — —Ministral-3-8B-Reasoning → Nemotron-LD-8B MATH-500 87.2 90.8 92.6 90.4 90.2 — 39.4 — 11.4 —Gemma 4 → DiffusionGemma SLAKE 83.1 83.3 82.9 — 82.3 — 81.8 — 81.2 77.1 Gemma 4 → DiffusionGemma VQA-RAD 71.6 72.7 73.8 74.5 73.6 — 68.7 — 71.8 70.5 
+
+Table 8: Transfer , Db + λτ A: the AR vector on the diffusion base. For DiffusionGemma, Db
+
+denotes the instruction-tuned reference checkpoint. Shading and bold as above; λ=0 is the base. All results are in percentages.                                                                                                                                                                                                        
+
+> AR →Diffusion Anchor α
+> 0(base) 0.10.20.30.40.50.60.70.80.91.01.11.31.41.5
+> Qwen2.5-7B →Dream-7B IFEval 50.5 —54.1 ——58.4 58.7 59.1 58.4 59.3 56.7 ————Qwen2.5-Coder →Dream-Coder HumanEval+ 57.9 ———65.9 65.9 67.1 61.0 59.1 ——————Qwen2.5-Coder →DiffuCoder HumanEval+ 61.6 60.4 57.3 —47.6 ——————————AceCoder-Rule →DiffuCoder (RL) MBPP+ 65.9 66.1 66.9 65.3 65.3 ——————————Qwen3-8B →DreamReasoner MATH-500 ————74.0 76.0 75.8 ————————Ministral-3-3B-Instruct →Nemotron-LD-3B IFEval 25.2 ——————53.4 56.2 59.6 58.1 ————Ministral-3-8B-Instruct →Nemotron-LD-8B IFEval 28.2 ————————59.0 61.6 61.0 62.2 64.9 63.2 Ministral-3-8B-Reasoning →Nemotron-LD-8B IFEval 28.2 ———53.5 —55.1 56.9 57.6 57.6 56.8 ————Gemma 4 →DiffusionGemma SLAKE 63.2 —68.0 —71.6 —74.9 —76.8 76.9 77.1 75.5 ———Gemma 4 →DiffusionGemma VQA-RAD 57.4 —65.0 —68.5 72.9 72.3 74.1 71.8 —70.5 ————
+
+Table 9: Dp + ατ A: the AR vector added to the post-trained diffusion model. Shading and bold as above. All results are in percentages. 
+
+AR → Diffusion Anchor α
+
+0 (parent) 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2
+
+Qwen2.5-7B → Dream-7B IFEval 63.0 — 67.7 — 70.9 — 71.0 73.3 73.5 74.5 74.9 77.1 75.5 Qwen2.5-Coder → Dream-Coder HumanEval+ 77.4 — 75.0 76.8 77.4 77.4 75.6 — — — — — —Qwen2.5-Coder → DiffuCoder HumanEval+ 65.9 — 66.5 — 68.9 69.5 67.7 60.4 — — — — —AceCoder-Rule → DiffuCoder (RL) MBPP+ 66.9 — — — 66.9 66.9 66.4 — 66.9 — — — —Qwen3-8B → DreamReasoner MATH-500 93.6 — 93.6 93.6 93.8 94.4 93.6 94.2 — — — — —Ministral-3-3B-Instruct → Nemotron-LD-3B IFEval 68.0 68.1 69.1 69.2 71.0 70.0 69.8 69.4 66.5 64.6 — — —Ministral-3-8B-Instruct → Nemotron-LD-8B IFEval 69.8 69.6 71.3 73.5 74.3 75.4 72.9 73.2 73.6 71.4 — — —Ministral-3-8B-Reasoning → Nemotron-LD-8B MATH-500 87.2 88.4 90.8 91.6 89.2 — 79.6 — 35.4 — — — —Gemma 4 → DiffusionGemma SLAKE 83.1 83.4 82.8 — 82.4 — 81.6 — 79.3 — 77.9 — —Gemma 4 → DiffusionGemma VQA-RAD 71.6 — 73.4 73.4 74.7 74.3 73.2 — 74.3 — 71.4 — —
+
+21 Preprint Table 10: Db + ατ D : the model’s own post-training vector rescaled, no AR term. Shading and bold as above. All results are in percentages. 
+
+Diffusion (no AR term) Anchor α
+
+0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 (parent) Qwen2.5-7B → Dream-7B IFEval — — — — — 61.5 — 61.3 63.4 63.0 Qwen2.5-Coder → Dream-Coder HumanEval+ — — — — — — — 72.0 78.7 77.4 Qwen2.5-Coder → DiffuCoder HumanEval+ — — — 68.3 68.9 70.1 65.9 66.5 65.9 65.9 AceCoder-Rule → DiffuCoder (RL) MBPP+ — 65.6 — 66.7 69.3 68.8 69.6 67.5 — 66.9 Qwen3-8B → DreamReasoner MATH-500 — — — — 88.4 89.0 88.8 93.4 89.8 93.6 Ministral-3-3B-Instruct → Nemotron-LD-3B IFEval 28.4 49.7 60.9 67.3 70.1 70.3 72.0 71.3 70.5 68.0 Ministral-3-8B-Instruct → Nemotron-LD-8B IFEval 20.8 21.4 24.2 56.4 70.1 71.7 70.8 70.5 71.5 69.8 Ministral-3-8B-Reasoning → Nemotron-LD-8B MATH-500 — 0.0 — 41.4 — 83.6 87.4 90.2 90.8 87.2 Gemma 4 → DiffusionGemma SLAKE — 68.7 — 75.6 — 80.3 82.6 84.0 83.4 83.1 Gemma 4 → DiffusionGemma VQA-RAD — 66.7 — 69.0 — 71.2 — 71.4 72.5 71.6 
+
+Table 11: Short-budget IFEval comparison on the 8B A2D merge. Both budgets evaluate the same 541 prompts with thinking off and select λ = 0 .4. Scores are percentages; median lengths are generated token counts. Bold marks the best score per budget. 
+
+1,280-token budget 8,192-token budget 
+
+λ Score Median length Score Median length 0.3 74.03 314 74.07 308 0.4 78.00 332 78.76 336 0.5 75.59 323 76.20 315 
+
+22 Preprint 
+
+## B ADDITIONAL RESULTS 
+
+In this section, we report additional experimental results. B.1 FULL RESULTS FOR ANALYSES AND ABLATIONS 
+
+Here we put the full results for the analyses and ablations conducted in section 4. • Table 12 presents the full results for the decomposition of the contributions by adding the AR task vector and downscaling the diffusion task vector. • Table 13 presents the full results for transfering the diffusion vector back to the AR base model. • Figure 5 (a) compares the ”AR-ness” between the diffusion parent model and the A2D merged model, showing that A2D does not shift the model systematically toward autore-gressive generation. • Figure 5 (b) shows that A2D mainly changes the diffusion parent’s token prediction at positions where the diffusion parent has a low confidence. • Table 14 presents the module-wise ablation of the transferred AR update. For A2D -Transfer, removing the MLP component causes a substantial performance drop, while re-moving attention has little effect. For A2D -Merge, reverting the MLP modules to the diffu-sion parent nearly preserves full performance, whereas reverting attention causes a larger drop, suggesting that MLPs mainly carry standalone AR transfer while attention provides more complementary gains during merging. • Table 15 shows that continued-pretraining vectors do not transfer effectively, suggesting that A2D is most suitable for relatively local post-training updates rather than pretraining-scale model transformations. 1 2 3 4 5 6 7 8
+
+> k
+> 0.7 0.8 0.9 1.0
+> AR-ness@ k
+> autoregressive
+
+Dream, MATH-500     
+
+> Parent, global Parent, local A2D, global A2D, local 0.2 0.4 0.6 0.8 1.0
+> parent confidence at the token
+> 0.1 0.3 1310 30 60
+> tokens changed by A2D (%)
+
+MATH-500 
+
+Figure 5: How A2D alters diffusion generation. Left: A2D largely preserves the parent’s decoding order. Right: Prediction changes concentrate on low-confidence tokens. Table 12: Sources of the A2D gain. Best-performing point for each construction, with coefficients selected on the anchor task. Avg. rank is the mean within-pair rank (1 = best) and Avg. Acc. is the mean over the seven pairs. All results are in percentages.                                                                   
+
+> Dream DreamCoder DiffuCoder DiffuCoder-RL DreamReasoner Nemotron-3B DiffusionGemma Avg. rank ↓Avg. Acc.
+> IFEval HumanEval+ HumanEval+ MBPP+ MATH-500 IFEval VQA-RAD
+> Diffusion parent Dp63.0 77.4 65.9 66.9 93.6 68.0 71.6 3.7 72.3
+> +τAonly Dp+λτ A77.1 77.4 69.5 66.9 94.4 71.0 74.7 2.4 75.9
+> −τDonly Dp−λτ D63.4 78.7 70.1 69.6 93.4 72.0 72.5 2.4 74.2
+> A2D merge Dp+λ(τA−τD)72.8 79.3 74.4 69.0 94.8 72.9 74.5 1.4 76.8
+
+B.2 FULL RESULTS OF DREAM -7B Here, we report the results used in Figure 2a and in Figure 2b in Table 16. 23 Preprint Table 13: Reverse direction: diffusion post-training vector into the AR model. AR’s rows use their native budget. All results are in percentages.                                                                    
+
+> Dream-7B →Qwen2.5-7B DiffuCoder →Qwen2.5-Coder Nemotron-LD-3B →Ministral-3-3B IFEval IFBench GSM8K MATH-500 HumanEval+ MBPP+ IFEval MATH-500 MBPP Diffusion donor 63.0 19.0 83.0 38.4 65.9 65.9 68.0 76.8 73.0 AR base 40.5 16.3 62.5 17.4 74.4 62.2 45.4 60.2 64.3
+> A2D (transfer, α=1 .0/0.1/0.9)46.7 19.0 56.0 16.2 74.4 64.8 55.7 35.0 55.8 AR instruct 75.3 31.7 83.0 56.0 86.6 71.7 67.0 82.4 76.2
+> A2D (merge, λ=0 .1/0.2/0.2)77.3 30.7 82.9 56.4 86.6 71.7 69.0 81.4 77.0
+
+Table 14: Module-wise ablation of the transferred AR update. MATH-500 accuracy on Dream-7B. For A2D-Merge, the ablated module is reverted to the diffusion parent Dp, while all remaining modules use the merged weights. All results are in percentages. 
+
+A2D-Transfer A2D-Merge Full model 40.8 45.8 
+
+w/o AR attention 40.8 43.0 w/o AR MLP 30.4 45.6 
+
+B.3 FULL RESULTS OF NEMOTRON -LD-3B Table 17 reports the full Nemotron-LD-3B results under both diffusion and autoregressive decoding. For the diffusion Base, we evaluate two prompting protocols. The main paper reports the native raw-prompt result, which provides the stronger overall Base performance. For completeness, we additionally evaluate the Base using the same instruction prompt format as A2D-Transfer, providing a prompt-matched comparison. Under either protocol, A2D-Transfer substantially strengthens the Base checkpoint, bringing it close to or beyond the Instruct model on several benchmarks. A2D-Merge then provides further improve-ments over the Instruct checkpoint under both diffusion and autoregressive decoding. B.4 RESULTS OF NEMOTRON -LD-8B Here, we provide the full results for Nemotron-LD-8B in Table 18. At the 8B scale, we evaluate A2D with both instruction-tuning and reasoning-oriented AR updates. 
+
+Instruction-tuning updates. With the Ministral-3-8B-Instruct donor, A2D-Transfer broadly im-proves the diffusion base, while A2D-Merge provides gains on several benchmarks under both dif-fusion and AR decoding. The merging gains are less consistent than for the 3B model. Impor-tantly, this setting exhibits a mismatch in generation behavior: Nemotron-LD-8B produces long, reasoning-like responses on reasoning-intensive tasks even with thinking disabled, whereas merg-ing the Instruct update substantially shortens these generations (Figure 6). Thus, comparisons on these tasks are partially confounded by changes in effective reasoning behavior in addition to the weight-space composition itself. 
+
+Reasoning updates. Separately, we evaluate A2D using the Ministral-3-8B-Reasoning donor, with thinking enabled for both the diffusion parent and the merged model. Unlike the instruction-tuning setting above, both models use the same explicit thinking mode, avoiding the generation-behavior mismatch. Under the official generation budget, A2D-Merge improves the mean score from 59 .9 to 64 .3, with substantial gains on reasoning-related benchmarks such as MATH-500 (87 .2 → 92 .6), GPQA ( 36 .4 → 44 .4), AIME24 ( 33 .3 → 46 .7), and LiveCodeBench ( 26 .9 → 38 .1). The gains remain strong when doubling the generation budget, where the mean further increases from 60 .4 to 65 .6. These results show that reasoning-oriented AR post-training updates can be effectively composed with diffusion models at the 8B scale under matched reasoning behavior. 24 Preprint Table 15: Continued pre-training vectors do not transfer. Adding the AR continued-pretraining vector to the diffusion base does not improve performance, even at small coefficients. These vectors are 70 –82 × larger than the post-training vectors used in our main experiments. Bold denotes the best α> 0 result; all results are percentages. 
+
+Recipient Benchmark α in Db + ατ CPT 
+
+0 0.01 0.05 1.0
+
+Math ( 82 ×), Qwen2.5-Math − Qwen2.5 Dream-7B-Base GSM8K 76.6 76.6 74.8 0.0 Code ( 70 ×), Qwen2.5-Coder − Qwen2.5 Dream-Coder-Base HumanEval 63.4 61.6 57.3 0.0 
+
+Table 16: Qwen2.5-7B → Dream-7B on six tasks. One transfer model ( α=0 .9) and one merged model ( λ=0 .6), both selected on IFEval, improve every task over the corresponding baseline. All results are in percentages.                                        
+
+> Qwen2.5-7B →Dream-7B IFEval IFBench GSM8K MATH-500 HumanEval+ MBPP+ AR donor 75.3 31.7 83.0 36.6 76.8 69.0 Base 49.7 14.0 66.5 20.8 48.8 59.3
+> A2D (transfer) 59.2 25.0 81.7 40.2 54.9 62.7
+> Instruct 63.0 19.0 83.0 38.4 51.8 57.1
+> A2D (merge) 72.8 22.3 83.7 45.0 59.8 58.7
+
+B.5 DIFFUSION GEMMA WITH SLAKE P OST -TRAINING 
+
+In the main paper, we report results for merging with DiffusionGemma using checkpoints fine-tuned on VQA-RAD. In Table 19, we additionally report the same setup using checkpoints fine-tuned on SLAKE. Unlike on VQA-Med, where the AR and diffusion models achieve comparable perfor-mance, on SLAKE the AR model is substantially weaker than its diffusion counterpart, providing a complementary setting where the donor itself is less capable than the recipient. Despite this gap, the AR SLAKE task vector transfers effectively to the diffusion base and further improves the diffusion post-trained model across all three benchmarks when transferred or merged. This shows that AR updates can remain complementary even when the donor itself is weaker than the recipient. B.6 SELF -SPECULATIVE DECODING OF NEMOTRON 
+
+Table 20 evaluates whether the benefits of A2D extend to self-speculative decoding. We compare each merged checkpoint with its corresponding Instruct parent under matched decoding settings, reporting accuracy, tokens per forward evaluation (TPF), and generation time per token. We use NVIDIA’s native linear self-speculative decoding, with diffusion drafting and autoregressive verifi-cation, a block size of 32, threshold 0, and no LoRA adapter. All runs use greedy decoding, with the same generation and thinking budgets specified in Appendix A.1. Across the evaluated configurations, A2D consistently increases TPF and generally improves accu-racy. The non-thinking merges improve both accuracy and observed time per token on both bench-marks and at both model sizes. These benefits also extend to MATH-500 with the reasoning donor and thinking enabled. B.7 POST -TRAINING TYPES AND NORM RATIOS 
+
+As shown in Table 21, we concatenate parameter differences over backbone tensors (attention, MLP, and normalization layers) and compute their ℓ2 norms and cosine similarities. The Nemotron measurements additionally include compatible input-embedding rows after key mapping, exclud-ing protected rows and unmatched parameters. All measurements exclude output heads, the other 25 Preprint Table 17: Ministral-3-3B-Instruct → Nemotron-LD-3B. DLM and AR denote diffusion and au-toregressive decoding of the same checkpoint. Mean excludes IFEval. Bold marks the better result within each Instruct-merge pair. All results are in percentages. 
+
+Mode GSM8K MATH-500 HumanEval MBPP IFEval MMLU GPQA AIME24 AIME25 LCB-CPP Mean AR donor AR 91.3 83.0 80.5 75.9 65.1 67.9 40.9 30.0 13.3 27.1 56.7 Base (raw protocol) DLM 59.1 40.0 64.6 70.9 23.2 62.0 35.4 0.0 0.0 9.9 38.0 Base (Instruct protocol) DLM 78.0 34.6 39.6 38.6 25.8 55.1 26.3 0.0 0.0 4.0 30.7 
+
+A2D (transfer) DLM 88.1 52.6 72.6 74.3 60.6 62.8 33.3 3.3 3.3 14.1 44.9 
+
+Base (raw protocol) AR 52.1 50.4 71.3 72.8 21.1 58.0 32.8 10.0 13.3 14.5 41.7 
+
+A2D (transfer) AR 89.2 60.4 73.8 74.6 59.0 62.6 33.3 6.7 0.0 14.5 46.1 
+
+Instruct DLM 89.2 76.8 73.2 73.0 68.0 72.1 35.4 10.0 13.3 16.3 51.0 
+
+A2D (merge) DLM 90.1 79.6 75.0 75.7 72.9 72.9 43.4 16.7 13.3 18.9 54.0 
+
+Instruct AR 87.6 76.0 73.8 69.8 68.8 71.9 41.9 23.3 13.3 17.6 52.8 
+
+A2D (merge) AR 89.3 81.0 79.9 75.1 72.8 72.5 38.4 20.0 13.3 18.7 54.3 
+
+Table 18: Ministral-3-8B → Nemotron-LD-8B. DLM and AR denote diffusion and autoregressive decoding of the same checkpoint. Mean excludes IFEval and, when unavailable, MMLU, which under some settings exhibits repetitive generation and requires over four days to complete. Bold 
+
+marks the better result within each corresponding pair. All results are in percentages. 
+
+Mode GSM8K MATH-500 HumanEval MBPP IFEval MMLU GPQA AIME24 AIME25 LCB-CPP Mean AR donor AR 93.2 87.8 77.4 77.8 69.5 76.7 50.0 30.0 26.7 34.8 61.6 Base (raw protocol) DLM 64.7 51.2 77.4 82.0 28.2 38.4 34.3 13.3 20.0 17.0 44.3 Base (Instruct protocol) DLM 78.2 59.8 4.9 13.2 21.5 — 9.1 6.7 10.0 2.2 23.0 
+
+A2D (transfer) DLM 89.5 71.6 75.0 81.7 65.7 72.4 37.4 13.3 6.7 11.2 51.0 
+
+Base (raw protocol) AR 63.8 60.2 76.2 79.9 26.0 53.6 33.3 13.3 20.0 13.4 46.0 
+
+A2D (transfer) AR 89.7 69.8 74.4 79.4 62.6 70.1 39.9 6.7 13.3 12.8 50.7 
+
+Instruct DLM 93.7 89.2 73.8 62.2 69.8 79.1 44.4 30.0 30.0 29.3 59.1 
+
+A2D (merge) DLM 94.5 89.0 71.3 65.3 78.8 78.6 42.9 33.3 26.7 28.0 58.8 Instruct AR 93.5 88.6 78.0 65.1 70.8 79.8 48.0 33.3 26.7 35.5 60.9 
+
+A2D (merge) AR 93.9 89.4 79.3 72.2 74.9 78.8 47.0 30.0 26.7 31.1 60.9 
+
+thinking , official budget ( 8,192 total / 6,000 thinking), reasoning donor Instruct DLM 92.4 87.2 86.0 87.3 75.5 — 36.4 33.3 30.0 26.9 59.9 
+
+A2D (merge) DLM 94.1 92.6 79.3 86.2 74.7 — 44.4 46.7 33.3 38.1 64.3 
+
+thinking, double budget (16 ,384 total / 12 ,000 thinking), reasoning donor Nemotron-LD-8B-Instruct DLM 92.2 87.0 85.4 87.3 75.6 — 40.4 33.3 30.0 27.3 60.4 
+
+A2D (merge) DLM 94.0 92.2 79.3 86.5 74.6 — 46.0 53.3 33.3 40.5 65.6 
+
+model families also exclude all input embeddings. We define ∆b = Db − Ab, ∆p = Dp − Ap,
+
+τA = Ap − Ab, and τD = Dp − Db.For most SFT pairs, the AR-to-diffusion conversion direction remains highly stable after post-training, with cos(∆ b, ∆p) ≥ 0.98 , while the AR and diffusion post-training vectors have low cosine similarity, indicating largely distinct updates. DreamReasoner shows a larger change in the conversion direction and also has a substantially larger AR post-training update. The update scale is also markedly different between post-training and continued pre-training. Post-training vectors have relatively small norms, whereas continued-pretraining vectors are substan-tially larger, potentially moving the resulting checkpoints beyond the local low-loss region in which weight-space composition is most effective. In addition, the code continued-pretraining vectors are strongly aligned across the AR and diffusion paradigms, in contrast to the near-orthogonality observed for post-training vectors. 26 Preprint 10 2
+
+> 10 3
+> 10 4
+> Mean generated tokens
+> 175 579 515 344 643 113 494 1571 1057 1115 168 598 282 101 830 115 360 867 1328 1162
+> 8192
+
+Nemotron-LD-3B, official protocol (8192 tokens, thinking off) 
+
+parent merge ¸ = 0 :3 (Instruct donor) 
+
+> 10 2
+> 10 3
+> 10 4
+> Mean generated tokens
+> 326 1078 540 165 1403 483 2713 5205 4767 4971 286 972 382 183 1414 238 1074 3642 2845 1159
+> 8192
+
+Nemotron-LD-8B, official protocol (8192 tokens, thinking off) 
+
+parent merge ¸ = 0 :4 (Instruct donor) 
+
+GSM8K MATH-500HumanEval MBPP IFEval MMLU GPQA AIME24 AIME25 LCB 
+
+> 10 2
+> 10 3
+> 10 4
+> Mean generated tokens
+> 310 1050 970 618 2470 6680 4130 4572 5924 361 1118 987 361 1369 5734 4512 5390 6075
+> 8192
+
+Nemotron-LD-8B, thinking on, official budget (8192 total / 6000 thinking) 
+
+parent (thinking) merge ¸ = 0 :2 (Reasoning donor, thinking) 
+
+Figure 6: Generation-length mismatch in Nemotron-LD. The 8B model, unlike the 3B one, ex-hibits longer, reasoning-like generations even with thinking disabled. Enabling thinking substan-tially reduces the length mismatch between the parent and merged models. Table 19: AR SLAKE post-training transfer from Gemma to DiffusionGemma. AR donor denotes the AR checkpoint providing the task vector. Base denotes the instruction-tuned diffusion checkpoint. Anchor task used for hyperparameter selection is highlighted. Bold marks the best result compared to the corresponding baseline. All results are in percentages. 
+
+Gemma 4 → DiffusionGemma VQA-RAD SLAKE VQA-Med AR donor 58.09 80.68 37.20 Base 57.43 63.24 43.20 
+
+A2D (transfer) 56.54 77.10 37.20 Post-trained 60.75 83.13 39.60 
+
+A2D (merge) 61.64 83.32 40.00 
+
+27 Preprint Table 20: Accuracy and efficiency of self-speculative decoding. TPF is P 
+
+> i
+
+Ti/ P 
+
+> i
+
+NFE i, in-cluding thinking tokens. Relative time is normalized generation time per token within each dataset, model size, and thinking setting; lower is better. Timings are observational and exclude model loading and final grading. Accuracy results are percentages (MATH-500 accuracy; MBPP base-test pass@1), while TPF and relative time are ratios. Accuracy is in percentages. 
+
+MATH-500 MBPP Model Acc. ↑ TPF ↑ Rel. time ↓ Acc. ↑ TPF ↑ Rel. time ↓
+
+Ministral-3-3B-Instruct → Nemotron-LD-3B, thinking off 
+
+Instruct parent 76.6 4.96 1.00 69.8 3.71 1.00 
+
+A2D (merge) 80.8 5.04 0.87 74.9 3.90 0.80 
+
+Ministral-3-8B-Instruct → Nemotron-LD-8B, thinking off 
+
+Instruct parent 87.0 5.34 1.00 68.0 3.42 1.00 
+
+A2D (merge) 88.6 6.07 0.88 73.0 3.55 0.77 
+
+Ministral-3-8B-Reasoning → Nemotron-LD-8B, thinking on 
+
+Instruct parent 87.6 3.70 1.00 87.8 3.77 1.00 
+
+A2D (merge) 91.4 4.04 0.81 84.4 3.84 1.53 
+
+Table 21: Geometry of post-training and paradigm-conversion directions across model pairs. 
+
+Measurements use backbone parameters and, for Nemotron, compatible input embeddings after key mapping, excluding protected rows. Output heads are excluded throughout.                                                                                              
+
+> diffusion ←AR post-training ∥τA∥∥τD∥∥∆b∥∥∆p∥cos(∆ b,∆p)cos( τA, τ D)
+> Qwen2.5-7B →Dream-7B instruct (SFT) 23.0 31.5 729 732 +0 .999 +0 .013
+> Qwen2.5-Coder →Dream-Coder code (SFT) 87.0 84.6 589 602 +0 .980 +0 .023
+> Qwen3-8B →DreamReasoner reasoning (SFT / SFT+RL) 189.2 295.8 459 556 +0 .803 +0 .118
+> Ministral-3 →Nemotron-LD-3B instruct (SFT), cross-arch. 43.1 17.1 280.9 271.4 +0 .987 +0 .075
+> Ministral-3 →Nemotron-LD-8B instruct (SFT), cross-arch. 42.2 16.3 387.0 380.4 +0 .994 +0 .070
+> Qwen2.5-Coder →DiffuCoder code (SFT) 87.0 33.3 627 630 +0 .989 +0 .005
+> AceCoder-Rule →DiffuCoder code (RL) 0.68 4.10 630 630 +1 .000 +0 .004
+> Continued pre-training (knowledge) vectors, for contrast ∥vA∥∥vD∥cos( vA, v D)
+> code knowledge continued pre-training 1603.6 1460.9 ———+0 .869
+> math knowledge continued pre-training 1876.9 —————
+
+28 Preprint 
+
+## C ANALYSIS 
+
+C.1 CORRECTION AND ERROR INTRODUCTION ALONG THE A2D DIRECTION 
+
+We further characterize how A2D changes model predictions by tracking beneficial and adverse prediction transitions as the AR contribution increases. 0.0 0.2 0.4 0.6 0.8 1.0                                              
+
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100%
+> Rate
+> Qwen2.5-7B !Dream-7B
+> 0.0 0.1 0.2 0.3 0.4
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100% Qwen2.5-Coder !Dream-Coder
+> 0.0 0.1 0.2 0.3 0.4
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100% Qwen2.5-Coder !DiffuCoder
+> 0.0 0.2 0.3 0.4 0.5 0.6
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100%
+> Rate
+> AceCoder-Rule !DiffuCoder-RL
+> 0.0 0.1 0.2 0.3 0.4
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100% Qwen3-8B !DreamReasoner-8B
+> 0.0 0.2 0.4 0.6 0.8
+> Merge weight ¸
+> 0% 20% 40% 60% 80% 100% Ministral-3-3B !Nemotron-LD-3B
+> Accuracy Correction rate Error introduction rate Diffusion parent
+
+Figure 7: Correction increases with the AR contribution while error introduction remains lim-ited over the effective interpolation range. We report accuracy, correction rate (parent wrong →
+
+A2D correct), and error introduction rate (parent correct → A2D wrong) along the A2D interpola-tion path. Dashed lines denote the diffusion parent, and stars mark the best-performing coefficient. Across the six settings in Figure 7, increasing the AR contribution generally increases correction while introducing few new errors around the optimal region. Some models remain robust over a broad range of λ, while Dream-7B and Nemotron-LD show a clearer trade-off at larger values. Overall, A2D improves performance by correcting parent errors while largely preserving already-correct predictions. C.2 INTERPOLATION PRESERVES COMPLEMENTARY GAINS ON RELEASED CHECKPOINTS 
+
+As shown in Figure 8, the same pattern holds for released checkpoints: the diffusion parent and AR donor solve different questions, while the merged model preserves most successes from both. C.3 ALIGNED REPRESENTATION CHANGES ON RELEASED CHECKPOINTS 
+
+The same pattern extends to released checkpoints. As shown in Figure 9, for both Dream-Coder and DiffuCoder-RL, AR and diffusion post-training updates remain nearly orthogonal in parameter space while inducing substantially more aligned changes in the diffusion model’s representations. Notably, this pattern also holds for the RL-derived updates of DiffuCoder-RL. 29 Preprint 52 
+
+40 
+
+254 225 127 
+
+68 
+
+108 
+
+27 
+
+N = 541 
+
+problems 
+
+Qwen2.5-7B ! Dream-7B IFEval 
+
+130 
+
+126 
+
+18 
+
+9 12 
+
+N = 164 
+
+problems 
+
+Qwen2.5-Coder ! Dream-Coder HumanEval 
+
+115 
+
+111 
+
+33 
+
+14 
+
+12 
+
+N = 164 
+
+problems 
+
+Qwen2.5-Coder ! DiffuCoder HumanEval 
+
+25 
+
+22 
+
+228 
+
+219 
+
+39 
+
+18 
+
+86 
+
+N = 378 
+
+problems 
+
+AceCoder ! DiffuCoder-RL MBPP+ 
+
+460 
+
+454 
+
+24 
+
+N = 500 
+
+problems 
+
+Qwen3-8B ! DreamReasoner-8B MATH-500 
+
+108 
+
+84 
+
+226 
+
+212 
+
+81 
+
+34 
+
+126 
+
+32 
+
+N = 541 
+
+problems 
+
+Ministral-3-3B ! Nemotron-LD-3B IFEval 
+
+Diffusion-only success Shared success AR-only success Persistent failure Merged model success Merged model failure 
+
+Figure 8: A2D keeps the successes of both endpoints. For every item of the benchmark, the inner ring records which of the diffusion parent and the AR donor solves it. The outer ring records whether the merged model solves it. Dream-Coder DiffuCoder-RL 
+
+Parameter space   
+
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7
+> Cosine similarity
+> 0.023 0.004
+> Dream-Coder DiffuCoder-RL
+
+Representation space  
+
+> 0.346 0.238 AR ¡Diffusion task vectors AR vs. diffusion feature changes
+
+Figure 9: Distinct parameter updates induce aligned representation changes for released check-points. 30 Preprint 
+
+## D LIMITATIONS AND FUTURE WORK 
+
+Our results reveal a weight-space connection between AR and diffusion models: AR post-training updates remain meaningful after transfer to diffusion models and can complement diffusion-specific updates. This extends existing connections between the two paradigms beyond training and decod-ing mechanisms. However, several questions remain open. A2D currently relies on a compatible training lineage between the AR donor and diffusion recip-ient. All model pairs studied here originate from the same AR family, although our Nemotron experiments show that exact architectural correspondence is not required. Whether cross-paradigm transfer extends to more distant or independently trained model pairs remains unclear. Moreover, the transferability we observe is primarily limited to relatively local post-training up-dates. Continued-pretraining updates are substantially larger and do not transfer effectively in our experiments, suggesting that pretraining-scale transformations may require additional alignment or decomposition. Future work could further characterize what determines cross-paradigm compatibility, develop more adaptive composition strategies, and study A2D as an initialization for subsequent SFT or RL. 31
